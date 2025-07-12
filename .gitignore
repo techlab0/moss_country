@@ -40,3 +40,4 @@ yarn-error.log*
 # Large video files
 public/images/background/background_mov01.mov
 public/images/background/background_mov02.mov
+*.mov
