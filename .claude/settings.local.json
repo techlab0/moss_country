@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(cp:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:glamp-element.jp)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)"
+    ],
+    "deny": []
+  }
+}
