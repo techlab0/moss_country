@@ -3,8 +3,6 @@ import React from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-import { storeImages } from '@/lib/imageUtils';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -66,12 +64,6 @@ const services = [
   },
 ];
 
-const gallery = [
-  { id: 'exterior', title: '店舗外観', description: '緑豊かな外観が目印です', image: 'from-moss-green to-warm-brown' },
-  { id: 'showroom', title: 'ショールーム', description: '豊富な商品を展示', image: 'from-light-green to-moss-green' },
-  { id: 'workshop-room', title: 'ワークショップルーム', description: '明るく開放的な制作空間', image: 'from-beige to-light-green' },
-  { id: 'cafe-space', title: 'カフェスペース', description: 'テラリウムに囲まれた癒し空間', image: 'from-warm-brown to-beige' },
-];
 
 const faq = [
   {

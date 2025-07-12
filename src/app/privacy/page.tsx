@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Container } from '@/components/layout/Container';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 
 export default function PrivacyPage() {
   return (

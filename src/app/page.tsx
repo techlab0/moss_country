@@ -1,7 +1,6 @@
 import React from 'react';
 import { Hero } from '@/components/sections/Hero';
 import { Container } from '@/components/layout/Container';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';

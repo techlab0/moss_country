@@ -1,7 +1,6 @@
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
