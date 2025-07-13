@@ -266,7 +266,6 @@ export default async function ProductsPage() {
                 width={800}
                 height={600}
                 className="w-full h-full object-cover"
-                fallbackGradient="from-moss-green to-warm-brown"
               />
             </div>
           </div>
