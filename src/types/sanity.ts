@@ -42,6 +42,7 @@ export interface SimpleWorkshop {
   title: string
   description: string
   price?: number
+  duration?: string
 }
 
 export interface Product {
