@@ -41,3 +41,4 @@ yarn-error.log*
 public/images/background/background_mov01.mov
 public/images/background/background_mov02.mov
 *.mov
+public/images/background/*.mov
