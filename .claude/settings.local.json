@@ -19,7 +19,13 @@
       "Bash(git push:*)",
       "Bash(git add:*)",
       "Bash(git reset:*)",
+<<<<<<< HEAD
       "Bash(git commit:*)"
+=======
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)"
+>>>>>>> clean-main
     ],
     "deny": []
   }

@@ -2,7 +2,10 @@
 
 import React from 'react';
 import { Container } from '@/components/layout/Container';
+<<<<<<< HEAD
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+=======
+>>>>>>> clean-main
 
 export default function PrivacyPage() {
   return (

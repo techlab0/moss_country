@@ -4,7 +4,10 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
+<<<<<<< HEAD
 import { teamImages } from '@/lib/imageUtils';
+=======
+>>>>>>> clean-main
 
 const timeline = [
   {

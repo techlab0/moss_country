@@ -1,13 +1,17 @@
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
+<<<<<<< HEAD
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+=======
+>>>>>>> clean-main
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
 
 interface BlogPostPageProps {
+<<<<<<< HEAD
   params: {
     slug: string
   }
@@ -15,6 +19,16 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const post: BlogPost | null = await getBlogPostBySlug(params.slug)
+=======
+  params: Promise<{
+    slug: string
+  }>
+}
+
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params
+  const post: BlogPost | null = await getBlogPostBySlug(slug)
+>>>>>>> clean-main
 
   if (!post) {
     notFound()

@@ -3,8 +3,6 @@ import React from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-import { storeImages } from '@/lib/imageUtils';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -66,12 +64,6 @@ const services = [
   },
 ];
 
-const gallery = [
-  { id: 'exterior', title: '店舗外観', description: '緑豊かな外観が目印です', image: 'from-moss-green to-warm-brown' },
-  { id: 'showroom', title: 'ショールーム', description: '豊富な商品を展示', image: 'from-light-green to-moss-green' },
-  { id: 'workshop-room', title: 'ワークショップルーム', description: '明るく開放的な制作空間', image: 'from-beige to-light-green' },
-  { id: 'cafe-space', title: 'カフェスペース', description: 'テラリウムに囲まれた癒し空間', image: 'from-warm-brown to-beige' },
-];
 
 const faq = [
   {
@@ -108,15 +100,14 @@ export default function StorePage() {
       {/* Hero Section */}
       <section className="py-20 relative">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-emerald-50/70" />
-        <div className="absolute inset-0 bg-emerald-950/10" />
+        <div className="absolute inset-0 bg-stone-900/85 backdrop-blur-md" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               北海道で出会う、本物のテラリウム体験
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            <div className="w-24 h-1 bg-emerald-400 mx-auto mb-8"></div>
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto mb-8">
               札幌の中心部にある私たちの店舗で、実際に手に取って、
               テラリウムの美しさと職人の技術を感じてください。
             </p>
@@ -150,7 +141,7 @@ export default function StorePage() {
           </div>
           <div className="grid md:grid-cols-2 gap-12">
             {/* Store Details */}
-            <div className="glass-card p-8 rounded-3xl">
+            <div className="glass-card p-4 sm:p-8 rounded-3xl">
               
               <div className="space-y-6">
                 <div className="flex items-start">
@@ -161,8 +152,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green mb-1">住所</h3>
-                    <p className="text-white">{storeInfo.address}</p>
+                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">住所</h3>
+                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.address}</p>
                   </div>
                 </div>
 
@@ -173,8 +164,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green mb-1">電話番号</h3>
-                    <p className="text-white">{storeInfo.phone}</p>
+                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">電話番号</h3>
+                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.phone}</p>
                   </div>
                 </div>
 
@@ -185,8 +176,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green mb-1">メールアドレス</h3>
-                    <p className="text-white">{storeInfo.email}</p>
+                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">メールアドレス</h3>
+                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.email}</p>
                   </div>
                 </div>
 
@@ -197,11 +188,11 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green mb-1">営業時間</h3>
-                    <div className="text-white space-y-1">
-                      <p>平日: {storeInfo.hours.weekday}</p>
-                      <p>土日祝: {storeInfo.hours.weekend}</p>
-                      <p className="text-red-600">定休日: {storeInfo.hours.closed}</p>
+                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">営業時間</h3>
+                    <div className="text-white md:text-white text-gray-800 space-y-1">
+                      <p className="break-all overflow-wrap-anywhere">平日: {storeInfo.hours.weekday}</p>
+                      <p className="break-all overflow-wrap-anywhere">土日祝: {storeInfo.hours.weekend}</p>
+                      <p className="text-red-600 md:text-red-600 text-red-800 break-all overflow-wrap-anywhere">定休日: {storeInfo.hours.closed}</p>
                     </div>
                   </div>
                 </div>
@@ -209,8 +200,8 @@ export default function StorePage() {
             </div>
 
             {/* Map Placeholder */}
-            <div className="glass-card p-8 rounded-3xl">
-              <h2 className="text-3xl font-bold text-light-green mb-8">アクセスマップ</h2>
+            <div className="glass-card p-4 sm:p-8 rounded-3xl">
+              <h2 className="text-2xl sm:text-3xl font-bold text-light-green md:text-light-green text-gray-900 mb-6 sm:mb-8">アクセスマップ</h2>
               <div className="h-64 rounded-lg overflow-hidden mb-6">
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2913.5264158063487!2d141.29211759999998!3d43.0934509!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2967fe4c6bc9%3A0x5f6284f1ebb2447c!2zTW9zcyBDb3VudHJ544CQ6IuU44OG44Op44Oq44Km44Og5L2c5oiQ44O744Ov44O844Kv44K344On44OD44OX44CR!5e0!3m2!1sja!2sjp!4v1752175558799!5m2!1sja!2sjp"
@@ -231,7 +222,7 @@ export default function StorePage() {
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
                     </svg>
                   </span>
-                  <span className="text-white">{storeInfo.access.subway}</span>
+                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.subway}</span>
                 </div>
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3">
@@ -239,7 +230,7 @@ export default function StorePage() {
                       <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
                     </svg>
                   </span>
-                  <span className="text-white">{storeInfo.access.bus}</span>
+                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.bus}</span>
                 </div>
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
@@ -247,7 +238,7 @@ export default function StorePage() {
                       <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                   </span>
-                  <span className="text-white">{storeInfo.access.car}</span>
+                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.car}</span>
                 </div>
               </div>
             </div>

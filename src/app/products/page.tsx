@@ -110,11 +110,11 @@ export default async function ProductsPage() {
                       </svg>
                     )}
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{category.name}</h3>
-                  <p className="text-gray-200 text-sm">{category.description}</p>
+                  <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
+                  <p className="text-gray-100 font-medium text-base">{category.description}</p>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-amber-200 font-medium">{category.count}</p>
+                  <p className="text-amber-100 font-bold text-lg">{category.count}</p>
                 </CardContent>
               </Card>
             ))}

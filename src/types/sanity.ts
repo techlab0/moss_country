@@ -39,10 +39,17 @@ export interface Workshop {
 
 export interface SimpleWorkshop {
   _id: string
+<<<<<<< HEAD
   _type: 'simpleWorkshop'
   title: string
   description: string
   price: number
+=======
+  title: string
+  description: string
+  price?: number
+  duration?: string
+>>>>>>> clean-main
 }
 
 export interface Product {
@@ -98,7 +105,14 @@ export interface BlogPost {
   author: string
   publishedAt: string
   excerpt?: string
+<<<<<<< HEAD
   content: any[] // Portable Text
+=======
+  content: Array<{
+    _type: string
+    [key: string]: unknown
+  }> // Portable Text
+>>>>>>> clean-main
   featuredImage?: {
     _type: 'image'
     asset: {

@@ -18,7 +18,10 @@ export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({
   width,
   height,
   className = '',
+<<<<<<< HEAD
   fallbackGradient = 'from-moss-green to-warm-brown',
+=======
+>>>>>>> clean-main
   priority = false,
 }) => {
   // 画像パスが指定されている場合は Image コンポーネントを使用

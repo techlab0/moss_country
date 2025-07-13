@@ -145,10 +145,10 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
               transitionDelay: '1800ms'
             }}
           >
-            <button className="group relative px-16 py-6 text-lg font-light bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full hover:bg-white/20 transition-all duration-500 transform hover:scale-105 shadow-2xl">
+            <a href="/workshop" className="group relative inline-block px-8 sm:px-12 md:px-16 py-4 sm:py-5 md:py-6 text-base sm:text-lg font-light bg-white/15 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white/25 transition-all duration-500 transform hover:scale-105 shadow-2xl">
               <span className="relative z-10">体験する</span>
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400/0 via-emerald-400/10 to-emerald-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </button>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400/0 via-emerald-400/15 to-emerald-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </a>
           </div>
         </div>
       </div>
