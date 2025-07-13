@@ -100,15 +100,14 @@ export default function StorePage() {
       {/* Hero Section */}
       <section className="py-20 relative">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-white/85" />
-        <div className="absolute inset-0 bg-stone-100/30" />
+        <div className="absolute inset-0 bg-stone-900/85 backdrop-blur-md" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-emerald-800 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               北海道で出会う、本物のテラリウム体験
             </h1>
-            <div className="w-24 h-1 bg-emerald-700 mx-auto mb-8"></div>
-            <p className="text-xl text-gray-800 max-w-3xl mx-auto mb-8">
+            <div className="w-24 h-1 bg-emerald-400 mx-auto mb-8"></div>
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto mb-8">
               札幌の中心部にある私たちの店舗で、実際に手に取って、
               テラリウムの美しさと職人の技術を感じてください。
             </p>

@@ -98,21 +98,19 @@ export default function Home() {
       {/* 商品カテゴリー概要 - 円形カルーセル */}
       <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-white/90" />
-        {/* Text Visibility Overlay */}
-        <div className="absolute inset-0 bg-stone-100/50" />
+        <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-md" />
         
         <Container className="relative z-10">
           <AnimatedSection animation="fade-in" className="text-center mb-12 sm:mb-16 px-4">
             <div className="mb-6 sm:mb-8">
-              <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-800 font-medium">Our Products</span>
+              <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-gray-900 mb-8 sm:mb-12 leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-white mb-8 sm:mb-12 leading-tight">
               あなたにぴったりの
               <br className="sm:hidden" />
-              <span className="text-emerald-700 font-bold">テラリウムを見つけよう</span>
+              <span className="text-emerald-400 font-bold">テラリウムを見つけよう</span>
             </h2>
-            <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-600 to-transparent mx-auto"></div>
+            <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
           </AnimatedSection>
           
           <CircularCarousel 
