@@ -152,7 +152,7 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">住所</h3>
+                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">住所</h3>
                     <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.address}</p>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">電話番号</h3>
+                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">電話番号</h3>
                     <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.phone}</p>
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">メールアドレス</h3>
+                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">メールアドレス</h3>
                     <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.email}</p>
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-light-green md:text-light-green text-gray-900 mb-1">営業時間</h3>
+                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">営業時間</h3>
                     <div className="text-white md:text-white text-gray-800 space-y-1">
                       <p className="break-all overflow-wrap-anywhere">平日: {storeInfo.hours.weekday}</p>
                       <p className="break-all overflow-wrap-anywhere">土日祝: {storeInfo.hours.weekend}</p>
@@ -201,7 +201,7 @@ export default function StorePage() {
 
             {/* Map Placeholder */}
             <div className="glass-card p-4 sm:p-8 rounded-3xl">
-              <h2 className="text-2xl sm:text-3xl font-bold text-light-green md:text-light-green text-gray-900 mb-6 sm:mb-8">アクセスマップ</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 md:text-amber-700 text-gray-900 mb-6 sm:mb-8">アクセスマップ</h2>
               <div className="h-64 rounded-lg overflow-hidden mb-6">
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2913.5264158063487!2d141.29211759999998!3d43.0934509!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2967fe4c6bc9%3A0x5f6284f1ebb2447c!2zTW9zcyBDb3VudHJ544CQ6IuU44OG44Op44Oq44Km44Og5L2c5oiQ44O744Ov44O844Kv44K344On44OD44OX44CR!5e0!3m2!1sja!2sjp!4v1752175558799!5m2!1sja!2sjp"
