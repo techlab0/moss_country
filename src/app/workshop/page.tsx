@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getSimpleWorkshops } from '@/lib/sanity';
 import { workshopImages } from '@/lib/imageUtils';
+import type { SimpleWorkshop } from '@/types/sanity';
 
 const courses = [
   {
