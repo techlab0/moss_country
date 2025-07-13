@@ -76,13 +76,15 @@ export default function Home() {
           </div>
           
           <AnimatedSection animation="fade-in" delay={1600} className="text-center mt-20">
-            <Button 
-              variant="primary" 
-              size="lg"
-              className="px-12 py-4 text-lg font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105"
-            >
-              ストーリーを読む
-            </Button>
+            <a href="/story">
+              <Button 
+                variant="primary" 
+                size="lg"
+                className="px-12 py-4 text-lg font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105"
+              >
+                ストーリーを読む
+              </Button>
+            </a>
           </AnimatedSection>
         </Container>
       </section>
@@ -199,13 +201,15 @@ export default function Home() {
                   <span className="text-base">アフターフォロー完備</span>
                 </li>
               </ul>
-              <Button 
-                variant="primary" 
-                size="lg"
-                className="px-8 py-3 text-base font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 relative z-10"
-              >
-                ワークショップ詳細
-              </Button>
+              <a href="/workshop">
+                <Button 
+                  variant="primary" 
+                  size="lg"
+                  className="px-8 py-3 text-base font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 relative z-10"
+                >
+                  ワークショップ詳細
+                </Button>
+              </a>
             </div>
             <div className="glass-card-dark rounded-3xl p-8 h-96 relative overflow-hidden">
               <ImagePlaceholder
@@ -239,20 +243,24 @@ export default function Home() {
               全国配送対応で、あなたのもとへ小さな自然をお届けします。
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                className="px-12 py-4 text-lg font-medium bg-white text-emerald-900 hover:bg-emerald-50 border-0 rounded-full transition-all duration-300 transform hover:scale-105"
-              >
-                ECサイトで商品を見る
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="lg" 
-                className="px-12 py-4 text-lg font-medium text-white border-2 border-white/60 hover:bg-white hover:text-emerald-900 rounded-full transition-all duration-300 transform hover:scale-105"
-              >
-                店舗を訪れる
-              </Button>
+              <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer">
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  className="px-12 py-4 text-lg font-medium bg-white text-emerald-900 hover:bg-emerald-50 border-0 rounded-full transition-all duration-300 transform hover:scale-105"
+                >
+                  ECサイトで商品を見る
+                </Button>
+              </a>
+              <a href="/store">
+                <Button 
+                  variant="ghost" 
+                  size="lg" 
+                  className="px-12 py-4 text-lg font-medium text-white border-2 border-white/60 hover:bg-white hover:text-emerald-900 rounded-full transition-all duration-300 transform hover:scale-105"
+                >
+                  店舗を訪れる
+                </Button>
+              </a>
             </div>
           </div>
         </Container>
