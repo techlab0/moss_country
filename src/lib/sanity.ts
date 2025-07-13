@@ -42,7 +42,6 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
       _id,
       title,
       description,
-      duration,
       price
     }
   `)

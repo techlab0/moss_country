@@ -39,11 +39,9 @@ export interface Workshop {
 
 export interface SimpleWorkshop {
   _id: string
-  _type: 'simpleWorkshop'
   title: string
   description: string
-  price: number
-  duration?: string
+  price?: number
 }
 
 export interface Product {
