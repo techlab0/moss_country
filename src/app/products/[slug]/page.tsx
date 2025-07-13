@@ -8,13 +8,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product: Product | null = await getProductBySlug(params.slug)
+  const { slug } = await params
+  const product: Product | null = await getProductBySlug(slug)
 
   if (!product) {
     notFound()
