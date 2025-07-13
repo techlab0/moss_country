@@ -98,7 +98,10 @@ export interface BlogPost {
   author: string
   publishedAt: string
   excerpt?: string
-  content: Array<Record<string, unknown>> // Portable Text
+  content: Array<{
+    _type: string
+    [key: string]: unknown
+  }> // Portable Text
   featuredImage?: {
     _type: 'image'
     asset: {
