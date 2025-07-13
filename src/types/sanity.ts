@@ -98,7 +98,7 @@ export interface BlogPost {
   author: string
   publishedAt: string
   excerpt?: string
-  content: Array<{[key: string]: unknown}> // Portable Text
+  content: any // Portable Text
   featuredImage?: {
     _type: 'image'
     asset: {
