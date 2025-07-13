@@ -97,7 +97,7 @@ const testimonials = [
 ];
 
 export default function WorkshopPage() {
-  const [workshops, setWorkshops] = useState([]);
+  const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
   const [, setLoading] = useState(true);
 
   useEffect(() => {
