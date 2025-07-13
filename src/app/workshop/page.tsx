@@ -260,7 +260,7 @@ export default function WorkshopPage() {
                       </div>
                       <div className="text-center">
                         <div className="font-semibold text-moss-green">時間</div>
-                        <div className="text-gray-600">{workshop.duration || '90分'}</div>
+                        <div className="text-gray-600">{(workshop as SimpleWorkshop & { duration?: string }).duration || '90分'}</div>
                       </div>
                     </div>
                   </CardHeader>
