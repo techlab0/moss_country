@@ -4,14 +4,9 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-<<<<<<< HEAD
-import { getWorkshops, getSimpleWorkshops, urlFor } from '@/lib/sanity';
-import { workshopImages } from '@/lib/imageUtils';
-=======
 import { getSimpleWorkshops } from '@/lib/sanity';
 import { workshopImages } from '@/lib/imageUtils';
 import type { SimpleWorkshop } from '@/types/sanity';
->>>>>>> clean-main
 
 const courses = [
   {
@@ -103,13 +98,8 @@ const testimonials = [
 ];
 
 export default function WorkshopPage() {
-<<<<<<< HEAD
-  const [workshops, setWorkshops] = useState([]);
-  const [loading, setLoading] = useState(true);
-=======
   const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
   const [, setLoading] = useState(true);
->>>>>>> clean-main
 
   useEffect(() => {
     async function fetchWorkshops() {
@@ -258,11 +248,7 @@ export default function WorkshopPage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-<<<<<<< HEAD
-              {workshops.map((workshop: any) => (
-=======
               {workshops.map((workshop: {_id: string, title: string, description: string, price?: number}) => (
->>>>>>> clean-main
                 <Card key={workshop._id} className="bg-white shadow-lg">
                   <CardHeader>
                     <h3 className="text-xl font-bold text-moss-green mb-2">{workshop.title}</h3>
@@ -274,11 +260,7 @@ export default function WorkshopPage() {
                       </div>
                       <div className="text-center">
                         <div className="font-semibold text-moss-green">時間</div>
-<<<<<<< HEAD
-                        <div className="text-gray-600">{workshop.duration}</div>
-=======
                         <div className="text-gray-600">{(workshop as SimpleWorkshop & { duration?: string }).duration || '90分'}</div>
->>>>>>> clean-main
                       </div>
                     </div>
                   </CardHeader>

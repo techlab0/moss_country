@@ -3,13 +3,8 @@ import imageUrlBuilder from '@sanity/image-url'
 import type { Workshop, SimpleWorkshop, Product, BlogPost, FAQ, SanityImage } from '@/types/sanity'
 
 export const client = createClient({
-<<<<<<< HEAD
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
-=======
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
->>>>>>> clean-main
   useCdn: false, // Use CDN for production
   apiVersion: '2024-01-01',
 })
@@ -47,10 +42,6 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
       _id,
       title,
       description,
-<<<<<<< HEAD
-      duration,
-=======
->>>>>>> clean-main
       price
     }
   `)

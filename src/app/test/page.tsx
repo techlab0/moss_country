@@ -15,11 +15,7 @@ export default async function TestPage() {
             <p className="text-gray-500">データがありません</p>
           ) : (
             <div className="space-y-4">
-<<<<<<< HEAD
-              {workshops.map((workshop: any) => (
-=======
               {workshops.map((workshop: {_id: string, title: string, description: string, price?: number, duration?: string}) => (
->>>>>>> clean-main
                 <div key={workshop._id} className="border-b pb-4">
                   <h3 className="text-lg font-medium text-moss-green">{workshop.title}</h3>
                   <p className="text-gray-600 mt-2">{workshop.description}</p>

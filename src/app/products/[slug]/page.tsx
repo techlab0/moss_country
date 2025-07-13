@@ -8,15 +8,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface ProductPageProps {
-<<<<<<< HEAD
-  params: {
-    slug: string
-  }
-}
-
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product: Product | null = await getProductBySlug(params.slug)
-=======
   params: Promise<{
     slug: string
   }>
@@ -25,7 +16,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const product: Product | null = await getProductBySlug(slug)
->>>>>>> clean-main
 
   if (!product) {
     notFound()
