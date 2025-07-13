@@ -223,7 +223,6 @@ export default function Home() {
                 width={800}
                 height={600}
                 className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
-                fallbackGradient="from-moss-green to-warm-brown"
               />
             </div>
           </div>

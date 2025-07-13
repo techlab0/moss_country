@@ -174,7 +174,6 @@ export default function WorkshopPage() {
                     width={800}
                     height={600}
                     className="w-full h-full object-cover"
-                    fallbackGradient={course.image}
                   />
                 </div>
                 <CardHeader>

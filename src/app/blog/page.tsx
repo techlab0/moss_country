@@ -71,7 +71,7 @@ export default async function BlogPage() {
                         width={400}
                         height={300}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        fallbackGradient="from-moss-green to-warm-brown"
+                        
                       />
                     </div>
                   )}

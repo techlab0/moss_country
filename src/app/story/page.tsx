@@ -250,7 +250,7 @@ export default function StoryPage() {
                   width={800}
                   height={600}
                   className="w-full h-full object-cover"
-                  fallbackGradient="from-moss-green to-warm-brown"
+                  
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -261,7 +261,7 @@ export default function StoryPage() {
                     width={400}
                     height={300}
                     className="w-full h-full object-cover"
-                    fallbackGradient="from-light-green to-moss-green"
+                    
                   />
                 </div>
                 <div className="h-32 overflow-hidden rounded-lg">
@@ -271,7 +271,7 @@ export default function StoryPage() {
                     width={400}
                     height={300}
                     className="w-full h-full object-cover"
-                    fallbackGradient="from-beige to-light-green"
+                    
                   />
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function StoryPage() {
                   width={600}
                   height={400}
                   className="w-full h-full object-cover"
-                  fallbackGradient="from-moss-green to-light-green"
+                  
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -342,7 +342,7 @@ export default function StoryPage() {
                     width={300}
                     height={200}
                     className="w-full h-full object-cover"
-                    fallbackGradient="from-light-green to-beige"
+                    
                   />
                 </div>
                 <div className="h-24 overflow-hidden rounded-lg">
@@ -352,7 +352,7 @@ export default function StoryPage() {
                     width={300}
                     height={200}
                     className="w-full h-full object-cover"
-                    fallbackGradient="from-beige to-warm-brown"
+                    
                   />
                 </div>
               </div>

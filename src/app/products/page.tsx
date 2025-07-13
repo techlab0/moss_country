@@ -163,7 +163,6 @@ export default async function ProductsPage() {
                         width={400}
                         height={300}
                         className="w-full h-full object-cover"
-                        fallbackGradient="from-moss-green to-warm-brown"
                       />
                     )}
                     {product.featured && (
