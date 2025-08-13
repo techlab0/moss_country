@@ -5,6 +5,10 @@ import config from '../../../../sanity.config'
 
 export const dynamic = 'force-dynamic'
 
-export default function AdminPage() {
-  return <NextStudio config={config} />
+export default function StudioPage() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <NextStudio config={config} />
+    </div>
+  )
 }
