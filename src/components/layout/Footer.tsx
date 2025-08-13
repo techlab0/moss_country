@@ -86,9 +86,9 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer" className="text-light-green hover:text-white transition-colors duration-200">
+                <Link href="/products" className="text-light-green hover:text-white transition-colors duration-200">
                   ECサイトで購入
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

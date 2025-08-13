@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/Button';
 const storeInfo = {
   name: 'MOSS COUNTRY',
   address: '札幌市西区発寒11条4丁目3-1',
-  phone: '011-xxx-xxxx',
-  email: 'mosscountry***************@gmail.com',
+  phone: '080-3605-6340',
+  email: 'moss.country.kokenokuni@gmail.com',
   hours: {
     weekday: '10:00 - 18:00',
     weekend: '10:00 - 19:00',

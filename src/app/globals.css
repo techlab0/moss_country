@@ -29,6 +29,41 @@ html {
   min-height: 100vh;
 }
 
+/* レスポンシブ背景固定 */
+.bg-fixed-desktop {
+  background-attachment: scroll;
+}
+
+@media (min-width: 768px) {
+  .bg-fixed-desktop {
+    background-attachment: fixed;
+  }
+}
+
+/* レスポンシブ画像の最適化 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* タッチフレンドリーなボタンサイズ */
+@media (max-width: 767px) {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* フォーカス可視性の向上 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
 body::before {
   content: '';
   position: fixed;

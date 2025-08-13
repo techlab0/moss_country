@@ -1,12 +1,11 @@
 import React from 'react';
 import { Container } from '@/components/layout/Container';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ProductCard } from '@/components/ui/ProductCard';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-import { getProducts, urlFor } from '@/lib/sanity';
+import { getProducts } from '@/lib/sanity';
 import type { Product } from '@/types/sanity';
-import Link from 'next/link';
-import Image from 'next/image';
 
 const categories = [
   {
@@ -36,12 +35,11 @@ export default async function ProductsPage() {
 
   return (
     <div 
-      className="min-h-screen relative"
+      className="min-h-screen relative bg-fixed-desktop"
       style={{
         backgroundImage: `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundPosition: 'center'
       }}
     >
       {/* Unified Background Overlay */}
@@ -54,11 +52,11 @@ export default async function ProductsPage() {
         <div className="absolute inset-0 bg-emerald-950/10" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-moss-green mb-6">
               職人が手がける、世界に一つだけのテラリウム
             </h1>
             <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
               一つひとつ手作業で丁寧に作られた本格テラリウム。
               初心者向けからプレミアムまで、あなたにぴったりの小さな自然を見つけてください。
             </p>
@@ -146,65 +144,7 @@ export default async function ProductsPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product) => (
-                <Card key={product._id} className="hover:transform hover:scale-105 transition-all duration-300">
-                  <div className="h-64 overflow-hidden relative">
-                    {product.images && product.images[0] ? (
-                      <Image
-                        src={urlFor(product.images[0]).width(400).height(300).url()}
-                        alt={product.name}
-                        width={400}
-                        height={300}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <ImagePlaceholder
-                        src=""
-                        alt={product.name}
-                        width={400}
-                        height={300}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    {product.featured && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-sm z-10">
-                        おすすめ
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
-                        {product.category}
-                      </span>
-                      <span className="text-moss-green font-bold text-lg">¥{product.price.toLocaleString()}</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-moss-green mb-2">{product.name}</h3>
-                    <p className="text-gray-700 mb-4">{product.description}</p>
-                    {product.materials && product.materials.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {product.materials.map((material, index) => (
-                          <span key={index} className="bg-light-green text-moss-green px-2 py-1 rounded text-sm">
-                            {material}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <Link href={`/products/${product.slug.current}`} className="block">
-                        <Button variant="primary" className="w-full">
-                          詳細を見る
-                        </Button>
-                      </Link>
-                      <Button variant="secondary" className="w-full">
-                        <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer">
-                          ECサイトで購入
-                        </a>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           )}

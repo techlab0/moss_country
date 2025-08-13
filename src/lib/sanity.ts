@@ -101,41 +101,95 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
 // Product queries
 export async function getProducts(): Promise<Product[]> {
-  return await client.fetch(`
-    *[_type == "product" && inStock == true] | order(sortOrder asc) {
-      _id,
-      name,
-      slug,
-      description,
-      price,
-      category,
-      images,
-      features,
-      size,
-      materials,
-      careInstructions,
-      featured
+  try {
+    const products = await client.fetch(
+      `*[_type == "product"] | order(sortOrder asc) {
+        _id,
+        name,
+        slug,
+        price,
+        category,
+        "image": images[0] {
+          asset-> {
+            _ref,
+            url
+          },
+          alt
+        },
+        featured,
+        inStock,
+        dimensions
+      }`,
+      {},
+      {
+        cache: 'force-cache',
+        next: { revalidate: 300 } // 5分間キャッシュ
+      }
+    );
+    
+    // Sanityにデータがない場合はモックデータを返す
+    if (!products || products.length === 0) {
+      console.log('No Sanity products found, using mock data');
+      const { mockProducts } = await import('./mockProducts');
+      return mockProducts;
     }
-  `)
+    
+    console.log(`Found ${products.length} products from Sanity:`, products.map((p: any) => p.name));
+    
+    // Sanityデータにモックデータを追加
+    const { mockProducts } = await import('./mockProducts');
+    return [...products, ...mockProducts];
+  } catch (error) {
+    console.warn('Failed to fetch products from Sanity, using mock data:', error);
+    const { mockProducts } = await import('./mockProducts');
+    return mockProducts;
+  }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  return await client.fetch(`
-    *[_type == "product" && slug.current == $slug][0] {
-      _id,
-      name,
-      slug,
-      description,
-      price,
-      category,
-      images,
-      features,
-      size,
-      materials,
-      careInstructions,
-      featured
+  try {
+    const product = await client.fetch(
+      `*[_type == "product" && slug.current == $slug][0] {
+        _id,
+        name,
+        slug,
+        description,
+        price,
+        category,
+        images[] {
+          asset-> {
+            _ref,
+            url
+          },
+          alt,
+          hotspot,
+          crop
+        },
+        materials,
+        careInstructions,
+        featured,
+        inStock,
+        dimensions
+      }`,
+      { slug },
+      {
+        cache: 'force-cache',
+        next: { revalidate: 3600 } // 1時間キャッシュ
+      }
+    );
+    
+    // Sanityにデータがない場合はモックデータから検索
+    if (!product) {
+      const { mockProducts } = await import('./mockProducts');
+      return mockProducts.find(p => p.slug.current === slug) || null;
     }
-  `, { slug })
+    
+    return product;
+  } catch (error) {
+    console.warn('Failed to fetch product from Sanity, checking mock data:', error);
+    const { mockProducts } = await import('./mockProducts');
+    return mockProducts.find(p => p.slug.current === slug) || null;
+  }
 }
 
 // FAQ queries

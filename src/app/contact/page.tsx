@@ -9,14 +9,14 @@ const contactMethods = [
   {
     title: '電話でのお問い合わせ',
     description: 'お急ぎの方はお電話でお気軽にお問い合わせください',
-    info: '011-234-5678',
+    info: '080-3605-6340',
     hours: '営業時間: 10:00-18:00 / 定休日: 月曜日',
     icon: '📞',
   },
   {
     title: 'メールでのお問い合わせ',
     description: '詳しいご相談やお見積りはメールでも承ります',
-    info: 'info@mosscountry.jp',
+    info: 'moss.country.kokenokuni@gmail.com',
     hours: '通常24時間以内にご返信いたします',
     icon: '✉️',
   },

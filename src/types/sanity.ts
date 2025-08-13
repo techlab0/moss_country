@@ -85,6 +85,12 @@ export interface Product {
   materials?: string[]
   careInstructions?: string
   sortOrder?: number
+  shipping?: {
+    carrier: 'yupack' | 'yumail' | 'takkyubin' | 'letterpack' | 'sagawa'
+    weight: number // グラム単位
+    fragile?: boolean // 割れ物
+    special?: string // 特別な配送指示
+  }
 }
 
 export interface BlogPost {

@@ -107,6 +107,37 @@ export const product = defineType({
       initialValue: true,
     }),
     defineField({
+      name: 'stockQuantity',
+      title: '在庫数',
+      type: 'number',
+      validation: Rule => Rule.required().min(0),
+      initialValue: 0,
+    }),
+    defineField({
+      name: 'reserved',
+      title: '予約在庫数',
+      type: 'number',
+      validation: Rule => Rule.min(0),
+      initialValue: 0,
+      readOnly: true,
+      description: 'システムが自動的に管理します'
+    }),
+    defineField({
+      name: 'lowStockThreshold',
+      title: '低在庫警告しきい値',
+      type: 'number',
+      validation: Rule => Rule.min(0),
+      initialValue: 5,
+      description: 'この数量以下になると低在庫警告が表示されます'
+    }),
+    defineField({
+      name: 'weight',
+      title: '重量（g）',
+      type: 'number',
+      validation: Rule => Rule.min(0),
+      description: '配送料計算に使用されます'
+    }),
+    defineField({
       name: 'featured',
       title: 'おすすめ商品',
       type: 'boolean',

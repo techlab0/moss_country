@@ -1,8 +1,8 @@
 import { getProductBySlug, urlFor } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { Button } from '@/components/ui/Button'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { ProductActions } from '@/components/ui/ProductActions'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -23,12 +23,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div 
-      className="min-h-screen py-8"
+      className="min-h-screen py-8 bg-fixed-desktop"
       style={{
         backgroundImage: `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundPosition: 'center'
       }}
     >
       <Container>
@@ -40,7 +39,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
             {product.images && product.images.length > 0 ? (
               <>
@@ -54,7 +53,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   />
                 </div>
                 {product.images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {product.images.slice(1, 5).map((image, index) => (
                       <div key={index} className="aspect-square overflow-hidden rounded">
                         <Image
@@ -94,8 +93,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-moss-green mb-4">{product.name}</h1>
-              <div className="text-3xl font-bold text-moss-green mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-moss-green mb-4">{product.name}</h1>
+              <div className="text-2xl sm:text-3xl font-bold text-moss-green mb-6">
                 ¥{product.price.toLocaleString()}
               </div>
             </div>
@@ -110,7 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {product.dimensions && (
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-3">サイズ</h2>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   {product.dimensions.width && (
                     <div>
                       <span className="text-gray-600">幅:</span>
@@ -153,29 +152,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
-              <div className="flex items-center mb-4">
-                {product.inStock ? (
-                  <span className="text-green-600 font-medium">在庫あり</span>
-                ) : (
-                  <span className="text-red-600 font-medium">在庫切れ</span>
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                <Button variant="primary" className="w-full" disabled={!product.inStock}>
-                  <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer">
-                    ECサイトで購入する
-                  </a>
-                </Button>
-                
-                <Button variant="secondary" className="w-full">
-                  <a href="/contact">
-                    商品についてお問い合わせ
-                  </a>
-                </Button>
-              </div>
-            </div>
+            {/* 商品アクション（カート追加など） */}
+            <ProductActions product={product} />
           </div>
         </div>
       </Container>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Hero } from '@/components/sections/Hero';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -247,20 +248,20 @@ export default function Home() {
               全国配送対応で、あなたのもとへ小さな自然をお届けします。
             </p>
             <div className="flex flex-col gap-4 sm:gap-6 justify-center items-center sm:flex-row">
-              <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+              <Link href="/products" className="w-full sm:w-auto">
                 <Button 
-                  variant="secondary" 
+                  variant="primary" 
                   size="lg" 
-                  className="px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium bg-white text-emerald-900 hover:bg-emerald-50 border-0 rounded-full transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+                  className="px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                 >
-                  ECサイトで商品を見る
+                  商品を見る
                 </Button>
-              </a>
+              </Link>
               <a href="/store" className="w-full sm:w-auto">
                 <Button 
-                  variant="ghost" 
+                  variant="primary" 
                   size="lg" 
-                  className="px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium text-white border-2 border-white/60 hover:bg-white hover:text-emerald-900 rounded-full transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+                  className="px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                 >
                   店舗を訪れる
                 </Button>

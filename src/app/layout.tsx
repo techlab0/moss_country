@@ -4,6 +4,10 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
+import { CartProvider } from "@/contexts/CartContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PerformanceInit } from "@/components/PerformanceInit";
+import { InventoryNotifications } from "@/components/ui/InventoryNotifications";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,12 +73,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header />
-        <main>
-          {children}
-        </main>
-        <Footer />
-        <ScrollToTopButton />
+        <ErrorBoundary>
+          <CartProvider>
+            <Header />
+            <main>
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </main>
+            <Footer />
+            <ScrollToTopButton />
+            <PerformanceInit />
+            <InventoryNotifications />
+          </CartProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -204,28 +204,28 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       </div>
 
       {/* Current Item Details */}
-      <div className="mt-16 text-center text-stone-800">
+      <div className="mt-16 text-center text-white">
         <div className="max-w-2xl mx-auto">
           <div 
             className={`transform transition-all duration-500 ${
               isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
             }`}
           >
-            <div className="text-sm uppercase tracking-wider text-amber-700 mb-4">
+            <div className="text-sm uppercase tracking-wider text-emerald-300 mb-4">
               {currentItem.category}
             </div>
-            <h2 className="text-4xl md:text-5xl font-light mb-6 leading-tight">
+            <h2 className="text-4xl md:text-5xl font-light mb-6 leading-tight text-white">
               {currentItem.title}
             </h2>
-            <p className="text-xl text-stone-600 leading-relaxed mb-8">
+            <p className="text-xl text-gray-200 leading-relaxed mb-8">
               {currentItem.description}
             </p>
             {currentItem.price && (
-              <div className="text-3xl font-light text-amber-700 mb-8">
+              <div className="text-3xl font-light text-emerald-300 mb-8">
                 {currentItem.price}
               </div>
             )}
-            <button className="px-12 py-4 bg-amber-700 hover:bg-amber-800 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+            <button className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
               詳しく見る
             </button>
           </div>
