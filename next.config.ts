@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
   compress: true, // gzip圧縮
   poweredByHeader: false, // セキュリティのためX-Powered-Byヘッダーを非表示
   experimental: {
-    optimizeCss: true, // CSS最適化
     scrollRestoration: true,
   },
   webpack: (config, { isServer }) => {
