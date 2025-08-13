@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
 import { getEcommerceImageUrl } from '@/lib/adapters';
-import { EmailService } from '@/lib/email';
 import type { CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
-import type { OrderEmailData } from '@/lib/email';
 
 // 配送料金表（札幌から全国、実際のゆうパック料金を参考）
 const SHIPPING_RATES = {
@@ -514,55 +512,29 @@ export default function CheckoutPage() {
     console.log('Order processed:', orderData);
   };
 
-  // SendGridを使用したメール送信処理
+  // メール送信処理（API経由）
   const sendOrderConfirmationEmails = async (orderData: any) => {
     try {
-      // 注文データをEmailService用の形式に変換
-      const emailData: OrderEmailData = {
-        orderNumber: orderData.orderNumber,
-        customerName: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
-        customerEmail: orderData.customer.email,
-        items: orderData.items.map((item: any) => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.quantity * item.price
-        })),
-        subtotal: orderData.subtotal,
-        shippingCost: orderData.shippingCost,
-        tax: orderData.tax,
-        total: orderData.total,
-        paymentMethod: getPaymentMethodDisplayName(orderData.paymentMethod),
-        shippingAddress: orderData.shippingAddress,
-        // 銀行振込の場合の情報
-        bankInfo: orderData.paymentMethod === 'bank_transfer' ? {
-          bank: '北海道銀行',
-          branch: '札幌駅前支店',
-          accountType: '普通',
-          accountNumber: '1234567',
-          accountName: 'MOSS COUNTRY',
-          transferDeadline: getTransferDeadline()
-        } : undefined,
-        // 代金引換の場合の手数料
-        codFee: orderData.paymentMethod === 'cash_on_delivery' ? 300 : undefined
-      };
+      // API経由でメール送信（サーバーサイド処理）
+      const response = await fetch('/api/email/order-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: orderData.customer,
+          items: orderData.items,
+          pricing: orderData.pricing,
+          paymentMethod: orderData.paymentMethod,
+          shippingAddress: orderData.shippingAddress
+        })
+      });
 
-      // 顧客向け確認メール送信
-      const customerEmailSent = await EmailService.sendOrderConfirmationEmail(emailData);
-      if (customerEmailSent) {
-        console.log('✅ 顧客確認メール送信成功');
+      if (response.ok) {
+        console.log('✅ 注文確認メール送信成功');
       } else {
-        console.warn('⚠️ 顧客確認メール送信失敗（設定未完了の可能性）');
+        console.warn('⚠️ メール送信失敗');
       }
-
-      // 管理者向け通知メール送信
-      const adminEmailSent = await EmailService.sendAdminNotificationEmail(emailData);
-      if (adminEmailSent) {
-        console.log('✅ 管理者通知メール送信成功');
-      } else {
-        console.warn('⚠️ 管理者通知メール送信失敗（設定未完了の可能性）');
-      }
-
     } catch (error) {
       console.error('メール送信エラー:', error);
       // メール送信エラーでも注文処理は継続

@@ -22,6 +22,18 @@ const nextConfig: NextConfig = {
     optimizeCss: true, // CSS最適化
     scrollRestoration: true,
   },
+  webpack: (config, { isServer }) => {
+    // SendGridをサーバーサイドでのみ使用
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        stream: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
   turbopack: {
     resolveAlias: {
       '@/': './src/',
