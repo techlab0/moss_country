@@ -6,19 +6,15 @@ import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
-import { getEcommerceImageUrl, getEcommerceStock } from '@/lib/adapters';
+import { getEcommerceImageUrl } from '@/lib/adapters';
 import { inventoryService } from '@/lib/inventoryService';
 
 export default function CartPage() {
   const { 
     cart, 
     updateQuantity, 
-    removeFromCart, 
-    setShippingMethod, 
-    getShippingMethods 
+    removeFromCart
   } = useCart();
-
-  const shippingMethods = getShippingMethods();
 
   if (cart.items.length === 0) {
     return (
