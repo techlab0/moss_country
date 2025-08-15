@@ -5,6 +5,10 @@
   "outputDirectory": ".next",
   "rewrites": [
     {
+      "source": "/admin/:path*",
+      "destination": "/admin/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
