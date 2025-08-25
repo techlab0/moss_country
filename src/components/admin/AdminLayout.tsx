@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const navigation = [
   { name: 'ダッシュボード', href: '/admin/dashboard', icon: '📊' },
@@ -10,11 +10,43 @@ const navigation = [
   { name: '在庫管理', href: '/admin/inventory', icon: '📋' },
   { name: '商品管理', href: '/admin/products', icon: '🌱' },
   { name: '顧客管理', href: '/admin/customers', icon: '👥' },
+  { name: 'ユーザー管理', href: '/admin/users', icon: '👤' },
   { name: '詳細CMS', href: '/admin/cms', icon: '⚙️' },
+  { name: '2FA設定', href: '/admin/setup-2fa', icon: '🔐' },
 ];
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+}
+
+function LogoutButton() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+      });
+      router.push('/admin/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleLogout}
+      disabled={isLoading}
+      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
+    >
+      {isLoading ? 'ログアウト中...' : 'ログアウト'}
+    </button>
+  );
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -90,10 +122,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
                 <Link
                   href="/"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-moss-green hover:bg-moss-green/90 transition-colors"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                 >
                   サイトを表示
                 </Link>
+                <LogoutButton />
               </div>
             </div>
           </div>
