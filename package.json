@@ -14,13 +14,16 @@
     "@sanity/image-url": "^1.1.0",
     "@sanity/vision": "^3.98.1",
     "@sendgrid/mail": "^8.1.5",
+    "@square/web-payments-sdk-types": "^1.78.0",
+    "@types/uuid": "^10.0.0",
     "classnames": "^2.5.1",
     "date-fns": "^4.1.0",
     "next": "15.3.5",
     "next-sanity": "^9.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sanity": "^3.98.1"
+    "sanity": "^3.98.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

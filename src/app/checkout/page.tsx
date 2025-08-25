@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
+import { SquareCheckout } from '@/components/ui/SquareCheckout';
 import { useCart } from '@/contexts/CartContext';
 import { getEcommerceImageUrl } from '@/lib/adapters';
 import type { CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
@@ -112,7 +113,7 @@ const YUPACK_SIZE_LIMITS = {
 };
 
 // 商品寸法から実際の配送サイズを計算
-const calculateActualShippingSize = (cartItems: any[]) => {
+const calculateActualShippingSize = (cartItems: Array<{ product: { shipping?: { weight?: number; dimensions?: { width: number; height: number; depth: number } }; fragile?: boolean; specialInstructions?: string[] }; quantity: number }>) => {
   let totalWeight = 0;
   let maxWidth = 0, maxHeight = 0, maxDepth = 0;
   let hasFragile = false;
@@ -196,7 +197,7 @@ const calculateActualShippingSize = (cartItems: any[]) => {
 };
 
 // 適切なゆうパックサイズを決定
-const determineYupackSize = (shippingInfo: any) => {
+const determineYupackSize = (shippingInfo: { totalDimension: number; totalWeight: number }) => {
   const { totalDimension, totalWeight } = shippingInfo;
   
   // サイズと重量の両方をチェック
@@ -212,7 +213,7 @@ const determineYupackSize = (shippingInfo: any) => {
 };
 
 // カートの商品から配送サイズと料金を計算（正確な仕様）
-const calculateShippingByProducts = (cartItems: any[], prefecture: string, shippingMethodId: string) => {
+const calculateShippingByProducts = (cartItems: Array<{ product: object; quantity: number }>, prefecture: string, shippingMethodId: string) => {
   if (!cartItems.length) return 0;
 
   try {
@@ -480,18 +481,13 @@ export default function CheckoutPage() {
       };
 
       // 支払い方法による分岐
-      if (formData.paymentMethod === 'credit_card') {
-        // クレジットカード決済の場合：決済画面へ遷移
-        // 注文データをsessionStorageに保存
-        sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
-        window.location.href = '/payment/credit-card';
-        return;
-      } else {
+      if (formData.paymentMethod !== 'credit_card') {
         // 銀行振込・代金引換の場合：注文確定処理
         await processNonCardPayment(orderData);
         setOrderComplete(true);
         clearCart();
       }
+      // クレジットカード決済の場合はコンポーネントで処理
     } catch (error) {
       console.error('Order processing failed:', error);
       alert('注文の処理中にエラーが発生しました。もう一度お試しください。');
@@ -501,7 +497,7 @@ export default function CheckoutPage() {
   };
 
   // 非カード決済の処理（振込・代金引換）
-  const processNonCardPayment = async (orderData: any) => {
+  const processNonCardPayment = async (orderData: { customer: object; items: object; pricing: object; paymentMethod: object; shippingAddress: object }) => {
     // ここでは注文処理をシミュレート
     // 実際の実装では、APIに注文データを送信
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -513,7 +509,7 @@ export default function CheckoutPage() {
   };
 
   // メール送信処理（API経由）
-  const sendOrderConfirmationEmails = async (orderData: any) => {
+  const sendOrderConfirmationEmails = async (orderData: { customer: object; items: object; pricing: object; paymentMethod: object; shippingAddress: object }) => {
     try {
       // API経由でメール送信（サーバーサイド処理）
       const response = await fetch('/api/email/order-confirmation', {
@@ -1058,23 +1054,43 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* 注文ボタン */}
-                  <Button 
-                    type="submit"
-                    variant="primary" 
-                    size="lg" 
-                    className="w-full py-4 text-lg font-medium"
-                    disabled={isProcessing || !formData.terms}
-                  >
-                    {isProcessing ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        注文処理中...
-                      </div>
-                    ) : (
-                      `注文を確定する - ¥${shippingCalculation.total.toLocaleString()}`
-                    )}
-                  </Button>
+                  {/* 決済コンポーネント */}
+                  {formData.paymentMethod === 'credit_card' ? (
+                    <SquareCheckout
+                      cart={{
+                        ...shippingCalculation,
+                        items: cart.items
+                      }}
+                      customerData={formData.customer}
+                      orderData={{
+                        shippingAddress: formData.shippingAddress,
+                        billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+                        shippingMethod: formData.shippingMethod,
+                        sameAsShipping: formData.sameAsShipping,
+                        terms: formData.terms,
+                        newsletter: formData.newsletter,
+                        notes: formData.notes
+                      }}
+                      mode="embedded"
+                    />
+                  ) : (
+                    <Button 
+                      type="submit"
+                      variant="primary" 
+                      size="lg" 
+                      className="w-full py-4 text-lg font-medium"
+                      disabled={isProcessing || !formData.terms}
+                    >
+                      {isProcessing ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          注文処理中...
+                        </div>
+                      ) : (
+                        `注文を確定する - ¥${shippingCalculation.total.toLocaleString()}`
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

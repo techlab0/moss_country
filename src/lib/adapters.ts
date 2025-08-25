@@ -61,15 +61,15 @@ export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] |
 /**
  * 在庫状況の安全な取得
  */
-export function getSafeStock(product: SanityProduct, variantKey?: string): number {
-  // Sanity型にはstockプロパティがないので、デフォルト値を返す
+// Sanity型にはstockプロパティがないので、デフォルト値を返す
+export function getSafeStock(): number {
   return 10;
 }
 
 /**
  * 在庫有無の安全な取得
  */
-export function getSafeInStock(product: SanityProduct, variantKey?: string): boolean {
+export function getSafeInStock(product: SanityProduct): boolean {
   return product.inStock ?? true;
 }
 

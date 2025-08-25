@@ -9,16 +9,16 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
 import { getSafeImageUrl, getSafeStock, sanityToEcommerceProduct } from '@/lib/adapters';
 import { InventoryBadge, InventoryAlert } from '@/components/ui/InventoryStatus';
-import { useInventory } from '@/hooks/useInventory';
+import { useSanityInventory } from '@/hooks/useSanityInventory';
 import type { Product } from '@/types/sanity';
 
 interface ProductCardProps {
   product: Product;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock } = useInventory(product._id);
+  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock } = useSanityInventory(product._id);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -46,7 +46,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) 
     } finally {
       setIsAdding(false);
     }
-  }, [product, addToCart, sanityToEcommerceProduct]);
+  }, [product, addToCart, hasInventory, isOutOfStock]);
 
   return (
     <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${!product.inStock ? 'opacity-75' : ''}`}>
@@ -232,3 +232,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) 
          prevProps.product.price === nextProps.product.price &&
          prevProps.product.featured === nextProps.product.featured;
 });
+
+ProductCard.displayName = 'ProductCard';
+
+export { ProductCard };

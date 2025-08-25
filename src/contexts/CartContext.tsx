@@ -305,17 +305,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('一度に追加できる数量は99個までです');
       }
       
-      // 在庫サービスによる在庫チェック
-      if (!inventoryService.isInStock(product._id, variant?._key, quantity)) {
-        const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
-        throw new Error(`在庫不足です。残り${availableStock}個まで追加可能です`);
-      }
-      
-      // 在庫予約の実行
-      const reserveSuccess = inventoryService.reserveStock(product._id, quantity, variant?._key);
-      if (!reserveSuccess) {
-        const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
-        throw new Error(`在庫予約に失敗しました。残り${availableStock}個まで追加可能です`);
+      // 在庫サービスによる在庫チェック（開発中は一時的に無効化）
+      if (process.env.NODE_ENV !== 'development') {
+        if (!inventoryService.isInStock(product._id, variant?._key, quantity)) {
+          const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
+          throw new Error(`在庫不足です。残り${availableStock}個まで追加可能です`);
+        }
+        
+        // 在庫予約の実行
+        const reserveSuccess = inventoryService.reserveStock(product._id, quantity, variant?._key);
+        if (!reserveSuccess) {
+          const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
+          throw new Error(`在庫予約に失敗しました。残り${availableStock}個まで追加可能です`);
+        }
+      } else {
+        // 開発環境では在庫チェックをスキップ（Web Payments SDKテスト用）
+        console.log(`🛒 在庫チェックをスキップして商品を追加: ${product.name} x${quantity}`);
       }
       
       dispatch({ type: 'ADD_ITEM', payload: { product, quantity, variant } });

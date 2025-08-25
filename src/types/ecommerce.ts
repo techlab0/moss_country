@@ -100,6 +100,8 @@ export interface Order {
   _id: string;
   orderNumber: string;
   customerId: string;
+  squareOrderId?: string;
+  squarePaymentId?: string;
   customer: {
     email: string;
     firstName: string;
@@ -118,6 +120,7 @@ export interface Order {
   paymentMethod: PaymentMethod;
   notes?: string;
   trackingNumber?: string;
+  metadata?: OrderMetadata;
   createdAt: string;
   updatedAt: string;
   estimatedDelivery?: string;
@@ -271,5 +274,90 @@ export interface PaginatedResponse<T> {
     limit: number;
     total: number;
     totalPages: number;
+  };
+}
+
+// Square-specific types
+export interface OrderMetadata {
+  reservationId?: string;
+  customData?: Record<string, unknown>;
+}
+
+export interface SquarePaymentLink {
+  id: string;
+  version: number;
+  name: string;
+  url: string;
+  orderId: string;
+}
+
+export interface SquareCreatePaymentLinkRequest {
+  idempotencyKey: string;
+  quickPay: {
+    name: string;
+    priceMoney: {
+      amount: number;
+      currency: string;
+    };
+    locationId: string;
+  };
+  paymentNote?: string;
+  checkoutOptions?: {
+    allowTipping?: boolean;
+    customFields?: Array<{
+      title: string;
+    }>;
+    subscriptionPlanId?: string;
+    redirectUrl?: string;
+    merchantSupportEmail?: string;
+  };
+  prePopulatedData?: {
+    buyerEmail?: string;
+    buyerPhoneNumber?: string;
+    buyerAddress?: {
+      addressLine1?: string;
+      addressLine2?: string;
+      locality?: string;
+      administrativeDistrictLevel1?: string;
+      postalCode?: string;
+      country?: string;
+    };
+  };
+}
+
+export interface SquareWebhookEvent {
+  type: string;
+  data: {
+    type: 'payment' | 'order';
+    id: string;
+    object: SquarePayment | SquareOrder;
+  };
+}
+
+export interface SquarePayment {
+  id: string;
+  amount_money: {
+    amount: number;
+    currency: string;
+  };
+  status: 'APPROVED' | 'PENDING' | 'COMPLETED' | 'CANCELED' | 'FAILED';
+  order_id?: string;
+  receipt_number?: string;
+  receipt_url?: string;
+}
+
+export interface SquareOrder {
+  id: string;
+  location_id: string;
+  state: 'DRAFT' | 'OPEN' | 'COMPLETED' | 'CANCELED';
+  total_money: {
+    amount: number;
+    currency: string;
+  };
+  net_amounts: {
+    total_money: {
+      amount: number;
+      currency: string;
+    };
   };
 }

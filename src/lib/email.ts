@@ -79,7 +79,7 @@ export class EmailService {
   static async sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
     const subject = `【MOSS COUNTRY】ご注文ありがとうございます - 注文番号: ${data.orderNumber}`;
     
-    let html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -282,6 +282,159 @@ Email: info@mosscountry.com
     });
   }
 
+  // Square決済用の注文確認メール
+  static async sendSquareOrderConfirmationEmail(orderData: {
+    orderNumber: string;
+    customer: { email: string; firstName: string; lastName: string };
+    items: Array<{ name: string; quantity: number; price: number }>;
+    total: number;
+    paymentId?: string;
+    receiptUrl?: string;
+  }): Promise<boolean> {
+    const subject = `【MOSS COUNTRY】ご注文ありがとうございます - 注文番号: ${orderData.orderNumber}`;
+    
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ご注文確認 - MOSS COUNTRY</title>
+    <style>
+        body { font-family: 'Hiragino Sans', 'Yu Gothic', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #2d5016; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #2d5016; margin-bottom: 10px; }
+        .order-info { background: #f8f9f0; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .success-badge { background: #d4edda; color: #155724; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745; margin: 20px 0; }
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table th, .items-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .items-table th { background-color: #f0f0f0; font-weight: bold; }
+        .total-row { font-weight: bold; background-color: #f8f9f0; }
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🌿 MOSS COUNTRY</div>
+            <p>北海道の苔テラリウム専門店</p>
+        </div>
+        
+        <div class="success-badge">
+            <h3>✅ お支払いが完了しました</h3>
+            <p>この度は、MOSS COUNTRYでのご注文をいただき、誠にありがとうございます。</p>
+        </div>
+        
+        <h2>${orderData.customer.lastName} ${orderData.customer.firstName} 様</h2>
+        
+        <div class="order-info">
+            <h3>📋 ご注文情報</h3>
+            <p><strong>注文番号:</strong> ${orderData.orderNumber}</p>
+            <p><strong>注文日時:</strong> ${new Date().toLocaleDateString('ja-JP', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</p>
+            ${orderData.paymentId ? `<p><strong>決済ID:</strong> ${orderData.paymentId}</p>` : ''}
+        </div>
+        
+        <h3>🛍️ ご注文商品</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>商品名</th>
+                    <th>数量</th>
+                    <th>価格</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${orderData.items.map(item => `
+                    <tr>
+                        <td>${item.product?.name || 'Unknown Product'}</td>
+                        <td>${item.quantity}</td>
+                        <td>¥${(item.price || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('')}
+                <tr class="total-row">
+                    <td colspan="2"><strong>合計金額</strong></td>
+                    <td><strong>¥${orderData.total.toLocaleString()}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="order-info">
+            <h3>💳 お支払い</h3>
+            <p><strong>お支払い方法:</strong> クレジットカード決済（Square）</p>
+            <p><strong>お支払い状況:</strong> <span style="color: #28a745; font-weight: bold;">完了</span></p>
+            ${orderData.receiptUrl ? `<p><a href="${orderData.receiptUrl}" style="color: #2d5016;">レシートを確認する</a></p>` : ''}
+        </div>
+        
+        <div class="order-info">
+            <h3>📦 発送について</h3>
+            <p>お支払い確認後、2-3営業日以内に発送いたします。</p>
+            <p>発送完了後、追跡番号をメールでお知らせいたします。</p>
+            <p>商品の準備が整うまで今しばらくお待ちください。</p>
+        </div>
+        
+        <div class="footer">
+            <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+            <hr style="margin: 20px 0;">
+            <p><strong>🌿 MOSS COUNTRY</strong><br>
+            北海道札幌市中央区<br>
+            TEL: 011-123-4567<br>
+            Email: info@mosscountry.com<br>
+            営業時間: 10:00-18:00（定休日：月曜日）</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const text = `
+【MOSS COUNTRY】ご注文ありがとうございます
+
+${orderData.customer.lastName} ${orderData.customer.firstName} 様
+
+この度は、MOSS COUNTRYでのご注文をいただき、誠にありがとうございます。
+お支払いが完了いたしました。
+
+■ ご注文情報
+注文番号: ${orderData.orderNumber}
+注文日時: ${new Date().toLocaleDateString('ja-JP')}
+${orderData.paymentId ? `決済ID: ${orderData.paymentId}` : ''}
+
+■ ご注文商品
+${orderData.items.map(item => `${item.product?.name || 'Unknown Product'} × ${item.quantity} = ¥${(item.price || 0).toLocaleString()}`).join('\n')}
+
+合計金額: ¥${orderData.total.toLocaleString()}
+
+■ お支払い
+お支払い方法: クレジットカード決済（Square）
+お支払い状況: 完了
+
+■ 発送について
+お支払い確認後、2-3営業日以内に発送いたします。
+発送完了後、追跡番号をメールでお知らせいたします。
+
+────────────────────
+🌿 MOSS COUNTRY
+北海道札幌市中央区
+TEL: 011-123-4567
+Email: info@mosscountry.com
+営業時間: 10:00-18:00（定休日：月曜日）
+────────────────────
+`;
+
+    return this.sendEmail({
+      to: orderData.customer.email,
+      subject,
+      html,
+      text
+    });
+  }
+
   static async sendAdminNotificationEmail(data: OrderEmailData): Promise<boolean> {
     const subject = `【新規注文】${data.orderNumber} - ${data.customerName}様`;
     
@@ -355,4 +508,16 @@ Email: info@mosscountry.com
       html
     });
   }
+}
+
+// Convenience export function for webhook usage
+export async function sendOrderConfirmationEmail(orderData: {
+  orderNumber: string;
+  customer: { email: string; firstName: string; lastName: string };
+  items: Array<{ name: string; quantity: number; price: number }>;
+  total: number;
+  paymentId?: string;
+  receiptUrl?: string;
+}): Promise<boolean> {
+  return EmailService.sendSquareOrderConfirmationEmail(orderData);
 }

@@ -86,8 +86,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="text-light-green hover:text-white transition-colors duration-200">
-                  ECサイトで購入
+                <Link href="/checkout" className="text-light-green hover:text-white transition-colors duration-200">
+                  カート・購入
                 </Link>
               </li>
             </ul>

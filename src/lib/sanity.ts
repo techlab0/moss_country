@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
-import type { Workshop, SimpleWorkshop, Product, BlogPost, FAQ, SanityImage } from '@/types/sanity'
+import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage } from '@/types/sanity'
 
 export const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
@@ -15,27 +15,7 @@ export function urlFor(source: SanityImage) {
   return builder.image(source)
 }
 
-// Workshop queries
-export async function getWorkshops(): Promise<Workshop[]> {
-  return await client.fetch(`
-    *[_type == "workshop" && !(_id in path("drafts.**"))] | order(title asc) {
-      _id,
-      title,
-      slug,
-      category,
-      description,
-      duration,
-      price,
-      capacity,
-      image,
-      features,
-      difficulty,
-      schedules
-    }
-  `)
-}
-
-// Simple Workshop queries (for testing)
+// Simple Workshop queries
 export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
   return await client.fetch(`
     *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
@@ -45,25 +25,6 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
       price
     }
   `)
-}
-
-export async function getWorkshopBySlug(slug: string): Promise<Workshop | null> {
-  return await client.fetch(`
-    *[_type == "workshop" && slug.current == $slug][0] {
-      _id,
-      title,
-      slug,
-      category,
-      description,
-      duration,
-      price,
-      capacity,
-      image,
-      features,
-      difficulty,
-      schedules
-    }
-  `, { slug })
 }
 
 // Blog queries
@@ -134,7 +95,7 @@ export async function getProducts(): Promise<Product[]> {
       return mockProducts;
     }
     
-    console.log(`Found ${products.length} products from Sanity:`, products.map((p: any) => p.name));
+    console.log(`Found ${products.length} products from Sanity:`, products.map((p: { name: string }) => p.name));
     
     // Sanityデータにモックデータを追加
     const { mockProducts } = await import('./mockProducts');
@@ -189,6 +150,60 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     console.warn('Failed to fetch product from Sanity, checking mock data:', error);
     const { mockProducts } = await import('./mockProducts');
     return mockProducts.find(p => p.slug.current === slug) || null;
+  }
+}
+
+// Inventory queries
+export async function getProductsWithInventory(): Promise<Product[]> {
+  try {
+    const products = await client.fetch(
+      `*[_type == "product"] | order(sortOrder asc, _createdAt desc) {
+        _id,
+        name,
+        slug,
+        description,
+        price,
+        category,
+        images,
+        features,
+        "dimensions": size,
+        materials,
+        careInstructions,
+        inStock,
+        featured,
+        sortOrder,
+        weight,
+        stockQuantity,
+        reserved,
+        lowStockThreshold
+      }`
+    );
+    
+    if (!products || products.length === 0) {
+      console.log('No Sanity products found for inventory');
+      return [];
+    }
+    
+    return products;
+  } catch (error) {
+    console.error('Failed to fetch products with inventory:', error);
+    return [];
+  }
+}
+
+export async function updateProductInventory(productId: string, stockQuantity: number, reserved: number = 0): Promise<void> {
+  try {
+    await client
+      .patch(productId)
+      .set({
+        stockQuantity,
+        reserved,
+        inStock: stockQuantity > 0,
+      })
+      .commit();
+  } catch (error) {
+    console.error('Failed to update product inventory:', error);
+    throw error;
   }
 }
 

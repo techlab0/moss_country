@@ -2,7 +2,7 @@
  * デバウンス関数
  * 連続した関数呼び出しを指定した遅延時間後に実行
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -26,7 +26,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * スロットル関数
  * 指定した間隔でのみ関数を実行
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {

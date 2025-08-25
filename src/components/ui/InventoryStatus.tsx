@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useInventory } from '@/hooks/useInventory';
+import { useSanityInventory } from '@/hooks/useSanityInventory';
 
 interface InventoryStatusProps {
   productId: string;
@@ -18,7 +18,16 @@ export const InventoryStatus: React.FC<InventoryStatusProps> = ({
   showThreshold = true,
   className = ''
 }) => {
-  const { availableStock, isInStock, isLowStock, isOutOfStock } = useInventory(productId, variantKey);
+  const { availableStock, isInStock, isLowStock, isOutOfStock, loading } = useSanityInventory(productId, variantKey);
+
+  if (loading) {
+    return (
+      <div className={`inline-flex items-center gap-2 ${className}`}>
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+        <span className="text-gray-500 text-sm">在庫確認中...</span>
+      </div>
+    );
+  }
 
   if (isOutOfStock) {
     return (
@@ -67,7 +76,7 @@ export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
   variant = 'default',
   className = ''
 }) => {
-  const { availableStock, isInStock, isLowStock, isOutOfStock } = useInventory(productId, variantKey);
+  const { availableStock, isLowStock, isOutOfStock } = useSanityInventory(productId, variantKey);
 
   if (variant === 'compact') {
     return (
@@ -152,11 +161,10 @@ interface InventoryAlertProps {
 export const InventoryAlert: React.FC<InventoryAlertProps> = ({
   productId,
   variantKey,
-  onRestock,
   onNotifyWhenAvailable,
   className = ''
 }) => {
-  const { isOutOfStock, isLowStock } = useInventory(productId, variantKey);
+  const { isOutOfStock, isLowStock } = useSanityInventory(productId, variantKey);
 
   if (isOutOfStock) {
     return (

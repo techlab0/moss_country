@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/contexts/CartContext';
-import { getSafeStock, sanityToEcommerceProduct } from '@/lib/adapters';
-import { useInventory } from '@/hooks/useInventory';
+import { sanityToEcommerceProduct } from '@/lib/adapters';
+import { useSanityInventory } from '@/hooks/useSanityInventory';
 import type { Product } from '@/types/sanity';
 
 interface ProductActionsProps {
@@ -14,7 +14,7 @@ interface ProductActionsProps {
 
 export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { availableStock, isInStock, isOutOfStock } = useInventory(product._id);
+  const { availableStock, isInStock, isOutOfStock } = useSanityInventory(product._id);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -22,15 +22,28 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
 
 
   const handleAddToCart = async () => {
+    console.log('🛒 カートに追加開始:', product._id, product.name);
+    console.log('📦 在庫状況:', { isInStock, isOutOfStock, availableStock });
+    
+    if (isOutOfStock) {
+      console.warn('❌ 在庫切れのため追加できません');
+      setError('在庫切れです');
+      return;
+    }
+
     setIsAdding(true);
     setError(null);
     
     try {
-      addToCart(sanityToEcommerceProduct(product), quantity);
+      const ecommerceProduct = sanityToEcommerceProduct(product);
+      console.log('🔄 変換された商品:', ecommerceProduct);
+      
+      addToCart(ecommerceProduct, quantity);
+      console.log('✅ カートに追加成功');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to add to cart:', error);
+      console.error('❌ カート追加エラー:', error);
       const errorMessage = error instanceof Error ? error.message : 'カートに追加できませんでした';
       setError(errorMessage);
       setTimeout(() => setError(null), 5000);

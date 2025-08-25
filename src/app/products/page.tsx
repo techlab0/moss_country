@@ -61,8 +61,8 @@ export default async function ProductsPage() {
               初心者向けからプレミアムまで、あなたにぴったりの小さな自然を見つけてください。
             </p>
             <Button variant="primary" size="lg">
-              <a href="https://mosscountry.theshop.jp/" target="_blank" rel="noopener noreferrer">
-                ECサイトで購入する
+              <a href="#products">
+                商品を見る
               </a>
             </Button>
           </div>
@@ -121,7 +121,7 @@ export default async function ProductsPage() {
       </section>
 
       {/* Product Grid */}
-      <section className="py-20 relative">
+      <section id="products" className="py-20 relative">
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
@@ -225,12 +225,10 @@ export default async function ProductsPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a
-                href="https://mosscountry.theshop.jp/"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/checkout"
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 font-semibold px-8 py-3 rounded-lg inline-block"
               >
-                ECサイトで購入
+                カートを見る
               </a>
               <a
                 href="mailto:info@mosscountry.jp"

@@ -71,7 +71,7 @@ export class InventoryService {
         }
       `, { productIds });
 
-      return products.map((product: any) => {
+      return products.map((product: { _id: string; reserved?: number; stockQuantity?: number; lowStockThreshold?: number }) => {
         const reserved = product.reserved || 0;
         const totalStock = product.stockQuantity || 0;
         const availableStock = Math.max(0, totalStock - reserved);
@@ -105,7 +105,7 @@ export class InventoryService {
       }
 
       // 予約在庫を増加
-      const result = await client
+      await client
         .patch(productId)
         .inc({ reserved: quantity })
         .commit();

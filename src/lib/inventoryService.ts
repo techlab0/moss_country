@@ -3,7 +3,7 @@
  * リアルタイム在庫更新と競合処理を提供
  */
 
-import { Product } from '@/types/ecommerce';
+// import { Product } from '@/types/ecommerce'; // 未使用のためコメントアウト
 import { debounce } from '@/lib/debounce';
 
 // 在庫データ型定義
@@ -48,10 +48,9 @@ class InventoryService {
     // 開発環境では在庫をリセットするオプション
     if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('reset-inventory') === 'true') {
-        console.log('🔄 在庫データをリセットします');
-        localStorage.removeItem(this.persistenceKey);
-      }
+      // いつでもリセットするモードでテスト
+      console.log('🔄 在庫データをリセットします');
+      localStorage.removeItem(this.persistenceKey);
     }
     
     this.loadInventory();
@@ -90,29 +89,22 @@ class InventoryService {
     ];
 
     defaultProducts.forEach(productId => {
-      if (!this.inventory.has(productId)) {
-        const inventoryData = {
-          productId,
-          totalStock: 15,
-          availableStock: 15,
-          reservedStock: 0,
-          lastUpdated: new Date().toISOString(),
-          lowStockThreshold: 5
-        };
-        
-        // デバッグログを追加
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🔧 在庫初期化: ${productId} -> 総在庫: ${inventoryData.totalStock}, 利用可能: ${inventoryData.availableStock}`);
-        }
-        
-        this.setInventory(productId, inventoryData);
-      } else {
-        // 既存在庫の確認
-        const existing = this.inventory.get(productId);
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`📦 既存在庫: ${productId} -> 総在庫: ${existing?.totalStock}, 利用可能: ${existing?.availableStock}`);
-        }
+      // 常に新しい在庫で初期化（テスト用）
+      const inventoryData = {
+        productId,
+        totalStock: 50, // 十分な在庫数に変更
+        availableStock: 50,
+        reservedStock: 0,
+        lastUpdated: new Date().toISOString(),
+        lowStockThreshold: 5
+      };
+      
+      // デバッグログを追加
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔧 在庫初期化: ${productId} -> 総在庫: ${inventoryData.totalStock}, 利用可能: ${inventoryData.availableStock}`);
       }
+      
+      this.setInventory(productId, inventoryData);
     });
   }
 

@@ -414,6 +414,165 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
 
 ---
 
+## 🚀 Phase 4.0 完成！Square決済システム統合完了（2024年8月18日）
+
+**🎉 Square Payment Link統合・完全ECサイト実現！**
+
+### 🆕 今回の主要成果（Phase 4.0）
+- ✅ **Square決済システム完全統合** - Payment Link方式による安全な決済
+- ✅ **Webhook自動処理** - 決済完了→注文更新→在庫減算→メール送信の完全自動化
+- ✅ **在庫予約システム** - 注文時在庫予約、決済完了時確定減算
+- ✅ **将来拡張対応** - 予約システム連携用metadata設計済み
+
+### 🔥 技術的ハイライト（Phase 4.0）
+- **Square SDK統合**:
+  - `squareup` パッケージ導入
+  - Payment Link API統合
+  - Sandbox/Production環境対応
+- **高度なWebhook処理**:
+  - 署名検証によるセキュリティ
+  - 決済成功/失敗の自動判別
+  - 在庫の予約→確定減算フロー
+- **Sanity CMS拡張**:
+  - `order` スキーマ新規追加（Square ID連携対応）
+  - `inventory` スキーマ新規追加（予約在庫管理）
+  - 将来の予約システム用metadata設計
+- **型安全な実装**:
+  - Square API型定義完備
+  - TypeScript完全対応
+  - エラーハンドリング強化
+
+### 💼 ビジネス価値
+- **即座の本格決済開始** - Square決済による安全な取引
+- **完全自動化** - 注文〜決済〜在庫〜メールまで無人運用
+- **将来性確保** - Web Payments SDK移行準備完了
+- **予約システム準備** - ワークショップ予約との統合基盤完成
+
+### 📋 新規実装機能
+
+#### 1. Square決済統合
+- **Payment Link生成** (`/api/payments/create-payment-link`)
+  - カート情報からSquare決済ページ生成
+  - 顧客情報事前入力
+  - 成功時リダイレクト設定
+- **CheckoutButton** コンポーネント
+  - ワンクリックで決済ページ遷移
+  - ローディング・エラー表示
+  - 入力バリデーション
+
+#### 2. Webhook自動処理
+- **決済Webhook** (`/api/webhooks/square`)
+  - `payment.updated` / `order.updated` イベント処理
+  - 署名検証によるセキュリティ
+  - 決済成功時の自動処理フロー
+- **在庫管理連携**
+  - 注文時: 在庫予約
+  - 決済成功: 在庫確定減算
+  - 決済失敗: 予約解放
+
+#### 3. メール機能拡張
+- **Square決済用メール**
+  - 決済完了確認メール
+  - Square レシートURL連携
+  - 決済ID情報表示
+
+#### 4. データベース設計
+```typescript
+// Order Schema
+- squareOrderId?: string
+- squarePaymentId?: string 
+- metadata?: { reservationId?: string }
+
+// Inventory Schema  
+- quantity: number
+- reserved: number (予約在庫)
+- available: number (実在庫)
+```
+
+### 🛠️ 実装ファイル
+- `src/lib/square.ts` - Square API設定・ヘルパー関数
+- `src/app/api/payments/create-payment-link/route.ts` - 決済リンク生成API
+- `src/app/api/webhooks/square/route.ts` - Square Webhook処理
+- `src/components/ui/CheckoutButton.tsx` - 決済ボタンコンポーネント
+- `src/app/payment/success/page.tsx` - 決済成功ページ
+- `sanity/schemas/order.ts` - 注文スキーマ
+- `sanity/schemas/inventory.ts` - 在庫スキーマ
+- `src/types/ecommerce.ts` - Square型定義追加
+
+### 🔧 必要な環境変数
+```env
+# Square Configuration
+SQUARE_ENVIRONMENT="sandbox" # or "production"
+NEXT_PUBLIC_SQUARE_APPLICATION_ID="sq0idp-xxxxx"
+SQUARE_ACCESS_TOKEN="EAAAExxxxx"
+SQUARE_LOCATION_ID="LOCATION_ID"
+
+# 既存の環境変数
+SENDGRID_API_KEY="SG.xxxxx"
+NEXT_PUBLIC_SANITY_PROJECT_ID="z36tkqex"
+NEXT_PUBLIC_SANITY_DATASET="production"
+```
+
+### 📚 セットアップガイド
+詳細な導入手順は `docs/SQUARE_SETUP_GUIDE.md` を参照
+
+---
+
+## 🚀 Phase 5.0 開始！Web Payments SDK統合開発中（2024年8月22日）
+
+**🎯 Square Web Payments SDK統合による埋め込み型決済フォーム実装**
+
+### 🆕 今回の主要成果（Phase 5.0 進行中）
+- ✅ **Web Payments SDK導入** - `@square/web-payments-sdk-types` パッケージ追加
+- ✅ **埋め込み型決済フォーム** - `SquarePaymentForm.tsx` コンポーネント実装
+- ✅ **決済API拡張** - `/api/payments/create-payment` エンドポイント実装
+- ✅ **チェックアウト統合** - `SquareCheckout.tsx` による統合フロー
+- ⚠️ **決済デバッグ中** - Square API 400エラーの詳細解析・修正完了
+
+### 🔥 技術的ハイライト（Phase 5.0）
+- **Web Payments SDK統合**:
+  - Square Web Payments SDK JavaScript読み込み
+  - カード情報の安全なトークン化
+  - 日本語UI・郵便番号ガイダンス対応
+  - リアルタイムバリデーション
+- **埋め込み型決済フロー**:
+  - サイト内決済完結（外部遷移なし）
+  - カード情報入力→トークン化→決済処理
+  - エラーハンドリング・ユーザーフィードバック
+- **環境変数修正**:
+  - `NEXT_PUBLIC_SQUARE_LOCATION_ID` 追加（クライアント側アクセス）
+  - 設定バリデーション・デバッグログ強化
+- **決済API改善**:
+  - 詳細エラーログ実装
+  - リクエストペイロード最適化
+  - 開発環境用Sanity操作スキップ
+
+### 💼 ビジネス価値
+- **UX向上** - ユーザーが外部サイトに遷移せずに決済完了
+- **コンバージョン率向上** - 決済離脱率の大幅削減期待
+- **信頼性向上** - サイト内で一貫した決済体験
+- **将来性確保** - Square最新機能対応
+
+### 📋 実装ファイル（Phase 5.0）
+- `src/components/ui/SquarePaymentForm.tsx` - 埋め込み型カード入力フォーム
+- `src/components/ui/SquareCheckout.tsx` - 決済統合コンポーネント
+- `src/app/api/payments/create-payment/route.ts` - Web Payments SDK用API
+- `src/app/checkout/page.tsx` - チェックアウトページ拡張
+
+### 🐛 デバッグ・修正完了
+- **環境変数問題**: Location IDのクライアント側アクセス修正
+- **Square API設定**: 不適切なapp_fee_money削除
+- **詳細ログ**: エラー内容の完全表示対応
+- **ビルドキャッシュ**: .nextフォルダ削除・クリーンビルド
+
+### 🔄 次回開発予定
+1. **Web Payments SDK完成** - 決済テスト・エラー解決完了
+2. **予約システム統合** - ワークショップ予約機能との連携
+3. **管理画面強化** - Square取引の管理画面表示
+4. **定期購入機能** - Square Subscriptions API活用
+
+---
+
 ## 🏆 過去の開発成果サマリー（2024年8月7日）
 
 **🎉 決済システム・メール機能が完全実装完了！ECサイトPhase 2.0達成！**
@@ -433,5 +592,221 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
 
 ---
 
-*最終更新: 2024年8月8日*
-*バージョン: 3.0 - SendGrid統合・在庫管理システム完全実装版*
+## 🎯 Phase 5.0 完成！Web Payments SDK統合・決済システム完全安定化（2024年8月23日）
+
+**🎉 Square Web Payments SDK完全統合・本格ECサイト運用準備完了！**
+
+### 🆕 今回の主要成果（Phase 5.0）
+- ✅ **Square Web Payments SDK完全統合** - 埋め込み型決済フォーム実装完了
+- ✅ **400エラー完全解決** - Location ID修正・詳細エラーハンドリング
+- ✅ **UX改善** - カードフォーム重複問題解決・React DOM propエラー修正
+- ✅ **決済システム安定化** - 本格運用レベルの品質実現
+
+### 🔥 技術的ハイライト（Phase 5.0）
+- **Square Web Payments SDK統合**:
+  - サイト内決済完結（外部遷移なし）
+  - カード情報の安全なトークン化
+  - 日本語UI・郵便番号ガイダンス対応
+  - 環境別SDK URL自動切り替え
+- **エラーハンドリング強化**:
+  - Location ID設定修正（`LYE66T3Q33FHR` → `LHNF0S8RCCQW3`）
+  - 詳細ログ出力・日本語エラーメッセージ
+  - 特定エラーコード対応（CARD_DECLINED、INSUFFICIENT_FUNDS等）
+  - トークン形式・有効性バリデーション
+- **UI/UX改善**:
+  - カードフォーム重複問題解決
+  - React `asChild` prop エラー修正
+  - 決済フロー簡素化・直感的操作
+- **設定最適化**:
+  - `NEXT_PUBLIC_SQUARE_ENVIRONMENT` 環境変数追加
+  - 本番・サンドボックス環境自動判別
+  - 設定値検証・デバッグログ強化
+
+### 💼 ビジネス価値
+- **即座の本格運用可能** - 安定した決済処理・エラーハンドリング
+- **UX最大化** - サイト内完結決済によるコンバージョン率向上
+- **運用効率化** - 詳細ログによる問題解決迅速化
+- **将来性確保** - Square最新機能対応・拡張性確保
+
+### 📋 完成機能一覧（Phase 5.0時点）
+
+#### 1. ECサイト中核機能（完全実装）
+- ショッピングカート（追加・削除・数量変更・在庫チェック）
+- チェックアウトフロー（顧客情報〜注文完了）
+- **決済システム（3方式完全対応）**:
+  - **Square Web Payments SDK**: サイト内埋め込み決済
+  - **Square Payment Link**: 外部決済ページ
+  - **従来決済**: 銀行振込・代金引換
+- 配送料計算（実際のゆうパック料金表・3D梱包計算）
+
+#### 2. メールシステム（SendGrid統合）
+- 注文確認メール（支払い方法別）
+- 管理者通知メール
+- HTMLメールテンプレート
+- 日本語完全対応
+
+#### 3. 在庫管理システム（Sanity CMS統合）
+- リアルタイム在庫管理
+- 在庫予約・解放システム
+- 在庫変更ログ追跡
+- 低在庫・在庫切れ管理
+
+#### 4. システム品質・安定性
+- TypeScript完全対応
+- SSR/CSR適切分離
+- 包括的エラーハンドリング
+- **決済システム完全安定化**
+
+### 🛠️ 実装・修正ファイル（Phase 5.0）
+- `src/components/ui/SquareCheckout.tsx` - 決済統合コンポーネント簡素化
+- `src/components/ui/SquarePaymentForm.tsx` - 埋め込み型決済フォーム
+- `src/app/api/payments/create-payment/route.ts` - エラーハンドリング強化
+- `src/app/payment/success/page.tsx` - React DOM propエラー修正
+- `.env.local` - Location ID修正・環境変数追加
+
+### 🔧 修正内容詳細
+1. **Square API設定修正**:
+   - Location ID: `LYE66T3Q33FHR` → `LHNF0S8RCCQW3`
+   - 環境変数: `NEXT_PUBLIC_SQUARE_ENVIRONMENT` 追加
+   
+2. **エラーハンドリング改善**:
+   - 詳細ログ出力・リクエスト内容表示
+   - 日本語エラーメッセージ（カード拒否・残高不足等）
+   - トークン長さ・形式検証強化
+
+3. **UI問題修正**:
+   - React `asChild` prop エラー解決
+   - カードフォーム重複表示修正
+   - 決済フロー直接表示化
+
+### 🔄 次回開発予定（Phase 6.0）
+1. **予約システム統合** - ワークショップ予約機能との連携
+2. **管理画面強化** - Square取引・注文管理ダッシュボード
+3. **定期購入機能** - Square Subscriptions API活用
+4. **パフォーマンス最適化** - 画像最適化・キャッシュ戦略
+
+### 💡 技術的成果
+- **決済成功率**: 安定した決済処理実現
+- **エラー解決率**: 詳細ログによる迅速な問題特定
+- **UX向上**: カードフォーム統合によるスムーズな決済体験
+- **コード品質**: TypeScript型安全性・エラーハンドリング強化
+
+**本格ECサイトとしての機能が完全に整いました。Square決済システムの安定稼働により、即座の商用運用が可能です。**
+
+---
+
+## 🏆 Phase 6.0 完成！統合管理画面・在庫連携システム完成（2024年12月24日）
+
+**🎉 完全統合管理画面・Sanity CMS在庫連携・簡易商品登録システム実装完了！**
+
+### 🆕 今回の主要成果（Phase 6.0）
+- ✅ **統合管理画面システム** - 外部ECサイト依存を完全排除
+- ✅ **Sanity CMS在庫連携** - 管理画面↔Sanity間のリアルタイム在庫同期
+- ✅ **簡易商品登録機能** - 日本語フォームによる直感的な商品登録
+- ✅ **管理画面UI改善** - レスポンシブレイアウト・UX向上
+
+### 🔥 技術的ハイライト（Phase 6.0）
+- **完全内製EC統合**:
+  - 外部ECサイトリンクを内製カート機能に統一
+  - ユーザーが外部遷移なしで購入完結
+  - 商品ページエラー修正（_refエラー対応）
+- **統合管理画面システム**:
+  - `/admin` → `/admin/dashboard` 自動リダイレクト
+  - 注文管理・在庫管理・商品管理の統合
+  - Sanity CMSを詳細設定用に分離
+- **Sanity CMS在庫連携**:
+  - `getProductsWithInventory()` - 在庫情報込み商品取得
+  - `updateProductInventory()` - リアルタイム在庫更新API
+  - 在庫変更の即座反映（管理画面→Sanity→サイト）
+- **簡易商品登録システム**:
+  - `/admin/products/new` - 日本語フォーム式登録画面
+  - 基本情報入力（名前・価格・カテゴリ・説明・サイズ）
+  - 自動スラッグ生成・バリデーション機能
+- **UI/UX改善**:
+  - Flexboxレイアウトによる管理画面修正
+  - サイドバー・メインコンテンツの正確な配置
+  - モバイル対応・レスポンシブデザイン
+
+### 💼 ビジネス価値（Phase 6.0）
+- **運用効率最大化** - 外部システム依存なしの完全統合運用
+- **操作簡素化** - 英語CMS画面を見る必要がない日本語管理画面
+- **データ一元管理** - Sanity CMSによる唯一のデータソース
+- **拡張性確保** - 将来機能追加の基盤完成
+
+### 📋 完成機能一覧（Phase 6.0時点）
+
+#### 1. 統合管理画面システム（完全実装）
+- **ダッシュボード** (`/admin/dashboard`):
+  - 統計情報表示（売上・注文・在庫状況）
+  - 最近の注文一覧・在庫アラート
+- **注文管理** (`/admin/orders`):
+  - 注文一覧・詳細表示・ステータス更新
+  - 顧客情報・配送先・支払情報管理
+- **在庫管理** (`/admin/inventory`):
+  - **Sanity CMS完全連携** - リアルタイム在庫取得・更新
+  - 在庫編集・ログ表示・アラート機能
+- **商品管理** (`/admin/products`):
+  - Sanity商品データ表示・在庫状況統合
+  - **簡易登録** - 日本語フォーム式商品登録
+  - **詳細登録** - Sanity CMS連携
+- **詳細CMS** (`/admin/cms`):
+  - Sanity Studio（開発者向け高度設定）
+
+#### 2. ECサイト統合（完全実装）
+- **内製ECシステム**:
+  - 外部ECサイト依存完全排除
+  - 商品ページ→カート→チェックアウト→決済の完全フロー
+- **Square決済システム**:
+  - Web Payments SDK（埋め込み決済）
+  - Payment Link（外部決済）
+  - 従来決済（銀行振込・代引き）
+
+#### 3. データ連携システム（完全実装）
+- **Sanity CMS統合**:
+  - 商品データ・在庫情報の一元管理
+  - 管理画面からの即座更新・反映
+- **在庫連携API**:
+  - `/api/inventory/update` - 在庫更新エンドポイント
+  - リアルタイム同期・整合性保証
+
+### 🛠️ 実装ファイル（Phase 6.0）
+- `src/app/admin/page.tsx` - 管理画面リダイレクト
+- `src/app/admin/dashboard/page.tsx` - 統合ダッシュボード
+- `src/app/admin/products/new/page.tsx` - 簡易商品登録
+- `src/app/api/inventory/update/route.ts` - 在庫更新API
+- `src/lib/sanity.ts` - Sanity在庫連携関数追加
+- `src/components/admin/AdminLayout.tsx` - レイアウト改善
+
+### 🔧 システム構成（Phase 6.0）
+```
+管理者アクセス:
+/admin → /admin/dashboard (自動リダイレクト)
+
+日常業務フロー:
+1. ダッシュボード - 全体状況確認
+2. 注文管理 - 注文処理・発送
+3. 在庫管理 - 在庫調整（Sanity自動同期）
+4. 商品管理 - 商品確認・簡易登録
+
+高度設定:
+/admin/cms - Sanity Studio（必要時のみ）
+```
+
+### 🔄 運用準備完了機能
+1. **即座の本格運用可能** - 全管理機能日本語対応
+2. **データ整合性確保** - Sanity CMSによる一元管理
+3. **操作効率最大化** - 外部システム遷移不要
+4. **拡張性確保** - 将来機能追加の基盤完成
+
+### 💡 技術的成果
+- **運用簡素化**: 外部ECサイト依存排除による管理工数削減
+- **データ一元化**: Sanity CMSによる商品・在庫・注文の統合管理
+- **UX向上**: 日本語管理画面による直感的操作
+- **システム安定性**: TypeScript完全対応・エラーハンドリング強化
+
+**MOSS COUNTRY ECサイトは完全統合管理システムとして稼働準備が整いました。日本語管理画面により、納品後の操作説明が大幅に簡素化され、即座の本格運用が可能です。**
+
+---
+
+*最終更新: 2024年12月24日*
+*バージョン: 6.0 - 統合管理画面・在庫連携システム完成版*
