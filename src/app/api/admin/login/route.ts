@@ -80,7 +80,10 @@ export async function POST(request: NextRequest) {
       });
 
       // 最終ログイン時刻を更新
-      user.lastLogin = new Date();
+      const { updateAdminUser } = await import('@/lib/userManager');
+      updateAdminUser(user.id, {
+        lastLogin: new Date(),
+      });
 
       return response;
     }
