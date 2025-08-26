@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { RecentOrders } from '@/components/admin/RecentOrders';
 import { InventoryAlerts } from '@/components/admin/InventoryAlerts';
+import { CurrentUserInfo } from '@/components/admin/CurrentUserInfo';
 
 export default function AdminDashboardPage() {
   return (
@@ -18,7 +19,10 @@ export default function AdminDashboardPage() {
         {/* 統計情報 */}
         <DashboardStats />
         
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* 現在のユーザー情報 */}
+          <CurrentUserInfo />
+          
           {/* 最近の注文 */}
           <RecentOrders />
           

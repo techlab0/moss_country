@@ -25,47 +25,65 @@ export interface UserSession {
   exp: number;
 }
 
-// 環境変数からユーザーデータを読み込み（本来はデータベース）
-export function getUsers(): AdminUser[] {
-  const usersJson = process.env.ADMIN_USERS;
-  if (!usersJson) {
-    // デフォルトユーザー - 事前にハッシュ化されたパスワード
-    const adminEmail = process.env.ADMIN_EMAIL || 'moss.country.kokenokuni@gmail.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeThis2024!SecurePassword';
-    
-    const defaultUser: AdminUser = {
-      id: 'admin-1',
-      email: adminEmail,
-      passwordHash: hashPassword(adminPassword),
-      role: 'admin',
-      twoFactorEnabled: false,
-      twoFactorMethod: null,
-      createdAt: new Date(),
-    };
-    
-    console.log('Created default user:', {
-      email: defaultUser.email,
-      role: defaultUser.role,
-      twoFactorEnabled: defaultUser.twoFactorEnabled
-    });
-    
-    return [defaultUser];
-  }
+// メモリベースのユーザーストレージ（開発・デモ用）
+let usersCache: AdminUser[] | null = null;
+
+// デフォルトユーザーを作成
+function createDefaultUser(): AdminUser {
+  const adminEmail = process.env.ADMIN_EMAIL || 'moss.country.kokenokuni@gmail.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeThis2024!SecurePassword';
   
-  try {
-    return JSON.parse(usersJson);
-  } catch {
-    return [];
-  }
+  return {
+    id: 'admin-1',
+    email: adminEmail,
+    passwordHash: hashPassword(adminPassword),
+    role: 'admin',
+    twoFactorEnabled: false,
+    twoFactorMethod: null,
+    createdAt: new Date(),
+  };
 }
 
-// ユーザーデータを環境変数に保存（本来はデータベース）
+// ユーザーデータを読み込み（メモリベース）
+export function getUsers(): AdminUser[] {
+  if (usersCache === null) {
+    const usersJson = process.env.ADMIN_USERS;
+    if (!usersJson) {
+      // デフォルトユーザーを作成
+      const defaultUser = createDefaultUser();
+      usersCache = [defaultUser];
+      
+      console.log('Created default user:', {
+        email: defaultUser.email,
+        role: defaultUser.role,
+        twoFactorEnabled: defaultUser.twoFactorEnabled
+      });
+    } else {
+      try {
+        usersCache = JSON.parse(usersJson);
+      } catch {
+        // パース失敗時はデフォルトユーザーを使用
+        usersCache = [createDefaultUser()];
+      }
+    }
+  }
+  
+  return usersCache || [];
+}
+
+// ユーザーデータを保存（メモリベース）
 export function saveUsers(users: AdminUser[]): void {
-  // 実際の運用では、この情報をデータベースに保存
+  usersCache = [...users]; // 配列をコピーして保存
+  
   console.log('=== ユーザー情報更新 ===');
-  console.log('以下を環境変数 ADMIN_USERS に設定してください:');
-  console.log(`ADMIN_USERS='${JSON.stringify(users, null, 2)}'`);
+  console.log(`現在のユーザー数: ${users.length}`);
+  users.forEach(user => {
+    console.log(`- ${user.email} (${user.role})`);
+  });
   console.log('====================');
+  
+  // 本番環境では、ここでデータベースに保存
+  // 現在はメモリ上でのみ管理（サーバー再起動でリセット）
 }
 
 // ユーザーをメールアドレスで検索
