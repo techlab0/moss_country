@@ -10,30 +10,79 @@ interface SetupData {
   backupCodes: string[];
 }
 
+type TwoFactorMethod = 'totp' | 'webauthn';
+
 export default function Setup2FAPage() {
+  const [selectedMethod, setSelectedMethod] = useState<TwoFactorMethod>('totp');
   const [setupData, setSetupData] = useState<SetupData | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'setup' | 'verify' | 'backup'>('setup');
+  const [step, setStep] = useState<'method-select' | 'setup' | 'verify' | 'backup'>('method-select');
   const router = useRouter();
 
-  useEffect(() => {
-    generateSetup();
-  }, []);
 
-  const generateSetup = async () => {
+  const generateSetup = async (method: TwoFactorMethod) => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/admin/2fa/setup', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ method }),
       });
       
       if (response.ok) {
         const data = await response.json();
-        setSetupData(data);
+        
+        if (method === 'webauthn') {
+          // WebAuthn登録処理
+          try {
+            // @ts-ignore - WebAuthn types
+            const credential = await navigator.credentials.create({
+              publicKey: data.options
+            });
+            
+            if (!credential) {
+              setError('WebAuthn認証がキャンセルされました');
+              return;
+            }
+            
+            // 登録完了をサーバーに送信
+            const verifyResponse = await fetch('/api/admin/2fa/webauthn/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ credential }),
+            });
+            
+            if (verifyResponse.ok) {
+              router.push('/admin/dashboard');
+              return;
+            } else {
+              const errorData = await verifyResponse.json();
+              setError(errorData.error || 'WebAuthn登録に失敗しました');
+            }
+          } catch (webauthnError: any) {
+            console.error('WebAuthn error:', webauthnError);
+            if (webauthnError.name === 'NotAllowedError') {
+              setError('認証がキャンセルされました');
+            } else if (webauthnError.name === 'NotSupportedError') {
+              setError('このブラウザはWebAuthnに対応していません');
+            } else {
+              setError('WebAuthn認証中にエラーが発生しました');
+            }
+          }
+        } else {
+          setSetupData(data);
+          setStep('setup');
+        }
       } else {
-        setError('2FA設定の生成に失敗しました');
+        const errorData = await response.json();
+        setError(errorData.error || '2FA設定の生成に失敗しました');
       }
     } catch (err) {
       setError('ネットワークエラーが発生しました');
@@ -114,6 +163,78 @@ export default function Setup2FAPage() {
             二段階認証の設定
           </h1>
 
+          {step === 'method-select' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-md">
+                <h3 className="text-sm font-medium text-blue-800">
+                  二段階認証方法を選択
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  アカウントの安全性を高めるために、認証方法を選択してください。
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedMethod === 'totp' ? 'border-moss-green bg-moss-green/5' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => setSelectedMethod('totp')}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        checked={selectedMethod === 'totp'} 
+                        onChange={() => setSelectedMethod('totp')}
+                        className="text-moss-green" 
+                      />
+                      <div>
+                        <h4 className="font-medium text-gray-900">認証アプリ (推奨)</h4>
+                        <p className="text-sm text-gray-600">Google Authenticator、Authy等のアプリを使用</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedMethod === 'webauthn' ? 'border-moss-green bg-moss-green/5' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => setSelectedMethod('webauthn')}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        checked={selectedMethod === 'webauthn'} 
+                        onChange={() => setSelectedMethod('webauthn')}
+                        className="text-moss-green" 
+                      />
+                      <div>
+                        <h4 className="font-medium text-gray-900">WebAuthn (生体認証)</h4>
+                        <p className="text-sm text-gray-600">指紋認証、Face ID、セキュリティキー等</p>
+                        <p className="text-xs text-gray-500 mt-1">ℹ️ ブラウザが対応している場合のみ使用可能</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={() => generateSetup(selectedMethod)}
+                disabled={isLoading}
+                className="w-full bg-moss-green text-white py-2 px-4 rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+              >
+                {isLoading ? '設定中...' : (selectedMethod === 'webauthn' ? 'WebAuthn認証を開始' : '設定を開始')}
+              </button>
+            </div>
+          )}
+
           {step === 'setup' && setupData && (
             <div className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-md">
@@ -142,12 +263,20 @@ export default function Setup2FAPage() {
                 </code>
               </div>
 
-              <button
-                onClick={() => setStep('verify')}
-                className="w-full bg-moss-green text-white py-2 px-4 rounded-md hover:bg-moss-green/90"
-              >
-                次へ進む
-              </button>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setStep('method-select')}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+                >
+                  戻る
+                </button>
+                <button
+                  onClick={() => setStep('verify')}
+                  className="flex-1 bg-moss-green text-white py-2 px-4 rounded-md hover:bg-moss-green/90"
+                >
+                  次へ進む
+                </button>
+              </div>
             </div>
           )}
 
