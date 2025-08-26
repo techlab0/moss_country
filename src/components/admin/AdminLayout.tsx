@@ -11,6 +11,7 @@ const navigation = [
   { name: '商品管理', href: '/admin/products', icon: '🌱' },
   { name: '顧客管理', href: '/admin/customers', icon: '👥' },
   { name: 'ユーザー管理', href: '/admin/users', icon: '👤' },
+  { name: '監査ログ', href: '/admin/audit-logs', icon: '🔍' },
   { name: '詳細CMS', href: '/admin/cms', icon: '⚙️' },
   { name: '2FA設定', href: '/admin/setup-2fa', icon: '🔐' },
 ];

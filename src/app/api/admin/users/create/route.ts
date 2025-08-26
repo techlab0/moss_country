@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, findUserById } from '@/lib/userManager';
 import { verifyJWT } from '@/lib/auth';
+import { logAuditEvent } from '@/lib/auditLog';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,23 @@ export async function POST(request: NextRequest) {
     }
 
     const newUser = createUser(email, password, role || 'editor');
+    
+    // ユーザー作成を記録
+    logAuditEvent(
+      currentUser.id,
+      currentUser.email,
+      'user.created',
+      'user_management',
+      {
+        new_user_email: newUser.email,
+        new_user_role: newUser.role,
+      },
+      {
+        resourceId: newUser.id,
+        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+        severity: 'high'
+      }
+    );
     
     return NextResponse.json({ 
       success: true, 

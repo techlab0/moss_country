@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminToken } from '@/lib/auth';
 import { findUserByEmail, verifyPassword } from '@/lib/userManager';
+import { logAuditEvent } from '@/lib/auditLog';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +17,25 @@ export async function POST(request: NextRequest) {
 
     console.log('Login attempt for email:', email);
 
+    // リクエスト情報を取得
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
     // ユーザーを検索
     const user = findUserByEmail(email);
     if (!user) {
       console.log('User not found:', email);
+      
+      // ログイン失敗を記録
+      logAuditEvent(
+        'unknown',
+        email,
+        'login.failed',
+        'authentication',
+        { reason: 'user_not_found' },
+        { ipAddress, userAgent, severity: 'high' }
+      );
+      
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
         { status: 401 }
@@ -32,6 +48,17 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       console.log('Invalid password for user:', email);
+      
+      // ログイン失敗を記録
+      logAuditEvent(
+        user.id,
+        user.email,
+        'login.failed',
+        'authentication',
+        { reason: 'invalid_password' },
+        { ipAddress, userAgent, severity: 'high' }
+      );
+      
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
         { status: 401 }
@@ -84,6 +111,16 @@ export async function POST(request: NextRequest) {
       updateAdminUser(user.id, {
         lastLogin: new Date(),
       });
+
+      // ログイン成功を記録
+      logAuditEvent(
+        user.id,
+        user.email,
+        'login.success',
+        'authentication',
+        { method: '2fa_disabled' },
+        { ipAddress, userAgent, severity: 'low' }
+      );
 
       return response;
     }
