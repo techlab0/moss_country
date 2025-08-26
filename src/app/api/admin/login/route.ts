@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAdminCredentials, createAdminToken, setAdminSession } from '@/lib/auth';
+import { createAdminToken } from '@/lib/auth';
+import { findUserByEmail, verifyPassword } from '@/lib/userManager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,23 +14,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 管理者認証情報を検証
-    const isValid = validateAdminCredentials(email, password);
-    
-    if (!isValid) {
-      // セキュリティのため、詳細なエラーメッセージは返さない
+    console.log('Login attempt for email:', email);
+
+    // ユーザーを検索
+    const user = findUserByEmail(email);
+    if (!user) {
+      console.log('User not found:', email);
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
         { status: 401 }
       );
     }
 
+    console.log('User found:', user.email, 'Role:', user.role);
+
+    // パスワードを検証
+    const isPasswordValid = verifyPassword(password, user.passwordHash);
+    if (!isPasswordValid) {
+      console.log('Invalid password for user:', email);
+      return NextResponse.json(
+        { error: '認証情報が正しくありません' },
+        { status: 401 }
+      );
+    }
+
+    console.log('Password verified for user:', email);
+
     // 2FAが有効かチェック
-    const is2FAEnabled = process.env.ADMIN_2FA_ENABLED === 'true';
-    
-    if (is2FAEnabled) {
+    if (user.twoFactorEnabled) {
+      console.log('2FA required for user:', email);
       // 一時的なトークンを生成（2FA未認証状態）
-      const tempToken = await createAdminToken('admin', email);
+      const tempToken = await createAdminToken(user.id, user.email);
       
       const response = NextResponse.json({ 
         success: true, 
@@ -47,8 +62,9 @@ export async function POST(request: NextRequest) {
 
       return response;
     } else {
-      // 2FAが無効の場合は従来通り
-      const token = await createAdminToken('admin', email);
+      console.log('2FA not required for user:', email);
+      // 2FAが無効の場合は直接ログイン
+      const token = await createAdminToken(user.id, user.email);
       
       const response = NextResponse.json({ 
         success: true, 
@@ -62,6 +78,9 @@ export async function POST(request: NextRequest) {
         maxAge: 24 * 60 * 60, // 24時間
         path: '/',
       });
+
+      // 最終ログイン時刻を更新
+      user.lastLogin = new Date();
 
       return response;
     }

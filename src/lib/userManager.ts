@@ -29,16 +29,26 @@ export interface UserSession {
 export function getUsers(): AdminUser[] {
   const usersJson = process.env.ADMIN_USERS;
   if (!usersJson) {
-    // デフォルトユーザー
+    // デフォルトユーザー - 事前にハッシュ化されたパスワード
+    const adminEmail = process.env.ADMIN_EMAIL || 'moss.country.kokenokuni@gmail.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeThis2024!SecurePassword';
+    
     const defaultUser: AdminUser = {
       id: 'admin-1',
-      email: process.env.ADMIN_EMAIL || 'admin@moss.country',
-      passwordHash: hashPassword(process.env.ADMIN_PASSWORD || 'ChangeThis2024!'),
+      email: adminEmail,
+      passwordHash: hashPassword(adminPassword),
       role: 'admin',
       twoFactorEnabled: false,
       twoFactorMethod: null,
       createdAt: new Date(),
     };
+    
+    console.log('Created default user:', {
+      email: defaultUser.email,
+      role: defaultUser.role,
+      twoFactorEnabled: defaultUser.twoFactorEnabled
+    });
+    
     return [defaultUser];
   }
   
