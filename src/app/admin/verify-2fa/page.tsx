@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function Verify2FAPage() {
+function Verify2FAContent() {
   const [verificationCode, setVerificationCode] = useState('');
   const [backupCode, setBackupCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
@@ -132,5 +132,13 @@ export default function Verify2FAPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function Verify2FAPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-lg">読み込み中...</div></div>}>
+      <Verify2FAContent />
+    </Suspense>
   );
 }

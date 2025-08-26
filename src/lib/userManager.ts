@@ -180,3 +180,8 @@ export function deleteUser(userId: string): boolean {
   saveUsers(filteredUsers);
   return true;
 }
+
+// エクスポートエイリアス
+export const getAdminUsers = getUsers;
+export const comparePassword = verifyPassword;
+export const updateAdminUser = updateUser;

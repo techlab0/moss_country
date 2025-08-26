@@ -100,3 +100,6 @@ export async function createTwoFactorVerifiedToken(userId: string, email: string
     .setExpirationTime('24h')
     .sign(SECRET_KEY);
 }
+
+// JWTトークンを検証 (verifyJWT alias)
+export const verifyJWT = verifyAdminToken;
