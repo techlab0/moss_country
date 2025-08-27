@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '無効なトークンです' }, { status: 401 });
     }
 
-    const currentUser = findUserById(payload.userId as string);
+    const currentUser = await findUserById(payload.userId as string);
     if (!currentUser) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }

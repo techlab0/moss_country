@@ -1,5 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
+import { 
+  createUserInDB,
+  findUserByEmailInDB,
+  findUserByIdInDB,
+  updateUserInDB,
+  getAllUsersFromDB,
+  AdminUser as DBAdminUser
+} from './supabase';
 
 export interface AdminUser {
   id: string;
@@ -7,14 +15,15 @@ export interface AdminUser {
   passwordHash: string;
   role: 'admin' | 'editor';
   twoFactorEnabled: boolean;
-  twoFactorMethod: 'sms' | 'google' | 'device' | null;
-  phoneNumber?: string;
-  googleId?: string;
-  deviceCode?: string;
-  deviceCodeExpiry?: Date;
+  twoFactorMethod?: 'totp' | 'webauthn' | null;
+  totpSecret?: string;
+  webauthnCredentials?: any[];
   lastLogin?: Date;
   createdAt: Date;
 }
+
+// 環境変数でデータベース使用を制御
+const USE_DATABASE = process.env.USE_SUPABASE === 'true';
 
 export interface UserSession {
   userId: string;
@@ -44,12 +53,21 @@ function createDefaultUser(): AdminUser {
   };
 }
 
-// ユーザーデータを読み込み（メモリベース）
-export function getUsers(): AdminUser[] {
+// ユーザーデータを読み込み（データベース優先、フォールバックでメモリベース）
+export async function getUsers(): Promise<AdminUser[]> {
+  if (USE_DATABASE) {
+    try {
+      const dbUsers = await getAllUsersFromDB();
+      return dbUsers.map(convertDBUserToAdminUser);
+    } catch (error) {
+      console.warn('データベース接続に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+  
+  // メモリベース（フォールバック）
   if (usersCache === null) {
     const usersJson = process.env.ADMIN_USERS;
     if (!usersJson) {
-      // デフォルトユーザーを作成
       const defaultUser = createDefaultUser();
       usersCache = [defaultUser];
       
@@ -62,12 +80,29 @@ export function getUsers(): AdminUser[] {
       try {
         usersCache = JSON.parse(usersJson);
       } catch {
-        // パース失敗時はデフォルトユーザーを使用
         usersCache = [createDefaultUser()];
       }
     }
   }
   
+  return usersCache || [];
+}
+
+// 同期版（既存コードとの互換性用）
+export function getUsersSync(): AdminUser[] {
+  if (usersCache === null) {
+    const usersJson = process.env.ADMIN_USERS;
+    if (!usersJson) {
+      const defaultUser = createDefaultUser();
+      usersCache = [defaultUser];
+    } else {
+      try {
+        usersCache = JSON.parse(usersJson);
+      } catch {
+        usersCache = [createDefaultUser()];
+      }
+    }
+  }
   return usersCache || [];
 }
 
@@ -86,15 +121,73 @@ export function saveUsers(users: AdminUser[]): void {
   // 現在はメモリ上でのみ管理（サーバー再起動でリセット）
 }
 
+// DB用ユーザー型変換
+function convertDBUserToAdminUser(dbUser: DBAdminUser): AdminUser {
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    passwordHash: dbUser.password_hash,
+    role: dbUser.role,
+    twoFactorEnabled: dbUser.two_factor_enabled,
+    twoFactorMethod: dbUser.totp_secret ? 'totp' : (dbUser.webauthn_credentials?.length ? 'webauthn' : null),
+    totpSecret: dbUser.totp_secret || undefined,
+    webauthnCredentials: dbUser.webauthn_credentials || undefined,
+    lastLogin: dbUser.last_login || undefined,
+    createdAt: new Date(dbUser.created_at)
+  };
+}
+
+function convertAdminUserToDBUser(user: AdminUser): Omit<DBAdminUser, 'id' | 'created_at' | 'updated_at'> {
+  return {
+    email: user.email,
+    password_hash: user.passwordHash,
+    role: user.role,
+    two_factor_enabled: user.twoFactorEnabled,
+    totp_secret: user.totpSecret || null,
+    webauthn_credentials: user.webauthnCredentials || null,
+    last_login: user.lastLogin || null
+  };
+}
+
 // ユーザーをメールアドレスで検索
-export function findUserByEmail(email: string): AdminUser | null {
-  const users = getUsers();
+export async function findUserByEmail(email: string): Promise<AdminUser | null> {
+  if (USE_DATABASE) {
+    try {
+      const dbUser = await findUserByEmailInDB(email);
+      return dbUser ? convertDBUserToAdminUser(dbUser) : null;
+    } catch (error) {
+      console.warn('データベース検索に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+  
+  const users = getUsersSync();
+  return users.find(user => user.email === email) || null;
+}
+
+// 同期版（既存コードとの互換性用）
+export function findUserByEmailSync(email: string): AdminUser | null {
+  const users = getUsersSync();
   return users.find(user => user.email === email) || null;
 }
 
 // ユーザーをIDで検索
-export function findUserById(id: string): AdminUser | null {
-  const users = getUsers();
+export async function findUserById(id: string): Promise<AdminUser | null> {
+  if (USE_DATABASE) {
+    try {
+      const dbUser = await findUserByIdInDB(id);
+      return dbUser ? convertDBUserToAdminUser(dbUser) : null;
+    } catch (error) {
+      console.warn('データベース検索に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+  
+  const users = getUsersSync();
+  return users.find(user => user.id === id) || null;
+}
+
+// 同期版（既存コードとの互換性用）
+export function findUserByIdSync(id: string): AdminUser | null {
+  const users = getUsersSync();
   return users.find(user => user.id === id) || null;
 }
 
@@ -109,10 +202,44 @@ export function verifyPassword(password: string, hash: string): boolean {
 }
 
 // 新しいユーザーを作成
-export function createUser(email: string, password: string, role: 'admin' | 'editor' = 'editor'): AdminUser {
-  const users = getUsers();
-  
+export async function createUser(email: string, password: string, role: 'admin' | 'editor' = 'editor'): Promise<AdminUser> {
   // メールアドレスの重複チェック
+  const existingUser = await findUserByEmail(email);
+  if (existingUser) {
+    throw new Error('このメールアドレスは既に使用されています');
+  }
+
+  const newUser: AdminUser = {
+    id: `admin-${Date.now()}`,
+    email,
+    passwordHash: hashPassword(password),
+    role,
+    twoFactorEnabled: false,
+    twoFactorMethod: null,
+    createdAt: new Date(),
+  };
+
+  if (USE_DATABASE) {
+    try {
+      const dbUser = await createUserInDB(convertAdminUserToDBUser(newUser));
+      return convertDBUserToAdminUser(dbUser);
+    } catch (error) {
+      console.warn('データベース作成に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+
+  // メモリベース（フォールバック）
+  const users = getUsersSync();
+  users.push(newUser);
+  saveUsers(users);
+  
+  return newUser;
+}
+
+// 同期版（既存コードとの互換性用）
+export function createUserSync(email: string, password: string, role: 'admin' | 'editor' = 'editor'): AdminUser {
+  const users = getUsersSync();
+  
   if (users.find(user => user.email === email)) {
     throw new Error('このメールアドレスは既に使用されています');
   }
@@ -134,8 +261,37 @@ export function createUser(email: string, password: string, role: 'admin' | 'edi
 }
 
 // ユーザー情報を更新
-export function updateUser(userId: string, updates: Partial<AdminUser>): AdminUser | null {
-  const users = getUsers();
+export async function updateUser(userId: string, updates: Partial<AdminUser>): Promise<AdminUser | null> {
+  if (USE_DATABASE) {
+    try {
+      const currentUser = await findUserByIdInDB(userId);
+      if (!currentUser) return null;
+      
+      const updatedUser = { ...convertDBUserToAdminUser(currentUser), ...updates };
+      const dbUser = await updateUserInDB(userId, convertAdminUserToDBUser(updatedUser));
+      return convertDBUserToAdminUser(dbUser);
+    } catch (error) {
+      console.warn('データベース更新に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+  
+  // メモリベース（フォールバック）
+  const users = getUsersSync();
+  const userIndex = users.findIndex(user => user.id === userId);
+  
+  if (userIndex === -1) {
+    return null;
+  }
+
+  users[userIndex] = { ...users[userIndex], ...updates };
+  saveUsers(users);
+  
+  return users[userIndex];
+}
+
+// 同期版（既存コードとの互換性用）
+export function updateUserSync(userId: string, updates: Partial<AdminUser>): AdminUser | null {
+  const users = getUsersSync();
   const userIndex = users.findIndex(user => user.id === userId);
   
   if (userIndex === -1) {
@@ -209,7 +365,14 @@ export function deleteUser(userId: string): boolean {
   return true;
 }
 
+// 既存API互換性のための同期関数エクスポート
+// export { getUsersSync as getUsers }; // 重複回避のためコメントアウト
+// export { findUserByEmailSync as findUserByEmail }; // 重複回避のためコメントアウト
+// export { findUserByIdSync as findUserById }; // 重複回避のためコメントアウト
+// export { createUserSync as createUser }; // 重複回避のためコメントアウト
+// export { updateUserSync as updateUser }; // 重複回避のためコメントアウト
+
 // エクスポートエイリアス
-export const getAdminUsers = getUsers;
+export const getAdminUsers = getUsersSync;
 export const comparePassword = verifyPassword;
-export const updateAdminUser = updateUser;
+export const updateAdminUser = updateUserSync;

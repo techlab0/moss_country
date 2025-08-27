@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // ユーザーを検索
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (!user) {
       console.log('User not found:', email);
       
@@ -107,8 +107,8 @@ export async function POST(request: NextRequest) {
       });
 
       // 最終ログイン時刻を更新
-      const { updateAdminUser } = await import('@/lib/userManager');
-      updateAdminUser(user.id, {
+      const { updateUser } = await import('@/lib/userManager');
+      await updateUser(user.id, {
         lastLogin: new Date(),
       });
 

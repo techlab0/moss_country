@@ -17,7 +17,9 @@
       "Bash(npm cache clean:*)",
       "Bash(source:*)",
       "Bash(grep:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(node:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }
