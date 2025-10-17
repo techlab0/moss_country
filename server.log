@@ -1,0 +1,28 @@
+
+> moss_country@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.3.5
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ scrollRestoration
+
+ ✓ Starting...
+ ✓ Ready in 18.8s
+ ○ Compiling / ...
+ ✓ Compiled / in 37s (1618 modules)
+🔧 在庫初期化: mock-1 -> 総在庫: 50, 利用可能: 50
+🔧 在庫初期化: mock-2 -> 総在庫: 50, 利用可能: 50
+🔧 在庫初期化: mock-3 -> 総在庫: 50, 利用可能: 50
+🔧 在庫初期化: mock-4 -> 総在庫: 50, 利用可能: 50
+🔧 在庫初期化: mock-5 -> 総在庫: 50, 利用可能: 50
+🔧 在庫初期化: mock-6 -> 総在庫: 50, 利用可能: 50
+ HEAD / 200 in 40841ms
+ ✓ Compiled in 3.8s (614 modules)
+ GET / 200 in 1117ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 14.7s (1002 modules)
+ GET /favicon.ico 200 in 18271ms
+ GET /favicon.ico 200 in 558ms

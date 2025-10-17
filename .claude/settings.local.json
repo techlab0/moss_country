@@ -19,7 +19,16 @@
       "Bash(grep:*)",
       "Bash(mv:*)",
       "Bash(node:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(true)",
+      "Bash(cat:*)",
+      "WebFetch(domain:www.y-michikusa.com)",
+      "Bash(find:*)",
+      "Bash(npx sanity:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(npx prettier:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }
