@@ -226,8 +226,8 @@ export default function AdvancedSecurityPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-        {/* ヘッダー */}
-        <div className="flex justify-between items-center">
+      {/* ヘッダー */}
+      <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">高度なセキュリティ管理</h1>
             <p className="text-gray-700 mt-2 text-base font-medium">ログイン制限・IP制御・脅威検出・セキュリティレポート</p>

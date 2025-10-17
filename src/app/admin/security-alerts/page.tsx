@@ -172,8 +172,8 @@ export default function SecurityAlertsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-        {/* ヘッダー */}
-        <div className="flex justify-between items-center">
+      {/* ヘッダー */}
+      <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">セキュリティアラート</h1>
             <p className="text-gray-600 mt-2">自動検出されたセキュリティ脅威とインシデント</p>
