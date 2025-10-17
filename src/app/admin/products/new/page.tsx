@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { createProduct } from '@/lib/sanity';
 
 interface ProductFormData {
   name: string;
@@ -29,7 +28,7 @@ const categories = [
   'メンテナンス',
 ];
 
-const NewProductPage = (): JSX.Element => {
+const NewProductPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>({
@@ -48,12 +47,8 @@ const NewProductPage = (): JSX.Element => {
     setLoading(true);
 
     try {
-      // TODO: 実際のSanity API連携
       console.log('商品作成データ:', formData);
-      
-      // モック処理（実際はSanityに保存）
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       alert('商品が正常に登録されました！');
       router.push('/admin/products');
     } catch (error) {
@@ -96,195 +91,126 @@ const NewProductPage = (): JSX.Element => {
         <p className="text-gray-600 mt-2">商品情報を入力して新しい商品を登録します</p>
       </div>
 
-        <div className="bg-white shadow rounded-lg">
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* 基本情報 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  商品名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                  placeholder="例: ミニカプセルテラリウム"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL スラッグ
-                </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                  placeholder="mini-capsule-terrarium"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  商品ページのURL: /products/{formData.slug}
-                </p>
-              </div>
-            </div>
-
-            {/* 価格とカテゴリ */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  価格 (円) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                  placeholder="5500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  カテゴリ
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* 説明文 */}
+      <div className="bg-white shadow rounded-lg">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                商品説明
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                placeholder="この商品の特徴や魅力を説明してください..."
-              />
-            </div>
-
-            {/* 素材 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                使用素材
+                商品名 *
               </label>
               <input
                 type="text"
-                value={formData.materials.join(', ')}
-                onChange={(e) => handleMaterialsChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                placeholder="苔, 流木, 石, ガラス容器 (カンマ区切り)"
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
             </div>
 
-            {/* サイズ */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                サイズ (cm)
+                スラッグ (URL用)
               </label>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={formData.dimensions.width || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      dimensions: { ...prev.dimensions, width: parseFloat(e.target.value) || undefined }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                    placeholder="幅"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={formData.dimensions.height || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      dimensions: { ...prev.dimensions, height: parseFloat(e.target.value) || undefined }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                    placeholder="高さ"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={formData.dimensions.depth || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      dimensions: { ...prev.dimensions, depth: parseFloat(e.target.value) || undefined }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                    placeholder="奥行"
-                  />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="product-slug"
+              />
             </div>
+          </div>
 
-            {/* お手入れ方法 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              商品説明 *
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={4}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                お手入れ方法
+                価格 (円) *
               </label>
-              <textarea
-                value={formData.careInstructions}
-                onChange={(e) => setFormData(prev => ({ ...prev, careInstructions: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                placeholder="週に1-2回霧吹きで水を与えてください..."
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="0"
+                required
               />
             </div>
 
-            {/* ボタン */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                カテゴリ *
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-moss-green text-white rounded-md hover:bg-moss-green/90 disabled:opacity-50"
-              >
-                {loading ? '登録中...' : '商品を登録'}
-              </button>
+                {categories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
-          </form>
-        </div>
+          </div>
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-medium text-blue-900 mb-2">💡 ヒント</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• 商品画像の追加は登録後に詳細CMS管理で行えます</li>
-            <li>• 在庫数は在庫管理ページで設定できます</li>
-            <li>• より詳細な設定は詳細CMS管理をご利用ください</li>
-          </ul>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              使用材料 (カンマ区切り)
+            </label>
+            <input
+              type="text"
+              value={formData.materials.join(', ')}
+              onChange={(e) => handleMaterialsChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="苔, ガラス容器, 土"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              お手入れ方法
+            </label>
+            <textarea
+              value={formData.careInstructions}
+              onChange={(e) => setFormData(prev => ({ ...prev, careInstructions: e.target.value }))}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="水やりの頻度や置き場所などの注意点を記載"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? '登録中...' : '商品を登録'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

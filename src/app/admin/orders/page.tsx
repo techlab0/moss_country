@@ -30,7 +30,7 @@ const statusConfig = {
   cancelled: { label: 'キャンセル', color: 'bg-red-100 text-red-800' },
 };
 
-const AdminOrdersPage = (): JSX.Element => {
+const AdminOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -40,8 +40,6 @@ const AdminOrdersPage = (): JSX.Element => {
   }, []);
 
   const fetchOrders = async () => {
-    // TODO: 実際のAPIから注文データを取得
-    // 現在はモックデータを使用
     setTimeout(() => {
       setOrders([
         {
@@ -91,7 +89,6 @@ const AdminOrdersPage = (): JSX.Element => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    // TODO: APIでステータス更新
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
@@ -123,97 +120,68 @@ const AdminOrdersPage = (): JSX.Element => {
         </div>
       </div>
 
-        {/* フィルター */}
-        <div className="flex space-x-2">
+      <div className="flex space-x-2">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'all' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          すべて ({orders.length})
+        </button>
+        {Object.entries(statusConfig).map(([status, config]) => (
           <button
-            onClick={() => setFilter('all')}
+            key={status}
+            onClick={() => setFilter(status)}
             className={`px-4 py-2 text-sm font-medium rounded-md ${
-              filter === 'all'
-                ? 'bg-moss-green text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === status 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            すべて ({orders.length})
+            {config.label} ({orders.filter(order => order.status === status).length})
           </button>
-          {Object.entries(statusConfig).map(([status, config]) => {
-            const count = orders.filter(order => order.status === status).length;
-            return (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  filter === status
-                    ? 'bg-moss-green text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {config.label} ({count})
-              </button>
-            );
-          })}
-        </div>
+        ))}
+      </div>
 
-        {/* 注文一覧 */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    注文番号
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    顧客情報
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    金額
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    支払方法
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ステータス
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    注文日
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {filteredOrders.map((order) => (
+            <li key={order.id}>
+              <div className="px-4 py-4 flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-indigo-600 truncate">
+                      {order.orderNumber}
+                    </p>
+                    <div className="ml-2 flex-shrink-0 flex">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusConfig[order.status].color}`}>
+                        {statusConfig[order.status].label}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between">
+                    <div className="sm:flex">
+                      <p className="flex items-center text-sm text-gray-500">
+                        {order.customerName} ({order.customerEmail})
+                      </p>
+                      <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                        ¥{order.total.toLocaleString()} - {order.paymentMethod}
+                      </p>
+                    </div>
+                    <div className="ml-2 flex-shrink-0 flex space-x-2">
+                      <Link 
                         href={`/admin/orders/${order.id}`}
-                        className="text-sm font-medium text-moss-green hover:text-moss-green/80"
+                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                       >
-                        {order.orderNumber}
+                        詳細
                       </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {order.customerName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.customerEmail}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{order.total.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.paymentMethod}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                        className={`text-xs font-medium rounded-full px-2 py-1 border-0 ${statusConfig[order.status].color}`}
+                        className="text-sm border-gray-300 rounded-md"
                       >
                         {Object.entries(statusConfig).map(([status, config]) => (
                           <option key={status} value={status}>
@@ -221,30 +189,13 @@ const AdminOrdersPage = (): JSX.Element => {
                           </option>
                         ))}
                       </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.createdAt.toLocaleDateString('ja-JP')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="text-moss-green hover:text-moss-green/80"
-                      >
-                        詳細
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredOrders.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">注文がありません</p>
-            </div>
-          )}
-        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
