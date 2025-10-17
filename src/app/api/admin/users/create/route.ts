@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '無効なトークンです' }, { status: 401 });
     }
 
-    const currentUser = findUserById(payload.userId as string);
+    const currentUser = await findUserById(payload.userId as string);
     if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const newUser = createUser(email, password, role || 'editor');
+    const newUser = await createUser(email, password, role || 'editor');
     
     // ユーザー作成を記録
-    logAuditEvent(
+    await logAuditEvent(
       currentUser.id,
       currentUser.email,
       'user.created',
@@ -76,13 +76,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('User creation error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
     
     if (error.message?.includes('既に使用されています')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     
+    // より詳細なエラーメッセージを返す（開発環境のみ）
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const errorMessage = isDevelopment 
+      ? `ユーザーの作成に失敗しました: ${error.message}`
+      : 'ユーザーの作成に失敗しました';
+    
     return NextResponse.json({ 
-      error: 'ユーザーの作成に失敗しました' 
+      error: errorMessage,
+      ...(isDevelopment && { details: error.stack })
     }, { status: 500 });
   }
 }

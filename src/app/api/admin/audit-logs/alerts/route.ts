@@ -16,13 +16,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '無効なトークンです' }, { status: 401 });
     }
 
-    const currentUser = findUserById(payload.userId as string);
+    const currentUser = await findUserById(payload.userId as string);
     if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
 
     // セキュリティアラートを検出
-    const { alerts } = detectSecurityAlerts();
+    const { alerts } = await detectSecurityAlerts();
 
     return NextResponse.json({ alerts });
 

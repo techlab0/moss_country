@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminToken } from '@/lib/auth';
 import { findUserByEmail, verifyPassword } from '@/lib/userManager';
 import { logAuditEvent } from '@/lib/auditLog';
+import { 
+  checkLoginAttempts, 
+  recordLoginAttempt 
+} from '@/lib/advancedSecurity';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +25,34 @@ export async function POST(request: NextRequest) {
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
+    // ログイン試行制限をチェック
+    const loginCheck = checkLoginAttempts(email, ipAddress);
+    if (loginCheck.isBlocked) {
+      console.log('Login blocked for:', email, 'IP:', ipAddress, 'Reason:', loginCheck.reason);
+      
+      // ブロック状態を記録
+      recordLoginAttempt(email, ipAddress, userAgent, false, loginCheck.reason);
+      
+      const message = loginCheck.lockoutUntil 
+        ? `ログイン試行回数の制限に達しました。${loginCheck.lockoutUntil.toLocaleString('ja-JP')}まで待ってからお試しください。`
+        : 'ログイン試行回数の制限に達しました。しばらく待ってからお試しください。';
+      
+      return NextResponse.json(
+        { 
+          error: message,
+          lockoutUntil: loginCheck.lockoutUntil,
+          remainingAttempts: loginCheck.remainingAttempts
+        },
+        { status: 429 }
+      );
+    }
+
     // ユーザーを検索
     const user = await findUserByEmail(email);
     if (!user) {
       console.log('User not found:', email);
       
-      // ログイン失敗を記録
+      // ログイン失敗を記録（従来のシステム）
       logAuditEvent(
         'unknown',
         email,
@@ -35,6 +61,9 @@ export async function POST(request: NextRequest) {
         { reason: 'user_not_found' },
         { ipAddress, userAgent, severity: 'high' }
       );
+      
+      // ログイン失敗を記録（高度セキュリティシステム）
+      recordLoginAttempt(email, ipAddress, userAgent, false, 'user_not_found');
       
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
@@ -49,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       console.log('Invalid password for user:', email);
       
-      // ログイン失敗を記録
+      // ログイン失敗を記録（従来のシステム）
       logAuditEvent(
         user.id,
         user.email,
@@ -58,6 +87,9 @@ export async function POST(request: NextRequest) {
         { reason: 'invalid_password' },
         { ipAddress, userAgent, severity: 'high' }
       );
+      
+      // ログイン失敗を記録（高度セキュリティシステム）
+      recordLoginAttempt(email, ipAddress, userAgent, false, 'invalid_password');
       
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
@@ -112,7 +144,7 @@ export async function POST(request: NextRequest) {
         lastLogin: new Date(),
       });
 
-      // ログイン成功を記録
+      // ログイン成功を記録（従来のシステム）
       logAuditEvent(
         user.id,
         user.email,
@@ -121,6 +153,9 @@ export async function POST(request: NextRequest) {
         { method: '2fa_disabled' },
         { ipAddress, userAgent, severity: 'low' }
       );
+
+      // ログイン成功を記録（高度セキュリティシステム）
+      recordLoginAttempt(email, ipAddress, userAgent, true);
 
       return response;
     }

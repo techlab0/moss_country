@@ -18,7 +18,7 @@ export async function DELETE(
       return NextResponse.json({ error: '無効なトークンです' }, { status: 401 });
     }
 
-    const currentUser = findUserById(payload.userId as string);
+    const currentUser = await findUserById(payload.userId as string);
     if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
@@ -33,7 +33,7 @@ export async function DELETE(
     }
 
     // ユーザーが存在するかチェック
-    const userToDelete = findUserById(userId);
+    const userToDelete = await findUserById(userId);
     if (!userToDelete) {
       return NextResponse.json({ 
         error: 'ユーザーが見つかりません' 

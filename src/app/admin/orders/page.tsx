@@ -30,7 +30,7 @@ const statusConfig = {
   cancelled: { label: 'キャンセル', color: 'bg-red-100 text-red-800' },
 };
 
-export default function AdminOrdersPage() {
+export default function AdminOrdersPage(): JSX.Element {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');

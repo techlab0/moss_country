@@ -72,7 +72,7 @@ interface IPRestriction {
   isActive: boolean;
 }
 
-export default function AdvancedSecurityPage() {
+export default function AdvancedSecurityPage(): JSX.Element {
   const [settings, setSettings] = useState<SecuritySettings | null>(null);
   const [statistics, setStatistics] = useState<SecurityStatistics | null>(null);
   const [reports, setReports] = useState<SecurityReport[]>([]);
