@@ -29,50 +29,65 @@ export function urlFor(source: SanityImage) {
 
 // Simple Workshop queries
 export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
-  return await client.fetch(`
-    *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
-      _id,
-      title,
-      description,
-      price
-    }
-  `)
+  try {
+    return await client.fetch(`
+      *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
+        _id,
+        title,
+        description,
+        price
+      }
+    `)
+  } catch (error) {
+    console.warn('Failed to fetch workshops from Sanity:', error)
+    return []
+  }
 }
 
 // Blog queries with pagination support
 export async function getBlogPosts(limit = 10, offset = 0): Promise<BlogPost[]> {
-  return await client.fetch(`
-    *[_type == "blogPost" && isPublished == true] | order(publishedAt desc) [$start...$end] {
-      _id,
-      title,
-      slug,
-      excerpt,
-      featuredImage,
-      category,
-      publishedAt,
-      author
-    }
-  `, { start: offset, end: offset + limit - 1 }, {
-    cache: 'force-cache',
-    next: { revalidate: 3600 } // 1時間キャッシュ
-  })
+  try {
+    return await client.fetch(`
+      *[_type == "blogPost" && isPublished == true] | order(publishedAt desc) [$start...$end] {
+        _id,
+        title,
+        slug,
+        excerpt,
+        featuredImage,
+        category,
+        publishedAt,
+        author
+      }
+    `, { start: offset, end: offset + limit - 1 }, {
+      cache: 'force-cache',
+      next: { revalidate: 3600 } // 1時間キャッシュ
+    })
+  } catch (error) {
+    console.warn('Failed to fetch blog posts from Sanity:', error)
+    return []
+  }
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  return await client.fetch(`
-    *[_type == "blogPost" && slug.current == $slug][0] {
-      _id,
-      title,
-      slug,
-      excerpt,
-      content,
-      featuredImage,
-      category,
-      tags,
-      publishedAt,
-      author
-    }
-  `, { slug })
+  try {
+    return await client.fetch(`
+      *[_type == "blogPost" && slug.current == $slug][0] {
+        _id,
+        title,
+        slug,
+        excerpt,
+        content,
+        featuredImage,
+        category,
+        tags,
+        publishedAt,
+        author
+      }
+    `, { slug })
+  } catch (error) {
+    console.warn('Failed to fetch blog post from Sanity:', error)
+    return null
+  }
 }
 
 // Product queries with pagination support
@@ -364,80 +379,100 @@ export async function generateUniqueSlug(baseSlug: string, excludeId?: string): 
 
 // FAQ queries
 export async function getFAQs(): Promise<FAQ[]> {
-  return await client.fetch(`
-    *[_type == "faq" && isPublished == true] | order(sortOrder asc) {
-      _id,
-      question,
-      answer,
-      category
-    }
-  `)
+  try {
+    return await client.fetch(`
+      *[_type == "faq" && isPublished == true] | order(sortOrder asc) {
+        _id,
+        question,
+        answer,
+        category
+      }
+    `)
+  } catch (error) {
+    console.warn('Failed to fetch FAQs from Sanity:', error)
+    return []
+  }
 }
 
 // Moss Species queries with pagination and caching
 export async function getMossSpecies(limit = 20, offset = 0): Promise<MossSpecies[]> {
-  return await client.fetch(`
-    *[_type == "mossSpecies" && isVisible == true] | order(sortOrder asc, publishedAt desc) [$start...$end] {
-      _id,
-      name,
-      commonNames,
-      slug,
-      description,
-      images,
-      characteristics,
-      basicInfo,
-      supplementaryInfo,
-      practicalAdvice,
-      // 古いフィールドも互換性のために取得
-      terrariumSuitability,
-      hokkaidoInfo,
-      practicalInfo,
-      category,
-      tags,
-      featured,
-      publishedAt
-    }
-  `, { start: offset, end: offset + limit - 1 }, {
-    cache: 'force-cache',
-    next: { revalidate: 1800 } // 30分間キャッシュ
-  })
+  try {
+    return await client.fetch(`
+      *[_type == "mossSpecies" && isVisible == true] | order(sortOrder asc, publishedAt desc) [$start...$end] {
+        _id,
+        name,
+        commonNames,
+        slug,
+        description,
+        images,
+        characteristics,
+        basicInfo,
+        supplementaryInfo,
+        practicalAdvice,
+        // 古いフィールドも互換性のために取得
+        terrariumSuitability,
+        hokkaidoInfo,
+        practicalInfo,
+        category,
+        tags,
+        featured,
+        publishedAt
+      }
+    `, { start: offset, end: offset + limit - 1 }, {
+      cache: 'force-cache',
+      next: { revalidate: 1800 } // 30分間キャッシュ
+    })
+  } catch (error) {
+    console.warn('Failed to fetch moss species from Sanity:', error)
+    return []
+  }
 }
 
 export async function getMossSpeciesBySlug(slug: string): Promise<MossSpecies | null> {
-  return await client.fetch(`
-    *[_type == "mossSpecies" && slug.current == $slug && isVisible == true][0] {
-      _id,
-      name,
-      commonNames,
-      slug,
-      description,
-      images,
-      characteristics,
-      basicInfo,
-      supplementaryInfo,
-      practicalAdvice,
-      // 古いフィールドも互換性のために取得
-      terrariumSuitability,
-      hokkaidoInfo,
-      practicalInfo,
-      category,
-      tags,
-      featured,
-      publishedAt
-    }
-  `, { slug })
+  try {
+    return await client.fetch(`
+      *[_type == "mossSpecies" && slug.current == $slug && isVisible == true][0] {
+        _id,
+        name,
+        commonNames,
+        slug,
+        description,
+        images,
+        characteristics,
+        basicInfo,
+        supplementaryInfo,
+        practicalAdvice,
+        // 古いフィールドも互換性のために取得
+        terrariumSuitability,
+        hokkaidoInfo,
+        practicalInfo,
+        category,
+        tags,
+        featured,
+        publishedAt
+      }
+    `, { slug })
+  } catch (error) {
+    console.warn('Failed to fetch moss species from Sanity:', error)
+    return null
+  }
 }
 
 export async function getFeaturedMossSpecies(): Promise<MossSpecies[]> {
-  return await client.fetch(`
-    *[_type == "mossSpecies" && isVisible == true && featured == true] | order(sortOrder asc, publishedAt desc) {
-      _id,
-      name,
-      slug,
-      images,
-      characteristics,
-      category,
-      featured
-    }
-  `)
+  try {
+    return await client.fetch(`
+      *[_type == "mossSpecies" && isVisible == true && featured == true] | order(sortOrder asc, publishedAt desc) {
+        _id,
+        name,
+        slug,
+        images,
+        characteristics,
+        category,
+        featured
+      }
+    `)
+  } catch (error) {
+    console.warn('Failed to fetch featured moss species from Sanity:', error)
+    return []
+  }
 }

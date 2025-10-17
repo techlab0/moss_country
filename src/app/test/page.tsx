@@ -1,7 +1,15 @@
 import { getSimpleWorkshops } from '@/lib/sanity'
 
 export default async function TestPage() {
-  const workshops = await getSimpleWorkshops()
+  let workshops = []
+  let error = null
+  
+  try {
+    workshops = await getSimpleWorkshops()
+  } catch (err) {
+    console.warn('Failed to fetch workshops:', err)
+    error = err
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-20">
@@ -11,7 +19,12 @@ export default async function TestPage() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">取得されたワークショップデータ</h2>
           
-          {workshops.length === 0 ? (
+          {error ? (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+              <p className="font-semibold">データ取得エラー</p>
+              <p className="text-sm mt-1">Sanity CMSへの接続に失敗しました。環境変数の設定を確認してください。</p>
+            </div>
+          ) : workshops.length === 0 ? (
             <p className="text-gray-500">データがありません</p>
           ) : (
             <div className="space-y-4">

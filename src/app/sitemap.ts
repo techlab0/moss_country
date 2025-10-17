@@ -87,8 +87,8 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://moss-country.com'
   const dynamicRoutes: MetadataRoute.Sitemap = []
 
+  // Get blog posts with individual error handling
   try {
-    // Get blog posts
     const blogPosts = await client.fetch(`
       *[_type == "post" && defined(slug.current)] {
         slug,
@@ -105,8 +105,12 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })
     }
+  } catch (error) {
+    console.warn('Error fetching blog posts for sitemap:', error)
+  }
 
-    // Get products
+  // Get products with individual error handling
+  try {
     const products = await client.fetch(`
       *[_type == "product" && defined(slug.current)] {
         slug,
@@ -122,8 +126,12 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       })
     }
+  } catch (error) {
+    console.warn('Error fetching products for sitemap:', error)
+  }
 
-    // Get moss guide entries
+  // Get moss guide entries with individual error handling
+  try {
     const mossGuide = await client.fetch(`
       *[_type == "mossSpecies" && defined(slug.current) && isVisible == true] {
         slug,
@@ -140,7 +148,7 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
       })
     }
   } catch (error) {
-    console.error('Error fetching dynamic routes for sitemap:', error)
+    console.warn('Error fetching moss guide for sitemap:', error)
   }
 
   return dynamicRoutes
