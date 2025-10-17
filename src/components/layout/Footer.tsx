@@ -44,23 +44,38 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-4">
               <li>
-                <Link href="/products" className="text-gray-300 hover:text-white transition-colors duration-200">
-                  商品紹介
+                <Link href="/products" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  商品
                 </Link>
               </li>
               <li>
-                <Link href="/workshop" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <Link href="/moss-guide" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  苔図鑑
+                </Link>
+              </li>
+              <li>
+                <Link href="/workshop" className="text-emerald-600 hover:text-white transition-colors duration-200">
                   ワークショップ
                 </Link>
               </li>
               <li>
-                <Link href="/story" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <Link href="/story" className="text-emerald-600 hover:text-white transition-colors duration-200">
                   ストーリー
                 </Link>
               </li>
               <li>
-                <Link href="/store" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <Link href="/store" className="text-emerald-600 hover:text-white transition-colors duration-200">
                   店舗情報
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  ブログ
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  お問い合わせ
                 </Link>
               </li>
             </ul>
@@ -74,20 +89,23 @@ export const Footer: React.FC = () => {
             <ul className="space-y-4">
               <li className="text-gray-300">
                 <span className="block text-sm">営業時間</span>
-                <span className="text-white">10:00 - 18:00</span>
+                <span className="text-white">11:00 - 20:00</span>
               </li>
               <li className="text-gray-300">
-                <span className="block text-sm">定休日</span>
-                <span className="text-white">月曜日</span>
+                <span className="block text-sm">営業日</span>
+                <span className="text-white">不定休（カレンダーをご確認ください）</span>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-200">
+                <Link href="/contact" className="text-emerald-600 hover:text-white transition-colors duration-200">
                   お問い合わせフォーム
                 </Link>
               </li>
               <li>
-                <Link href="/checkout" className="text-light-green hover:text-white transition-colors duration-200">
-                  カート・購入
+                <Link href="/checkout" className="text-emerald-600 hover:text-white transition-colors duration-200 flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 2.4M17 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
+                  </svg>
+                  カート
                 </Link>
               </li>
             </ul>
@@ -100,9 +118,15 @@ export const Footer: React.FC = () => {
             <p className="text-gray-400 text-sm">
               © 2024 MOSS COUNTRY. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors duration-200">
+            <div className="flex flex-wrap space-x-6 mt-4 md:mt-0 gap-y-2">
+              <Link href="/terms" className="text-emerald-600 hover:text-white text-sm transition-colors duration-200">
+                利用規約
+              </Link>
+              <Link href="/privacy" className="text-emerald-600 hover:text-white text-sm transition-colors duration-200">
                 プライバシーポリシー
+              </Link>
+              <Link href="/legal" className="text-emerald-600 hover:text-white text-sm transition-colors duration-200">
+                特定商取引法
               </Link>
             </div>
           </div>

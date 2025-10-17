@@ -1,8 +1,8 @@
-import React from 'react';
+import { ReactNode } from 'react';
 import Link from 'next/link';
 
 interface CMSLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function CMSLayout({ children }: CMSLayoutProps) {

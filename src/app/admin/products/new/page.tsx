@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 import { createProduct } from '@/lib/sanity';
 
 interface ProductFormData {
@@ -44,7 +43,7 @@ export default function NewProductPage() {
     dimensions: {},
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -91,8 +90,7 @@ export default function NewProductPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">新商品登録</h1>
           <p className="text-gray-600 mt-2">商品情報を入力して新しい商品を登録します</p>
@@ -288,6 +286,6 @@ export default function NewProductPage() {
           </ul>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

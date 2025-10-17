@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface SetupData {
   qrCodeUrl: string;
@@ -147,17 +146,14 @@ export default function Setup2FAPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-lg">2FA設定を準備中...</div>
-        </div>
-      </AdminLayout>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg">2FA設定を準備中...</div>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="max-w-2xl mx-auto py-8">
+    <div className="max-w-2xl mx-auto py-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             二段階認証の設定
@@ -372,6 +368,6 @@ export default function Setup2FAPage() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

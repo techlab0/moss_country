@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import { useState, Suspense, FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function Verify2FAContent() {
@@ -12,7 +12,7 @@ function Verify2FAContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);

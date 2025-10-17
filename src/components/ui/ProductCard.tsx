@@ -10,6 +10,7 @@ import { useCart } from '@/contexts/CartContext';
 import { getSafeImageUrl, getSafeStock, sanityToEcommerceProduct } from '@/lib/adapters';
 import { InventoryBadge, InventoryAlert } from '@/components/ui/InventoryStatus';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
+import { getNextImageProps } from '@/lib/imageOptimization';
 import type { Product } from '@/types/sanity';
 
 interface ProductCardProps {
@@ -54,14 +55,14 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
         <div className="h-64 overflow-hidden relative">
           {product.images && product.images[0] ? (
             <Image
-              src={getSafeImageUrl(product.images?.[0], 400, 300)}
-              alt={product.name}
-              width={400}
-              height={300}
+              {...getNextImageProps(product.images[0], {
+                width: 400,
+                height: 300,
+                quality: 85,
+                sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                priority: product.featured
+              })}
               className={`w-full h-full object-cover ${!product.inStock ? 'grayscale' : ''}`}
-              priority={product.featured}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              loading={product.featured ? "eager" : "lazy"}
             />
           ) : (
             <ImagePlaceholder

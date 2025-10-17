@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useState, useEffect } from 'react';
 
 interface AuditLog {
   id: string;
@@ -32,7 +31,7 @@ interface SecurityAlert {
   users: string[];
 }
 
-export default function AuditLogsPage() {
+export default function AuditLogsPage(): JSX.Element {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
@@ -40,21 +39,42 @@ export default function AuditLogsPage() {
   const [filter, setFilter] = useState({
     severity: '',
     action: '',
-    user: '',
+    userEmail: '',
+    startDate: '',
+    endDate: '',
+    ipAddress: '',
+    resource: '',
+    search: '',
   });
+  const [sortBy, setSortBy] = useState<'timestamp' | 'action' | 'severity' | 'userEmail'>('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, [filter]);
+  }, [filter, sortBy, sortOrder, currentPage]);
 
   const fetchData = async () => {
     try {
       // 監査ログを取得
-      const logsResponse = await fetch('/api/admin/audit-logs?' + new URLSearchParams({
+      const params = new URLSearchParams({
+        limit: itemsPerPage.toString(),
+        offset: ((currentPage - 1) * itemsPerPage).toString(),
+        sortBy,
+        sortOrder,
         ...(filter.severity && { severity: filter.severity }),
         ...(filter.action && { action: filter.action }),
-        ...(filter.user && { userId: filter.user }),
-      }));
+        ...(filter.userEmail && { userEmail: filter.userEmail }),
+        ...(filter.startDate && { startDate: filter.startDate }),
+        ...(filter.endDate && { endDate: filter.endDate }),
+        ...(filter.ipAddress && { ipAddress: filter.ipAddress }),
+        ...(filter.resource && { resource: filter.resource }),
+        ...(filter.search && { search: filter.search }),
+      });
+      const logsResponse = await fetch('/api/admin/audit-logs?' + params);
       
       if (logsResponse.ok) {
         const logsData = await logsResponse.json();
@@ -79,6 +99,72 @@ export default function AuditLogsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const exportData = async (format: 'csv' | 'json') => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams({
+        export: format,
+        ...(filter.severity && { severity: filter.severity }),
+        ...(filter.action && { action: filter.action }),
+        ...(filter.userEmail && { userEmail: filter.userEmail }),
+        ...(filter.startDate && { startDate: filter.startDate }),
+        ...(filter.endDate && { endDate: filter.endDate }),
+        ...(filter.ipAddress && { ipAddress: filter.ipAddress }),
+        ...(filter.resource && { resource: filter.resource }),
+        ...(filter.search && { search: filter.search }),
+      });
+      
+      const response = await fetch('/api/admin/audit-logs?' + params);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || `audit-logs.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error('エクスポートに失敗:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilter({
+      severity: '',
+      action: '',
+      userEmail: '',
+      startDate: '',
+      endDate: '',
+      ipAddress: '',
+      resource: '',
+      search: '',
+    });
+    setCurrentPage(1);
+  };
+
+  const handleSort = (column: typeof sortBy) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1);
+  };
+
+  const getSortIcon = (column: typeof sortBy) => {
+    if (sortBy === column) {
+      return sortOrder === 'asc' ? '↑' : '↓';
+    }
+    return '↕';
   };
 
   const getSeverityColor = (severity: string) => {
@@ -111,162 +197,20 @@ export default function AuditLogsPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout>
-        <div className="flex justify-center py-12">
-          <div className="text-lg">読み込み中...</div>
-        </div>
-      </AdminLayout>
+      <div className="flex justify-center py-12">
+        <div className="text-lg">読み込み中...</div>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* ヘッダー */}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">監査ログ</h1>
           <p className="text-gray-600 mt-2">システムの操作履歴とセキュリティ監視</p>
         </div>
-
-        {/* 統計情報 */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm text-gray-600">総ログ数</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-blue-600">{stats.today}</div>
-              <div className="text-sm text-gray-600">今日</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-green-600">{stats.thisWeek}</div>
-              <div className="text-sm text-gray-600">今週</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-red-600">{stats.bySeverity.critical || 0}</div>
-              <div className="text-sm text-gray-600">重要なイベント</div>
-            </div>
-          </div>
-        )}
-
-        {/* セキュリティアラート */}
-        {alerts.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-red-800 mb-3">🚨 セキュリティアラート</h3>
-            <div className="space-y-2">
-              {alerts.map((alert, index) => (
-                <div key={index} className={`p-3 rounded ${
-                  alert.severity === 'critical' ? 'bg-red-100' :
-                  alert.severity === 'high' ? 'bg-yellow-100' : 'bg-blue-100'
-                }`}>
-                  <div className="font-medium">{alert.message}</div>
-                  <div className="text-sm text-gray-600">
-                    影響ユーザー: {alert.users.join(', ')} ({alert.count}件)
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* フィルター */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">フィルター</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">重要度</label>
-              <select
-                value={filter.severity}
-                onChange={(e) => setFilter({...filter, severity: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">すべて</option>
-                <option value="low">低</option>
-                <option value="medium">中</option>
-                <option value="high">高</option>
-                <option value="critical">緊急</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">アクション</label>
-              <select
-                value={filter.action}
-                onChange={(e) => setFilter({...filter, action: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">すべて</option>
-                <option value="login.success">ログイン成功</option>
-                <option value="login.failed">ログイン失敗</option>
-                <option value="user.created">ユーザー作成</option>
-                <option value="user.deleted">ユーザー削除</option>
-                <option value="password.changed">パスワード変更</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => setFilter({severity: '', action: '', user: ''})}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-              >
-                リセット
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ログ一覧 */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">操作ログ</h3>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">時刻</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ユーザー</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">アクション</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">リソース</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">重要度</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">詳細</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {new Date(log.timestamp).toLocaleString('ja-JP')}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.userEmail}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{getActionLabel(log.action)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.resource}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(log.severity)}`}>
-                        {log.severity}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {log.ipAddress && <div>IP: {log.ipAddress}</div>}
-                      {Object.keys(log.details).length > 0 && (
-                        <div className="text-xs text-gray-400 mt-1">
-                          {JSON.stringify(log.details, null, 2).substring(0, 100)}...
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {logs.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-500">ログが見つかりませんでした</div>
-            </div>
-          )}
-        </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

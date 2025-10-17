@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Order {
   id: string;
@@ -104,22 +103,19 @@ export default function AdminOrdersPage() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-200 rounded"></div>
+          ))}
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">注文管理</h1>
@@ -250,6 +246,6 @@ export default function AdminOrdersPage() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

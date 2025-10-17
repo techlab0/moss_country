@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useState, useEffect } from 'react';
 
 interface AdminUser {
   id: string;
@@ -89,29 +88,26 @@ export default function UsersPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout>
-        <div className="flex justify-center py-12">
-          <div className="text-lg">読み込み中...</div>
-        </div>
-      </AdminLayout>
+      <div className="flex justify-center py-12">
+        <div className="text-lg font-semibold text-gray-800">読み込み中...</div>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">ユーザー管理</h1>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-moss-green text-white px-4 py-2 rounded-md hover:bg-moss-green/90"
+            className="bg-moss-green text-white px-4 py-2 rounded-md hover:bg-moss-green/90 font-semibold text-base"
           >
             新しいユーザーを作成
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-base font-medium">
             {error}
           </div>
         )}
@@ -120,19 +116,19 @@ export default function UsersPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
                   ユーザー
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
                   役割
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
                   2段階認証
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
                   最終ログイン
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase">
                   操作
                 </th>
               </tr>
@@ -256,6 +252,6 @@ export default function UsersPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </div>
   );
 }

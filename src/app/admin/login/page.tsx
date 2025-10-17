@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { ButtonLoading } from '@/components/ui/LoadingScreen';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -49,10 +50,10 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
             MOSS COUNTRY
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-lg text-gray-800 font-semibold">
             管理画面ログイン
           </p>
         </div>
@@ -71,7 +72,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 sm:text-sm"
+                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
                 placeholder="メールアドレス"
                 disabled={isLoading}
               />
@@ -88,7 +89,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 sm:text-sm"
+                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
                 placeholder="パスワード"
                 disabled={isLoading}
               />
@@ -96,7 +97,7 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-base font-medium">
               {error}
             </div>
           )}
@@ -105,9 +106,16 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-moss-green hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-moss-green hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'ログイン中...' : 'ログイン'}
+{isLoading ? (
+                <>
+                  <ButtonLoading />
+                  ログイン中...
+                </>
+              ) : (
+                'ログイン'
+              )}
             </button>
           </div>
         </form>
@@ -115,7 +123,7 @@ export default function AdminLoginPage() {
         <div className="text-center">
           <a
             href="/"
-            className="font-medium text-moss-green hover:text-moss-green/80"
+            className="font-semibold text-base text-moss-green hover:text-moss-green/80"
           >
             ← サイトに戻る
           </a>

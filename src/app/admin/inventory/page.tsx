@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useState, useEffect } from 'react';
 import { getProductsWithInventory } from '@/lib/sanity';
 
 interface InventoryItem {
@@ -215,235 +214,231 @@ export default function AdminInventoryPage() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-48"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
-        </div>
-      </AdminLayout>
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-gray-200 rounded w-48"></div>
+        <div className="h-96 bg-gray-200 rounded"></div>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">在庫管理</h1>
-            <p className="text-gray-600 mt-2">商品の在庫状況を管理</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">在庫管理</h1>
+          <p className="text-gray-600 mt-2">商品の在庫状況を管理</p>
         </div>
+      </div>
 
-        {/* フィルター */}
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              filter === 'all'
-                ? 'bg-moss-green text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            すべて ({inventory.length})
-          </button>
-          <button
-            onClick={() => setFilter('in_stock')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              filter === 'in_stock'
-                ? 'bg-moss-green text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            在庫あり ({inventory.filter(i => i.status === 'in_stock').length})
-          </button>
-          <button
-            onClick={() => setFilter('low_stock')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              filter === 'low_stock'
-                ? 'bg-moss-green text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            在庫少 ({inventory.filter(i => i.status === 'low_stock').length})
-          </button>
-          <button
-            onClick={() => setFilter('out_of_stock')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              filter === 'out_of_stock'
-                ? 'bg-moss-green text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            在庫切れ ({inventory.filter(i => i.status === 'out_of_stock').length})
-          </button>
-        </div>
+      {/* フィルター */}
+      <div className="flex space-x-2">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'all'
+              ? 'bg-moss-green text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          すべて ({inventory.length})
+        </button>
+        <button
+          onClick={() => setFilter('in_stock')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'in_stock'
+              ? 'bg-moss-green text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          在庫あり ({inventory.filter(i => i.status === 'in_stock').length})
+        </button>
+        <button
+          onClick={() => setFilter('low_stock')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'low_stock'
+              ? 'bg-moss-green text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          在庫少 ({inventory.filter(i => i.status === 'low_stock').length})
+        </button>
+        <button
+          onClick={() => setFilter('out_of_stock')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'out_of_stock'
+              ? 'bg-moss-green text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          在庫切れ ({inventory.filter(i => i.status === 'out_of_stock').length})
+        </button>
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* 在庫一覧 */}
-          <div className="xl:col-span-2">
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b">
-                <h2 className="text-lg font-medium">在庫状況</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        商品名
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        現在庫数
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        予約済
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        利用可能
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        ステータス
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredInventory.map((item) => {
-                      const statusConfig = getStatusConfig(item.status);
-                      return (
-                        <tr key={item.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.productName}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {item.category}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {editingItem === item.id ? (
-                              <input
-                                type="number"
-                                min="0"
-                                value={editValues[item.id] || 0}
-                                onChange={(e) => setEditValues({
-                                  ...editValues,
-                                  [item.id]: parseInt(e.target.value) || 0
-                                })}
-                                className="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-moss-green focus:border-moss-green"
-                                autoFocus
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">
-                                {item.currentStock}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.reservedStock}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.availableStock}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
-                              {statusConfig.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {editingItem === item.id ? (
-                              <div className="space-x-2">
-                                <button
-                                  onClick={() => saveEdit(item.id)}
-                                  className="text-green-600 hover:text-green-500"
-                                >
-                                  保存
-                                </button>
-                                <button
-                                  onClick={cancelEdit}
-                                  className="text-gray-600 hover:text-gray-500"
-                                >
-                                  キャンセル
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => startEdit(item.id, item.currentStock)}
-                                className="text-moss-green hover:text-moss-green/80"
-                              >
-                                編集
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* 在庫一覧 */}
+        <div className="xl:col-span-2">
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-lg font-medium">在庫状況</h2>
             </div>
-          </div>
-
-          {/* 在庫変更ログ */}
-          <div>
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b">
-                <h2 className="text-lg font-medium">最近の在庫変更</h2>
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                <div className="divide-y divide-gray-200">
-                  {logs.map((log) => {
-                    const typeConfig = {
-                      restock: { label: '補充', color: 'text-green-600', icon: '📦' },
-                      sale: { label: '販売', color: 'text-blue-600', icon: '💰' },
-                      reservation: { label: '予約', color: 'text-yellow-600', icon: '📋' },
-                      adjustment: { label: '調整', color: 'text-gray-600', icon: '⚙️' },
-                    };
-
-                    const config = typeConfig[log.type];
-
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      商品名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      現在庫数
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      予約済
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      利用可能
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      ステータス
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredInventory.map((item) => {
+                    const statusConfig = getStatusConfig(item.status);
                     return (
-                      <div key={log.id} className="px-6 py-4">
-                        <div className="flex items-start space-x-3">
-                          <span className="text-lg">{config.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
-                              <span className={config.color}>{config.label}</span>
-                              <span className="ml-2">
-                                {log.quantity > 0 ? '+' : ''}{log.quantity}
-                              </span>
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {inventory.find(i => i.productId === log.productId)?.productName}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {log.timestamp.toLocaleDateString('ja-JP')} {log.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                            {log.note && (
-                              <p className="text-xs text-gray-500">
-                                {log.note}
-                              </p>
-                            )}
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.productName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {item.category}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">
-                              {log.previousStock} → {log.newStock}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {editingItem === item.id ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={editValues[item.id] || 0}
+                              onChange={(e) => setEditValues({
+                                ...editValues,
+                                [item.id]: parseInt(e.target.value) || 0
+                              })}
+                              className="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-sm text-gray-900">
+                              {item.currentStock}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.reservedStock}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.availableStock}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
+                            {statusConfig.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {editingItem === item.id ? (
+                            <div className="space-x-2">
+                              <button
+                                onClick={() => saveEdit(item.id)}
+                                className="text-green-600 hover:text-green-500"
+                              >
+                                保存
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                className="text-gray-600 hover:text-gray-500"
+                              >
+                                キャンセル
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEdit(item.id, item.currentStock)}
+                              className="text-moss-green hover:text-moss-green/80"
+                            >
+                              編集
+                            </button>
+                          )}
+                        </td>
+                      </tr>
                     );
                   })}
-                </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* 在庫変更ログ */}
+        <div>
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-lg font-medium">最近の在庫変更</h2>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              <div className="divide-y divide-gray-200">
+                {logs.map((log) => {
+                  const typeConfig = {
+                    restock: { label: '補充', color: 'text-green-600', icon: '📦' },
+                    sale: { label: '販売', color: 'text-blue-600', icon: '💰' },
+                    reservation: { label: '予約', color: 'text-yellow-600', icon: '📋' },
+                    adjustment: { label: '調整', color: 'text-gray-600', icon: '⚙️' },
+                  };
+
+                  const config = typeConfig[log.type];
+
+                  return (
+                    <div key={log.id} className="px-6 py-4">
+                      <div className="flex items-start space-x-3">
+                        <span className="text-lg">{config.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            <span className={config.color}>{config.label}</span>
+                            <span className="ml-2">
+                              {log.quantity > 0 ? '+' : ''}{log.quantity}
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {inventory.find(i => i.productId === log.productId)?.productName}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {log.timestamp.toLocaleDateString('ja-JP')} {log.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          {log.note && (
+                            <p className="text-xs text-gray-500">
+                              {log.note}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">
+                            {log.previousStock} → {log.newStock}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
