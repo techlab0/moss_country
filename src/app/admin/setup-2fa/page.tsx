@@ -11,7 +11,7 @@ interface SetupData {
 
 type TwoFactorMethod = 'totp' | 'webauthn';
 
-export default function Setup2FAPage() {
+const Setup2FAPage = (): JSX.Element => {
   const [selectedMethod, setSelectedMethod] = useState<TwoFactorMethod>('totp');
   const [setupData, setSetupData] = useState<SetupData | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
@@ -370,4 +370,6 @@ export default function Setup2FAPage() {
       </div>
     </div>
   );
-}
+};
+
+export default Setup2FAPage;

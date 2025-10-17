@@ -29,7 +29,7 @@ const categories = [
   'メンテナンス',
 ];
 
-export default function NewProductPage(): JSX.Element {
+const NewProductPage = (): JSX.Element => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>({
@@ -288,4 +288,6 @@ export default function NewProductPage(): JSX.Element {
       </div>
     </div>
   );
-}
+};
+
+export default NewProductPage;

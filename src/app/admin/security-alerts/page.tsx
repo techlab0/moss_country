@@ -33,7 +33,7 @@ interface SecurityAlertStats {
   byType: Record<string, number>;
 }
 
-export default function SecurityAlertsPage(): JSX.Element {
+const SecurityAlertsPage = (): JSX.Element => {
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [stats, setStats] = useState<SecurityAlertStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -435,4 +435,6 @@ export default function SecurityAlertsPage(): JSX.Element {
       </div>
     </div>
   );
-}
+};
+
+export default SecurityAlertsPage;
