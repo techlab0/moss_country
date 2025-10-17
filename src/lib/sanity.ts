@@ -1,12 +1,24 @@
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
-import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage } from '@/types/sanity'
+import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies } from '@/types/sanity'
+import { generateSEOFriendlySlug } from '@/lib/slugUtils'
 
 export const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  useCdn: false, // Use CDN for production
+  useCdn: true, // Enable CDN for better performance
   apiVersion: '2024-01-01',
+  token: process.env.SANITY_API_TOKEN, // 書き込み権限用のトークンを追加
+})
+
+// 書き込み用のクライアント（サーバーサイドでのみ使用）
+export const writeClient = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  useCdn: false,
+  apiVersion: '2024-01-01',
+  token: process.env.SANITY_API_TOKEN, // 書き込み権限が必要
+  ignoreBrowserTokenWarning: true,
 })
 
 const builder = imageUrlBuilder(client)
@@ -27,10 +39,10 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
   `)
 }
 
-// Blog queries
-export async function getBlogPosts(): Promise<BlogPost[]> {
+// Blog queries with pagination support
+export async function getBlogPosts(limit = 10, offset = 0): Promise<BlogPost[]> {
   return await client.fetch(`
-    *[_type == "blogPost" && isPublished == true] | order(publishedAt desc) {
+    *[_type == "blogPost" && isPublished == true] | order(publishedAt desc) [$start...$end] {
       _id,
       title,
       slug,
@@ -40,7 +52,10 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
       publishedAt,
       author
     }
-  `)
+  `, { start: offset, end: offset + limit - 1 }, {
+    cache: 'force-cache',
+    next: { revalidate: 3600 } // 1時間キャッシュ
+  })
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -60,11 +75,11 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
   `, { slug })
 }
 
-// Product queries
-export async function getProducts(): Promise<Product[]> {
+// Product queries with pagination support
+export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
   try {
     const products = await client.fetch(
-      `*[_type == "product"] | order(sortOrder asc) {
+      `*[_type == "product"] | order(sortOrder asc) [$start...$end] {
         _id,
         name,
         slug,
@@ -81,7 +96,7 @@ export async function getProducts(): Promise<Product[]> {
         inStock,
         dimensions
       }`,
-      {},
+      { start: offset, end: offset + limit - 1 },
       {
         cache: 'force-cache',
         next: { revalidate: 300 } // 5分間キャッシュ
@@ -193,7 +208,7 @@ export async function getProductsWithInventory(): Promise<Product[]> {
 
 export async function updateProductInventory(productId: string, stockQuantity: number, reserved: number = 0): Promise<void> {
   try {
-    await client
+    await writeClient
       .patch(productId)
       .set({
         stockQuantity,
@@ -207,6 +222,146 @@ export async function updateProductInventory(productId: string, stockQuantity: n
   }
 }
 
+// Admin Blog queries (for management dashboard)
+export async function getAllBlogPosts(): Promise<BlogPost[]> {
+  return await client.fetch(`
+    *[_type == "blogPost"] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      excerpt,
+      featuredImage,
+      category,
+      tags,
+      publishedAt,
+      isPublished,
+      author,
+      _createdAt,
+      _updatedAt
+    }
+  `)
+}
+
+export async function createBlogPost(data: Partial<BlogPost>): Promise<BlogPost> {
+  const doc = {
+    _type: 'blogPost',
+    ...data,
+    publishedAt: data.publishedAt || new Date().toISOString(),
+    isPublished: data.isPublished || false,
+    author: data.author || 'MOSS COUNTRY'
+  };
+  
+  return await writeClient.create(doc);
+}
+
+export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promise<BlogPost> {
+  try {
+    console.log('Sanity updateBlogPost:', id, data);
+    
+    // スラッグの更新処理
+    let updateData = { ...data };
+    if (data.slug) {
+      // スラッグが提供されている場合はそのまま使用
+      if (typeof data.slug === 'string') {
+        updateData.slug = {
+          _type: 'slug',
+          current: data.slug
+        };
+      }
+      // オブジェクト形式の場合はそのまま
+    } else if (data.title) {
+      // スラッグが未提供でタイトルがある場合は自動生成
+      updateData.slug = {
+        _type: 'slug',
+        current: generateSEOFriendlySlug(data.title)
+      };
+    }
+    
+    const result = await writeClient
+      .patch(id)
+      .set(updateData)
+      .commit();
+      
+    console.log('Update result:', result);
+    return result;
+  } catch (error) {
+    console.error('Sanity updateBlogPost error:', error);
+    throw error;
+  }
+}
+
+export async function deleteBlogPost(id: string): Promise<void> {
+  await writeClient.delete(id);
+}
+
+export async function publishBlogPost(id: string): Promise<BlogPost> {
+  return await writeClient
+    .patch(id)
+    .set({ 
+      isPublished: true,
+      publishedAt: new Date().toISOString()
+    })
+    .commit();
+}
+
+export async function unpublishBlogPost(id: string): Promise<BlogPost> {
+  return await writeClient
+    .patch(id)
+    .set({ isPublished: false })
+    .commit();
+}
+
+// Blog category statistics
+export async function getBlogCategoryStats(): Promise<{category: string, count: number}[]> {
+  try {
+    const result = await client.fetch(`
+      *[_type == "blogPost"] {
+        category
+      }
+    `);
+    
+    // カテゴリ別に集計
+    const categoryCount: {[key: string]: number} = {};
+    result.forEach((post: {category: string}) => {
+      if (post.category) {
+        categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
+      }
+    });
+    
+    // 結果をフォーマット
+    return Object.entries(categoryCount).map(([category, count]) => ({
+      category,
+      count
+    }));
+  } catch (error) {
+    console.error('Failed to fetch blog category stats:', error);
+    return [];
+  }
+}
+
+// スラッグの重複チェック
+export async function checkSlugExists(slug: string, excludeId?: string): Promise<boolean> {
+  const query = excludeId 
+    ? `*[_type == "blogPost" && slug.current == $slug && _id != $excludeId]`
+    : `*[_type == "blogPost" && slug.current == $slug]`;
+  
+  const results = await client.fetch(query, { slug, excludeId });
+  return results.length > 0;
+}
+
+// 重複しないスラッグを生成
+export async function generateUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (await checkSlugExists(slug, excludeId)) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+  
+  return slug;
+}
+
 // FAQ queries
 export async function getFAQs(): Promise<FAQ[]> {
   return await client.fetch(`
@@ -215,6 +370,74 @@ export async function getFAQs(): Promise<FAQ[]> {
       question,
       answer,
       category
+    }
+  `)
+}
+
+// Moss Species queries with pagination and caching
+export async function getMossSpecies(limit = 20, offset = 0): Promise<MossSpecies[]> {
+  return await client.fetch(`
+    *[_type == "mossSpecies" && isVisible == true] | order(sortOrder asc, publishedAt desc) [$start...$end] {
+      _id,
+      name,
+      commonNames,
+      slug,
+      description,
+      images,
+      characteristics,
+      basicInfo,
+      supplementaryInfo,
+      practicalAdvice,
+      // 古いフィールドも互換性のために取得
+      terrariumSuitability,
+      hokkaidoInfo,
+      practicalInfo,
+      category,
+      tags,
+      featured,
+      publishedAt
+    }
+  `, { start: offset, end: offset + limit - 1 }, {
+    cache: 'force-cache',
+    next: { revalidate: 1800 } // 30分間キャッシュ
+  })
+}
+
+export async function getMossSpeciesBySlug(slug: string): Promise<MossSpecies | null> {
+  return await client.fetch(`
+    *[_type == "mossSpecies" && slug.current == $slug && isVisible == true][0] {
+      _id,
+      name,
+      commonNames,
+      slug,
+      description,
+      images,
+      characteristics,
+      basicInfo,
+      supplementaryInfo,
+      practicalAdvice,
+      // 古いフィールドも互換性のために取得
+      terrariumSuitability,
+      hokkaidoInfo,
+      practicalInfo,
+      category,
+      tags,
+      featured,
+      publishedAt
+    }
+  `, { slug })
+}
+
+export async function getFeaturedMossSpecies(): Promise<MossSpecies[]> {
+  return await client.fetch(`
+    *[_type == "mossSpecies" && isVisible == true && featured == true] | order(sortOrder asc, publishedAt desc) {
+      _id,
+      name,
+      slug,
+      images,
+      characteristics,
+      category,
+      featured
     }
   `)
 }

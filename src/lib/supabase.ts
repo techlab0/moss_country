@@ -49,7 +49,7 @@ export interface AuditLog {
 
 // ユーザー管理関数
 export async function createUserInDB(userData: Omit<AdminUser, 'id' | 'created_at' | 'updated_at'>) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('admin_users')
     .insert([{
       ...userData,
@@ -101,7 +101,7 @@ export async function updateUserInDB(id: string, updates: Partial<AdminUser>) {
 }
 
 export async function getAllUsersFromDB(): Promise<AdminUser[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('admin_users')
     .select('*')
     .order('created_at', { ascending: false })

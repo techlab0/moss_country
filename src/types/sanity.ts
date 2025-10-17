@@ -128,3 +128,48 @@ export interface SanitySlug {
   _type: 'slug'
   current: string
 }
+
+export interface MossSpecies {
+  _id: string
+  _type: 'mossSpecies'
+  name: string
+  commonNames?: string[]
+  slug: SanitySlug
+  description: Array<{
+    _type: string
+    [key: string]: unknown
+  }> // Portable Text
+  images: (SanityImage & {
+    caption?: string
+  })[]
+  characteristics: {
+    beginnerFriendly: 1 | 2 | 3 | 4 | 5
+    waterRequirement: 'low' | 'medium' | 'high'
+    lightRequirement: 'weak' | 'medium' | 'strong'
+    temperatureAdaptability: 'cold' | 'temperate' | 'warm'
+    growthSpeed: 'slow' | 'normal' | 'fast'
+  }
+  basicInfo?: {
+    habitat?: string
+    appearance?: string
+    characteristics?: string
+  }
+  supplementaryInfo?: {
+    distribution?: string
+    collectionSeason?: ('spring' | 'summer' | 'autumn' | 'winter')[]
+    winterCare?: string
+    additionalNotes?: string
+  }
+  practicalAdvice?: {
+    workshopUsage: boolean
+    difficultyPoints?: string[]
+    successTips?: string[]
+    careInstructions?: string
+  }
+  category: 'moss' | 'liverwort' | 'hornwort'
+  tags?: string[]
+  featured: boolean
+  publishedAt: string
+  isVisible: boolean
+  sortOrder?: number
+}

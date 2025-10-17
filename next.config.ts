@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   trailingSlash: false,
-  output: 'standalone',
   compress: true, // gzip圧縮
   poweredByHeader: false, // セキュリティのためX-Powered-Byヘッダーを非表示
   experimental: {
@@ -37,6 +36,9 @@ const nextConfig: NextConfig = {
         crypto: false,
       };
     }
+
+    // 動的インポートによりSupabaseエラーは回避されるため、extern設定は不要
+
     return config;
   },
   turbopack: {

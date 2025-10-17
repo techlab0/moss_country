@@ -103,3 +103,8 @@ export async function createTwoFactorVerifiedToken(userId: string, email: string
 
 // JWTトークンを検証 (verifyJWT alias)
 export const verifyJWT = verifyAdminToken;
+
+// 管理者セッションを検証する関数（APIルート用）
+export async function verifyAdminSession(request: NextRequest): Promise<AdminSession | null> {
+  return await getAdminSessionFromRequest(request);
+}

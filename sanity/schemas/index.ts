@@ -5,6 +5,7 @@ import { simpleWorkshop } from './simpleWorkshop'
 import inventoryLog from './inventoryLog'
 import { order } from './order'
 import { inventory } from './inventory'
+import { mossSpecies } from './mossSpecies'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -14,4 +15,5 @@ export const schemaTypes = [
   inventoryLog,
   order,
   inventory,
+  mossSpecies,
 ]

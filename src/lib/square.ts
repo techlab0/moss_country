@@ -162,15 +162,43 @@ export async function getOrder(orderId: string) {
  * Verify webhook signature for security
  */
 export function verifyWebhookSignature(
-  _payload: string,
-  signature: string
+  payload: string,
+  signature: string,
+  url?: string
 ): boolean {
   try {
-    // Square webhook signature verification would go here
-    // For now, we'll implement a basic check
-    return signature && signature.length > 0
+    const webhookSignatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY
+    
+    if (!webhookSignatureKey) {
+      console.error('🚨 SQUARE_WEBHOOK_SIGNATURE_KEY is not set')
+      return false
+    }
+    
+    if (!signature) {
+      console.error('🚨 No signature provided in webhook')
+      return false
+    }
+    
+    // Square webhook signature verification
+    // https://developer.squareup.com/docs/webhooks/step3verify
+    const crypto = require('crypto')
+    
+    // Concatenate url + body for Square's signature verification
+    const stringToSign = (url || '') + payload
+    
+    // Create HMAC-SHA256 signature
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSignatureKey)
+      .update(stringToSign, 'utf8')
+      .digest('base64')
+    
+    // Secure comparison to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, 'base64'),
+      Buffer.from(expectedSignature, 'base64')
+    )
   } catch (error) {
-    console.error('Error verifying webhook signature:', error)
+    console.error('🚨 Webhook signature verification failed:', error)
     return false
   }
 }

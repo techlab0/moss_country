@@ -1,4 +1,21 @@
-import { logAuditEventToDB, getAuditLogsFromDB, AuditLog as DBAuditLog } from './supabase';
+// Supabase関数を動的インポート用
+async function getSupabaseAuditFunctions() {
+  const USE_DATABASE = process.env.USE_SUPABASE === 'true';
+  if (!USE_DATABASE) {
+    console.log('USE_SUPABASE is false, skipping Supabase import');
+    return null;
+  }
+  try {
+    const supabaseModule = await import('./supabase');
+    return {
+      logAuditEventToDB: supabaseModule.logAuditEventToDB,
+      getAuditLogsFromDB: supabaseModule.getAuditLogsFromDB
+    };
+  } catch (error) {
+    console.warn('Supabase監査ログモジュールの読み込みに失敗:', error);
+    return null;
+  }
+}
 
 export interface AuditLog {
   id: string;
@@ -39,6 +56,21 @@ export type AuditAction =
 
 // メモリベースの監査ログストレージ
 let auditLogs: AuditLog[] = [];
+
+// DB用監査ログ型定義（動的インポート用）
+interface DBAuditLog {
+  id: string;
+  user_id: string;
+  user_email: string;
+  action: string;
+  category: string;
+  details: Record<string, any>;
+  resource_id?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  created_at: Date;
+}
 
 // DB用監査ログ型変換
 function convertDBAuditLogToAuditLog(dbLog: DBAuditLog): AuditLog {
@@ -86,18 +118,21 @@ export async function logAuditEvent(
   };
 
   if (USE_DATABASE) {
-    try {
-      await logAuditEventToDB(logData);
-      console.log('🔍 Audit Log (DB):', {
-        action,
-        user: userEmail,
-        resource,
-        severity: logData.severity,
-        details,
-      });
-      return;
-    } catch (error) {
-      console.warn('データベース監査ログ記録に失敗、メモリベースにフォールバック:', error);
+    const supabaseFunctions = await getSupabaseAuditFunctions();
+    if (supabaseFunctions) {
+      try {
+        await supabaseFunctions.logAuditEventToDB(logData);
+        console.log('🔍 Audit Log (DB):', {
+          action,
+          user: userEmail,
+          resource,
+          severity: logData.severity,
+          details,
+        });
+        return;
+      } catch (error) {
+        console.warn('データベース監査ログ記録に失敗、メモリベースにフォールバック:', error);
+      }
     }
   }
 
@@ -183,19 +218,36 @@ export async function getAuditLogs(options: {
   limit?: number;
   offset?: number;
   userId?: string;
+  userEmail?: string;
   action?: AuditAction;
   severity?: AuditLog['severity'];
+  startDate?: string;
+  endDate?: string;
   dateFrom?: Date;
   dateTo?: Date;
+  ipAddress?: string;
+  resource?: string;
+  searchText?: string;
+  sortBy?: 'timestamp' | 'action' | 'severity' | 'userEmail';
+  sortOrder?: 'asc' | 'desc';
 } = {}): Promise<AuditLog[]> {
+  // 日付文字列をDateオブジェクトに変換
+  const dateFrom = options.startDate ? new Date(options.startDate) : options.dateFrom;
+  const dateTo = options.endDate ? new Date(options.endDate) : options.dateTo;
+
   if (USE_DATABASE) {
-    try {
-      const dbLogs = await getAuditLogsFromDB(options.limit, options.offset);
-      let filtered = dbLogs.map(convertDBAuditLogToAuditLog);
+    const supabaseFunctions = await getSupabaseAuditFunctions();
+    if (supabaseFunctions) {
+      try {
+        const dbLogs = await supabaseFunctions.getAuditLogsFromDB(options.limit, options.offset);
+        let filtered = dbLogs.map(convertDBAuditLogToAuditLog);
 
       // フィルタリング（データベースクエリでやらなかった分）
       if (options.userId) {
         filtered = filtered.filter(log => log.userId === options.userId);
+      }
+      if (options.userEmail) {
+        filtered = filtered.filter(log => log.userEmail.toLowerCase().includes(options.userEmail!.toLowerCase()));
       }
       if (options.action) {
         filtered = filtered.filter(log => log.action === options.action);
@@ -203,16 +255,67 @@ export async function getAuditLogs(options: {
       if (options.severity) {
         filtered = filtered.filter(log => log.severity === options.severity);
       }
-      if (options.dateFrom) {
-        filtered = filtered.filter(log => log.timestamp >= options.dateFrom!);
+      if (dateFrom) {
+        filtered = filtered.filter(log => log.timestamp >= dateFrom!);
       }
-      if (options.dateTo) {
-        filtered = filtered.filter(log => log.timestamp <= options.dateTo!);
+      if (dateTo) {
+        filtered = filtered.filter(log => log.timestamp <= dateTo!);
+      }
+      if (options.ipAddress) {
+        filtered = filtered.filter(log => log.ipAddress && log.ipAddress.includes(options.ipAddress!));
+      }
+      if (options.resource) {
+        filtered = filtered.filter(log => log.resource.toLowerCase().includes(options.resource!.toLowerCase()));
+      }
+      if (options.searchText) {
+        const searchLower = options.searchText.toLowerCase();
+        filtered = filtered.filter(log => 
+          log.userEmail.toLowerCase().includes(searchLower) ||
+          log.action.toLowerCase().includes(searchLower) ||
+          log.resource.toLowerCase().includes(searchLower) ||
+          JSON.stringify(log.details).toLowerCase().includes(searchLower)
+        );
       }
 
-      return filtered;
-    } catch (error) {
-      console.warn('データベース監査ログ取得に失敗、メモリベースにフォールバック:', error);
+      // ソート
+      const sortBy = options.sortBy || 'timestamp';
+      const sortOrder = options.sortOrder || 'desc';
+      filtered.sort((a, b) => {
+        let aVal, bVal;
+        switch (sortBy) {
+          case 'timestamp':
+            aVal = a.timestamp.getTime();
+            bVal = b.timestamp.getTime();
+            break;
+          case 'action':
+            aVal = a.action;
+            bVal = b.action;
+            break;
+          case 'severity':
+            const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+            aVal = severityOrder[a.severity];
+            bVal = severityOrder[b.severity];
+            break;
+          case 'userEmail':
+            aVal = a.userEmail;
+            bVal = b.userEmail;
+            break;
+          default:
+            aVal = a.timestamp.getTime();
+            bVal = b.timestamp.getTime();
+        }
+
+        if (sortOrder === 'asc') {
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        } else {
+          return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+        }
+      });
+
+        return filtered;
+      } catch (error) {
+        console.warn('データベース監査ログ取得に失敗、メモリベースにフォールバック:', error);
+      }
     }
   }
 
@@ -222,18 +325,71 @@ export async function getAuditLogs(options: {
   if (options.userId) {
     filtered = filtered.filter(log => log.userId === options.userId);
   }
+  if (options.userEmail) {
+    filtered = filtered.filter(log => log.userEmail.toLowerCase().includes(options.userEmail!.toLowerCase()));
+  }
   if (options.action) {
     filtered = filtered.filter(log => log.action === options.action);
   }
   if (options.severity) {
     filtered = filtered.filter(log => log.severity === options.severity);
   }
-  if (options.dateFrom) {
-    filtered = filtered.filter(log => log.timestamp >= options.dateFrom!);
+  if (dateFrom) {
+    filtered = filtered.filter(log => log.timestamp >= dateFrom!);
   }
-  if (options.dateTo) {
-    filtered = filtered.filter(log => log.timestamp <= options.dateTo!);
+  if (dateTo) {
+    filtered = filtered.filter(log => log.timestamp <= dateTo!);
   }
+  if (options.ipAddress) {
+    filtered = filtered.filter(log => log.ipAddress && log.ipAddress.includes(options.ipAddress!));
+  }
+  if (options.resource) {
+    filtered = filtered.filter(log => log.resource.toLowerCase().includes(options.resource!.toLowerCase()));
+  }
+  if (options.searchText) {
+    const searchLower = options.searchText.toLowerCase();
+    filtered = filtered.filter(log => 
+      log.userEmail.toLowerCase().includes(searchLower) ||
+      log.action.toLowerCase().includes(searchLower) ||
+      log.resource.toLowerCase().includes(searchLower) ||
+      JSON.stringify(log.details).toLowerCase().includes(searchLower)
+    );
+  }
+
+  // ソート
+  const sortBy = options.sortBy || 'timestamp';
+  const sortOrder = options.sortOrder || 'desc';
+  filtered.sort((a, b) => {
+    let aVal, bVal;
+    switch (sortBy) {
+      case 'timestamp':
+        aVal = a.timestamp.getTime();
+        bVal = b.timestamp.getTime();
+        break;
+      case 'action':
+        aVal = a.action;
+        bVal = b.action;
+        break;
+      case 'severity':
+        const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+        aVal = severityOrder[a.severity];
+        bVal = severityOrder[b.severity];
+        break;
+      case 'userEmail':
+        aVal = a.userEmail;
+        bVal = b.userEmail;
+        break;
+      default:
+        aVal = a.timestamp.getTime();
+        bVal = b.timestamp.getTime();
+    }
+
+    if (sortOrder === 'asc') {
+      return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    } else {
+      return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+    }
+  });
 
   const offset = options.offset || 0;
   const limit = options.limit || 50;
@@ -294,11 +450,16 @@ export async function getAuditLogStats(): Promise<{
   let logs: AuditLog[] = [];
 
   if (USE_DATABASE) {
-    try {
-      const dbLogs = await getAuditLogsFromDB(1000, 0); // 統計用に多めに取得
-      logs = dbLogs.map(convertDBAuditLogToAuditLog);
-    } catch (error) {
-      console.warn('データベース監査ログ統計取得に失敗、メモリベースにフォールバック:', error);
+    const supabaseFunctions = await getSupabaseAuditFunctions();
+    if (supabaseFunctions) {
+      try {
+        const dbLogs = await supabaseFunctions.getAuditLogsFromDB(1000, 0); // 統計用に多めに取得
+        logs = dbLogs.map(convertDBAuditLogToAuditLog);
+      } catch (error) {
+        console.warn('データベース監査ログ統計取得に失敗、メモリベースにフォールバック:', error);
+        logs = auditLogs;
+      }
+    } else {
       logs = auditLogs;
     }
   } else {
@@ -390,11 +551,16 @@ export async function detectSecurityAlerts(): Promise<{
   let logs: AuditLog[] = [];
 
   if (USE_DATABASE) {
-    try {
-      const dbLogs = await getAuditLogsFromDB(500, 0); // 最近のログを取得
-      logs = dbLogs.map(convertDBAuditLogToAuditLog);
-    } catch (error) {
-      console.warn('データベースセキュリティアラート検出に失敗、メモリベースにフォールバック:', error);
+    const supabaseFunctions = await getSupabaseAuditFunctions();
+    if (supabaseFunctions) {
+      try {
+        const dbLogs = await supabaseFunctions.getAuditLogsFromDB(500, 0); // 最近のログを取得
+        logs = dbLogs.map(convertDBAuditLogToAuditLog);
+      } catch (error) {
+        console.warn('データベースセキュリティアラート検出に失敗、メモリベースにフォールバック:', error);
+        logs = auditLogs;
+      }
+    } else {
       logs = auditLogs;
     }
   } else {
