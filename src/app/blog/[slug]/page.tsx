@@ -31,13 +31,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       }}
     >
       <Container>
-        <div className="mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 inline-block">
-            <Link href="/blog" className="text-moss-green hover:underline font-medium">
-              ← ブログ一覧に戻る
-            </Link>
-          </div>
-        </div>
 
         <article className="max-w-4xl mx-auto">
           <header className="mb-8">
@@ -119,7 +112,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
 
           {post.tags && post.tags.length > 0 && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">
               <h3 className="text-lg font-semibold mb-3">タグ</h3>
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag, index) => (
@@ -130,6 +123,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </div>
             </div>
           )}
+
+          {/* ブログ一覧に戻るボタン */}
+          <div className="text-center">
+            <Link 
+              href="/blog" 
+              className="inline-flex items-center px-6 py-3 bg-moss-green text-white font-medium rounded-lg hover:bg-moss-green/90 transition-colors shadow-lg"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              ブログ一覧に戻る
+            </Link>
+          </div>
         </article>
       </Container>
     </div>
