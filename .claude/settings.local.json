@@ -28,7 +28,8 @@
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
       "Bash(npx prettier:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

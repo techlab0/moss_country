@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
 import { client } from '@/lib/sanity'
-import { sendOrderConfirmationEmail } from '@/lib/email'
+// 注文確認メールはSquare側のレシート機能を使用するため、EmailJSは不要
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -189,21 +189,8 @@ async function processSuccessfulPayment(order: { _id: string; orderNumber: strin
     // Convert reserved inventory to actual reduction
     await finalizeInventoryReduction(order.items)
 
-    // Send confirmation email
-    try {
-      await sendOrderConfirmationEmail({
-        orderNumber: order.orderNumber,
-        customer: order.customer,
-        items: order.items,
-        total: order.total,
-        paymentId: payment.id,
-        receiptUrl: payment.receiptUrl,
-      })
-      console.log(`Sent confirmation email for order ${order.orderNumber}`)
-    } catch (emailError) {
-      console.error(`Failed to send confirmation email for order ${order.orderNumber}:`, emailError)
-      // Don't throw - email failure shouldn't break the payment process
-    }
+    // 注文確認メールはSquareの自動レシート送信機能を使用
+    console.log(`Payment processed for order ${order.orderNumber}. Customer will receive Square receipt automatically.`)
 
     console.log(`Successfully processed payment for order ${order.orderNumber}`)
 

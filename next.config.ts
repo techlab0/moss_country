@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
     scrollRestoration: true,
   },
   webpack: (config, { isServer }) => {
-    // SendGridをサーバーサイドでのみ使用
+    // クライアントサイドでnode.jsモジュールのフォールバック設定
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -36,8 +36,6 @@ const nextConfig: NextConfig = {
         crypto: false,
       };
     }
-
-    // 動的インポートによりSupabaseエラーは回避されるため、extern設定は不要
 
     return config;
   },

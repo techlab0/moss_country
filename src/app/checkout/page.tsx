@@ -502,44 +502,10 @@ export default function CheckoutPage() {
     // 実際の実装では、APIに注文データを送信
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // SendGridを使用してメール送信
-    await sendOrderConfirmationEmails(orderData);
+    // 注文確認メールはSquareの自動レシート機能を使用
     
     console.log('Order processed:', orderData);
   };
-
-  // メール送信処理（API経由）
-  const sendOrderConfirmationEmails = async (orderData: { customer: object; items: object; pricing: object; paymentMethod: object; shippingAddress: object }) => {
-    try {
-      // API経由でメール送信（サーバーサイド処理）
-      const response = await fetch('/api/email/order-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customer: orderData.customer,
-          items: orderData.items,
-          pricing: orderData.pricing,
-          paymentMethod: orderData.paymentMethod,
-          shippingAddress: orderData.shippingAddress
-        })
-      });
-
-      if (response.ok) {
-        console.log('✅ 注文確認メール送信成功');
-      } else {
-        console.warn('⚠️ メール送信失敗');
-      }
-    } catch (error) {
-      console.error('メール送信エラー:', error);
-      // メール送信エラーでも注文処理は継続
-    }
-  };
-
-
-
-
   // 注文完了画面
   if (orderComplete) {
     return (

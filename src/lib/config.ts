@@ -16,7 +16,9 @@ export function validateProductionConfig(): {
 
   const optionalVariables = [
     'SANITY_API_TOKEN',
-    'SENDGRID_API_KEY', 
+    'NEXT_PUBLIC_EMAILJS_SERVICE_ID',
+    'NEXT_PUBLIC_EMAILJS_TEMPLATE_ID', 
+    'NEXT_PUBLIC_EMAILJS_PUBLIC_KEY',
     'NEXT_PUBLIC_SQUARE_APPLICATION_ID',
     'SQUARE_ACCESS_TOKEN',
     'SUPABASE_SERVICE_ROLE_KEY',
@@ -83,10 +85,16 @@ export const squareConfig = {
   ),
 };
 
-// SendGrid設定（メール送信）
-export const sendGridConfig = {
-  apiKey: process.env.SENDGRID_API_KEY,
-  isConfigured: !!process.env.SENDGRID_API_KEY,
+// EmailJS設定（お問い合わせフォーム）
+export const emailJSConfig = {
+  serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
+  templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
+  publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY,
+  isConfigured: !!(
+    process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID &&
+    process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID &&
+    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
+  ),
 };
 
 // サイト設定
