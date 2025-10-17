@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { CircularCarousel } from '@/components/ui/CircularCarousel';
+import { LatestNews } from '@/components/sections/LatestNews';
 
 export default function Home() {
   return (
@@ -96,6 +97,9 @@ export default function Home() {
         </Container>
       </section>
 
+      {/* 新着情報 */}
+      <LatestNews />
+
       {/* 商品カテゴリー概要 - 円形カルーセル */}
       <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
         {/* Section Overlay */}
@@ -107,9 +111,9 @@ export default function Home() {
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-white mb-8 sm:mb-12 leading-tight">
-              あなたにぴったりの
-              <br className="sm:hidden" />
-              <span className="text-emerald-400 font-bold">テラリウムを見つけよう</span>
+              <span className="text-emerald-400 font-bold">MOSS COUNTRY's</span>
+              <br />
+              Terrarium
             </h2>
             <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
           </AnimatedSection>
@@ -118,43 +122,38 @@ export default function Home() {
             items={[
               {
                 id: '1',
-                title: '初心者向けテラリウム',
-                description: 'テラリウム初心者の方でも安心して始められる、お手入れ簡単なシリーズです。',
-                image: '/images/products/terrarium-starter.jpg',
-                category: 'Beginner',
-                price: '¥3,500〜'
+                title: 'ミニボトル苔テラリウム',
+                description: 'コンパクトで可愛らしい手のひらサイズ。オフィスデスクやベッドサイドにぴったり。',
+                image: '/images/products/moss-country_products_bottle.png',
+                category: 'Mini Bottle'
               },
               {
                 id: '2',
-                title: 'プレミアムテラリウム',
-                description: '厳選された素材と高度な技術で作られた、特別な日にふさわしいテラリウムです。',
-                image: '/images/products/terrarium-premium.jpg',
-                category: 'Premium',
-                price: '¥12,000〜'
+                title: 'グラス苔テラリウム',
+                description: '透明感と存在感を兼ね備えた上質なガラス容器。リビングの主役として。',
+                image: '/images/products/moss-country_products_glass.png',
+                category: 'Glass'
               },
               {
                 id: '3',
-                title: 'ワークショップ体験',
-                description: 'プロの指導のもと、自分だけのオリジナルテラリウムを作る体験ができます。',
-                image: '/images/workshop/basic-course.jpg',
-                category: 'Workshop',
-                price: '¥8,000〜'
+                title: '苔玉（こけだま）',
+                description: '日本の伝統美と現代のライフスタイルを融合。和洋問わずどんな空間にも。',
+                image: '/images/products/moss-country_products_mossball.png',
+                category: 'Kokedama'
               },
               {
                 id: '4',
-                title: 'カスタムオーダー',
-                description: 'お客様のご要望に合わせて、完全オリジナルのテラリウムを制作いたします。',
-                image: '/images/products/terrarium-custom.jpg',
-                category: 'Custom',
-                price: '¥20,000〜'
+                title: '大型テラリウム',
+                description: 'MOSS COUNTRY自慢の特大サイズ。存在感抜群でお店やオフィスのシンボルに。',
+                image: '/images/products/moss-country_products_big.png',
+                category: 'Large'
               },
               {
                 id: '5',
-                title: 'ギフトセット',
-                description: '大切な方への贈り物として、特別にパッケージされたテラリウムセットです。',
-                image: '/images/products/terrarium-gift.jpg',
-                category: 'Gift',
-                price: '¥6,000〜'
+                title: 'ワークショップ体験',
+                description: '職人による本格指導で自分だけのオリジナル作品を。初心者も安心の充実サポート。',
+                image: '/images/workshop/mosscountry_workshop.png',
+                category: 'Experience'
               }
             ]}
           />
@@ -263,7 +262,7 @@ export default function Home() {
                   size="lg" 
                   className="px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                 >
-                  店舗を訪れる
+                  アクセス
                 </Button>
               </a>
             </div>

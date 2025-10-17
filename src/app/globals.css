@@ -64,7 +64,8 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-body::before {
+/* 管理画面以外に背景画像を適用 */
+body:not(.admin-layout)::before {
   content: '';
   position: fixed;
   top: 0;
@@ -79,7 +80,8 @@ body::before {
   z-index: -2;
 }
 
-body::after {
+/* 管理画面以外にオーバーレイを適用 */
+body:not(.admin-layout)::after {
   content: '';
   position: fixed;
   top: 0;
@@ -88,6 +90,11 @@ body::after {
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: -1;
+}
+
+/* 管理画面用のクリーンな背景 */
+body.admin-layout {
+  background: #f9fafb;
 }
 
 /* カスタムスタイル */
