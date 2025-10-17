@@ -4,7 +4,14 @@ import { Container } from '@/components/layout/Container'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 
 export default async function FAQPage() {
-  const faqs: FAQ[] = await getFAQs()
+  let faqs: FAQ[] = []
+  
+  try {
+    faqs = await getFAQs()
+  } catch (error) {
+    console.warn('Failed to fetch FAQs:', error)
+    // FAQsの取得に失敗した場合は空配列を使用
+  }
 
   // グループ化されたFAQ
   const groupedFAQs = faqs.reduce((acc, faq) => {
