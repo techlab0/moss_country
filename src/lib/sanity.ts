@@ -118,22 +118,17 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
       }
     );
     
-    // Sanityにデータがない場合はモックデータを返す
+    // 本番環境ではSanityデータのみを返す
     if (!products || products.length === 0) {
-      console.log('No Sanity products found, using mock data');
-      const { mockProducts } = await import('./mockProducts');
-      return mockProducts;
+      console.log('No Sanity products found');
+      return [];
     }
     
     console.log(`Found ${products.length} products from Sanity:`, products.map((p: { name: string }) => p.name));
-    
-    // Sanityデータにモックデータを追加
-    const { mockProducts } = await import('./mockProducts');
-    return [...products, ...mockProducts];
+    return products;
   } catch (error) {
-    console.warn('Failed to fetch products from Sanity, using mock data:', error);
-    const { mockProducts } = await import('./mockProducts');
-    return mockProducts;
+    console.warn('Failed to fetch products from Sanity:', error);
+    return [];
   }
 }
 
@@ -169,17 +164,10 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       }
     );
     
-    // Sanityにデータがない場合はモックデータから検索
-    if (!product) {
-      const { mockProducts } = await import('./mockProducts');
-      return mockProducts.find(p => p.slug.current === slug) || null;
-    }
-    
     return product;
   } catch (error) {
-    console.warn('Failed to fetch product from Sanity, checking mock data:', error);
-    const { mockProducts } = await import('./mockProducts');
-    return mockProducts.find(p => p.slug.current === slug) || null;
+    console.warn('Failed to fetch product from Sanity:', error);
+    return null;
   }
 }
 
