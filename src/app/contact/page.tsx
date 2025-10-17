@@ -4,28 +4,26 @@ import React, { useState } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import emailjs from '@emailjs/browser';
 
 const contactMethods = [
   {
     title: '電話でのお問い合わせ',
     description: 'お急ぎの方はお電話でお気軽にお問い合わせください',
     info: '080-3605-6340',
-    hours: '営業時間: 10:00-18:00 / 定休日: 月曜日',
-    icon: '📞',
+    hours: '営業時間: 11:00-20:00 / 不定休（カレンダーをご確認ください）',
   },
   {
     title: 'メールでのお問い合わせ',
     description: '詳しいご相談やお見積りはメールでも承ります',
     info: 'moss.country.kokenokuni@gmail.com',
-    hours: '通常24時間以内にご返信いたします',
-    icon: '✉️',
+    hours: '通常3営業日以内にご返信いたします',
   },
   {
     title: '店舗でのご相談',
     description: '実際に商品を見ながらご相談いただけます',
-    info: '札幌市中央区大通西5丁目8番地',
+    info: '札幌市西区発寒11条4丁目3-1',
     hours: '予約優先（当日来店も歓迎）',
-    icon: '🏪',
   },
 ];
 
@@ -65,22 +63,58 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitMessage('');
     
-    // フォーム送信のシミュレーション
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setSubmitMessage('お問い合わせありがとうございます。24時間以内にご返信させていただきます。');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        inquiryType: '',
-        subject: '',
-        message: '',
-        agreement: false,
+      // まずSupabaseデータベースに保存
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // EmailJSでメール送信
+        try {
+          await emailjs.send(
+            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+            {
+              from_name: formData.name,
+              from_email: formData.email,
+              phone: formData.phone || '未記入',
+              inquiry_type: formData.inquiryType,
+              subject: formData.subject,
+              message: formData.message,
+              to_email: 'moss.country.kokenokuni@gmail.com',
+            },
+            process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+          );
+          
+          setSubmitMessage('お問い合わせありがとうございます。24時間以内にご返信させていただきます。');
+        } catch (emailError) {
+          console.error('EmailJS送信エラー:', emailError);
+          setSubmitMessage('お問い合わせを受け付けました。メール通知の送信に失敗しましたが、お問い合わせ内容は正常に保存されました。24時間以内にご返信させていただきます。');
+        }
+        
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          inquiryType: '',
+          subject: '',
+          message: '',
+          agreement: false,
+        });
+      } else {
+        setSubmitMessage(result.message || '送信中にエラーが発生しました。お手数ですが、お電話でお問い合わせください。');
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Contact form submission error:', error);
       setSubmitMessage('送信中にエラーが発生しました。お手数ですが、お電話でお問い合わせください。');
     } finally {
       setIsSubmitting(false);
@@ -91,7 +125,7 @@ export default function ContactPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/hero/main-hero.jpg)',
+        backgroundImage: 'url(/images/store/exterior.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -113,7 +147,7 @@ export default function ContactPage() {
 
       {/* Contact Methods */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/hero/main-hero.jpg)',
+        backgroundImage: 'url(/images/store/exterior.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -130,29 +164,49 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {contactMethods.map((method, index) => (
-              <Card key={index} className="text-center hover:transform hover:scale-105 transition-all duration-300">
-                <CardHeader>
-                  <div className="text-4xl mb-4">{method.icon}</div>
-                  <h3 className="text-xl font-semibold text-moss-green mb-2">{method.title}</h3>
-                  <p className="text-gray-600 mb-4">{method.description}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-light-blue p-4 rounded-lg mb-4">
-                    <p className="font-semibold text-moss-green text-lg">{method.info}</p>
-                    <p className="text-sm text-gray-600 mt-2">{method.hours}</p>
+          <div className="mb-16">
+            {/* 電話とメールを横並び */}
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              {contactMethods.slice(0, 2).map((method, index) => (
+                <Card key={index} className="text-center hover:transform hover:scale-105 transition-all duration-300">
+                  <CardHeader>
+                    <h3 className="text-xl font-semibold text-moss-green mb-2">{method.title}</h3>
+                    <p className="text-gray-600 mb-4">{method.description}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-light-blue p-4 rounded-lg mb-4">
+                      <p className="font-semibold text-moss-green text-lg break-all">{method.info}</p>
+                      <p className="text-sm text-gray-600 mt-2">{method.hours}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {/* 店舗での相談を下に配置 */}
+            <div className="w-full">
+              <Card className="hover:transform hover:scale-105 transition-all duration-300">
+                <div className="grid md:grid-cols-2 gap-8 items-center p-6">
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-moss-green mb-2">{contactMethods[2].title}</h3>
+                    <p className="text-gray-600">{contactMethods[2].description}</p>
                   </div>
-                </CardContent>
+                  <div className="text-center">
+                    <div className="bg-light-blue p-4 rounded-lg">
+                      <p className="font-semibold text-moss-green text-lg">{contactMethods[2].info}</p>
+                      <p className="text-sm text-gray-600 mt-2">{contactMethods[2].hours}</p>
+                    </div>
+                  </div>
+                </div>
               </Card>
-            ))}
+            </div>
           </div>
         </Container>
       </section>
 
       {/* Contact Form */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/hero/main-hero.jpg)',
+        backgroundImage: 'url(/images/store/exterior.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -276,6 +330,7 @@ export default function ContactPage() {
                   <div>
                     <label htmlFor="message" className="block text-sm font-medium text-moss-green mb-2">
                       お問い合わせ内容 <span className="text-red-500">*</span>
+                      <span className="text-sm text-gray-500 ml-2">({formData.message.length}/1000文字)</span>
                     </label>
                     <textarea
                       id="message"
@@ -284,13 +339,14 @@ export default function ContactPage() {
                       onChange={handleInputChange}
                       required
                       rows={6}
+                      maxLength={1000}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green resize-vertical"
-                      placeholder="詳しいお問い合わせ内容をお書きください"
+                      placeholder="詳しいお問い合わせ内容をお書きください（1000文字以内）"
                     />
                   </div>
 
                   {/* Agreement */}
-                  <div className="flex items-start">
+                  <div className="flex items-center">
                     <input
                       type="checkbox"
                       id="agreement"
@@ -298,7 +354,7 @@ export default function ContactPage() {
                       checked={formData.agreement}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 mr-3 w-4 h-4 text-moss-green border-gray-300 rounded focus:ring-moss-green"
+                      className="mr-3 w-4 h-4 text-moss-green border-gray-300 rounded focus:ring-moss-green flex-shrink-0"
                     />
                     <label htmlFor="agreement" className="text-sm text-gray-700">
                       <span className="text-red-500">*</span>
@@ -380,12 +436,9 @@ export default function ContactPage() {
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700">
               他にもご質問がございましたら、お気軽にお問い合わせください。
             </p>
-            <Button variant="primary">
-              さらに詳しいFAQを見る
-            </Button>
           </div>
         </Container>
       </section>

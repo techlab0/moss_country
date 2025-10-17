@@ -9,24 +9,20 @@ import type { Product } from '@/types/sanity';
 
 const categories = [
   {
-    name: '初心者向け',
-    description: 'テラリウムが初めての方にも安心',
-    count: '12種類',
+    name: '小瓶入り苔テラリウム',
+    description: '手のひらサイズの可愛らしいテラリウム',
   },
   {
-    name: 'プレミアム',
-    description: '特別な日にふさわしい高級品',
-    count: '8種類',
+    name: 'グラス入り苔テラリウム',
+    description: '透明感が美しい上質なガラス容器',
   },
   {
-    name: 'カスタム',
-    description: 'あなただけの特別なテラリウム',
-    count: '無限∞',
+    name: '苔玉',
+    description: '日本の伝統美を現代に活かした作品',
   },
   {
-    name: 'ギフト',
-    description: '大切な人への贈り物に',
-    count: '6種類',
+    name: '大型苔テラリウム',
+    description: 'インパクトある存在感の特別な空間',
   },
 ];
 
@@ -53,7 +49,7 @@ export default async function ProductsPage() {
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-moss-green mb-6">
-              職人が手がける、世界に一つだけのテラリウム
+              <span className="text-emerald-600">MOSS COUNTRY</span>の<br />テラリウムコレクション
             </h1>
             <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
             <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
@@ -75,47 +71,45 @@ export default async function ProductsPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                商品カテゴリー
+                商品例
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, index) => (
-              <Card key={index} className="text-center glass-card-dark">
-                <CardHeader>
-                  <div className="w-16 h-16 bg-amber-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {category.name === '初心者向け' && (
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                    )}
-                    {category.name === 'プレミアム' && (
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                      </svg>
-                    )}
-                    {category.name === 'カスタム' && (
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    )}
-                    {category.name === 'ギフト' && (
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                      </svg>
-                    )}
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
-                  <p className="text-gray-100 font-medium text-base">{category.description}</p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-amber-100 font-bold text-lg">{category.count}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {categories.map((category, index) => {
+              const getImageSrc = () => {
+                switch(category.name) {
+                  case '小瓶入り苔テラリウム':
+                    return '/images/products/moss-country_products_bottle.png';
+                  case 'グラス入り苔テラリウム':
+                    return '/images/products/moss-country_products_glass.png';
+                  case '苔玉':
+                    return '/images/products/moss-country_products_mossball.png';
+                  case '大型苔テラリウム':
+                    return '/images/products/moss-country_products_big.png';
+                  default:
+                    return '/images/products/moss-country_products_bottle.png';
+                }
+              };
+              
+              return (
+                <Card key={index} className="text-center glass-card-dark">
+                  <CardHeader>
+                    <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
+                      <img 
+                        src={getImageSrc()} 
+                        alt={category.name} 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
+                    <p className="text-gray-100 font-medium text-base">{category.description}</p>
+                  </CardHeader>
+                </Card>
+              );
+            })}
           </div>
         </Container>
       </section>
@@ -156,57 +150,70 @@ export default async function ProductsPage() {
         {/* Section Overlay */}
         <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
         <Container className="relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="glass-card p-8 rounded-3xl">
-              <h2 className="text-3xl font-bold text-moss-green mb-6">
-                簡単お手入れガイド
-              </h2>
-              <p className="text-lg text-gray-900 mb-6">
-                MOSS COUNTRYのテラリウムは、忙しい方でも簡単にお手入れできるよう設計されています。
-              </p>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <div className="w-8 h-8 bg-moss-green rounded-full flex items-center justify-center mr-3 mt-1">
-                    <span className="text-white text-sm font-bold">1</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-moss-green mb-1">適度な光</h4>
-                    <p className="text-gray-900">直射日光を避け、明るい室内に置いてください</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-8 h-8 bg-moss-green rounded-full flex items-center justify-center mr-3 mt-1">
-                    <span className="text-white text-sm font-bold">2</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-moss-green mb-1">霧吹きで水分補給</h4>
-                    <p className="text-gray-900">週に1-2回、霧吹きで軽く湿らせてください</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-8 h-8 bg-moss-green rounded-full flex items-center justify-center mr-3 mt-1">
-                    <span className="text-white text-sm font-bold">3</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-moss-green mb-1">換気を心がける</h4>
-                    <p className="text-gray-900">時々蓋を開けて新鮮な空気を入れてください</p>
-                  </div>
-                </li>
-              </ul>
-              <div className="mt-8">
-                <Button variant="primary">
-                  詳しいお手入れガイドを見る
-                </Button>
+          <div className="glass-card p-8 rounded-3xl">
+            <h2 className="text-3xl font-bold text-moss-green mb-6 text-center">
+              苔のお手入れ・管理方法
+            </h2>
+            <p className="text-lg text-gray-900 mb-8 text-center">
+              MOSS COUNTRYのテラリウムは、忙しい方でも簡単にお手入れできるよう設計されています。
+            </p>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">置き場所と光</h3>
+                <p className="text-gray-900 mb-3 flex-grow">直射日光は避け、ライトの光またはレース越しの光に当てましょう</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・本が読めるくらいの明るさがあればOK</li>
+                  <li>・強い日差しには弱いので、直射日光は避けてください</li>
+                  <li>・蛍光灯やLEDで生育が可能です</li>
+                </ul>
               </div>
-            </div>
-            <div className="h-96 overflow-hidden rounded-lg">
-              <ImagePlaceholder
-                src="/images/products/care-guide.jpg"
-                alt="テラリウムのお手入れガイド - 霧吹きと手入れ道具"
-                width={800}
-                height={600}
-                className="w-full h-full object-cover"
-              />
+
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">水やり</h3>
+                <p className="text-gray-900 mb-3 flex-grow">基本的には2～3週間に一度、苔と土を湿らせる程度でOK</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・水は葉っぱから吸収するので、苔をしっかり湿らせてください</li>
+                  <li>・土台となる土は常に湿らせるようにしてください</li>
+                  <li>・水は多すぎると苔に悪いので、あげすぎには注意してください</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">空気の入れ替え</h3>
+                <p className="text-gray-900 mb-3 flex-grow">余裕のある時は換気を行いましょう</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・空気がこもっていると苔の徒長の原因にもなるため、できるときは1日に一回数分程度の換気を行いましょう</li>
+                  <li>・換気をすることで湿気のこもりすぎも防止でき、苔も丈夫に育ちやすくなります</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">肥料</h3>
+                <p className="text-gray-900 mb-3 flex-grow">基本的には苔に肥料は使いません</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・苔の色が悪くなった場合などには、薬品を溶かした水を散布します</li>
+                  <li>・季節の変わり目の春や秋は温度変化も大きく、苔への負担も少なからず増している状態ですので、必要であればこの時期に散布をしてみましょう</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">お手入れ</h3>
+                <p className="text-gray-900 mb-3 flex-grow">適度にお手入れして見た目もきれいで清潔に保ちましょう</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・苔も時間が経つにつれて伸びてくるものもありますので、気になってきたらカットして整えましょう</li>
+                  <li>・色の茶色くなった苔はカットして無くすことでカビの予防にもなります</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                <h3 className="text-xl font-bold text-moss-green mb-3">移植</h3>
+                <p className="text-gray-900 mb-3 flex-grow">苔は移植先でも成長しやすいため、容器の交換なども行えます</p>
+                <ul className="text-gray-800 space-y-1 text-sm">
+                  <li>・苔を取り出し傷んでいる部分や茶色くなっている部分は捨てましょう</li>
+                  <li>・新しい容器に土、石、流木などレイアウト物を入れて移し替えることも可能です</li>
+                </ul>
+              </div>
             </div>
           </div>
         </Container>

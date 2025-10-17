@@ -9,7 +9,7 @@ const timeline = [
   {
     year: '2024',
     title: 'テラリウムとの出会い',
-    description: '代表の田中が偶然見つけた小さなテラリウムに心を奪われ、独学で制作技術を学び始める。',
+    description: '代表の立桶が北海道の豊かな自然と苔の魅力に心を奪われ、独自の制作技術を追求し始める。',
   },
   {
     year: '2025',
@@ -30,24 +30,20 @@ const timeline = [
 
 const values = [
   {
-    title: '自然への敬意',
-    description: '自然の美しさと神秘性を大切にし、テラリウムを通じて人と自然をつなぐ架け橋となることを目指しています。',
-    icon: '🌿',
+    title: 'AUTHENTICITY',
+    description: '北海道の自然そのものを表現する、本物の美しさを追求しています。',
   },
   {
-    title: '職人の技',
-    description: '一つひとつの作品に魂を込め、妥協のない品質で、お客様に感動をお届けすることを心がけています。',
-    icon: '🎨',
+    title: 'CRAFTSMANSHIP',
+    description: '一つひとつ手作りで仕上げる、妥協なき職人技術。',
   },
   {
-    title: '持続可能性',
-    description: '環境に配慮した素材選びと製法により、地球にやさしいテラリウムづくりを実践しています。',
-    icon: '🌍',
+    title: 'SUSTAINABILITY',
+    description: '自然への敬意を込めた、持続可能な素材選びと製法。',
   },
   {
-    title: 'コミュニティ',
-    description: 'テラリウムを愛する人々のコミュニティを育み、知識と経験を共有し合える場を提供します。',
-    icon: '🤝',
+    title: 'EXPERIENCE',
+    description: '単なる商品ではなく、心に残る特別な体験を提供。',
   },
 ];
 
@@ -66,17 +62,23 @@ export default function StoryPage() {
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 pointer-events-none" />
       {/* Hero Section */}
-      <section className="py-20 relative">
+      <section 
+        className="py-20 relative min-h-screen flex items-center"
+        style={{
+          backgroundImage: `url('/images/story/mosscountry_story_kv.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-emerald-50/70" />
-        <div className="absolute inset-0 bg-emerald-950/10" />
+        <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-6 drop-shadow-2xl px-4">
               小さな緑に込めた、大きな想い
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+            <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
+            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg">
               MOSS COUNTRYの想い、職人の技術、テラリウムへの情熱。
               私たちがなぜテラリウムを作り続けるのか、その理由をお話しします。
             </p>
@@ -89,21 +91,21 @@ export default function StoryPage() {
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                私たちのミッション
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
+                OUR MISSION
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
             </div>
           </div>
           <div className="max-w-4xl mx-auto">
             <div className="glass-card-dark text-center p-8 rounded-3xl">
-              <blockquote className="text-2xl md:text-3xl text-white italic leading-relaxed mb-8">
-                「小さなガラスの中に広がる自然の世界を通じて、<br />
-                現代人の心に癒しと感動をお届けし、<br />
-                人と自然の新しい関係を築いていく」
+              <blockquote className="text-2xl md:text-3xl text-white font-light leading-relaxed mb-8">
+                「北海道の苔が織りなす小宇宙を、<br />
+                あなたの日常に。」
               </blockquote>
-              <p className="text-lg text-white">
-                これが私たちMOSS COUNTRYの変わらぬ想いです。
+              <p className="text-lg text-white/90 font-light">
+                自然の息づかいを感じられる、唯一無二のテラリウム体験を。<br />
+                代表 立桶が追求する、新しい癒しのかたち。
               </p>
             </div>
           </div>
@@ -115,27 +117,28 @@ export default function StoryPage() {
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                私たちの価値観
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
+                OUR VALUES
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
-              <p className="text-lg text-gray-100 max-w-2xl mx-auto">
-                MOSS COUNTRYの活動を支える4つの核となる価値観
+              <p className="text-lg text-white/90 max-w-2xl mx-auto font-light">
+                MOSS COUNTRYが大切にする、4つの価値観
               </p>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {values.map((value, index) => (
-              <Card key={index} className="text-center">
-                <CardHeader>
-                  <div className="text-6xl mb-4">{value.icon}</div>
-                  <h3 className="text-xl font-semibold text-moss-green mb-4">{value.title}</h3>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 leading-relaxed">{value.description}</p>
-                </CardContent>
-              </Card>
+              <div key={index} className="relative glass-card-dark rounded-2xl p-8 text-center">
+                {/* Ordinal Number */}
+                <div className="absolute -top-2 left-1 transform -rotate-12 z-10">
+                  <div className="bg-white text-moss-green font-bold text-lg px-4 py-2 rounded-md shadow-xl">
+                    {index === 0 ? '1st' : index === 1 ? '2nd' : index === 2 ? '3rd' : '4th'}
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-4 tracking-wider mt-6 break-words">{value.title}</h3>
+                <p className="text-white/90 leading-relaxed font-light">{value.description}</p>
+              </div>
             ))}
           </div>
         </Container>
@@ -146,43 +149,27 @@ export default function StoryPage() {
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                MOSS COUNTRYの歩み
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
+                OUR JOURNEY
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
-              <p className="text-lg text-gray-100">
-                小さな出会いから始まった私たちの物語
+              <p className="text-lg text-white/90 font-light">
+                一つの出会いから生まれた、MOSS COUNTRYストーリー
               </p>
             </div>
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-moss-green"></div>
-              
+            <div className="space-y-8">
               {timeline.map((item, index) => (
-                <div key={index} className="relative flex items-start mb-12 last:mb-0">
-                  {/* Timeline marker */}
-                  <div className="relative">
-                    <div className="w-8 h-8 bg-moss-green rounded-full z-10 relative"></div>
-                    {index < timeline.length - 1 && (
-                      <div className="absolute top-6 left-4 transform -translate-x-1/2">
-                        <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-moss-green"></div>
-                      </div>
-                    )}
+                <div key={index} className="glass-card-dark rounded-2xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="bg-white text-moss-green px-4 py-2 rounded-lg text-sm font-bold mr-4 shadow-md">
+                      {item.year}
+                    </span>
+                    <h3 className="text-xl font-bold text-white tracking-wide">{item.title}</h3>
                   </div>
-                  <div className="ml-8 flex-1">
-                    <div className="bg-white rounded-lg p-6 shadow-md">
-                      <div className="flex items-center mb-2">
-                        <span className="bg-light-green text-moss-green px-3 py-1 rounded-full text-sm font-medium mr-3">
-                          {item.year}
-                        </span>
-                        <h3 className="text-xl font-semibold text-moss-green">{item.title}</h3>
-                      </div>
-                      <p className="text-gray-700">{item.description}</p>
-                    </div>
-                  </div>
+                  <p className="text-white/90 leading-relaxed font-light">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -196,36 +183,36 @@ export default function StoryPage() {
         <Container>
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="glass-card-dark p-8 rounded-3xl">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                職人の技術へのこだわり
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 break-words">
+                CRAFTSMANSHIP
               </h2>
-              <p className="text-lg text-white mb-6 leading-relaxed">
-                私たちは機械では再現できない「手作りの温かさ」を大切にしています。
-                一つひとつの素材選びから最終的な仕上げまで、すべて職人の手によって丁寧に作り上げられます。
+              <p className="text-lg text-white/90 mb-6 leading-relaxed font-light">
+                代表 立桶による、北海道の自然を知り尽くした職人技。<br />
+                機械では表現できない繊細さと、自然への深い理解が生み出す唯一無二の作品。
               </p>
               
               <div className="space-y-6">
                 <div className="flex items-start">
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
-                    <h4 className="font-semibold text-light-green mb-1">素材の厳選</h4>
-                    <p className="text-white/90">北海道の豊かな自然から採取した上質な苔と、相性の良い植物を厳選使用</p>
+                    <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">MATERIAL SELECTION</h4>
+                    <p className="text-white/80 font-light">北海道産の希少な苔を厳選して採取またはパートナーから取り寄せます。</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start">
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
-                    <h4 className="font-semibold text-light-green mb-1">独自の技法</h4>
-                    <p className="text-white/90">伝統的な技術に現代の知識を融合させた、MOSS COUNTRY独自の制作技法</p>
+                    <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">ORIGINAL TECHNIQUE</h4>
+                    <p className="text-white/80 font-light">北海道の苔の特性を活かす独自の配置・育成技法で作成します。</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start">
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
-                    <h4 className="font-semibold text-light-green mb-1">品質管理</h4>
-                    <p className="text-white/90">完成後も定期的なメンテナンスとアフターケアで、長く美しさを保ちます</p>
+                    <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">QUALITY ASSURANCE</h4>
+                    <p className="text-white/80 font-light">完成後のケア指導から定期メンテナンスまで、長期にわたる品質保証サポートします。</p>
                   </div>
                 </div>
               </div>
@@ -237,43 +224,23 @@ export default function StoryPage() {
                   onClick={() => window.location.href = '/products'}
                   className="cursor-pointer"
                 >
-                  職人の作品を見る
+                  作品を見る
                 </Button>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="h-48 overflow-hidden rounded-lg">
+            <div className="h-full">
+              <div className="overflow-hidden rounded-2xl border-2 border-white/30 shadow-2xl relative h-full">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-light-green/20 via-transparent to-moss-green/20 rounded-2xl"></div>
+                <div className="absolute inset-0 shadow-[0_0_50px_rgba(138,195,157,0.3)] rounded-2xl"></div>
                 <ImagePlaceholder
-                  src="/images/store/workshop-room.jpg"
-                  alt="MOSS COUNTRY職人の手作業によるテラリウム制作"
-                  width={800}
-                  height={600}
-                  className="w-full h-full object-cover"
-                  
+                  src="/images/story/mosscountry_story_craftmanship.jpg"
+                  alt="立桶賢による職人技術と北海道の苔テラリウム制作"
+                  width={600}
+                  height={500}
+                  className="w-full h-full object-cover relative z-10"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-32 overflow-hidden rounded-lg">
-                  <ImagePlaceholder
-                    src="/images/misc/tera01.jpeg"
-                    alt="素材選びから仕上げまでの職人技術"
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover"
-                    
-                  />
-                </div>
-                <div className="h-32 overflow-hidden rounded-lg">
-                  <ImagePlaceholder
-                    src="/images/misc/moss02.jpeg"
-                    alt="完成したテラリウムの品質確認"
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover"
-                    
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -286,75 +253,55 @@ export default function StoryPage() {
         <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
         <Container className="relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-moss-green mb-6">
-              これからの展望
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-moss-green mb-6">
+              FUTURE VISION
             </h2>
             <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="text-2xl font-semibold text-moss-green mb-4">
-                より多くの人にテラリウムの魅力を
+              <h3 className="text-2xl font-bold text-moss-green mb-4 tracking-wide">
+                北海道で根ざす、新しい文化を
               </h3>
-              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                私たちの最終的な目標は、テラリウムを通じてより多くの人が自然と触れ合い、
-                心の豊かさを感じられる社会を作ることです。
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed font-light">
+                札幌を拠点に、北海道各地に苔テラリウムの魅力を広め、<br />
+                地域に根ざした新しいライフスタイル文化を育みたい。
               </p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center">
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  全国への技術普及とワークショップ展開
+                  北海道各地でのワークショップ・体験教室の展開
                 </li>
                 <li className="flex items-center">
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  環境保護活動への参加と貢献
+                  地元観光業との連携・北海道の魅力発信
                 </li>
                 <li className="flex items-center">
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  新しい技術開発と品質向上の追求
+                  北海道の自然保護と持続可能な採取活動
                 </li>
               </ul>
             </div>
             
-            <div className="space-y-4">
-              <div className="h-48 overflow-hidden rounded-lg">
+            <div className="h-full">
+              <div className="overflow-hidden rounded-2xl border-2 border-white/30 shadow-2xl relative h-full">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-light-green/20 via-transparent to-moss-green/20 rounded-2xl"></div>
+                <div className="absolute inset-0 shadow-[0_0_50px_rgba(138,195,157,0.3)] rounded-2xl"></div>
                 <ImagePlaceholder
-                  src="/images/store/interior01.jpg"
-                  alt="未来への展望 - 美しく陳列されたテラリウム作品"
+                  src="/images/story/mosscountry_logo_sign.png"
+                  alt="MOSS COUNTRY ロゴサイン - 未来への展望"
                   width={600}
-                  height={400}
-                  className="w-full h-full object-cover"
-                  
+                  height={500}
+                  className="w-full h-full object-contain relative z-10 p-8"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-24 overflow-hidden rounded-lg">
-                  <ImagePlaceholder
-                    src="/images/misc/tera-02.jpeg"
-                    alt="多様なテラリウム作品"
-                    width={300}
-                    height={200}
-                    className="w-full h-full object-cover"
-                    
-                  />
-                </div>
-                <div className="h-24 overflow-hidden rounded-lg">
-                  <ImagePlaceholder
-                    src="/images/store/exterior.jpg"
-                    alt="MOSS COUNTRY店舗外観"
-                    width={300}
-                    height={200}
-                    className="w-full h-full object-cover"
-                    
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -365,12 +312,12 @@ export default function StoryPage() {
       <section className="py-20 bg-moss-green text-white">
         <Container>
           <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              私たちと一緒にテラリウムの世界を楽しみませんか？
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
+              あなたも、この特別な世界へ
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              MOSS COUNTRYの想いに共感していただけましたら、
-              ぜひ店舗にお越しいただくか、ワークショップにご参加ください。
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto font-light">
+              立桶が創り出す、北海道発のテラリウム体験。<br />
+              あなたの日常に、新しい癒しをお届けします。
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 

@@ -8,91 +8,46 @@ import { getSimpleWorkshops } from '@/lib/sanity';
 import { workshopImages } from '@/lib/imageUtils';
 import type { SimpleWorkshop } from '@/types/sanity';
 
-const courses = [
+const workshopSizes = [
   {
-    id: 'basic-course',
-    name: '基礎コース',
-    subtitle: '初めてでも安心',
-    duration: '90分',
-    price: '¥4,800',
-    capacity: '6名',
-    difficulty: '初心者向け',
-    description: 'テラリウムの基本を学びながら、小さなカプセルテラリウムを制作します。必要な道具・材料はすべて込み。',
-    includes: ['基本テラリウム制作', '必要道具一式', 'お手入れガイド', 'アフターサポート'],
-    target: 'テラリウム初心者、手作り体験をしたい方',
-    image: 'from-light-green to-moss-green',
+    id: 'small-size',
+    name: 'コンパクトサイズ',
+    dimensions: '約横6cm×縦11cm',
+    price: '¥3,500～',
+    description: '手のひらサイズの可愛らしいテラリウム。デスクや棚にちょこんと置けるサイズです。',
+    image: '/images/products/moss-country_products_bottle.png',
   },
   {
-    id: 'advanced-course',
-    name: '応用コース',
-    subtitle: 'もっと深く学ぼう',
-    duration: '120分',
-    price: '¥7,200',
-    capacity: '4名',
-    difficulty: '中級者向け',
-    description: '様々な苔や植物を使って、より複雑で美しいテラリウムを制作。デザインテクニックも学べます。',
-    includes: ['応用テラリウム制作', '高級素材使用', 'デザイン指導', '専用ツール体験'],
-    target: '基礎コース修了者、より本格的に学びたい方',
-    image: 'from-moss-green to-warm-brown',
-  },
-  {
-    id: 'family-course',
-    name: '親子コース',
-    subtitle: '家族で楽しむ自然の時間',
-    duration: '100分',
-    price: '¥6,000',
-    capacity: '5組',
-    difficulty: '親子向け',
-    description: '小学生以上のお子様と保護者の方が一緒に楽しめるコース。親子でそれぞれ1つずつ制作できます。',
-    includes: ['親子ペア制作', '子供用道具', '記念撮影', 'お持ち帰り用袋'],
-    target: '小学生以上のお子様がいるご家族',
-    image: 'from-beige to-light-green',
-  },
-  {
-    id: 'premium-course',
-    name: 'プレミアム体験',
-    subtitle: '職人技を間近で',
-    duration: '150分',
-    price: '¥12,000',
-    capacity: '3名',
-    difficulty: '上級者向け',
-    description: '職人と同じ技術と材料を使った本格制作体験。大型テラリウムやアート作品レベルの制作に挑戦。',
-    includes: ['プレミアム素材', '職人直接指導', '特製ツール使用', '作品証明書'],
-    target: 'テラリウム経験者、職人技術を学びたい方',
-    image: 'from-warm-brown to-moss-green',
+    id: 'regular-size',
+    name: 'レギュラーサイズ',
+    dimensions: '約横10cm×縦8cm',
+    price: '¥4,000～',
+    description: 'しっかりとした存在感のあるサイズ。お部屋のインテリアとしても映えます。',
+    image: '/images/products/moss-country_products_glass.png',
   },
 ];
 
-const schedule = [
-  { day: '火曜日', time: '14:00-15:30', course: '基礎コース' },
-  { day: '水曜日', time: '10:00-12:00', course: '応用コース' },
-  { day: '木曜日', time: '14:00-15:30', course: '基礎コース' },
-  { day: '土曜日', time: '10:00-11:40', course: '親子コース' },
-  { day: '土曜日', time: '14:00-16:30', course: 'プレミアム体験' },
-  { day: '日曜日', time: '10:00-11:30', course: '基礎コース' },
-  { day: '日曜日', time: '14:00-16:00', course: '応用コース' },
-];
 
 const testimonials = [
   {
     name: '田中 美咲さん',
     age: '20代女性',
-    course: '基礎コース',
-    comment: '初めてのテラリウム作りでしたが、先生が丁寧に教えてくださって、とても楽しい時間でした。作った作品は今も大切に育てています。',
+    course: 'レギュラーサイズ',
+    comment: '初めてのテラリウム作りでしたが、職人さんが丁寧に教えてくださって、とても楽しい2時間でした。作った作品は今も大切に育てています。',
     rating: 5,
   },
   {
     name: '佐藤 恵子さん・太郎くん',
-    age: '親子参加',
-    course: '親子コース',
-    comment: '8歳の息子と参加しました。子供でも分かりやすい説明で、親子で楽しく制作できました。息子は自分で作ったテラリウムをとても大切にしています。',
+    age: '親子参加（太郎くん10歳）',
+    course: 'コンパクトサイズ',
+    comment: '10歳の息子と参加しました。子供でも分かりやすい説明で、親子で楽しく制作できました。息子は自分で作ったテラリウムをとても大切にしています。',
     rating: 5,
   },
   {
     name: '山田 健太さん',
     age: '30代男性',
-    course: 'プレミアム体験',
-    comment: '職人さんの技術を間近で見ることができて、とても勉強になりました。材料の選び方や配置のコツなど、プロの技術を学べる貴重な体験でした。',
+    course: 'レギュラーサイズ',
+    comment: '職人さんの技術を間近で見ることができて、とても勉強になりました。苔の選び方や配置のコツなど、プロの技術を学べる貴重な体験でした。',
     rating: 5,
   },
 ];
@@ -128,202 +83,226 @@ export default function WorkshopPage() {
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 pointer-events-none" />
       {/* Hero Section */}
-      <section className="py-20 relative">
+      <section 
+        className="py-20 relative min-h-screen flex items-center"
+        style={{
+          backgroundImage: `url('/images/workshop/mosscountry_workshop.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-emerald-50/70" />
-        <div className="absolute inset-0 bg-emerald-950/10" />
+        <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               自分の手で作る、特別なテラリウム体験
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8">
               経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。
-              初心者の方でも安心して参加できるよう、基礎から応用まで幅広いコースをご用意しています。
+              9歳以上なら初心者の方でも安心して参加できます。
             </p>
-            <Button variant="primary" size="lg">
+            <Button 
+              variant="primary" 
+              size="lg"
+              className="bg-white !text-moss-green hover:bg-moss-green hover:!text-white"
+              onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
+            >
               今すぐ予約する
             </Button>
           </div>
         </Container>
       </section>
 
-      {/* Course Options */}
+      {/* Workshop Details */}
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                コース紹介
+                ワークショップ詳細
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                あなたのレベルや目的に合わせて選べる4つのコース
+                店舗営業日であればいつでも対応可能です
               </p>
             </div>
           </div>
           
+          {/* Workshop Info */}
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-moss-green mb-2">所要時間</h3>
+                <p className="text-2xl font-bold text-moss-green">約2時間</p>
+                <p className="text-gray-600 text-sm mt-2">ゆっくりと丁寧に制作できます</p>
+              </CardHeader>
+            </Card>
+            
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-moss-green mb-2">利用人数</h3>
+                <p className="text-2xl font-bold text-moss-green">1～4人</p>
+                <p className="text-gray-600 text-sm mt-2">少人数での丁寧な指導</p>
+              </CardHeader>
+            </Card>
+            
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-moss-green mb-2">対象年齢</h3>
+                <p className="text-2xl font-bold text-moss-green">9歳以上</p>
+                <p className="text-gray-600 text-sm mt-2">お子様も楽しく参加できます</p>
+              </CardHeader>
+            </Card>
+          </div>
+          
+          {/* Size Options */}
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-white mb-6">作品サイズ・料金</h3>
+          </div>
+          
           <div className="grid md:grid-cols-2 gap-8">
-            {courses.map((course) => (
-              <Card key={course.id} className="hover:transform hover:scale-105 transition-all duration-300">
-                <div className="h-48 overflow-hidden">
-                  <ImagePlaceholder
-                    src={workshopImages[course.id]?.src}
-                    alt={workshopImages[course.id]?.alt || course.name}
-                    width={800}
-                    height={600}
-                    className="w-full h-full object-cover"
+            {workshopSizes.map((size) => (
+              <Card key={size.id} className="hover:transform hover:scale-105 transition-all duration-300">
+                <div className="overflow-hidden">
+                  <img
+                    src={size.image}
+                    alt={size.name}
+                    className="w-full h-auto object-contain"
                   />
                 </div>
                 <CardHeader>
                   <div className="flex justify-between items-start mb-2">
-                    <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
-                      {course.difficulty}
-                    </span>
-                    <span className="text-moss-green font-bold text-xl">{course.price}</span>
+                    <h3 className="text-2xl font-semibold text-moss-green">{size.name}</h3>
+                    <span className="text-moss-green font-bold text-xl">{size.price}</span>
                   </div>
-                  <h3 className="text-2xl font-semibold text-moss-green mb-1">{course.name}</h3>
-                  <p className="text-gray-600 mb-3">{course.subtitle}</p>
-                  <p className="text-gray-700 mb-4">{course.description}</p>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                    <div className="text-center">
-                      <div className="font-semibold text-moss-green">時間</div>
-                      <div className="text-gray-600">{course.duration}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-moss-green">定員</div>
-                      <div className="text-gray-600">{course.capacity}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-moss-green">対象</div>
-                      <div className="text-gray-600">{course.difficulty}</div>
-                    </div>
-                  </div>
+                  <p className="text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
+                  <p className="text-gray-600">{size.description}</p>
                 </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-moss-green mb-2">含まれるもの：</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      {course.includes.map((item, index) => (
-                        <li key={index} className="flex items-center">
-                          <svg className="w-4 h-4 text-moss-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-moss-green mb-2">こんな方におすすめ：</h4>
-                    <p className="text-sm text-gray-600">{course.target}</p>
-                  </div>
-                  <Button variant="primary" className="w-full">
-                    このコースを予約する
-                  </Button>
-                </CardContent>
               </Card>
             ))}
+          </div>
+          
+          <div className="text-center mt-8">
+            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
+              <h4 className="text-lg font-semibold text-white mb-2">含まれるもの</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm text-white">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  必要道具一式
+                </div>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  材料費
+                </div>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  職人による指導
+                </div>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  お手入れガイド
+                </div>
+              </div>
+            </div>
           </div>
         </Container>
       </section>
 
-      {/* CMS Workshop Section */}
-      {workshops.length > 0 && (
-        <section className="py-20">
-          <Container>
-            <div className="text-center mb-16">
-              <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                  最新のワークショップ
-                </h2>
-                <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
-                <p className="text-lg text-gray-100">
-                  季節に合わせた特別なワークショップをご用意しています
-                </p>
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {workshops.map((workshop: {_id: string, title: string, description: string, price?: number}) => (
-                <Card key={workshop._id} className="bg-white shadow-lg">
-                  <CardHeader>
-                    <h3 className="text-xl font-bold text-moss-green mb-2">{workshop.title}</h3>
-                    <p className="text-gray-600 mb-4">{workshop.description}</p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="text-center">
-                        <div className="font-semibold text-moss-green">料金</div>
-                        <div className="text-gray-600">¥{workshop.price?.toLocaleString()}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-moss-green">時間</div>
-                        <div className="text-gray-600">{(workshop as SimpleWorkshop & { duration?: string }).duration || '90分'}</div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="primary" className="w-full">
-                      予約する
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </Container>
-        </section>
-      )}
-
-      {/* Schedule */}
+      {/* Availability */}
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                開催スケジュール
+                受付可能日
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                毎週開催中！ご都合の良い日時をお選びください
+                店舗営業日であればいつでも対応可能です
               </p>
             </div>
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <div className="grid gap-4">
-              {schedule.map((slot, index) => (
-                <div key={index} className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                      <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold">{slot.day.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <div className="font-semibold text-moss-green text-lg">{slot.day}</div>
-                        <div className="text-gray-600">{slot.time}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between md:justify-end space-x-4">
-                      <span className="bg-light-green text-moss-green px-3 py-1 rounded-full text-sm font-medium">
-                        {slot.course}
-                      </span>
-                      <Button variant="secondary" size="sm">
-                        予約する
-                      </Button>
-                    </div>
+            <div className="bg-white rounded-lg p-8 shadow-lg text-center">
+              <div className="grid md:grid-cols-3 gap-8 mb-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </div>
+                  <h3 className="text-xl font-bold text-moss-green mb-2">フレキシブルなスケジュール</h3>
+                  <p className="text-gray-600">店舗営業日ならいつでもOK</p>
                 </div>
-              ))}
-            </div>
-            
-            <div className="text-center mt-8">
-              <p className="text-white mb-4">
-                ※スケジュールは変更になる場合があります。最新情報はお問い合わせください。
-              </p>
-              <Button variant="primary" size="lg">
-                詳しいスケジュールを確認
-              </Button>
+                
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-moss-green mb-2">事前予約必須</h3>
+                  <p className="text-gray-600">材料の準備があります</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-moss-green mb-2">少人数制</h3>
+                  <p className="text-gray-600">1回最大4人まで</p>
+                </div>
+              </div>
+              
+              <div className="bg-light-green/20 p-6 rounded-lg">
+                <h4 className="text-lg font-semibold text-moss-green mb-4">予約について</h4>
+                <p className="text-gray-700 mb-4">
+                  ワークショップの参加には事前の予約が必要です。<br/>
+                  ご希望の日時・参加人数・作品サイズをお知らせください。
+                </p>
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-3">
+                    詳細はじゃらんのページをご確認ください
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-moss-green text-white hover:bg-moss-green/80"
+                    onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
+                  >
+                    じゃらんで詳細確認
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </Container>
@@ -421,25 +400,30 @@ export default function WorkshopPage() {
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
               職人の技術を間近で学びながら、世界に一つだけのテラリウムを作りましょう。
-              初心者の方も安心してご参加いただけます。
+              9歳以上のお子様も安心してご参加いただけます。
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'mailto:info@mosscountry.jp?subject=ワークショップ予約のお問い合わせ'}
+                onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
               >
-                ワークショップ予約
+                じゃらんで予約する
               </Button>
               <Button 
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'mailto:info@mosscountry.jp'}
+                onClick={() => window.location.href = 'mailto:info@mosscountry.jp?subject=ワークショップについてのお問い合わせ'}
               >
-                詳しく問い合わせる
+                お問い合わせフォーム
               </Button>
+            </div>
+            <div className="mt-6">
+              <p className="text-sm opacity-80">
+                ※予約詳細はじゃらんまたはお問い合わせフォームよりお願いします
+              </p>
             </div>
           </div>
         </Container>

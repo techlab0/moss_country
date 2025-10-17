@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,9 +10,8 @@ const storeInfo = {
   phone: '080-3605-6340',
   email: 'moss.country.kokenokuni@gmail.com',
   hours: {
-    weekday: '10:00 - 18:00',
-    weekend: '10:00 - 19:00',
-    closed: '月曜日（祝日の場合は翌日）',
+    regular: '11:00 - 20:00',
+    closed: '不定休（カレンダーをご確認ください）',
   },
   parking: '近隣のコインパーキングをご利用ください',
   access: {
@@ -22,18 +21,240 @@ const storeInfo = {
   },
 };
 
+interface CalendarEvent {
+  type: 'open' | 'event' | 'closed';
+  title: string;
+  location?: string;
+  notes?: string;
+}
+
+// カレンダー表示用のヘルパー関数
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month - 1, 1).getDay();
+}
+
+function formatDate(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// カレンダーコンポーネント
+function StoreCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarEvents, setCalendarEvents] = useState<{[key: string]: CalendarEvent}>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+
+  // カレンダーデータを取得
+  useEffect(() => {
+    const fetchCalendarData = async () => {
+      try {
+        const response = await fetch('/api/admin/calendar');
+        if (response.ok) {
+          const data = await response.json();
+          setCalendarEvents(data);
+        }
+      } catch (error) {
+        console.error('カレンダーデータの取得に失敗しました:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCalendarData();
+  }, []);
+  
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+  
+  const monthNames = [
+    '1月', '2月', '3月', '4月', '5月', '6月',
+    '7月', '8月', '9月', '10月', '11月', '12月'
+  ];
+  
+  const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  
+  const prevMonth = () => {
+    const prev = new Date(currentYear, currentMonth - 2, 1);
+    setCurrentDate(prev);
+  };
+  
+  const nextMonth = () => {
+    const next = new Date(currentYear, currentMonth, 1);
+    setCurrentDate(next);
+  };
+  
+  const renderCalendarDays = () => {
+    const days = [];
+    
+    // 前月の空白日
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="p-2"></div>);
+    }
+    
+    // 当月の日付
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = formatDate(currentYear, currentMonth, day);
+      const event = calendarEvents[dateStr];
+      const today = new Date();
+      const isToday = today.getFullYear() === currentYear && 
+                     today.getMonth() + 1 === currentMonth && 
+                     today.getDate() === day;
+      
+      let bgColor = 'bg-gray-50';
+      let textColor = 'text-gray-700';
+      let borderColor = 'border-gray-200';
+      
+      if (event) {
+        switch (event.type) {
+          case 'open':
+            bgColor = 'bg-emerald-50';
+            textColor = 'text-emerald-700';
+            borderColor = 'border-emerald-200';
+            break;
+          case 'event':
+            bgColor = 'bg-amber-50';
+            textColor = 'text-amber-700';
+            borderColor = 'border-amber-200';
+            break;
+          case 'closed':
+            bgColor = 'bg-red-50';
+            textColor = 'text-red-700';
+            borderColor = 'border-red-200';
+            break;
+        }
+      }
+      
+      if (isToday) {
+        borderColor = 'border-moss-green border-2';
+      }
+      
+      days.push(
+        <div
+          key={day}
+          className={`p-2 min-h-[60px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg relative hover:shadow-md transition-all duration-200`}
+        >
+          <div className="font-semibold mb-1">{day}</div>
+          {event && (
+            <div className="text-xs leading-tight">
+              <div className="font-medium">{event.title}</div>
+              {event.location && (
+                <div className="text-xs opacity-75 mt-1">
+                  📍 {event.location}
+                </div>
+              )}
+              {event.notes && (
+                <div className="text-xs opacity-75 mt-1">
+                  💭 {event.notes}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    return days;
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-lg text-white">カレンダーを読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-white">
+          {currentYear}年 {monthNames[currentMonth - 1]}
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={prevMonth}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={nextMonth}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      {/* カレンダー凡例 */}
+      <div className="flex flex-wrap gap-4 mb-6 text-sm">
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-emerald-50 border border-emerald-200 rounded mr-2"></div>
+          <span className="text-white">営業日</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-amber-50 border border-amber-200 rounded mr-2"></div>
+          <span className="text-white">イベント出店</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-red-50 border border-red-200 rounded mr-2"></div>
+          <span className="text-white">休業日</span>
+        </div>
+      </div>
+      
+      {/* 曜日ヘッダー */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {dayNames.map((dayName, index) => (
+          <div
+            key={dayName}
+            className={`p-2 text-center font-semibold text-sm ${
+              index === 0 ? 'text-red-300' : index === 6 ? 'text-blue-300' : 'text-white'
+            }`}
+          >
+            {dayName}
+          </div>
+        ))}
+      </div>
+      
+      {/* カレンダーグリッド */}
+      <div className="grid grid-cols-7 gap-1">
+        {renderCalendarDays()}
+      </div>
+      
+      {/* 注意事項 */}
+      <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+        <p className="text-sm text-yellow-800">
+          <strong>営業時間:</strong> 11:00 - 20:00<br/>
+          <strong>※</strong> イベント出店日は店舗での営業は行っておりません<br/>
+          <strong>※</strong> 予約優先制のため、ご来店前にお電話でご確認いただけますと確実です
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const facilities = [
   {
     name: 'ショールーム',
-    description: '100種類以上のテラリウムを実際に手に取ってご覧いただけます',
-    icon: '🏪',
-    image: '/images/store/interior01.jpg',
+    description: '様々なサイズ・デザインのテラリウムを実際に手に取ってご覧いただけます',
+    image: '/images/store/moss-country_store_items.png',
   },
   {
     name: 'ワークショップスペース',
-    description: '最大10名様まで同時に作業できる広々とした制作スペース',
-    icon: '🎨',
-    image: '/images/store/workshop-room.jpg',
+    description: '少人数制で丁寧に指導する、アットホームな制作スペース',
+    image: '/images/store/moss-country_store_workshopspace.png',
   },
 ];
 
@@ -41,13 +262,14 @@ const services = [
   {
     title: '商品販売',
     description: '完成品テラリウムの販売',
-    price: '¥3,200〜',
-    details: ['初心者向けから上級者向けまで', '100種類以上の豊富な品揃え', 'ギフト包装無料'],
+    price: '¥500〜',
+    details: ['初心者向けから上級者向けまで', '様々なサイズ・デザインをご用意', 'ギフト包装無料'],
+    link: '/products'
   },
   {
     title: 'オーダーメイド',
     description: 'お客様のご要望に合わせた特別制作',
-    price: '¥8,000〜',
+    price: '¥5,000〜',
     details: ['完全カスタマイズ対応', '制作期間：1-2週間', '事前相談無料'],
   },
   {
@@ -59,30 +281,89 @@ const services = [
   {
     title: 'ワークショップ',
     description: '手作り体験教室',
-    price: '¥4,800〜',
+    price: '¥3,500〜',
     details: ['初心者から上級者まで', '材料・道具込み', '作品持ち帰り可'],
+    link: '/workshop'
   },
 ];
 
 
-const faq = [
-  {
-    question: '駐車場はありますか？',
-    answer: '専用駐車場はございませんが、近隣に複数のコインパーキングがございます。お車でお越しの際は事前にご確認ください。',
-  },
-  {
-    question: '予約は必要ですか？',
-    answer: '商品のご購入やご見学は予約不要です。ワークショップやオーダーメイドのご相談は事前予約をお勧めいたします。',
-  },
-  {
-    question: 'クレジットカードは使えますか？',
-    answer: 'VISA、MasterCard、JCB、American Express、各種電子マネー、QRコード決済に対応しております。',
-  },
-  {
-    question: 'テラリウムの育て方を教えてもらえますか？',
-    answer: 'もちろんです。購入時に詳しいお手入れ方法をご説明いたします。その後のご質問もお気軽にお電話ください。',
-  },
-];
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  display_order: number;
+  is_active: boolean;
+}
+
+// FAQ表示用コンポーネント
+function FAQSection() {
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFAQs = async () => {
+      try {
+        const response = await fetch('/api/admin/faqs');
+        if (response.ok) {
+          const data = await response.json();
+          setFaqs(data);
+        } else {
+          console.error('FAQ取得に失敗しました');
+        }
+      } catch (error) {
+        console.error('FAQ取得エラー:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFAQs();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="text-center text-white">FAQを読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (faqs.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="text-center text-gray-300">
+          現在FAQはありません。
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {faqs.map((item, index) => (
+        <Card key={index}>
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-moss-green flex items-start">
+              <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">
+                Q
+              </span>
+              {item.question}
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start">
+              <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">
+                A
+              </span>
+              <p className="text-gray-700">{item.answer}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default function StorePage() {
   return (
@@ -141,7 +422,7 @@ export default function StorePage() {
           </div>
           <div className="grid md:grid-cols-2 gap-12">
             {/* Store Details */}
-            <div className="glass-card p-4 sm:p-8 rounded-3xl">
+            <div className="bg-amber-950/20 backdrop-blur-md p-4 sm:p-8 rounded-3xl">
               
               <div className="space-y-6">
                 <div className="flex items-start">
@@ -152,8 +433,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">住所</h3>
-                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.address}</p>
+                    <h3 className="font-semibold text-white mb-1">住所</h3>
+                    <p className="text-gray-200 break-all overflow-wrap-anywhere">{storeInfo.address}</p>
                   </div>
                 </div>
 
@@ -164,8 +445,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">電話番号</h3>
-                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.phone}</p>
+                    <h3 className="font-semibold text-white mb-1">電話番号</h3>
+                    <p className="text-gray-200 break-all overflow-wrap-anywhere">{storeInfo.phone}</p>
                   </div>
                 </div>
 
@@ -176,8 +457,8 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">メールアドレス</h3>
-                    <p className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere">{storeInfo.email}</p>
+                    <h3 className="font-semibold text-white mb-1">メールアドレス</h3>
+                    <p className="text-gray-200 break-all overflow-wrap-anywhere">{storeInfo.email}</p>
                   </div>
                 </div>
 
@@ -188,11 +469,13 @@ export default function StorePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-700 md:text-amber-700 text-gray-900 mb-1">営業時間</h3>
-                    <div className="text-white md:text-white text-gray-800 space-y-1">
-                      <p className="break-all overflow-wrap-anywhere">平日: {storeInfo.hours.weekday}</p>
-                      <p className="break-all overflow-wrap-anywhere">土日祝: {storeInfo.hours.weekend}</p>
-                      <p className="text-red-600 md:text-red-600 text-red-800 break-all overflow-wrap-anywhere">定休日: {storeInfo.hours.closed}</p>
+                    <h3 className="font-semibold text-white mb-1">営業時間</h3>
+                    <div className="text-gray-200 space-y-1">
+                      <p className="break-all overflow-wrap-anywhere">営業時間: {storeInfo.hours.regular}</p>
+                      <p className="text-yellow-300 break-all overflow-wrap-anywhere">{storeInfo.hours.closed}</p>
+                      <p className="text-blue-300 text-sm break-all overflow-wrap-anywhere mt-2">
+                        詳細は下記のカレンダーをご確認ください
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -200,8 +483,8 @@ export default function StorePage() {
             </div>
 
             {/* Map Placeholder */}
-            <div className="glass-card p-4 sm:p-8 rounded-3xl">
-              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 md:text-amber-700 text-gray-900 mb-6 sm:mb-8">アクセスマップ</h2>
+            <div className="bg-amber-950/20 backdrop-blur-md p-4 sm:p-8 rounded-3xl">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8">アクセスマップ</h2>
               <div className="h-64 rounded-lg overflow-hidden mb-6">
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2913.5264158063487!2d141.29211759999998!3d43.0934509!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2967fe4c6bc9%3A0x5f6284f1ebb2447c!2zTW9zcyBDb3VudHJ544CQ6IuU44OG44Op44Oq44Km44Og5L2c5oiQ44O744Ov44O844Kv44K344On44OD44OX44CR!5e0!3m2!1sja!2sjp!4v1752175558799!5m2!1sja!2sjp"
@@ -222,7 +505,7 @@ export default function StorePage() {
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
                     </svg>
                   </span>
-                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.subway}</span>
+                  <span className="text-gray-200 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.subway}</span>
                 </div>
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3">
@@ -230,7 +513,7 @@ export default function StorePage() {
                       <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
                     </svg>
                   </span>
-                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.bus}</span>
+                  <span className="text-gray-200 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.bus}</span>
                 </div>
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
@@ -238,10 +521,31 @@ export default function StorePage() {
                       <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                   </span>
-                  <span className="text-white md:text-white text-gray-800 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.car}</span>
+                  <span className="text-gray-200 break-all overflow-wrap-anywhere text-sm sm:text-base">{storeInfo.access.car}</span>
                 </div>
               </div>
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Store Calendar */}
+      <section className="py-20">
+        <Container>
+          <div className="text-center mb-16">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                営業カレンダー
+              </h2>
+              <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+              <p className="text-lg text-gray-100">
+                営業日・イベント出店・休業日をご確認いただけます
+              </p>
+            </div>
+          </div>
+          
+          <div className="max-w-4xl mx-auto">
+            <StoreCalendar />
           </div>
         </Container>
       </section>
@@ -264,19 +568,17 @@ export default function StorePage() {
           <div className="grid md:grid-cols-2 gap-8">
             {facilities.map((facility, index) => (
               <div key={index} className="group">
-                <div className="relative overflow-hidden rounded-lg shadow-lg">
-                  <img 
-                    src={facility.image} 
-                    alt={facility.name}
-                    className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <div className="flex items-center mb-2">
-                      <span className="text-3xl mr-3">{facility.icon}</span>
-                      <h3 className="text-2xl font-bold">{facility.name}</h3>
-                    </div>
-                    <p className="text-white/90 text-lg">{facility.description}</p>
+                <div className="glass-card rounded-3xl overflow-hidden shadow-lg h-full flex flex-col">
+                  <div className="relative overflow-hidden">
+                    <img 
+                      src={facility.image} 
+                      alt={facility.name}
+                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-6 bg-amber-950/20 backdrop-blur-md flex-1 flex flex-col">
+                    <h3 className="text-2xl font-bold text-white drop-shadow-lg mb-3">{facility.name}</h3>
+                    <p className="text-gray-100 text-lg leading-relaxed flex-1 drop-shadow-md">{facility.description}</p>
                   </div>
                 </div>
               </div>
@@ -323,13 +625,21 @@ export default function StorePage() {
                       </li>
                     ))}
                   </ul>
-                  <Button 
-                    variant="secondary" 
-                    className="w-full mt-4 cursor-pointer"
-                    onClick={() => window.location.href = 'mailto:info@mosscountry.jp?subject=' + encodeURIComponent(service.title + 'についてのお問い合わせ')}
+                  <div className="flex justify-center mt-4">
+                    <Button 
+                      variant="secondary" 
+                      className="cursor-pointer px-6 py-2"
+                    onClick={() => {
+                      if ((service as any).link) {
+                        window.location.href = (service as any).link;
+                      } else {
+                        window.location.href = '/contact';
+                      }
+                    }}
                   >
-                    詳しく問い合わせる
-                  </Button>
+                      {(service as any).link ? '詳細を見る' : '問い合わせる'}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -338,71 +648,27 @@ export default function StorePage() {
       </section>
 
       {/* Store Gallery */}
-      <section className="py-20 bg-white">
+      <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-white p-8 w-full">
-              <h2 className="text-3xl md:text-4xl font-bold text-moss-green mb-6">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 店舗の様子
               </h2>
-              <div className="w-24 h-1 bg-moss-green mx-auto mb-6"></div>
-              <p className="text-lg text-gray-600">
+              <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+              <p className="text-lg text-gray-100">
                 温かみのある空間で皆様をお迎えします
               </p>
             </div>
           </div>
 
-          <div className="relative min-h-[600px] overflow-hidden">
-            {/* Gallery Image Area - overlapping images */}
-            <div className="absolute inset-0 z-0">
-              {/* Large background image - img01 equivalent */}
-              <div className="absolute top-0 left-0 w-[420px] h-[280px] overflow-hidden shadow-xl z-10">
-                <img src="/images/store/interior01.jpg" alt="店内の様子" className="w-full h-full object-cover brightness-110 contrast-105 saturate-110" />
-              </div>
-              
-              {/* Medium image - img02 equivalent */}
-              <div className="absolute top-16 right-8 w-[350px] h-[235px] overflow-hidden shadow-xl z-20">
-                <img src="/images/store/workshop-room.jpg" alt="ワークショップルーム" className="w-full h-full object-cover brightness-105 contrast-110 saturate-105" />
-              </div>
-              
-              {/* Large image - img03 equivalent */}
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[480px] h-[320px] overflow-hidden shadow-xl z-30">
-                <img src="/images/store/exterior.jpg" alt="店舗外観" className="w-full h-full object-cover brightness-115 contrast-105 saturate-110" />
-              </div>
-              
-              {/* Medium moving image - img04 equivalent */}
-              <div className="absolute top-1/2 right-0 transform -translate-y-1/2 w-[320px] h-[180px] overflow-hidden shadow-xl z-40">
-                <img src="/images/store/interior02.jpg" alt="店内の様子2" className="w-full h-full object-cover brightness-110 contrast-105 saturate-105" />
-              </div>
-              
-              {/* Additional smaller images */}
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-[280px] h-[180px] overflow-hidden shadow-xl z-15">
-                <img src="/images/store/exterior02.jpeg" alt="店舗外観2" className="w-full h-full object-cover brightness-110 contrast-110 saturate-110" />
-              </div>
-              
-              <div className="absolute bottom-8 right-8 w-[250px] h-[160px] overflow-hidden shadow-xl z-25">
-                <img src="/images/store/interior03.jpeg" alt="店内の様子3" className="w-full h-full object-cover brightness-105 contrast-105 saturate-105" />
-              </div>
-              
-              {/* Handwritten text - crayon/chalk style */}
-              <div className="absolute bottom-12 left-8 z-50">
-                <div className="transform -rotate-12">
-                  <p className="text-4xl font-bold text-moss-green opacity-90 select-none" 
-                     style={{
-                       fontFamily: '"Kalam", "Caveat", "Amatic SC", "Shadows Into Light", "Permanent Marker", "Indie Flower", cursive',
-                       letterSpacing: '1px'
-                     }}>
-                    テラリウムとともに
-                  </p>
-                  <p className="text-3xl font-bold text-moss-green opacity-85 mt-2 ml-4 select-none" 
-                     style={{
-                       fontFamily: '"Kalam", "Caveat", "Amatic SC", "Shadows Into Light", "Permanent Marker", "Indie Flower", cursive',
-                       letterSpacing: '1px'
-                     }}>
-                    特別なひとときを。
-                  </p>
-                </div>
-              </div>
+          <div className="max-w-4xl mx-auto">
+            <div className="rounded-2xl overflow-hidden shadow-xl">
+              <img 
+                src="/images/store/moss-country_store_appearance.png" 
+                alt="店舗の様子" 
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
         </Container>
@@ -420,28 +686,7 @@ export default function StorePage() {
             </div>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
-            {faq.map((item, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold text-moss-green flex items-start">
-                    <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">
-                      Q
-                    </span>
-                    {item.question}
-                  </h3>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-start">
-                    <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">
-                      A
-                    </span>
-                    <p className="text-gray-700">{item.answer}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <FAQSection />
         </Container>
       </section>
 
@@ -461,7 +706,7 @@ export default function StorePage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'tel:011-123-4567'}
+                onClick={() => window.location.href = 'tel:080-3605-6340'}
               >
                 お電話でお問い合わせ
               </Button>
@@ -469,7 +714,7 @@ export default function StorePage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'mailto:info@mosscountry.jp'}
+                onClick={() => window.location.href = 'mailto:moss.country.kokenokuni@gmail.com'}
               >
                 メールでお問い合わせ
               </Button>
