@@ -1,8 +1,16 @@
 // SendGrid メール送信サービス
-import * as sgMail from '@sendgrid/mail';
+// SendGrid is optional - only import if available
+let sgMail: any = null;
+if (typeof window === 'undefined') {
+  try {
+    sgMail = require('@sendgrid/mail');
+  } catch (error) {
+    console.warn('SendGrid not available:', error);
+  }
+}
 
 // 環境変数からAPIキーを設定
-if (process.env.SENDGRID_API_KEY) {
+if (process.env.SENDGRID_API_KEY && sgMail) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
@@ -53,8 +61,8 @@ const DEFAULT_FROM_EMAIL = 'noreply@mosscountry.com';
 
 export class EmailService {
   static async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.warn('SendGrid API key not configured. Email not sent.');
+    if (!process.env.SENDGRID_API_KEY || !sgMail) {
+      console.warn('SendGrid API key not configured or module not available. Email not sent.');
       return false;
     }
 
