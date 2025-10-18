@@ -128,7 +128,7 @@ export default function BlogPage() {
               </div>
               
               {/* 検索結果数表示 */}
-              <div className="mt-4 text-sm text-gray-600">
+              <div className="mt-4 text-sm text-gray-800">
                 {searchTerm || selectedCategory !== 'all' ? (
                   <span>{filteredPosts.length}件の記事が見つかりました</span>
                 ) : (
@@ -149,7 +149,7 @@ export default function BlogPage() {
           <div className="text-center py-12">
             {searchTerm || selectedCategory !== 'all' ? (
               <div className="space-y-4">
-                <p className="text-gray-600 text-lg">検索条件に一致する記事が見つかりませんでした。</p>
+                <p className="text-gray-800 text-lg">検索条件に一致する記事が見つかりませんでした。</p>
                 <button
                   onClick={() => {
                     setSearchTerm('')
@@ -161,7 +161,7 @@ export default function BlogPage() {
                 </button>
               </div>
             ) : (
-              <p className="text-gray-600 text-lg">現在記事がありません。</p>
+              <p className="text-gray-800 text-lg">現在記事がありません。</p>
             )}
           </div>
         ) : (
@@ -205,7 +205,7 @@ export default function BlogPage() {
                               {post.category}
                             </span>
                           )}
-                          <time className="text-gray-500 text-sm font-medium">
+                          <time className="text-gray-700 text-sm font-medium">
                             {new Date(post.publishedAt).toLocaleDateString('ja-JP')}
                           </time>
                         </div>
@@ -217,14 +217,14 @@ export default function BlogPage() {
                         
                         {/* 抜粋 */}
                         {post.excerpt && (
-                          <p className="text-gray-600 line-clamp-3 mb-4 leading-relaxed">{post.excerpt}</p>
+                          <p className="text-gray-700 line-clamp-3 mb-4 leading-relaxed">{post.excerpt}</p>
                         )}
                         
                         {/* タグ */}
                         {post.tags && post.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
                             {post.tags.slice(0, 3).map((tag, index) => (
-                              <span key={index} className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                              <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
                                 #{tag}
                               </span>
                             ))}
@@ -234,7 +234,7 @@ export default function BlogPage() {
                       
                       {/* フッター */}
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <span className="text-sm text-gray-500">著者: {post.author}</span>
+                        <span className="text-sm text-gray-700">著者: {post.author}</span>
                         <span className="text-moss-green text-sm font-semibold group-hover:underline flex items-center">
                           続きを読む
                           <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

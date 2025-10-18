@@ -201,7 +201,7 @@ export default function MossGuidePage() {
 
               
               {/* 検索結果数表示 */}
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-800">
                 {searchTerm || selectedCategory !== 'all' || selectedDifficulty !== 'all' ? (
                   <span>{filteredSpecies.length}種類の苔が見つかりました</span>
                 ) : (
@@ -229,7 +229,7 @@ export default function MossGuidePage() {
             <div className="text-center py-12">
               {searchTerm || selectedCategory !== 'all' || selectedDifficulty !== 'all' ? (
                 <div className="space-y-4">
-                  <p className="text-gray-600 text-lg">検索条件に一致する苔が見つかりませんでした。</p>
+                  <p className="text-gray-800 text-lg">検索条件に一致する苔が見つかりませんでした。</p>
                   <button
                     onClick={() => {
                       setSearchTerm('')
@@ -242,7 +242,7 @@ export default function MossGuidePage() {
                   </button>
                 </div>
               ) : (
-                <p className="text-gray-600 text-lg">現在苔図鑑データがありません。</p>
+                <p className="text-gray-800 text-lg">現在苔図鑑データがありません。</p>
               )}
             </div>
           ) : (
@@ -310,20 +310,20 @@ export default function MossGuidePage() {
                         {/* 特性 */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-600">水分:</span>
-                            <span className="font-medium">{getCharacteristicLabel('waterRequirement', species.characteristics.waterRequirement)}</span>
+                            <span className="text-gray-800">水分:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('waterRequirement', species.characteristics.waterRequirement)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-600">光量:</span>
-                            <span className="font-medium">{getCharacteristicLabel('lightRequirement', species.characteristics.lightRequirement)}</span>
+                            <span className="text-gray-800">光量:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('lightRequirement', species.characteristics.lightRequirement)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-600">温度:</span>
-                            <span className="font-medium">{getCharacteristicLabel('temperatureAdaptability', species.characteristics.temperatureAdaptability)}</span>
+                            <span className="text-gray-800">温度:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('temperatureAdaptability', species.characteristics.temperatureAdaptability)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-600">成長:</span>
-                            <span className="font-medium">{getCharacteristicLabel('growthSpeed', species.characteristics.growthSpeed)}</span>
+                            <span className="text-gray-800">成長:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('growthSpeed', species.characteristics.growthSpeed)}</span>
                           </div>
                         </div>
                         
