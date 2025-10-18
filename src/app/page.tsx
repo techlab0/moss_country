@@ -57,28 +57,28 @@ export default function Home() {
             </AnimatedSection>
           </AnimatedSection>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 px-4">
             <AnimatedSection animation="slide-up" delay={1000} className="text-center group">
-              <div className="mb-6 bg-white/5 backdrop-blur-sm rounded-2xl p-6 sm:bg-transparent sm:backdrop-blur-0 sm:p-0">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-3 group-hover:text-emerald-200 transition-colors duration-300">職人の技</h3>
-                <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-4 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">一つひとつ手作業で丁寧に作られた本物のテラリウム</p>
+              <div className="bg-emerald-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:bg-emerald-900/40">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-emerald-200 transition-colors duration-300">職人の技</h3>
+                <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">一つひとつ手作業で<br className="hidden sm:block" />丁寧に作られた<br className="hidden sm:block" />本物のテラリウム</p>
               </div>
             </AnimatedSection>
             
             <AnimatedSection animation="slide-up" delay={1200} className="text-center group">
-              <div className="mb-6 bg-white/5 backdrop-blur-sm rounded-2xl p-6 sm:bg-transparent sm:backdrop-blur-0 sm:p-0">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-3 group-hover:text-emerald-200 transition-colors duration-300">北海道初</h3>
-                <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-4 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">カプセルテラリウムの専門店として地域密着</p>
+              <div className="bg-amber-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-amber-600/20 hover:border-amber-600/40 transition-all duration-300 hover:bg-amber-900/40">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-amber-200 transition-colors duration-300">北海道初</h3>
+                <div className="w-12 sm:w-16 h-0.5 bg-amber-500 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">カプセルテラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</p>
               </div>
             </AnimatedSection>
             
             <AnimatedSection animation="slide-up" delay={1400} className="text-center group">
-              <div className="mb-6 bg-white/5 backdrop-blur-sm rounded-2xl p-6 sm:bg-transparent sm:backdrop-blur-0 sm:p-0">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-3 group-hover:text-emerald-200 transition-colors duration-300">学べる</h3>
-                <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-4 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">初心者から上級者まで楽しめるワークショップ</p>
+              <div className="bg-teal-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-teal-400/20 hover:border-teal-400/40 transition-all duration-300 hover:bg-teal-900/40">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-teal-200 transition-colors duration-300">学べる</h3>
+                <div className="w-12 sm:w-16 h-0.5 bg-teal-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">初心者から上級者まで<br className="hidden sm:block" />楽しめる<br className="hidden sm:block" />ワークショップ</p>
               </div>
             </AnimatedSection>
           </div>
