@@ -55,13 +55,11 @@ export async function getBlogPosts(limit = 10, offset = 0): Promise<BlogPost[]> 
         excerpt,
         featuredImage,
         category,
+        tags,
         publishedAt,
         author
       }
-    `, { start: offset, end: offset + limit - 1 }, {
-      cache: 'force-cache',
-      next: { revalidate: 3600 } // 1時間キャッシュ
-    })
+    `, { start: offset, end: offset + limit - 1 })
   } catch (error) {
     console.warn('Failed to fetch blog posts from Sanity:', error)
     return []
@@ -227,22 +225,27 @@ export async function updateProductInventory(productId: string, stockQuantity: n
 
 // Admin Blog queries (for management dashboard)
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
-  return await client.fetch(`
-    *[_type == "blogPost"] | order(publishedAt desc) {
-      _id,
-      title,
-      slug,
-      excerpt,
-      featuredImage,
-      category,
-      tags,
-      publishedAt,
-      isPublished,
-      author,
-      _createdAt,
-      _updatedAt
-    }
-  `)
+  try {
+    return await client.fetch(`
+      *[_type == "blogPost"] | order(publishedAt desc) {
+        _id,
+        title,
+        slug,
+        excerpt,
+        featuredImage,
+        category,
+        tags,
+        publishedAt,
+        isPublished,
+        author,
+        _createdAt,
+        _updatedAt
+      }
+    `)
+  } catch (error) {
+    console.warn('Failed to fetch all blog posts from Sanity:', error)
+    return []
+  }
 }
 
 export async function createBlogPost(data: Partial<BlogPost>): Promise<BlogPost> {

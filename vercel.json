@@ -7,10 +7,6 @@
     {
       "source": "/admin/:path*",
       "destination": "/admin/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
     }
   ]
 }

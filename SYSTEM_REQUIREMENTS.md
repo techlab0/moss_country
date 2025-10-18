@@ -61,6 +61,21 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
 - **本番環境**: Vercel
 - **データベース**: Supabase (Production)
 
+### 外部サービス統合
+- **メール送信**: EmailJS (クライアントサイド)
+- **決済システム**: Square Web Payments SDK
+- **SMS認証**: Twilio
+- **CMS**: Sanity.io
+- **データベース**: Supabase PostgreSQL
+- **デプロイ**: Vercel Platform
+
+### 本番環境設定
+- **環境変数管理**: `.env.local` (開発), Vercel Environment Variables (本番)
+- **設定検証**: `/src/lib/config.ts` による環境変数バリデーション
+- **本番準備チェック**: `/admin/production-check` ダッシュボード
+- **エラーハンドリング**: 全外部API呼び出しのtry-catch包囲
+- **フォールバック**: Sanity CMS接続失敗時の空配列返却
+
 ## サイト構造
 
 ### 現在の実装ページ構成
@@ -137,7 +152,9 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
 - **アニメーション**: スクロール連動、ページ遷移効果
 
 ### 4. 問い合わせ・連絡機能 ✅
-- **お問い合わせフォーム**: バリデーション、確認機能
+- **お問い合わせフォーム**: EmailJS統合によるメール送信機能（SendGrid削除済み）
+- **メール送信**: EmailJS経由でのクライアントサイド送信
+- **注文確認メール**: Square決済システムの自動レシート機能を使用
 - **複数連絡手段**: 電話、メール、店舗訪問
 - **FAQ機能**: カテゴリ別質問回答、管理画面対応
 - **プライバシーポリシー**: 法的遵守
@@ -321,7 +338,7 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
    - チェックアウトプロセス
    - Square決済システム統合
    - 在庫管理システム
-   - メール送信システム (SendGrid)
+   - メール送信システム (EmailJS統合)
 
 3. **🆕 Supabaseデータベース統合システム**
    - **PostgreSQLデータベース**: Supabase完全統合
@@ -543,7 +560,39 @@ MOSS COUNTRY - 北海道の苔テラリウム専門店ウェブサイト
    - **修正**: テラリウム適性関連コードを完全削除
    - **安定性向上**: null参照エラーを根絶
 
-**📋 Phase 9.3 予定: 苔図鑑システム最終調整**
+#### ✅ Phase 10.0 完了: 本番環境移行準備・SendGrid削除・EmailJS統合
+
+**✅ 実施完了内容**:
+
+1. **SendGrid完全削除・EmailJS統合**:
+   - **`@sendgrid/mail`依存関係削除**: package.jsonからSendGrid関連パッケージを削除
+   - **EmailJS設定**: クライアントサイドメール送信システムに移行
+   - **注文確認メール**: Square決済システムの自動レシート機能を使用
+   - **API クリーンアップ**: `/src/lib/email.ts`ファイル削除、webhookからSendGrid関連コード削除
+
+2. **本番環境設定システム実装**:
+   - **`/src/lib/config.ts`**: 環境変数検証・設定管理システム
+   - **`/src/app/admin/production-check/page.tsx`**: 本番準備チェックダッシュボード
+   - **`/src/app/api/admin/config-check/route.ts`**: 設定検証APIエンドポイント
+   - **環境変数管理**: 本番・開発環境の明確な分離
+
+3. **Vercelビルドエラー修正**:
+   - **JSX構文エラー**: `users-advanced/page.tsx`と`users/page.tsx`の完全修正
+   - **Sanityエラーハンドリング**: 全CMS クエリをtry-catch で包囲
+   - **静的生成対応**: サイトマップ生成時のエラー処理強化
+
+4. **本番準備チェックリスト**:
+   - **環境変数**: EmailJS、Square、Sanity、Supabaseの設定確認
+   - **CMS データ**: モックデータから本番データへの移行準備
+   - **決済システム**: Square本番環境への切り替え準備
+   - **ドメイン設定**: カスタムドメイン設定の準備
+
+5. **Next.js設定最適化**:
+   - **Webpack設定**: SendGrid関連fallback設定の削除
+   - **画像最適化**: Sanity CDN統合の最適化
+   - **セキュリティ設定**: 本番環境向けheader設定
+
+**📋 Phase 10.1 予定: 本番データ移行・ドメイン設定**
 
 **🔄 次回実施予定**:
 1. **詳細ページの微調整**
@@ -693,7 +742,7 @@ SQUARE_LOCATION_ID=L***（機密・サーバーサイドのみ）
 - **データベース**: Supabase PostgreSQL + Sanity CMS
 - **ファイルストレージ**: Sanity Asset Management
 - **決済**: Square Payment API
-- **メール**: SendGrid API
+- **メール**: EmailJS (クライアントサイド)
 - **監視**: Vercel Analytics + Custom Logging
 
 ### パフォーマンス最適化
@@ -1003,6 +1052,109 @@ SQUARE_LOCATION_ID=L***（機密・サーバーサイドのみ）
 
 ---
 
-**最終更新**: 2025年10月12日  
-**バージョン**: 5.7  
-**ステータス**: ✅ Supabase接続復旧完了 - データベーステーブル設定待ち
+## 本番環境デプロイメントチェックリスト
+
+### ✅ 完了済み項目
+
+#### システム構築
+- [x] **Next.js 15.3.5アプリケーション**: App Router、TypeScript完全対応
+- [x] **Vercelビルドエラー修正**: JSX構文エラー、依存関係問題の解決
+- [x] **SendGrid削除・EmailJS統合**: メール送信システムの移行完了
+- [x] **エラーハンドリング強化**: 全Sanity CMS クエリのtry-catch実装
+
+#### 本番環境準備
+- [x] **環境変数管理システム**: `/src/lib/config.ts`実装
+- [x] **本番チェックダッシュボード**: `/admin/production-check`実装
+- [x] **設定検証API**: `/api/admin/config-check`実装
+
+### 🔄 本番移行時必要作業
+
+#### 1. 環境変数設定（Vercel）
+```bash
+# EmailJS設定
+NEXT_PUBLIC_EMAILJS_SERVICE_ID=service_xxx
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=template_xxx  
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=xxx
+
+# Square決済（本番環境）
+NEXT_PUBLIC_SQUARE_APPLICATION_ID=sq0idp-xxx  
+SQUARE_ACCESS_TOKEN=EAAAEOxxx（本番用）
+SQUARE_LOCATION_ID=Lxxx（本番用）
+SQUARE_WEBHOOK_SIGNATURE_KEY=xxx（本番用）
+
+# Sanity CMS（本番プロジェクト）
+NEXT_PUBLIC_SANITY_PROJECT_ID=xxx
+NEXT_PUBLIC_SANITY_DATASET=production
+SANITY_API_TOKEN=skxxx（本番用）
+
+# Supabase（本番プロジェクト）
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+SUPABASE_SERVICE_ROLE_KEY=xxx
+
+# その他
+NEXTAUTH_SECRET=xxx（生成必要）
+NEXTAUTH_URL=https://your-domain.com
+```
+
+#### 2. データ移行
+- [ ] **Sanity本番データ準備**:
+  - [ ] 実際の商品データ（苔テラリウム商品）
+  - [ ] ブログ記事・ニュース
+  - [ ] 苔図鑑データ
+  - [ ] FAQ情報
+  - [ ] 店舗・会社情報
+
+- [ ] **Supabase本番データベース**:
+  - [ ] `contact_inquiries`テーブル作成
+  - [ ] 管理者ユーザー作成
+  - [ ] RLS（Row Level Security）ポリシー設定
+
+#### 3. 外部サービス設定
+- [ ] **EmailJS**:
+  - [ ] サービス作成・テンプレート設定
+  - [ ] 本番用API キー取得
+
+- [ ] **Square**:
+  - [ ] 本番アカウント設定
+  - [ ] Webhook エンドポイント登録
+  - [ ] 決済テスト実行
+
+- [ ] **独自ドメイン**:
+  - [ ] ドメイン購入・DNS設定
+  - [ ] Vercel ドメイン連携
+  - [ ] SSL証明書設定
+
+#### 4. 最終確認・テスト
+- [ ] **機能テスト**:
+  - [ ] 商品購入フロー（決済まで）
+  - [ ] お問い合わせフォーム送信
+  - [ ] 管理画面ログイン・操作
+  - [ ] モバイル・デスクトップ表示
+
+- [ ] **パフォーマンステスト**:
+  - [ ] ページ読み込み速度
+  - [ ] 画像最適化確認
+  - [ ] SEO設定確認
+
+- [ ] **セキュリティチェック**:
+  - [ ] 環境変数漏洩チェック
+  - [ ] 管理画面アクセス制御
+  - [ ] Webhook署名検証
+
+### 📋 運用開始後の継続タスク
+- [ ] **定期メンテナンス**:
+  - [ ] 依存関係アップデート
+  - [ ] セキュリティパッチ適用
+  - [ ] バックアップ確認
+
+- [ ] **監視・分析**:
+  - [ ] アクセス解析設定
+  - [ ] エラー監視設定
+  - [ ] パフォーマンス監視
+
+---
+
+**最終更新**: 2025年10月17日  
+**バージョン**: 6.0  
+**ステータス**: ✅ 本番移行準備完了 - SendGrid削除・EmailJS統合完了
