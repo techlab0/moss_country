@@ -14,7 +14,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   showProgress = false
 }) => {
   const containerClasses = fullScreen
-    ? "fixed inset-0 z-50 flex items-center justify-center bg-stone-900"
+    ? "fixed inset-0 z-50 flex items-center justify-center bg-stone-900 h-screen min-h-screen"
     : "flex items-center justify-center py-12";
 
   return (
@@ -52,7 +52,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <div className="mt-4 w-64">
               <div className="flex justify-between text-sm text-emerald-300 mb-2">
                 <span>進行状況</span>
-                <span>{Math.round(progress)}%</span>
+                <span>{Math.min(Math.round(progress), 100)}%</span>
               </div>
               <div className="w-full bg-stone-800 rounded-full h-2 overflow-hidden">
                 <div 

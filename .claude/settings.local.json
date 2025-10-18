@@ -29,7 +29,9 @@
       "Bash(ls:*)",
       "Bash(npx prettier:*)",
       "Bash(echo:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git reset:*)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }

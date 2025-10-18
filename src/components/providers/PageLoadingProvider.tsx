@@ -99,6 +99,7 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
       });
 
       Promise.all(imagePromises).then(() => {
+        // 100%に到達したら即座にローディング終了条件を満たす
         setProgress(100);
         setImagesLoaded(true);
       });
@@ -128,6 +129,17 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     }
   }, [imagesLoaded, minTimeElapsed]);
 
+  // 100%に到達したら即座に終了
+  useEffect(() => {
+    if (progress >= 100 && minTimeElapsed) {
+      const immediateHideTimer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100); // 最小限の遅延
+
+      return () => clearTimeout(immediateHideTimer);
+    }
+  }, [progress, minTimeElapsed]);
+
   // プログレス更新ロジック
   useEffect(() => {
     if (!isLoading || !pageConfig) return;
@@ -135,7 +147,9 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     const progressTimer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) return prev;
-        return prev + Math.random() * 20;
+        // 100%を超えないように制限
+        const newProgress = prev + Math.random() * 20;
+        return Math.min(newProgress, 100);
       });
     }, 100);
 
