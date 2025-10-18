@@ -112,7 +112,9 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     
     // Smooth opacity transition
     let opacity = 1;
-    if (distanceFromCenter === visibleRange) {
+    if (normalizedIndex === 0) {
+      opacity = 1; // Center item is always fully visible
+    } else if (distanceFromCenter === visibleRange) {
       opacity = 0.2; // More fade for edge items
     } else if (distanceFromCenter === 1) {
       opacity = 0.7; // Semi-visible for adjacent items
@@ -130,7 +132,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       opacity,
       zIndex: normalizedIndex === 0 ? 10 : Math.max(1, 5 - distanceFromCenter),
       transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      filter: distanceFromCenter >= 2 ? 'blur(1px)' : 'blur(0px)',
+      filter: normalizedIndex === 0 ? 'brightness(1.1) blur(0px)' : distanceFromCenter >= 2 ? 'blur(1px)' : 'blur(0px)',
       visibility: 'visible' as const
     };
   };

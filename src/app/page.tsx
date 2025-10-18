@@ -152,7 +152,7 @@ export default function Home() {
                 id: '5',
                 title: 'ワークショップ体験',
                 description: '職人による本格指導で自分だけのオリジナル作品を。初心者も安心の充実サポート。',
-                image: '/images/workshop/mosscountry_workshop.png',
+                image: '/images/workshop/mosscountry_workshop_blight.png',
                 category: 'Experience'
               }
             ]}
