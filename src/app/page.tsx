@@ -25,9 +25,9 @@ export default function Home() {
       <Hero />
 
       {/* MOSS COUNTRYとは */}
-      <section className="py-16 sm:py-24 md:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">
         <Container>
-          <AnimatedSection animation="fade-in" className="text-center mb-16 sm:mb-20 md:mb-24">
+          <AnimatedSection animation="fade-in" className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24">
             <AnimatedSection animation="slide-up" delay={200} className="mb-6 sm:mb-8">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-400 font-normal">About MOSS COUNTRY</span>
             </AnimatedSection>
@@ -83,7 +83,7 @@ export default function Home() {
             </AnimatedSection>
           </div>
           
-          <AnimatedSection animation="fade-in" delay={1600} className="text-center mt-20">
+          <AnimatedSection animation="fade-in" delay={1600} className="text-center mt-12 sm:mt-16 md:mt-20">
             <a href="/story">
               <Button 
                 variant="primary" 
@@ -101,12 +101,12 @@ export default function Home() {
       <LatestNews />
 
       {/* 商品カテゴリー概要 - 円形カルーセル */}
-      <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
+      <section className="relative py-12 sm:py-16 md:py-24 lg:py-32 overflow-hidden">
         {/* Section Overlay */}
         <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-md" />
         
         <Container className="relative z-10">
-          <AnimatedSection animation="fade-in" className="text-center mb-12 sm:mb-16 px-4">
+          <AnimatedSection animation="fade-in" className="text-center mb-8 sm:mb-12 md:mb-16 px-4">
             <div className="mb-6 sm:mb-8">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
             </div>

@@ -95,10 +95,10 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
           }`}
         >
           {/* Animated Logo and Title */}
-          <div className="mb-12">
+          <div className="mb-8 md:mb-12">
             {/* Logo */}
             <div 
-              className="flex justify-center mb-8 transform transition-all duration-1000 ease-out"
+              className="flex justify-center mb-4 md:mb-8 transform transition-all duration-1000 ease-out"
               style={{
                 opacity: isLoaded ? 1 : 0,
                 transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',
@@ -126,7 +126,7 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
 
           {/* Description */}
           <div 
-            className="text-lg md:text-xl lg:text-2xl font-normal leading-relaxed text-white max-w-4xl mx-auto mb-16 transform transition-all duration-1000 ease-out drop-shadow-lg"
+            className="text-lg md:text-xl lg:text-2xl font-normal leading-relaxed text-white max-w-4xl mx-auto mb-8 md:mb-16 transform transition-all duration-1000 ease-out drop-shadow-lg"
             style={{
               opacity: isLoaded ? 1 : 0,
               transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',

@@ -29,7 +29,7 @@ export const LatestNews: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section className="py-16 sm:py-24 bg-stone-900/70 backdrop-blur-md">
+      <section className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
         <Container>
           <InlineLoading message="新着情報を読み込み中..." />
         </Container>
@@ -42,9 +42,9 @@ export const LatestNews: React.FC = () => {
   }
 
   return (
-    <section className="py-16 sm:py-24 bg-stone-900/70 backdrop-blur-md">
+    <section className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
       <Container>
-        <AnimatedSection animation="fade-in" className="text-center mb-12 sm:mb-16">
+        <AnimatedSection animation="fade-in" className="text-center mb-8 sm:mb-12 md:mb-16">
           <div className="mb-6 sm:mb-8">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">
               Latest News
