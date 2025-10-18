@@ -106,7 +106,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-md" />
         
         <Container className="relative z-10">
-          <AnimatedSection animation="fade-in" className="text-center mb-8 sm:mb-12 md:mb-16 px-4">
+          <AnimatedSection animation="fade-in" className="text-center mb-6 sm:mb-8 md:mb-10 px-4">
             <div className="mb-6 sm:mb-8">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
             </div>

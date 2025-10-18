@@ -138,7 +138,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   const currentItem = items[currentIndex];
 
   return (
-    <div className={`relative py-24 ${className}`}>
+    <div className={`relative py-12 ${className}`}>
       {/* Navigation Buttons */}
       <button
         onClick={prevItem}
