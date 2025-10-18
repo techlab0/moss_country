@@ -43,7 +43,14 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
   const currentSlide = slides[currentIndex] || slides[0];
 
   return (
-    <section className="relative h-screen overflow-hidden">
+    <section 
+      className="relative overflow-hidden"
+      style={{ 
+        height: '100vh',
+        minHeight: '100vh',
+        maxHeight: '100vh'
+      }}
+    >
       {/* Background Images/Videos with Natural Fade */}
       {slides.map((slide, index) => (
         <div
@@ -88,9 +95,16 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
       <div className="absolute inset-0 z-15" />
 
       {/* Content */}
-      <div className="relative z-20 h-full flex flex-col justify-start md:justify-center items-center text-white px-4 pt-20 md:pt-0">
+      <div 
+        className="relative z-20 flex flex-col items-center text-white px-4"
+        style={{ 
+          height: '100vh',
+          paddingTop: '15vh',    // 上部余白 15%
+          paddingBottom: '15vh'  // 下部余白 15%（スクロールインジケーター用）
+        }}
+      >
         <div 
-          className={`text-center max-w-6xl mx-auto transform transition-all duration-2000 ease-out ${
+          className={`text-center max-w-6xl mx-auto flex flex-col justify-center h-full transform transition-all duration-2000 ease-out ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
           }`}
         >
@@ -155,7 +169,10 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
       </div>
 
       {/* Scroll Indicator - Leaf Icon */}
-      <div className="absolute bottom-12 md:bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+      <div 
+        className="absolute left-1/2 transform -translate-x-1/2 z-20"
+        style={{ bottom: '8vh' }} // 下部余白の中央に配置
+      >
         <div className="flex flex-col items-center space-y-3 animate-bounce">
           <div className="text-white/70 text-xs md:text-sm font-light tracking-wider">SCROLL</div>
           <div className="w-px h-8 bg-gradient-to-b from-white/60 to-transparent" />
