@@ -88,7 +88,7 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
       <div className="absolute inset-0 z-15" />
 
       {/* Content */}
-      <div className="relative z-20 h-full flex flex-col justify-center items-center text-white px-4">
+      <div className="relative z-20 h-full flex flex-col justify-start md:justify-center items-center text-white px-4 pt-20 md:pt-0">
         <div 
           className={`text-center max-w-6xl mx-auto transform transition-all duration-2000 ease-out ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
