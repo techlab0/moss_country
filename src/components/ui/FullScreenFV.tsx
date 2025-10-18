@@ -95,14 +95,15 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
           }`}
         >
           {/* Animated Logo and Title */}
-          <div className="mb-8 md:mb-12">
+          <div className="mb-6 md:mb-8 lg:mb-12">
             {/* Logo */}
             <div 
-              className="flex justify-center mb-4 md:mb-8 transform transition-all duration-1000 ease-out"
+              className="flex justify-center transform transition-all duration-1000 ease-out"
               style={{
                 opacity: isLoaded ? 1 : 0,
                 transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',
-                transitionDelay: '500ms'
+                transitionDelay: '500ms',
+                marginBottom: '8px' // 全デバイスで統一
               }}
             >
               <img 
