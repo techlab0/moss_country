@@ -77,6 +77,11 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-site-verification-code', // 後で実際の値に置き換え
   },
+  icons: {
+    icon: '/images/mosscountry_logo.svg',
+    shortcut: '/images/mosscountry_logo.svg',
+    apple: '/images/mosscountry_logo.svg',
+  },
 };
 
 export default function RootLayout({
