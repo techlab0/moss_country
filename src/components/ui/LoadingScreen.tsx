@@ -21,9 +21,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     <div 
       className={containerClasses}
       style={fullScreen ? { 
-        height: '100vh', 
-        minHeight: '100vh',
-        maxHeight: '100vh',
+        height: '120vh', 
+        minHeight: '120vh',
         width: '100vw',
         position: 'fixed',
         top: 0,
