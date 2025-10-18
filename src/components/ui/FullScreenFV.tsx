@@ -138,7 +138,7 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
 
           {/* Floating CTA */}
           <div 
-            className="transform transition-all duration-1000 ease-out mb-16"
+            className="transform transition-all duration-1000 ease-out mb-20 md:mb-16"
             style={{
               opacity: isLoaded ? 1 : 0,
               transform: isLoaded ? 'translateY(0)' : 'translateY(20px)',
@@ -153,12 +153,20 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="flex flex-col items-center space-y-4 animate-bounce">
-          <div className="w-px h-16 bg-gradient-to-b from-white/60 to-transparent" />
-          <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white/80 rounded-full mt-2 animate-pulse" />
+      {/* Scroll Indicator - Leaf Icon */}
+      <div className="absolute bottom-12 md:bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex flex-col items-center space-y-3 animate-bounce">
+          <div className="text-white/70 text-xs md:text-sm font-light tracking-wider">SCROLL</div>
+          <div className="w-px h-8 bg-gradient-to-b from-white/60 to-transparent" />
+          {/* 植物アイコン（苔・葉っぱ風） */}
+          <div className="relative transform hover:scale-110 transition-transform duration-300">
+            <svg 
+              className="w-6 h-6 md:w-8 md:h-8 text-white/80 animate-pulse" 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
+            </svg>
           </div>
         </div>
       </div>
