@@ -14,7 +14,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   showProgress = false
 }) => {
   const containerClasses = fullScreen
-    ? "fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-stone-900 w-full h-full min-h-screen"
+    ? "fixed top-0 left-0 right-0 bottom-0 z-50 flex flex-col bg-stone-900 w-full h-full min-h-screen"
     : "flex items-center justify-center py-12";
 
   return (
@@ -30,7 +30,14 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         left: 0
       } : undefined}
     >
-      <div className="flex flex-col items-center">
+      <div 
+        className="flex flex-col items-center" 
+        style={fullScreen ? { 
+          height: '100vh', 
+          paddingTop: '35vh',  // 上部余白でコンテンツを適切に配置
+          paddingBottom: '35vh' // 下部余白
+        } : undefined}
+      >
         {/* 上部のローディング要素 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2">

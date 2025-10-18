@@ -104,9 +104,10 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
         }}
       >
         <div 
-          className={`text-center max-w-6xl mx-auto flex flex-col justify-center h-full transform transition-all duration-2000 ease-out ${
+          className={`text-center max-w-6xl mx-auto flex flex-col transform transition-all duration-2000 ease-out ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
           }`}
+          style={{ height: '70vh' }} // 15vh上下余白を除いた70vh使用
         >
           {/* Animated Logo and Title */}
           <div className="mb-6 md:mb-8 lg:mb-12">
