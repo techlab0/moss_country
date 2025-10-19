@@ -8,14 +8,19 @@ import { Container } from '@/components/layout/Container';
 type MaintenanceSettings = {
   isEnabled: boolean;
   password: string;
+  message?: string;
 };
 
 export default function SettingsPage() {
   const [maintenanceSettings, setMaintenanceSettings] = useState<MaintenanceSettings>({
     isEnabled: false,
-    password: ''
+    password: '',
+    message: ''
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     fetchMaintenanceSettings();
@@ -35,6 +40,41 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveSettings = async () => {
+    if (!maintenanceSettings.password.trim()) {
+      setMessage('メンテナンスパスワードを入力してください');
+      setMessageType('error');
+      return;
+    }
+
+    setIsSaving(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/admin/maintenance/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(maintenanceSettings),
+      });
+
+      if (response.ok) {
+        setMessage('設定を保存しました');
+        setMessageType('success');
+      } else {
+        const data = await response.json();
+        setMessage(data.error || '設定の保存に失敗しました');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('設定の保存に失敗しました');
+      setMessageType('error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -51,64 +91,91 @@ export default function SettingsPage() {
             <p className="text-gray-600 mt-2">サイトの基本設定を管理します</p>
           </div>
 
+          {message && (
+            <div className={`p-4 rounded-md mb-6 ${
+              messageType === 'success' 
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              {message}
+            </div>
+          )}
 
           {/* メンテナンスモード設定 */}
           <div className="bg-white shadow-sm rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">メンテナンスモード</h2>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <span className="text-yellow-600">⚠️</span>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    本番環境での設定方法
-                  </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
-                    <p>メンテナンスモードを有効にするには、Vercelダッシュボードで以下の環境変数を設定してください：</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li><code className="bg-yellow-100 px-2 py-1 rounded">MAINTENANCE_MODE=true</code></li>
-                      <li><code className="bg-yellow-100 px-2 py-1 rounded">MAINTENANCE_PASSWORD=your-password</code></li>
-                    </ul>
-                    <p className="mt-2">設定後、デプロイメントを再実行してください。</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md bg-gray-50">
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
                 <div>
                   <h3 className="font-medium text-gray-900">メンテナンスモード</h3>
                   <p className="text-sm text-gray-600">
-                    現在の状態: {maintenanceSettings.isEnabled ? 'メンテナンス中' : '通常運用中'}
+                    有効にすると、パスワードを入力したユーザーのみサイトにアクセスできます
                   </p>
                 </div>
-                <div className={`w-11 h-6 rounded-full flex items-center px-1 ${
-                  maintenanceSettings.isEnabled ? 'bg-yellow-500' : 'bg-green-500'
-                }`}>
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                    maintenanceSettings.isEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}></div>
-                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={maintenanceSettings.isEnabled}
+                    onChange={(e) => setMaintenanceSettings({
+                      ...maintenanceSettings,
+                      isEnabled: e.target.checked
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+                </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="maintenance-password" className="block text-sm font-medium text-gray-700 mb-2">
                   メンテナンスパスワード
                 </label>
                 <input
                   type="password"
+                  id="maintenance-password"
                   value={maintenanceSettings.password}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                  placeholder={maintenanceSettings.password ? '設定済み' : '未設定'}
+                  onChange={(e) => setMaintenanceSettings({
+                    ...maintenanceSettings,
+                    password: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  placeholder="メンテナンスパスワードを入力"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  メンテナンス中にサイトにアクセスするためのパスワードです（読み取り専用）
+                  メンテナンス中にサイトにアクセスするためのパスワードです
                 </p>
               </div>
+
+              <div>
+                <label htmlFor="maintenance-message" className="block text-sm font-medium text-gray-700 mb-2">
+                  メンテナンスメッセージ
+                </label>
+                <textarea
+                  id="maintenance-message"
+                  value={maintenanceSettings.message || ''}
+                  onChange={(e) => setMaintenanceSettings({
+                    ...maintenanceSettings,
+                    message: e.target.value
+                  })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  placeholder="メンテナンス中に表示するメッセージ"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  メンテナンスページに表示されるメッセージです
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <Button
+                onClick={handleSaveSettings}
+                disabled={isSaving}
+                className="bg-moss-green hover:bg-moss-green/90 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50"
+              >
+                {isSaving ? '保存中...' : '設定を保存'}
+              </Button>
             </div>
           </div>
 

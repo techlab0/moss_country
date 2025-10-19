@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth';
+import { getMaintenanceSettings } from '@/lib/sanity';
 
-// メンテナンス設定を読み込む関数
-function getMaintenanceSettings() {
-  return {
-    isEnabled: process.env.MAINTENANCE_MODE === 'true',
-    password: process.env.MAINTENANCE_PASSWORD || ''
-  };
+// メンテナンス設定を非同期で読み込む関数
+async function fetchMaintenanceSettings() {
+  try {
+    const settings = await getMaintenanceSettings();
+    return settings || { isEnabled: false, password: '' };
+  } catch (error) {
+    console.error('Failed to fetch maintenance settings:', error);
+    return { isEnabled: false, password: '' };
+  }
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // メンテナンスモードチェック（設定ファイルから読み込み）
-  const maintenanceSettings = getMaintenanceSettings();
+  // メンテナンスモードチェック（Sanityから読み込み）
+  const maintenanceSettings = await fetchMaintenanceSettings();
   const isMaintenanceMode = maintenanceSettings.isEnabled;
   
   if (isMaintenanceMode) {

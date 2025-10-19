@@ -467,3 +467,57 @@ export async function getFeaturedMossSpecies(): Promise<MossSpecies[]> {
     return []
   }
 }
+
+// Maintenance Settings queries
+export async function getMaintenanceSettings(): Promise<{
+  isEnabled: boolean;
+  password: string;
+  message?: string;
+} | null> {
+  try {
+    const settings = await client.fetch(`
+      *[_type == "maintenanceSettings"][0] {
+        isEnabled,
+        password,
+        message
+      }
+    `);
+    
+    return settings || null;
+  } catch (error) {
+    console.warn('Failed to fetch maintenance settings from Sanity:', error);
+    return null;
+  }
+}
+
+export async function updateMaintenanceSettings(data: {
+  isEnabled: boolean;
+  password: string;
+  message?: string;
+}): Promise<void> {
+  try {
+    // 既存の設定を検索
+    const existing = await client.fetch(`*[_type == "maintenanceSettings"][0]._id`);
+    
+    if (existing) {
+      // 既存の設定を更新
+      await writeClient
+        .patch(existing)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString()
+        })
+        .commit();
+    } else {
+      // 新しい設定を作成
+      await writeClient.create({
+        _type: 'maintenanceSettings',
+        ...data,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Failed to update maintenance settings:', error);
+    throw error;
+  }
+}
