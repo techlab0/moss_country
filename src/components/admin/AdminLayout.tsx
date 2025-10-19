@@ -23,6 +23,7 @@ const navigation = [
   { name: 'データベース最適化', href: '/admin/database', icon: '🗄️' },
   { name: '詳細CMS', href: '/admin/cms', icon: '⚙️' },
   { name: '2FA設定', href: '/admin/setup-2fa', icon: '🔐' },
+  { name: 'サイト設定', href: '/admin/settings', icon: '⚙️' },
 ];
 
 interface AdminLayoutProps {
