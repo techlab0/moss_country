@@ -145,7 +145,8 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
           : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'fixed',
+        filter: isMobile ? 'brightness(1.2)' : 'none'
       }}
     >
       {/* Background Overlay */}

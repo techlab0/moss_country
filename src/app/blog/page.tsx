@@ -84,7 +84,8 @@ export default function BlogPage() {
           : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'fixed',
+        filter: isMobile ? 'brightness(1.2)' : 'none'
       }}
     >
       {/* Unified Background Overlay */}
