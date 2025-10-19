@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PerformanceInit } from "@/components/PerformanceInit";
 import { InventoryNotifications } from "@/components/ui/InventoryNotifications";
 import { PageLoadingProvider } from "@/components/providers/PageLoadingProvider";
+import { StructuredData } from "@/components/seo/StructuredData";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,6 +92,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <StructuredData />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
