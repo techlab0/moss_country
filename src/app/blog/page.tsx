@@ -17,6 +17,19 @@ export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // ブログ記事を取得
   useEffect(() => {
@@ -66,7 +79,9 @@ export default function BlogPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: isMobile 
+          ? `url('/images/misc/moss02_sp.png')` 
+          : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

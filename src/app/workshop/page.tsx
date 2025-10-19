@@ -55,6 +55,19 @@ const testimonials = [
 export default function WorkshopPage() {
   const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
   const [, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   useEffect(() => {
     async function fetchWorkshops() {
@@ -74,7 +87,9 @@ export default function WorkshopPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: isMobile 
+          ? `url('/images/misc/moss02_sp.png')` 
+          : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

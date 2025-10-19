@@ -22,6 +22,19 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
   const [species, setSpecies] = useState<MossSpecies | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   useEffect(() => {
     const fetchSpecies = async () => {
@@ -127,7 +140,9 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: isMobile 
+          ? `url('/images/misc/moss02_sp.png')` 
+          : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

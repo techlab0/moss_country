@@ -366,11 +366,27 @@ function FAQSection() {
 }
 
 export default function StorePage() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
   return (
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: isMobile 
+          ? `url('/images/misc/moss02_sp.png')` 
+          : `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
