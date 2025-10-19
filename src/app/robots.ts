@@ -5,20 +5,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/account/',
-          '/orders/',
-          '/checkout/',
-          '/cart/',
-          '/payment/',
-          '/_next/',
-          '/test/',
-        ],
+        disallow: '/',
       },
     ],
-    sitemap: 'https://moss-country.com/sitemap.xml',
+    // sitemap: 'https://moss-country.com/sitemap.xml', // インデックス無効中はコメントアウト
   }
 }
