@@ -4,6 +4,35 @@ import { getAdminSessionFromRequest } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // メンテナンスモードチェック
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+  
+  if (isMaintenanceMode) {
+    // 管理画面、API、メンテナンス関連のパスは除外
+    if (
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/api') ||
+      pathname === '/maintenance' ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/images') ||
+      pathname.includes('.') // 静的ファイル
+    ) {
+      // 管理画面の場合は既存の認証処理を継続
+      if (pathname.startsWith('/admin')) {
+        // 下の管理画面処理に続く
+      } else {
+        return NextResponse.next();
+      }
+    } else {
+      // メンテナンス認証クッキーをチェック
+      const maintenanceAccess = request.cookies.get('maintenance-access');
+      if (maintenanceAccess?.value !== 'allowed') {
+        const maintenanceUrl = new URL('/maintenance', request.url);
+        return NextResponse.redirect(maintenanceUrl);
+      }
+    }
+  }
+
   // 管理画面のルートをチェック
   if (pathname.startsWith('/admin')) {
     // 認証不要のページ
@@ -47,5 +76,7 @@ export const config = {
     '/admin/:path*',
     // APIルートも保護
     '/api/admin/:path*',
+    // メンテナンスモード用にすべてのパブリックルートをチェック
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
