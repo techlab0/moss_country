@@ -24,10 +24,11 @@ export function MaintenancePage() {
       });
 
       if (response.ok) {
-        // パスワードが正しい場合、ページをリロード
-        window.location.reload();
+        // パスワードが正しい場合、ホームページにリダイレクト
+        window.location.href = '/';
       } else {
-        setError('パスワードが正しくありません');
+        const data = await response.json();
+        setError(data.error || 'パスワードが正しくありません');
       }
     } catch (error) {
       setError('認証に失敗しました');

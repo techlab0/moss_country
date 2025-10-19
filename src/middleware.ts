@@ -2,14 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth';
 import { getMaintenanceSettings } from '@/lib/sanity';
 
-// メンテナンス設定を非同期で読み込む関数
+// メンテナンス設定をキャッシュ付きで読み込む関数
+let settingsCache: { data: any; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30秒
+
 async function fetchMaintenanceSettings() {
   try {
+    // キャッシュが有効な場合はそれを使用
+    if (settingsCache && Date.now() - settingsCache.timestamp < CACHE_DURATION) {
+      return settingsCache.data;
+    }
+
     const settings = await getMaintenanceSettings();
-    return settings || { isEnabled: false, password: '' };
+    const result = settings || { isEnabled: false, password: '' };
+    
+    // キャッシュを更新
+    settingsCache = {
+      data: result,
+      timestamp: Date.now()
+    };
+    
+    return result;
   } catch (error) {
     console.error('Failed to fetch maintenance settings:', error);
-    return { isEnabled: false, password: '' };
+    // エラーの場合は環境変数フォールバック
+    return { 
+      isEnabled: process.env.MAINTENANCE_MODE === 'true', 
+      password: process.env.MAINTENANCE_PASSWORD || '' 
+    };
   }
 }
 
@@ -19,6 +39,10 @@ export async function middleware(request: NextRequest) {
   // メンテナンスモードチェック（Sanityから読み込み）
   const maintenanceSettings = await fetchMaintenanceSettings();
   const isMaintenanceMode = maintenanceSettings.isEnabled;
+  
+  console.log('Middleware - pathname:', pathname);
+  console.log('Middleware - maintenance settings:', maintenanceSettings);
+  console.log('Middleware - isMaintenanceMode:', isMaintenanceMode);
   
   if (isMaintenanceMode) {
     // 管理画面、API、メンテナンス関連のパスは除外
@@ -39,9 +63,14 @@ export async function middleware(request: NextRequest) {
     } else {
       // メンテナンス認証クッキーをチェック
       const maintenanceAccess = request.cookies.get('maintenance-access');
+      console.log('Middleware - maintenance cookie:', maintenanceAccess?.value);
+      
       if (maintenanceAccess?.value !== 'allowed') {
+        console.log('Middleware - redirecting to maintenance page');
         const maintenanceUrl = new URL('/maintenance', request.url);
         return NextResponse.redirect(maintenanceUrl);
+      } else {
+        console.log('Middleware - maintenance access allowed, continuing');
       }
     }
   }

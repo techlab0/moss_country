@@ -16,7 +16,11 @@ export async function POST(request: NextRequest) {
     const { getMaintenanceSettings } = require('@/lib/sanity');
     const settings = await getMaintenanceSettings();
     
+    console.log('Maintenance verify - settings:', settings);
+    console.log('Maintenance verify - input password:', password);
+    
     if (!settings || !settings.password) {
+      console.log('No maintenance password configured');
       return NextResponse.json(
         { error: 'メンテナンスパスワードが設定されていません' },
         { status: 500 }
@@ -24,6 +28,7 @@ export async function POST(request: NextRequest) {
     }
     
     const maintenancePassword = settings.password;
+    console.log('Maintenance verify - stored password:', maintenancePassword);
 
     if (password !== maintenancePassword) {
       return NextResponse.json(
