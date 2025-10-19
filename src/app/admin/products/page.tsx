@@ -49,6 +49,51 @@ export default function AdminProductsPage() {
     return 'in_stock';
   };
 
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`「${productName}」を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('削除に失敗しました');
+      }
+
+      alert('商品を削除しました');
+      fetchProducts(); // 商品一覧を再取得
+    } catch (error) {
+      console.error('削除エラー:', error);
+      alert('商品の削除に失敗しました');
+    }
+  };
+
+  const handleStockUpdate = async (productId: string, newStock: number) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          stockQuantity: newStock
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('在庫更新に失敗しました');
+      }
+
+      fetchProducts(); // 商品一覧を再取得
+    } catch (error) {
+      console.error('在庫更新エラー:', error);
+      alert('在庫の更新に失敗しました');
+    }
+  };
+
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'in_stock':
@@ -199,7 +244,16 @@ export default function AdminProductsPage() {
                       ¥{product.price.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.currentStock || 0}
+                      <input
+                        type="number"
+                        min="0"
+                        value={product.currentStock || 0}
+                        onChange={(e) => {
+                          const newStock = parseInt(e.target.value) || 0;
+                          handleStockUpdate(product._id, newStock);
+                        }}
+                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
@@ -216,12 +270,17 @@ export default function AdminProductsPage() {
                           確認
                         </Link>
                         <Link
-                          href={`/admin/cms/structure/product;${product._id}`}
-                          target="_blank"
+                          href={`/admin/products/${product._id}/edit`}
                           className="text-blue-600 hover:text-blue-500"
                         >
                           編集
                         </Link>
+                        <button
+                          onClick={() => handleDeleteProduct(product._id, product.name)}
+                          className="text-red-600 hover:text-red-500"
+                        >
+                          削除
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -239,7 +298,7 @@ export default function AdminProductsPage() {
               {filter === 'all' ? 'まだ商品が登録されていません' : `${filter}の商品がありません`}
             </p>
             <Link
-              href="/admin/cms"
+              href="/admin/products/new"
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
             >
               新しい商品を追加

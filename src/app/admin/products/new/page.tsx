@@ -17,6 +17,9 @@ interface ProductFormData {
     depth?: number;
   };
   weight?: number;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  featured: boolean;
 }
 
 const categories = [
@@ -40,6 +43,9 @@ const NewProductPage = () => {
     materials: [],
     careInstructions: '',
     dimensions: {},
+    stockQuantity: 0,
+    lowStockThreshold: 5,
+    featured: false,
   });
 
   const handleSubmit = async (e: FormEvent) => {
@@ -47,8 +53,20 @@ const NewProductPage = () => {
     setLoading(true);
 
     try {
-      console.log('商品作成データ:', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('商品の作成に失敗しました');
+      }
+
+      const newProduct = await response.json();
+      console.log('作成された商品:', newProduct);
       alert('商品が正常に登録されました！');
       router.push('/admin/products');
     } catch (error) {
@@ -192,6 +210,55 @@ const NewProductPage = () => {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="水やりの頻度や置き場所などの注意点を記載"
             />
+          </div>
+
+          {/* 在庫・管理設定 */}
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">在庫・管理設定</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  初期在庫数量
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.stockQuantity}
+                  onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  低在庫しきい値
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.lowStockThreshold}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lowStockThreshold: parseInt(e.target.value) || 5 }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="5"
+                />
+                <p className="text-xs text-gray-500 mt-1">この数以下になると「在庫少」表示</p>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
+                  おすすめ商品として表示
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4">
