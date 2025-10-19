@@ -9,6 +9,7 @@ interface InventoryAlert {
   currentStock: number;
   minStock: number;
   status: 'low' | 'out';
+  slug?: string;
 }
 
 export function InventoryAlerts() {
@@ -16,35 +17,24 @@ export function InventoryAlerts() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 実際のAPIから在庫アラートデータを取得
-    // 現在はモックデータを使用
-    setTimeout(() => {
-      setAlerts([
-        {
-          id: '1',
-          productName: 'ミニカプセルテラリウム',
-          currentStock: 2,
-          minStock: 5,
-          status: 'low',
-        },
-        {
-          id: '2',
-          productName: 'プレミアムテラリウム（大）',
-          currentStock: 0,
-          minStock: 3,
-          status: 'out',
-        },
-        {
-          id: '3',
-          productName: '苔玉テラリウム',
-          currentStock: 1,
-          minStock: 5,
-          status: 'low',
-        },
-      ]);
-      setLoading(false);
-    }, 800);
+    fetchAlerts();
   }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      const response = await fetch('/api/admin/dashboard/alerts');
+      if (!response.ok) {
+        throw new Error('在庫アラートデータの取得に失敗しました');
+      }
+      const data = await response.json();
+      setAlerts(data.alerts);
+      setLoading(false);
+    } catch (error) {
+      console.error('Alerts fetch error:', error);
+      setAlerts([]);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (

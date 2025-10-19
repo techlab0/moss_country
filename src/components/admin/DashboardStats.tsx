@@ -7,6 +7,14 @@ interface Stats {
   totalRevenue: number;
   totalProducts: number;
   lowStockItems: number;
+  outOfStockItems?: number;
+  totalInventoryValue?: number;
+  changes?: {
+    totalOrders: number;
+    totalRevenue: number;
+    totalProducts: number;
+    lowStockItems: number;
+  };
 }
 
 export function DashboardStats() {
@@ -19,18 +27,30 @@ export function DashboardStats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 実際のAPIから統計データを取得
-    // 現在はモックデータを使用
-    setTimeout(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/admin/dashboard/stats');
+      if (!response.ok) {
+        throw new Error('統計データの取得に失敗しました');
+      }
+      const data = await response.json();
+      setStats(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Stats fetch error:', error);
+      // エラー時はデフォルト値を設定
       setStats({
-        totalOrders: 45,
-        totalRevenue: 278500,
-        totalProducts: 28,
-        lowStockItems: 3,
+        totalOrders: 0,
+        totalRevenue: 0,
+        totalProducts: 0,
+        lowStockItems: 0,
       });
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
   const statCards = [
     {
@@ -39,7 +59,7 @@ export function DashboardStats() {
       suffix: '件',
       icon: '📦',
       color: 'bg-blue-500',
-      change: '+12%',
+      change: stats.changes?.totalOrders ? `+${stats.changes.totalOrders}` : '0',
     },
     {
       title: '総売上',
@@ -47,7 +67,7 @@ export function DashboardStats() {
       suffix: '円',
       icon: '💰',
       color: 'bg-green-500',
-      change: '+8.2%',
+      change: stats.changes?.totalRevenue ? `+¥${stats.changes.totalRevenue.toLocaleString()}` : '¥0',
       format: true,
     },
     {
@@ -56,7 +76,7 @@ export function DashboardStats() {
       suffix: '点',
       icon: '🌱',
       color: 'bg-moss-green',
-      change: '+2',
+      change: stats.changes?.totalProducts ? `+${stats.changes.totalProducts}` : '0',
     },
     {
       title: '低在庫商品',
@@ -64,7 +84,7 @@ export function DashboardStats() {
       suffix: '件',
       icon: '⚠️',
       color: 'bg-yellow-500',
-      change: '要確認',
+      change: stats.lowStockItems > 0 ? '要確認' : '良好',
     },
   ];
 

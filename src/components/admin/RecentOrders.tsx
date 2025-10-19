@@ -24,46 +24,28 @@ export function RecentOrders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 実際のAPIから注文データを取得
-    // 現在はモックデータを使用
-    setTimeout(() => {
-      setOrders([
-        {
-          id: '1',
-          orderNumber: 'ORD-20241224-001',
-          customerName: '田中 花子',
-          total: 8500,
-          status: 'pending',
-          createdAt: new Date('2024-12-24T10:30:00'),
-        },
-        {
-          id: '2',
-          orderNumber: 'ORD-20241224-002',
-          customerName: '山田 太郎',
-          total: 12000,
-          status: 'processing',
-          createdAt: new Date('2024-12-24T09:15:00'),
-        },
-        {
-          id: '3',
-          orderNumber: 'ORD-20241223-015',
-          customerName: '佐藤 美樹',
-          total: 6800,
-          status: 'shipped',
-          createdAt: new Date('2024-12-23T16:45:00'),
-        },
-        {
-          id: '4',
-          orderNumber: 'ORD-20241223-014',
-          customerName: '鈴木 健一',
-          total: 15200,
-          status: 'delivered',
-          createdAt: new Date('2024-12-23T14:20:00'),
-        },
-      ]);
-      setLoading(false);
-    }, 1200);
+    fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      // 注文システムが実装されたらここでAPIを呼び出し
+      // const response = await fetch('/api/admin/orders/recent');
+      // if (!response.ok) {
+      //   throw new Error('注文データの取得に失敗しました');
+      // }
+      // const data = await response.json();
+      // setOrders(data.orders);
+      
+      // 現在は注文システムが未実装のため空の状態を表示
+      setOrders([]);
+      setLoading(false);
+    } catch (error) {
+      console.error('Orders fetch error:', error);
+      setOrders([]);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -136,7 +118,9 @@ export function RecentOrders() {
       
       {orders.length === 0 && (
         <div className="px-6 py-8 text-center">
-          <p className="text-gray-500">最近の注文がありません</p>
+          <div className="text-gray-400 text-4xl mb-2">📦</div>
+          <p className="text-gray-500 mb-2">最近の注文がありません</p>
+          <p className="text-sm text-gray-400">注文システムが実装されるとここに表示されます</p>
         </div>
       )}
     </div>

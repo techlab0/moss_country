@@ -45,9 +45,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 一時セッションからユーザー情報を取得
+    const tempToken = request.cookies.get('admin-temp-session')?.value;
+    let userId = 'admin';
+    let userEmail = process.env.ADMIN_EMAIL!;
+    
+    if (tempToken) {
+      try {
+        const { verifyJWT } = await import('@/lib/auth');
+        const payload = await verifyJWT(tempToken);
+        if (payload) {
+          userId = payload.userId as string;
+          userEmail = payload.email as string;
+        }
+      } catch (error) {
+        console.log('Temp token verification failed, using default admin');
+      }
+    }
+
     // 2FA認証済みトークンを生成
-    const adminEmail = process.env.ADMIN_EMAIL!;
-    const token = await createTwoFactorVerifiedToken('admin', adminEmail);
+    const token = await createTwoFactorVerifiedToken(userId, userEmail);
+    
+    // 最終ログイン時刻を更新
+    try {
+      const { updateUser } = await import('@/lib/userManager');
+      await updateUser(userId, {
+        lastLogin: new Date(),
+      });
+    } catch (error) {
+      console.log('Failed to update lastLogin:', error);
+    }
     
     const response = NextResponse.json({ 
       success: true, 
@@ -61,6 +88,9 @@ export async function POST(request: NextRequest) {
       maxAge: 24 * 60 * 60, // 24時間
       path: '/',
     });
+
+    // 一時セッションを削除
+    response.cookies.delete('admin-temp-session');
 
     return response;
 
