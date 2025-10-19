@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth';
-import fs from 'fs';
-import path from 'path';
 
 // メンテナンス設定を読み込む関数
 function getMaintenanceSettings() {
-  try {
-    const settingsPath = path.join(process.cwd(), 'maintenance-settings.json');
-    if (fs.existsSync(settingsPath)) {
-      const data = fs.readFileSync(settingsPath, 'utf-8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Failed to read maintenance settings:', error);
-  }
-  return { isEnabled: false, password: '' };
+  return {
+    isEnabled: process.env.MAINTENANCE_MODE === 'true',
+    password: process.env.MAINTENANCE_PASSWORD || ''
+  };
 }
 
 export async function middleware(request: NextRequest) {

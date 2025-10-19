@@ -12,21 +12,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 設定ファイルからメンテナンスパスワードを取得
-    const fs = require('fs');
-    const path = require('path');
-    
-    let maintenancePassword = '';
-    try {
-      const settingsPath = path.join(process.cwd(), 'maintenance-settings.json');
-      if (fs.existsSync(settingsPath)) {
-        const data = fs.readFileSync(settingsPath, 'utf-8');
-        const settings = JSON.parse(data);
-        maintenancePassword = settings.password;
-      }
-    } catch (error) {
-      console.error('Failed to read maintenance settings:', error);
-    }
+    // 環境変数からメンテナンスパスワードを取得
+    const maintenancePassword = process.env.MAINTENANCE_PASSWORD;
     
     if (!maintenancePassword) {
       return NextResponse.json(
