@@ -6,10 +6,10 @@ export function StructuredData() {
     "@type": "LocalBusiness",
     "@id": "https://moss-country.com/#organization",
     "name": "MOSS COUNTRY",
-    "alternateName": ["moss country", "mosscountry", "モスカウントリー", "モスカントリー"],
+    "alternateName": ["moss country", "mosscountry", "モスカントリー"],
     "url": "https://moss-country.com",
     "logo": "https://moss-country.com/images/mosscountry_logo.svg",
-    "description": "MOSS COUNTRY（モスカウントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。",
+    "description": "MOSS COUNTRY（モスカントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "発寒11条4丁目3-1",

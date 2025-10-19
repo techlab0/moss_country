@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     default: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
     template: '%s | MOSS COUNTRY',
   },
-  description: 'MOSS COUNTRY（モスカウントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。小さなガラスの中に広がる、無限の自然の世界をお届けします。',
-  keywords: ['テラリウム', '苔テラリウム', 'カプセルテラリウム', '札幌', '北海道', 'ワークショップ', '癒し', 'インテリア', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカウントリー', 'モスカントリー', 'モス カウントリー', 'モス カントリー', '苔図鑑'],
+  description: 'MOSS COUNTRY（モスカントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。小さなガラスの中に広がる、無限の自然の世界をお届けします。',
+  keywords: ['テラリウム', '苔テラリウム', 'カプセルテラリウム', '札幌', '北海道', 'ワークショップ', '癒し', 'インテリア', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー', '苔図鑑'],
   authors: [{ name: 'MOSS COUNTRY' }],
   publisher: 'MOSS COUNTRY',
   formatDetection: {
