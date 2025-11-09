@@ -143,42 +143,48 @@ export default function Home() {
                 title: 'テラリウム作品',
                 description: '苔が織りなす穏やかな景色。日常の中に小さな癒しをお届けします。',
                 image: '/images/products/moss-country_products_glass.png',
-                category: 'Terrarium'
+                category: 'Terrarium',
+                link: '/products'
               },
               {
                 id: '2',
                 title: '苔玉・苔盆栽',
                 description: '日本の伝統美と現代のライフスタイルを融合。和洋問わずどんな空間にも。',
                 image: '/images/products/moss-country_products_mossball.png',
-                category: 'Moss Ball'
+                category: 'Moss Ball',
+                link: '/products'
               },
               {
                 id: '3',
                 title: '用品販売',
                 description: 'テラリウムづくりに使える道具や素材を揃えています。初心者の方でも安心して苔の世界を楽しめます。',
                 image: '/images/products/moss-country_products_accessories.png',
-                category: 'Tools'
+                category: 'Tools',
+                link: '/products'
               },
               {
                 id: '4',
                 title: 'ワークショップ',
                 description: '職人による本格指導で自分だけのオリジナル作品を。初心者も安心の充実サポート。',
                 image: '/images/workshop/mosscountry_workshop_blight.png',
-                category: 'Workshop'
+                category: 'Workshop',
+                link: '/workshop'
               },
               {
                 id: '5',
                 title: 'レンタルテラリウム',
                 description: 'いつも美しいままに佇む、洗練された苔の景色。上質な緑が、空間に安らぎを広げます。',
                 image: '/images/products/moss-country_products_big.png',
-                category: 'Rental'
+                category: 'Rental',
+                link: '/products'
               },
               {
                 id: '6',
                 title: '苔セラピー',
                 description: '静かな緑に心をゆだねて、やさしくととのう時間。苔の癒しが、あなたの内側にそっと寄り添います。',
                 image: '/images/products/moss-country_products_bottle.png',
-                category: 'Therapy'
+                category: 'Therapy',
+                link: '/workshop'
               }
             ]}
           />

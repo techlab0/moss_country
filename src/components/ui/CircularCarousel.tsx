@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ImagePlaceholder } from './ImagePlaceholder';
 
 interface CarouselItem {
@@ -10,6 +11,7 @@ interface CarouselItem {
   image: string;
   category: string;
   price?: string;
+  link?: string;
 }
 
 interface CircularCarouselProps {
@@ -237,9 +239,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
                 {currentItem.price}
               </div>
             )}
-            <button className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
-              詳しく見る
-            </button>
+            {currentItem.link ? (
+              <Link href={currentItem.link} className="inline-block px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+                詳しく見る
+              </Link>
+            ) : (
+              <button className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+                詳しく見る
+              </button>
+            )}
           </div>
         </div>
       </div>
