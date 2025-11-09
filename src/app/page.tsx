@@ -158,7 +158,7 @@ export default function Home() {
                 id: '3',
                 title: '用品販売',
                 description: 'テラリウムづくりに使える道具や素材を揃えています。初心者の方でも安心して苔の世界を楽しめます。',
-                image: '/images/products/moss-country_products_accessories.png',
+                image: '/images/products/care-guide.jpg',
                 category: 'Tools',
                 link: '/products'
               },
