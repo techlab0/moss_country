@@ -136,7 +136,12 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
                 transitionDelay: '1200ms'
               }}
             >
-              {currentSlide.subtitle}
+              {currentSlide.subtitle.split('\n').map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  {index < currentSlide.subtitle.split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
             </div>
           </div>
 
@@ -149,7 +154,12 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
               transitionDelay: '1500ms'
             }}
           >
-            {currentSlide.description}
+            {currentSlide.description.split('\n').map((line, index) => (
+              <React.Fragment key={index}>
+                {line}
+                {index < currentSlide.description.split('\n').length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </div>
 
           {/* Floating CTA */}
