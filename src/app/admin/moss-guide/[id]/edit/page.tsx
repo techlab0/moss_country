@@ -289,7 +289,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 required
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
                 placeholder="例：ホソウリゴケ"
               />
             </div>
