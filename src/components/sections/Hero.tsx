@@ -6,8 +6,8 @@ const fvSlides = [
     id: '1',
     image: '/images/misc/moss01.jpeg',
     title: 'MOSS COUNTRY',
-    subtitle: '小さなガラスの中に広がる',
-    description: '北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムで、あなたの暮らしに緑の癒しを。'
+    subtitle: '苔のある生活をあなたに。生活に『癒し』と『和み』を。',
+    description: '苔の緑に心をゆだねて、穏やかなひとときを。Moss Countryが癒しの空間をお届けします。'
   }
 ];
 
