@@ -22,6 +22,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   className = ''
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayIndex, setDisplayIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const nextItem = () => {
@@ -29,7 +30,10 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     setIsAnimating(true);
     // Clockwise: move right, items shift left
     setCurrentIndex((prev) => (prev + 1) % items.length);
-    setTimeout(() => setIsAnimating(false), 800);
+    setTimeout(() => {
+      setDisplayIndex((prev) => (prev + 1) % items.length);
+      setIsAnimating(false);
+    }, 400);
   };
 
   const prevItem = () => {
@@ -37,14 +41,20 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     setIsAnimating(true);
     // Counter-clockwise: move left, items shift right
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    setTimeout(() => setIsAnimating(false), 800);
+    setTimeout(() => {
+      setDisplayIndex((prev) => (prev - 1 + items.length) % items.length);
+      setIsAnimating(false);
+    }, 400);
   };
 
   const goToItem = (index: number) => {
     if (isAnimating || index === currentIndex) return;
     setIsAnimating(true);
     setCurrentIndex(index);
-    setTimeout(() => setIsAnimating(false), 800);
+    setTimeout(() => {
+      setDisplayIndex(index);
+      setIsAnimating(false);
+    }, 400);
   };
 
   // Calculate positions for horizontal-like arc arrangement
@@ -137,7 +147,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     };
   };
 
-  const currentItem = items[currentIndex];
+  const currentItem = items[displayIndex];
 
   return (
     <div className={`relative py-12 ${className}`}>

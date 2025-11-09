@@ -6,8 +6,8 @@ const fvSlides = [
     id: '1',
     image: '/images/misc/moss01.jpeg',
     title: 'MOSS COUNTRY',
-    subtitle: '苔のある生活をあなたに。生活に『癒し』と『和み』を。',
-    description: '苔の緑に心をゆだねて、穏やかなひとときを。Moss Countryが癒しの空間をお届けします。'
+    subtitle: '苔のある生活をあなたに。\n生活に『癒し』と『和み』を。',
+    description: '苔の緑に心をゆだねて、穏やかなひとときを。\nMoss Countryが癒しの空間をお届けします。'
   }
 ];
 

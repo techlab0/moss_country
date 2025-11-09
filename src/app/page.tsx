@@ -131,7 +131,7 @@ export default function Home() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-white mb-8 sm:mb-12 leading-tight">
               <span className="text-emerald-400 font-bold">MOSS COUNTRY's</span>
               <br />
-              Terrarium
+              Work
             </h2>
             <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
           </AnimatedSection>
