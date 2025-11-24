@@ -7,31 +7,39 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 
 const timeline = [
   {
+    year: '1990-2000s',
+    title: '自然との出会い',
+    titleEn: 'Meeting Nature',
+    description: '幼い頃から自然や動物が大好きで、両親に連れられて森や山へ出かけていました。中でも心を惹かれたのが、静かに息づく小さな苔。見つめているだけで心が落ち着き、時がたつのを忘れるほどでした。',
+    descriptionEn: 'From childhood, I loved nature and animals. Among them, moss fascinated me - a quiet, living beauty that made time stand still.',
+  },
+  {
     year: '2024',
-    title: 'テラリウムとの出会い',
-    description: '代表の立桶が北海道の豊かな自然と苔の魅力に心を奪われ、独自の制作技術を追求し始める。',
+    title: '苔とテラリウムとの再会',
+    titleEn: 'Rediscovering Moss & Terrariums',
+    description: '自分の仕事を持ちたいと考えたとき、心に浮かんだのは苔でした。<br/>人々が知らない苔の魅力を伝え、癒しを届けたい。<br/>北海道には苔テラリウムの文化がまだ少なく、「それなら自分が広めよう」と決意しました。',
+    descriptionEn: 'When I dreamed of creating my own work, moss came to mind.<br/>I wanted to share its quiet beauty and bring healing to people.<br/>Since Hokkaido had few moss terrarium spaces, I decided to create one myself.',
   },
   {
     year: '2025',
     title: 'MOSS COUNTRY設立',
-    description: '北海道の札幌にMOSS COUNTRYを設立。地域初のカプセルテラリウム専門店として話題に。',
+    titleEn: 'The Birth of Moss Country',
+    description: '見本のない中、独学で知識を深め、店舗の掃除や改装も自らの手で。<br/>こうして札幌に苔の専門店「Moss Country」が誕生しました。<br/>名前には、「日本を苔の国=Moss Countryにしたい」という願いを込めています。',
+    descriptionEn: 'Without any precedents, I studied on my own, renovated an old space by hand, and opened Moss Country - Hokkaido\'s first moss terrarium specialty Shop.<br/>The name reflects my wish to make Japan a true Moss Country.',
   },
   {
-    year: '2025',
-    title: 'ワークショップ開始',
-    description: 'より多くの人にテラリウムの魅力を伝えるため、本格的なワークショップ教室を開始。',
-  },
-  {
-    year: '2025',
-    title: '実店舗オープン',
-    description: 'オンライン販売を開始し、全国の皆様に北海道のテラリウムをお届け。実店舗での体験もさらに充実。',
+    year: '2026',
+    title: '未来へ',
+    titleEn: 'Looking Ahead',
+    description: 'これからはレンタル事業や苔セラピーを通じて、癒しの空間を広げていきます。<br/>子どもたちや地域の人々にも、苔を通して自然の素晴らしさを伝えたい。',
+    descriptionEn: 'Through moss rental and therapy, I hope to create spaces that soothe the heart.<br/>I wish to share the beauty of nature with children and communities across Japan.',
   },
 ];
 
 const values = [
   {
     title: 'AUTHENTICITY',
-    description: '北海道の自然そのものを表現する、本物の美しさを追求しています。',
+    description: '苔の素晴らしさを伝えるために本物の美しさを追求しています。',
   },
   {
     title: 'CRAFTSMANSHIP',
@@ -100,12 +108,12 @@ export default function StoryPage() {
           <div className="max-w-4xl mx-auto">
             <div className="glass-card-dark text-center p-8 rounded-3xl">
               <blockquote className="text-2xl md:text-3xl text-white font-light leading-relaxed mb-8">
-                「北海道の苔が織りなす小宇宙を、<br />
-                あなたの日常に。」
+                「苔のある生活をあなたに。<br />
+                生活に癒しと和みを。」
               </blockquote>
               <p className="text-lg text-white/90 font-light">
-                自然の息づかいを感じられる、唯一無二のテラリウム体験を。<br />
-                代表 立桶が追求する、新しい癒しのかたち。
+                苔の美しさを通して、心と暮らしに穏やかな時間を届けます。<br />
+                代表 立桶が提案する、新しい癒しのかたち。
               </p>
             </div>
           </div>
@@ -154,7 +162,8 @@ export default function StoryPage() {
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-white/90 font-light">
-                一つの出会いから生まれた、MOSS COUNTRYストーリー
+                一つの出会いから生まれた、Moss Countryの物語<br/>
+                A story born from a single encounter with nature.
               </p>
             </div>
           </div>
@@ -167,9 +176,23 @@ export default function StoryPage() {
                     <span className="bg-white text-moss-green px-4 py-2 rounded-lg text-sm font-bold mr-4 shadow-md">
                       {item.year}
                     </span>
-                    <h3 className="text-xl font-bold text-white tracking-wide">{item.title}</h3>
+                    <div>
+                      <h3 className="text-xl font-bold text-white tracking-wide">{item.title}</h3>
+                      {item.titleEn && (
+                        <p className="text-light-green text-sm font-light italic">{item.titleEn}</p>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-white/90 leading-relaxed font-light">{item.description}</p>
+                  <p 
+                    className="text-white/90 leading-relaxed font-light mb-3"
+                    dangerouslySetInnerHTML={{ __html: item.description }}
+                  />
+                  {item.descriptionEn && (
+                    <p 
+                      className="text-white/70 leading-relaxed font-light text-sm italic"
+                      dangerouslySetInnerHTML={{ __html: item.descriptionEn }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -187,8 +210,9 @@ export default function StoryPage() {
                 CRAFTSMANSHIP
               </h2>
               <p className="text-lg text-white/90 mb-6 leading-relaxed font-light">
-                代表 立桶による、北海道の自然を知り尽くした職人技。<br />
-                機械では表現できない繊細さと、自然への深い理解が生み出す唯一無二の作品。
+                ひとつひとつ丁寧に仕上げる手仕事。<br/>
+                機械では表現できない繊細さと、苔への愛情が込められた唯一無二の作品です。<br/>
+                自然と調和するように、手のぬくもりを大切にしています。
               </p>
               
               <div className="space-y-6">
@@ -196,7 +220,10 @@ export default function StoryPage() {
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">MATERIAL SELECTION</h4>
-                    <p className="text-white/80 font-light">北海道産の希少な苔を厳選して採取またはパートナーから取り寄せます。</p>
+                    <p className="text-white/80 font-light">
+                      国内から状態の良い苔を取り寄せ環境に合わせて最適な種類を選びます。<br/>
+                      苔の特徴を活かし、長く楽しめる作品づくりを心がけています。
+                    </p>
                   </div>
                 </div>
                 
@@ -204,7 +231,10 @@ export default function StoryPage() {
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">ORIGINAL TECHNIQUE</h4>
-                    <p className="text-white/80 font-light">北海道の苔の特性を活かす独自の配置・育成技法で作成します。</p>
+                    <p className="text-white/80 font-light">
+                      独自のレイアウトと育成方法で、苔の自然な表情を引き出します。<br/>
+                      見た人が癒されるような、やさしい空間づくりを目指しています。
+                    </p>
                   </div>
                 </div>
                 
@@ -212,7 +242,9 @@ export default function StoryPage() {
                   <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">QUALITY ASSURANCE</h4>
-                    <p className="text-white/80 font-light">完成後のケア指導から定期メンテナンスまで、長期にわたる品質保証サポートします。</p>
+                    <p className="text-white/80 font-light">
+                      完成後のケア方法を丁寧にお伝えし、長く苔を楽しんでいただけるようサポートいたします。
+                    </p>
                   </div>
                 </div>
               </div>
@@ -262,11 +294,12 @@ export default function StoryPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl font-bold text-moss-green mb-4 tracking-wide">
-                北海道で根ざす、新しい文化を
+                札幌から広がる、苔の癒しの輪
               </h3>
               <p className="text-lg text-gray-700 mb-6 leading-relaxed font-light">
-                札幌を拠点に、北海道各地に苔テラリウムの魅力を広め、<br />
-                地域に根ざした新しいライフスタイル文化を育みたい。
+                Moss Countryは札幌を拠点に、まずは北海道各地へ、<br/>
+                そしていずれは全国へと苔の癒しを届けていきます。<br/>
+                苔の美しさや魅力を通じて、心にやすらぎと自然への優しさを育む文化を広げていきたいと考えています。
               </p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center">
@@ -279,13 +312,13 @@ export default function StoryPage() {
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  地元観光業との連携・北海道の魅力発信
+                  地域や観光との連携を通じた、苔の魅力発信
                 </li>
                 <li className="flex items-center">
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  北海道の自然保護と持続可能な採取活動
+                  採取に頼らず、育成・循環を重視した自然保全への取り組み
                 </li>
               </ul>
             </div>

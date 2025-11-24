@@ -46,22 +46,22 @@ export default function Home() {
       <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">
         <Container>
           <AnimatedSection animation="fade-in" className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24">
-            <AnimatedSection animation="slide-up" delay={200} className="mb-6 sm:mb-8">
+            <AnimatedSection animation="slide-up" delay={70} className="mb-6 sm:mb-8">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-400 font-normal">About MOSS COUNTRY</span>
             </AnimatedSection>
-            <AnimatedSection animation="slide-up" delay={400} className="mb-6 sm:mb-8">
+            <AnimatedSection animation="slide-up" delay={130} className="mb-6 sm:mb-8">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal text-white leading-tight sm:leading-relaxed px-4">
                 小さな自然、
                 <br className="sm:hidden" />
                 大きな癒し
               </h2>
             </AnimatedSection>
-            <AnimatedSection animation="scale-in" delay={600} className="mb-8 sm:mb-12">
+            <AnimatedSection animation="scale-in" delay={200} className="mb-8 sm:mb-12">
               <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto"></div>
             </AnimatedSection>
-            <AnimatedSection animation="fade-in" delay={800}>
+            <AnimatedSection animation="fade-in" delay={270}>
               <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-normal text-white max-w-4xl mx-auto leading-relaxed px-4">
-                北海道初のカプセルテラリウム専門店として、
+                北海道初の苔テラリウム専門店として、
                 <br className="hidden sm:block" />
                 一つひとつ手作業で作り上げる
                 <br className="sm:hidden" />
@@ -76,7 +76,7 @@ export default function Home() {
           </AnimatedSection>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 px-4">
-            <AnimatedSection animation="slide-up" delay={1000} className="text-center group">
+            <AnimatedSection animation="slide-up" delay={330} className="text-center group">
               <div className="bg-emerald-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:bg-emerald-900/40">
                 <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-emerald-200 transition-colors duration-300">職人の技</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
@@ -84,15 +84,15 @@ export default function Home() {
               </div>
             </AnimatedSection>
             
-            <AnimatedSection animation="slide-up" delay={1200} className="text-center group">
+            <AnimatedSection animation="slide-up" delay={400} className="text-center group">
               <div className="bg-amber-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-amber-600/20 hover:border-amber-600/40 transition-all duration-300 hover:bg-amber-900/40">
                 <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-amber-200 transition-colors duration-300">北海道初</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-amber-500 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">カプセルテラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">苔テラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</p>
               </div>
             </AnimatedSection>
             
-            <AnimatedSection animation="slide-up" delay={1400} className="text-center group">
+            <AnimatedSection animation="slide-up" delay={470} className="text-center group">
               <div className="bg-teal-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-teal-400/20 hover:border-teal-400/40 transition-all duration-300 hover:bg-teal-900/40">
                 <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-teal-200 transition-colors duration-300">学べる</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-teal-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
@@ -101,7 +101,7 @@ export default function Home() {
             </AnimatedSection>
           </div>
           
-          <AnimatedSection animation="fade-in" delay={1600} className="text-center mt-12 sm:mt-16 md:mt-20">
+          <AnimatedSection animation="fade-in" delay={530} className="text-center mt-12 sm:mt-16 md:mt-20">
             <a href="/story">
               <Button 
                 variant="primary" 

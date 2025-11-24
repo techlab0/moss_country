@@ -63,7 +63,7 @@ export const LatestNews: React.FC = () => {
             <AnimatedSection 
               key={post._id} 
               animation="slide-up" 
-              delay={index * 100}
+              delay={index * 70}
               className="group"
             >
               <Link 
@@ -103,7 +103,7 @@ export const LatestNews: React.FC = () => {
           ))}
         </div>
 
-        <AnimatedSection animation="fade-in" delay={600} className="text-center mt-12">
+        <AnimatedSection animation="fade-in" delay={400} className="text-center mt-12">
           <Link 
             href="/blog"
             className="inline-flex items-center px-8 py-3 text-emerald-300 border border-emerald-400 rounded-full hover:bg-emerald-400 hover:text-stone-900 transition-all duration-300 font-medium"

@@ -10,20 +10,44 @@ import type { SimpleWorkshop } from '@/types/sanity';
 
 const workshopSizes = [
   {
-    id: 'small-size',
-    name: 'コンパクトサイズ',
-    dimensions: '約横6cm×縦11cm',
-    price: '¥3,500～',
-    description: '手のひらサイズの可愛らしいテラリウム。デスクや棚にちょこんと置けるサイズです。',
+    id: 'mini-terrarium',
+    name: 'ミニテラリウム',
+    dimensions: '6cm × 11cm',
+    price: '¥1,500',
+    description: '手のひらサイズの小さな苔の世界。初めての方にも気軽に楽しめる癒しの一本です。',
     image: '/images/products/moss-country_products_bottle.png',
   },
   {
-    id: 'regular-size',
-    name: 'レギュラーサイズ',
-    dimensions: '約横10cm×縦8cm',
-    price: '¥4,000～',
-    description: 'しっかりとした存在感のあるサイズ。お部屋のインテリアとしても映えます。',
+    id: 'glass-ball-s',
+    name: 'ガラスボールS',
+    dimensions: '10cm × 8cm',
+    price: '¥4,000',
+    description: '丸いガラスの中に広がる小さな苔の森。日常に緑を添える、柔らかな印象のテラリウムです。',
     image: '/images/products/moss-country_products_glass.png',
+  },
+  {
+    id: 'pop-jar',
+    name: 'ポップジャー',
+    dimensions: '11cm × 6cm',
+    price: '¥4,500',
+    description: 'ころんと可愛い形の容器に、立体的な苔の世界。インテリアにも映える明るい雰囲気です。',
+    image: '/images/products/moss-country_products_bottle.png',
+  },
+  {
+    id: 'glass-ball-m',
+    name: 'ガラスボールM',
+    dimensions: '15cm × 12cm',
+    price: '¥7,500',
+    description: '存在感あるサイズに豊かな景色を凝縮。苔の奥行きや地形の変化をじっくり楽しめます。',
+    image: '/images/products/moss-country_products_glass.png',
+  },
+  {
+    id: 'cliff-terrarium',
+    name: '崖景のテラリウム',
+    dimensions: '8cm × 10cm',
+    price: '¥5,500',
+    description: '岩肌と苔が織りなす、崖のような立体構造。小さな容器に自然の迫力と静けさを閉じ込めました。',
+    image: '/images/products/moss-country_products_bottle.png',
   },
 ];
 
@@ -117,7 +141,7 @@ export default function WorkshopPage() {
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
             <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8">
               経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。
-              9歳以上なら初心者の方でも安心して参加できます。
+              親御さんにもお手伝いいただくことで小さなお子様も参加可能です。
             </p>
             <Button 
               variant="primary" 
@@ -141,7 +165,7 @@ export default function WorkshopPage() {
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                店舗営業日であればいつでも対応可能です
+                在庫次第で当日参加も可能です
               </p>
             </div>
           </div>
@@ -182,7 +206,7 @@ export default function WorkshopPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold text-moss-green mb-2">対象年齢</h3>
-                <p className="text-2xl font-bold text-moss-green">9歳以上</p>
+                <p className="text-2xl font-bold text-moss-green">9歳以上推奨</p>
                 <p className="text-gray-600 text-sm mt-2">お子様も楽しく参加できます</p>
               </CardHeader>
             </Card>
@@ -193,7 +217,7 @@ export default function WorkshopPage() {
             <h3 className="text-2xl font-bold text-white mb-6">作品サイズ・料金</h3>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-3 lg:grid-cols-3 gap-6">
             {workshopSizes.map((size) => (
               <Card key={size.id} className="hover:transform hover:scale-105 transition-all duration-300">
                 <div className="overflow-hidden">
@@ -284,8 +308,8 @@ export default function WorkshopPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-moss-green mb-2">事前予約必須</h3>
-                  <p className="text-gray-600">材料の準備があります</p>
+                  <h3 className="text-xl font-bold text-moss-green mb-2">事前予約推奨</h3>
+                  <p className="text-gray-600">予約状況により当日参加可能</p>
                 </div>
                 
                 <div className="text-center">
@@ -302,8 +326,9 @@ export default function WorkshopPage() {
               <div className="bg-light-green/20 p-6 rounded-lg">
                 <h4 className="text-lg font-semibold text-moss-green mb-4">予約について</h4>
                 <p className="text-gray-700 mb-4">
-                  ワークショップの参加には事前の予約が必要です。<br/>
-                  ご希望の日時・参加人数・作品サイズをお知らせください。
+                  ワークショップの参加には事前の予約を推奨しております。<br/>
+                  お問い合わせフォームより、ご希望の日時・参加人数・コース名をお知らせください。<br/>
+                  じゃらんでの予約も可能です。
                 </p>
                 <div className="mt-4">
                   <p className="text-sm text-gray-600 mb-3">
@@ -416,7 +441,7 @@ export default function WorkshopPage() {
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
               職人の技術を間近で学びながら、世界に一つだけのテラリウムを作りましょう。
-              9歳以上のお子様も安心してご参加いただけます。
+              親御さんにもお手伝いいただくことで、小さなお子様も参加可能です。
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
