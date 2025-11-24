@@ -7,22 +7,41 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getProducts } from '@/lib/sanity';
 import type { Product } from '@/types/sanity';
 
-const categories = [
+const terrariumCategories = [
   {
-    name: '小瓶入り苔テラリウム',
-    description: '手のひらサイズの可愛らしいテラリウム',
+    name: 'Mini Terrarium（ミニ・テラリウム）',
+    description: '小さなガラスの中に広がる、あなただけの癒しの森。手のひらの中で、穏やかな時間が流れます。',
   },
   {
-    name: 'グラス入り苔テラリウム',
-    description: '透明感が美しい上質なガラス容器',
+    name: 'Standard Terrarium（スタンダード・テラリウム）',
+    description: '日々の暮らしに寄り添う、やさしい苔の景色。静かな緑が、心に安らぎを届けます。',
   },
   {
-    name: '苔玉',
-    description: '日本の伝統美を現代に活かした作品',
+    name: 'Grand Terrarium（グランド・テラリウム）',
+    description: '存在感ある苔の世界が、空間を豊かに彩ります。深みのある緑が、上質な癒しをもたらします。',
   },
   {
-    name: '大型苔テラリウム',
-    description: 'インパクトある存在感の特別な空間',
+    name: 'Premium Terrarium（プレミアム・テラリウム）',
+    description: '時を忘れるほどに美しい、静寂の世界。苔の深みが、空間をやさしく包み込みます。',
+  },
+];
+
+const supplyCategories = [
+  {
+    name: 'ツール',
+    description: 'テラリウム作りに必要な専門道具',
+  },
+  {
+    name: '容器',
+    description: '様々なサイズとデザインのガラス容器',
+  },
+  {
+    name: '素材',
+    description: '苔、土、石などの自然素材',
+  },
+  {
+    name: 'フィギュア',
+    description: 'テラリウムを彩る小さな装飾品',
   },
 ];
 
@@ -54,7 +73,7 @@ export default async function ProductsPage() {
             <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
             <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
               一つひとつ手作業で丁寧に作られた本格テラリウム。
-              初心者向けからプレミアムまで、あなたにぴったりの小さな自然を見つけてください。
+              初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。
             </p>
             <Button variant="primary" size="lg">
               <a href="#products">
@@ -65,29 +84,29 @@ export default async function ProductsPage() {
         </Container>
       </section>
 
-      {/* Category Overview */}
+      {/* Terrarium Works Section */}
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                商品例
+                テラリウム作品
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, index) => {
+            {terrariumCategories.map((category, index) => {
               const getImageSrc = () => {
                 switch(category.name) {
-                  case '小瓶入り苔テラリウム':
+                  case 'Mini Terrarium（ミニ・テラリウム）':
                     return '/images/products/moss-country_products_bottle.png';
-                  case 'グラス入り苔テラリウム':
+                  case 'Standard Terrarium（スタンダード・テラリウム）':
                     return '/images/products/moss-country_products_glass.png';
-                  case '苔玉':
+                  case 'Grand Terrarium（グランド・テラリウム）':
                     return '/images/products/moss-country_products_mossball.png';
-                  case '大型苔テラリウム':
+                  case 'Premium Terrarium（プレミアム・テラリウム）':
                     return '/images/products/moss-country_products_big.png';
                   default:
                     return '/images/products/moss-country_products_bottle.png';
@@ -101,7 +120,56 @@ export default async function ProductsPage() {
                       <img 
                         src={getImageSrc()} 
                         alt={category.name} 
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
+                    <p className="text-gray-100 font-medium text-base">{category.description}</p>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </Container>
+      </section>
+
+      {/* Supplies Section */}
+      <section className="py-20">
+        <Container>
+          <div className="text-center mb-16">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                関連用品
+              </h2>
+              <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {supplyCategories.map((category, index) => {
+              const getImageSrc = () => {
+                switch(category.name) {
+                  case 'ツール':
+                    return '/images/products/terrarium-starter.jpg';
+                  case '容器':
+                    return '/images/products/terrarium-standard.jpg';
+                  case '素材':
+                    return '/images/products/terrarium-premium.jpg';
+                  case 'フィギュア':
+                    return '/images/products/terrarium-custom.jpg';
+                  default:
+                    return '/images/products/terrarium-starter.jpg';
+                }
+              };
+              
+              return (
+                <Card key={index} className="text-center glass-card-dark">
+                  <CardHeader>
+                    <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
+                      <img 
+                        src={getImageSrc()} 
+                        alt={category.name} 
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
@@ -171,7 +239,7 @@ export default async function ProductsPage() {
 
               <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
                 <h3 className="text-xl font-bold text-moss-green mb-3">水やり</h3>
-                <p className="text-gray-900 mb-3 flex-grow">基本的には2～3週間に一度、苔と土を湿らせる程度でOK</p>
+                <p className="text-gray-900 mb-3 flex-grow">基本用土には、月に一度しっかりと水を与え、普段は週に一度ほど、苔と土の表面を軽く霧吹きで湿らせるだけでOK</p>
                 <ul className="text-gray-800 space-y-1 text-sm">
                   <li>・水は葉っぱから吸収するので、苔をしっかり湿らせてください</li>
                   <li>・土台となる土は常に湿らせるようにしてください</li>
@@ -203,6 +271,7 @@ export default async function ProductsPage() {
                 <ul className="text-gray-800 space-y-1 text-sm">
                   <li>・苔も時間が経つにつれて伸びてくるものもありますので、気になってきたらカットして整えましょう</li>
                   <li>・色の茶色くなった苔はカットして無くすことでカビの予防にもなります</li>
+                  <li>・適度に容器内の水滴と水垢を拭き取り綺麗に保ちましょう</li>
                 </ul>
               </div>
 
