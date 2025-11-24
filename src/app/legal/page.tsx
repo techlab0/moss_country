@@ -167,19 +167,19 @@ export default function LegalPage() {
                 </p>
                 <div className="space-y-2">
                   <p>
-                    <span className="font-medium">電話：</span>
+                    <span className="font-medium text-gray-800">電話：</span>
                     <a href="tel:080-3605-6340" className="text-emerald-600 hover:underline">
                       080-3605-6340
                     </a>
                   </p>
                   <p>
-                    <span className="font-medium">メール：</span>
+                    <span className="font-medium text-gray-800">メール：</span>
                     <a href="mailto:moss.country.kokenokuni@gmail.com" className="text-emerald-600 hover:underline">
                       moss.country.kokenokuni@gmail.com
                     </a>
                   </p>
                   <p>
-                    <span className="font-medium">お問い合わせフォーム：</span>
+                    <span className="font-medium text-gray-800">お問い合わせフォーム：</span>
                     <a href="/contact" className="text-emerald-600 hover:underline">
                       こちらから
                     </a>
