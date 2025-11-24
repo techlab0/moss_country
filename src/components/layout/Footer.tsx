@@ -39,7 +39,7 @@ export const Footer: React.FC = () => {
               </a>
 
               {/* YouTube */}
-              <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="https://www.youtube.com/@MossCountry1111" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="sr-only">YouTube</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
               </a>
 
               {/* Threads */}
-              <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="https://threads.com/@moss.country" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="sr-only">Threads</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.781 3.631 2.695 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.107-2.14 1.704-3.73 1.704-1.411 0-2.513-.509-3.27-1.51-.732-.967-1.100-2.265-1.100-3.86 0-1.332.299-2.508.89-3.499.592-.991 1.417-1.487 2.451-1.487.736 0 1.369.235 1.881.698.322.291.594.677.805 1.146.33-.93.61-1.766.835-2.487.225-.721.459-1.455.7-2.203.044-.133.06-.225.047-.276-.014-.051-.061-.088-.14-.111a1.67 1.67 0 0 0-.395-.061c-.14 0-.285.014-.434.041-.447.081-.764.253-.95.516-.186.262-.279.606-.279 1.031 0 .425.093.769.279 1.031.186.263.503.435.95.516.149.027.294.041.434.041a1.67 1.67 0 0 0 .395-.061c.079-.023.126-.06.14-.111.013-.051-.003-.143-.047-.276-.241-.748-.475-1.482-.7-2.203-.225-.721-.505-1.557-.835-2.487-.211.469-.483.855-.805 1.146-.512.463-1.145.698-1.881.698-1.034 0-1.859-.496-2.451-1.487-.591-.991-.89-2.167-.89-3.499 0-1.595.368-2.893 1.1-3.86.757-1.001 1.859-1.51 3.27-1.51 1.59 0 2.844.597 3.73 1.704.662.826 1.092 1.92 1.284 3.272.761-.45 1.324-1.04 1.634-1.75.528-1.205.557-3.185-1.09-4.798-1.442-1.414-3.177-2.025-5.8-2.045z"/>
@@ -55,7 +55,7 @@ export const Footer: React.FC = () => {
               </a>
 
               {/* Facebook */}
-              <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="https://m.facebook.com/61570932690760/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="sr-only">Facebook</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -63,7 +63,7 @@ export const Footer: React.FC = () => {
               </a>
 
               {/* TikTok */}
-              <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="https://www.tiktok.com/@moss.country" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="sr-only">TikTok</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
