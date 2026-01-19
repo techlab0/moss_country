@@ -1,6 +1,3 @@
-import * as speakeasy from 'speakeasy';
-import * as QRCode from 'qrcode';
-
 export interface TwoFactorSetup {
   secret: string;
   qrCodeUrl: string;
@@ -9,6 +6,10 @@ export interface TwoFactorSetup {
 
 // 2FA設定を生成
 export async function generateTwoFactorSetup(): Promise<TwoFactorSetup> {
+  // 動的インポートでビルド時のエラーを回避
+  const speakeasy = await import('speakeasy');
+  const QRCode = await import('qrcode');
+
   const secret = speakeasy.generateSecret({
     issuer: 'MOSS COUNTRY',
     name: 'Admin Account',
@@ -16,7 +17,7 @@ export async function generateTwoFactorSetup(): Promise<TwoFactorSetup> {
   });
 
   const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
-  
+
   // バックアップコードを生成（8桁の数字×10個）
   const backupCodes = Array.from({ length: 10 }, () => {
     return Math.random().toString().substr(2, 8);
@@ -30,7 +31,8 @@ export async function generateTwoFactorSetup(): Promise<TwoFactorSetup> {
 }
 
 // TOTPトークンを検証
-export function verifyTwoFactorToken(token: string, secret: string): boolean {
+export async function verifyTwoFactorToken(token: string, secret: string): Promise<boolean> {
+  const speakeasy = await import('speakeasy');
   return speakeasy.totp.verify({
     secret,
     encoding: 'base32',

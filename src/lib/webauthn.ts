@@ -1,14 +1,6 @@
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server';
 import type {
   GenerateRegistrationOptionsOpts,
   GenerateAuthenticationOptionsOpts,
-  VerifyRegistrationResponseOpts,
-  VerifyAuthenticationResponseOpts,
   RegistrationResponseJSON,
   AuthenticationResponseJSON,
 } from '@simplewebauthn/server';
@@ -41,6 +33,9 @@ const currentChallenges: Map<string, string> = new Map();
  */
 export async function generateWebAuthnRegistrationOptions(userId: string, userEmail: string) {
   try {
+    // 動的インポートでビルド時のエラーを回避
+    const { generateRegistrationOptions } = await import('@simplewebauthn/server');
+
     const user = webauthnUsers.get(userId) || {
       id: userId,
       email: userEmail,
@@ -66,10 +61,10 @@ export async function generateWebAuthnRegistrationOptions(userId: string, userEm
     };
 
     const registrationOptions = await generateRegistrationOptions(options);
-    
+
     // チャレンジを保存
     currentChallenges.set(userId, registrationOptions.challenge);
-    
+
     return registrationOptions;
   } catch (error) {
     console.error('WebAuthn registration options generation failed:', error);
@@ -85,6 +80,8 @@ export async function verifyWebAuthnRegistration(
   registrationResponse: RegistrationResponseJSON
 ) {
   try {
+    const { verifyRegistrationResponse } = await import('@simplewebauthn/server');
+
     const expectedChallenge = currentChallenges.get(userId);
     if (!expectedChallenge) {
       throw new Error('チャレンジが見つかりません');
@@ -98,7 +95,7 @@ export async function verifyWebAuthnRegistration(
     });
 
     if (verification.verified && verification.registrationInfo) {
-      const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
+      const { credential } = verification.registrationInfo;
 
       // 新しい認証情報を保存
       const user = webauthnUsers.get(userId) || {
@@ -108,10 +105,10 @@ export async function verifyWebAuthnRegistration(
       };
 
       const newCredential: WebAuthnCredential = {
-        id: Buffer.from(credentialID).toString('base64url'),
-        publicKey: credentialPublicKey,
-        counter,
-        transports: registrationResponse.response.transports,
+        id: Buffer.from(credential.id).toString('base64url'),
+        publicKey: credential.publicKey,
+        counter: credential.counter,
+        transports: registrationResponse.response.transports as AuthenticatorTransport[] | undefined,
       };
 
       user.credentials.push(newCredential);
@@ -135,6 +132,8 @@ export async function verifyWebAuthnRegistration(
  */
 export async function generateWebAuthnAuthenticationOptions(userId: string) {
   try {
+    const { generateAuthenticationOptions } = await import('@simplewebauthn/server');
+
     const user = webauthnUsers.get(userId);
     if (!user || user.credentials.length === 0) {
       throw new Error('登録された認証情報が見つかりません');
@@ -143,7 +142,7 @@ export async function generateWebAuthnAuthenticationOptions(userId: string) {
     const options: GenerateAuthenticationOptionsOpts = {
       rpID: RP_ID,
       allowCredentials: user.credentials.map(cred => ({
-        id: Buffer.from(cred.id, 'base64url'),
+        id: cred.id,
         type: 'public-key',
         transports: cred.transports,
       })),
@@ -151,10 +150,10 @@ export async function generateWebAuthnAuthenticationOptions(userId: string) {
     };
 
     const authenticationOptions = await generateAuthenticationOptions(options);
-    
+
     // チャレンジを保存
     currentChallenges.set(userId, authenticationOptions.challenge);
-    
+
     return authenticationOptions;
   } catch (error) {
     console.error('WebAuthn authentication options generation failed:', error);
@@ -170,16 +169,18 @@ export async function verifyWebAuthnAuthentication(
   authenticationResponse: AuthenticationResponseJSON
 ) {
   try {
+    const { verifyAuthenticationResponse } = await import('@simplewebauthn/server');
+
     const user = webauthnUsers.get(userId);
     const expectedChallenge = currentChallenges.get(userId);
-    
+
     if (!user || !expectedChallenge) {
       throw new Error('ユーザーまたはチャレンジが見つかりません');
     }
 
     const credentialID = Buffer.from(authenticationResponse.id, 'base64url').toString('base64url');
     const credential = user.credentials.find(cred => cred.id === credentialID);
-    
+
     if (!credential) {
       throw new Error('認証情報が見つかりません');
     }
@@ -189,9 +190,9 @@ export async function verifyWebAuthnAuthentication(
       expectedChallenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
-      authenticator: {
-        credentialID: Buffer.from(credential.id, 'base64url'),
-        credentialPublicKey: credential.publicKey,
+      credential: {
+        id: credential.id,
+        publicKey: credential.publicKey,
         counter: credential.counter,
       },
     });
@@ -200,7 +201,7 @@ export async function verifyWebAuthnAuthentication(
       // カウンターを更新
       credential.counter = verification.authenticationInfo.newCounter;
       webauthnUsers.set(userId, user);
-      
+
       // チャレンジを削除
       currentChallenges.delete(userId);
     }

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // TOTPコードを検証
-    const isValid = verifyTwoFactorToken(token, secret);
+    const isValid = await verifyTwoFactorToken(token, secret);
     
     if (!isValid) {
       return NextResponse.json(

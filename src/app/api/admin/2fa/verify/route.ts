@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // TOTPコードを確認
-      isValid = verifyTwoFactorToken(code, secret);
+      isValid = await verifyTwoFactorToken(code, secret);
     }
 
     if (!isValid) {
