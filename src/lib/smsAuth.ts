@@ -1,15 +1,15 @@
-import twilio from 'twilio';
-
 // Twilioクライアントを遅延初期化（環境変数が設定されている場合のみ）
-function getTwilioClient() {
+async function getTwilioClient() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  
+
   // 環境変数が設定されていない場合はnullを返す
   if (!accountSid || !authToken || !accountSid.startsWith('AC')) {
     return null;
   }
-  
+
+  // 動的インポートでビルド時のエラーを回避
+  const twilio = (await import('twilio')).default;
   return twilio(accountSid, authToken);
 }
 
@@ -31,7 +31,7 @@ export async function sendSMSCode(phoneNumber: string, userId: string): Promise<
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5分後に失効
 
     // Twilioクライアントを取得
-    const client = getTwilioClient();
+    const client = await getTwilioClient();
     
     if (!client) {
       console.warn('Twilio client not configured. SMS code generated but not sent:', code);
