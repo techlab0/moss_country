@@ -1,4 +1,7 @@
 // 画像関連のユーティリティ関数
+import { getHeroImageSettings } from './sanity';
+import { urlFor } from './sanity';
+import type { SanityImage } from '@/types/sanity';
 
 export interface ImageInfo {
   src: string;
@@ -125,8 +128,8 @@ export const storeImages: Record<string, ImageInfo> = {
   },
 };
 
-// ヒーロー画像の定義
-export const heroImages: Record<string, ImageInfo> = {
+// ヒーロー画像のデフォルト定義（フォールバック用）
+export const defaultHeroImages: Record<string, ImageInfo> = {
   'main': {
     src: '/images/hero/main-hero.jpg',
     alt: '美しい苔テラリウムのクローズアップ - MOSS COUNTRYメインビジュアル',
@@ -158,6 +161,91 @@ export const heroImages: Record<string, ImageInfo> = {
     height: 600,
   },
 };
+
+// 後方互換性のため、heroImagesもエクスポート（defaultHeroImagesのエイリアス）
+export const heroImages = defaultHeroImages;
+
+/**
+ * Sanityからヒーロー画像を取得する関数
+ * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store')
+ * @returns ヒーロー画像情報（Sanityに設定がない場合はデフォルト画像を返す）
+ */
+export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'story' | 'store'): Promise<ImageInfo> {
+  try {
+    const settings = await getHeroImageSettings();
+    
+    if (!settings) {
+      // Sanityに設定がない場合はデフォルト画像を返す
+      return defaultHeroImages[page];
+    }
+
+    const pageSettings = settings[page];
+    
+    if (!pageSettings?.image?.asset?._ref) {
+      // 該当ページの画像が設定されていない場合はデフォルト画像を返す
+      return defaultHeroImages[page];
+    }
+
+    // Sanityから画像URLを生成
+    const imageUrl = urlFor(pageSettings.image as SanityImage)
+      .width(page === 'main' ? 1920 : 1920)
+      .height(page === 'main' ? 1080 : 600)
+      .url();
+
+    return {
+      src: imageUrl,
+      alt: pageSettings.alt || defaultHeroImages[page].alt,
+      width: page === 'main' ? 1920 : 1920,
+      height: page === 'main' ? 1080 : 600,
+    };
+  } catch (error) {
+    console.warn(`Failed to get hero image for ${page}:`, error);
+    // エラー時はデフォルト画像を返す
+    return defaultHeroImages[page];
+  }
+}
+
+/**
+ * すべてのヒーロー画像を一度に取得する関数（キャッシュ効率化のため）
+ * @returns すべてのページのヒーロー画像情報
+ */
+export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
+  try {
+    const settings = await getHeroImageSettings();
+    
+    if (!settings) {
+      return defaultHeroImages;
+    }
+
+    const result: Record<string, ImageInfo> = {};
+    const pages: Array<'main' | 'products' | 'workshop' | 'story' | 'store'> = ['main', 'products', 'workshop', 'story', 'store'];
+
+    for (const page of pages) {
+      const pageSettings = settings[page];
+      
+      if (pageSettings?.image?.asset?._ref) {
+        const imageUrl = urlFor(pageSettings.image as SanityImage)
+          .width(page === 'main' ? 1920 : 1920)
+          .height(page === 'main' ? 1080 : 600)
+          .url();
+
+        result[page] = {
+          src: imageUrl,
+          alt: pageSettings.alt || defaultHeroImages[page].alt,
+          width: page === 'main' ? 1920 : 1920,
+          height: page === 'main' ? 1080 : 600,
+        };
+      } else {
+        result[page] = defaultHeroImages[page];
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.warn('Failed to get all hero images:', error);
+    return defaultHeroImages;
+  }
+}
 
 // デフォルト画像のパス
 export const DEFAULT_IMAGE = '/images/misc/default.jpeg';

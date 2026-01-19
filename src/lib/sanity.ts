@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
-import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies } from '@/types/sanity'
+import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies, HeroImageSettings } from '@/types/sanity'
 import { generateSEOFriendlySlug } from '@/lib/slugUtils'
 
 export const client = createClient({
@@ -519,5 +519,81 @@ export async function updateMaintenanceSettings(data: {
   } catch (error) {
     console.error('Failed to update maintenance settings:', error);
     throw error;
+  }
+}
+
+// Hero Image Settings queries
+export async function getHeroImageSettings(): Promise<HeroImageSettings | null> {
+  try {
+    const settings = await client.fetch(`
+      *[_type == "heroImageSettings"][0] {
+        _id,
+        _type,
+        main {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        products {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        workshop {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        story {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        store {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        updatedAt
+      }
+    `, {}, {
+      cache: 'force-cache',
+      next: { revalidate: 300 } // 5分間キャッシュ
+    });
+    
+    return settings || null;
+  } catch (error) {
+    console.warn('Failed to fetch hero image settings from Sanity:', error);
+    return null;
   }
 }

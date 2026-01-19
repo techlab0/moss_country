@@ -173,3 +173,29 @@ export interface MossSpecies {
   isVisible: boolean
   sortOrder?: number
 }
+
+export interface HeroImageSettings {
+  _id: string
+  _type: 'heroImageSettings'
+  main?: {
+    image?: SanityImage
+    alt?: string
+  }
+  products?: {
+    image?: SanityImage
+    alt?: string
+  }
+  workshop?: {
+    image?: SanityImage
+    alt?: string
+  }
+  story?: {
+    image?: SanityImage
+    alt?: string
+  }
+  store?: {
+    image?: SanityImage
+    alt?: string
+  }
+  updatedAt?: string
+}
