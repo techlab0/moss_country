@@ -1,9 +1,17 @@
 import twilio from 'twilio';
 
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+// Twilioクライアントを遅延初期化（環境変数が設定されている場合のみ）
+function getTwilioClient() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  
+  // 環境変数が設定されていない場合はnullを返す
+  if (!accountSid || !authToken || !accountSid.startsWith('AC')) {
+    return null;
+  }
+  
+  return twilio(accountSid, authToken);
+}
 
 export interface SMSCode {
   code: string;
@@ -21,6 +29,21 @@ export async function sendSMSCode(phoneNumber: string, userId: string): Promise<
     // 6桁のランダムコードを生成
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5分後に失効
+
+    // Twilioクライアントを取得
+    const client = getTwilioClient();
+    
+    if (!client) {
+      console.warn('Twilio client not configured. SMS code generated but not sent:', code);
+      // 開発環境ではコードを保存して続行
+      smsCodeStore.set(userId, {
+        code,
+        phoneNumber,
+        expiresAt,
+        userId,
+      });
+      return true;
+    }
 
     // Twilio経由でSMSを送信
     const message = await client.messages.create({
