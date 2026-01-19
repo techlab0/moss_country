@@ -9,38 +9,46 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { CircularCarousel } from '@/components/ui/CircularCarousel';
 import { LatestNews } from '@/components/sections/LatestNews';
+import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('main').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
-    <div 
+    <div
       className="relative"
       style={{
-        backgroundImage: isMobile 
-          ? `url('/images/misc/moss02_sp.png')` 
-          : `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: `url('${heroImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        filter: isMobile ? 'brightness(1.2)' : 'none'
+        backgroundAttachment: 'fixed'
       }}
     >
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 bg-emerald-900/20" />
       {/* Hero Section */}
-      <Hero />
+      <Hero heroImageUrl={heroImageUrl} />
 
       {/* MOSS COUNTRYとは */}
       <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">

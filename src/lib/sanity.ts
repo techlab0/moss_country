@@ -587,8 +587,7 @@ export async function getHeroImageSettings(): Promise<HeroImageSettings | null> 
         updatedAt
       }
     `, {}, {
-      cache: 'force-cache',
-      next: { revalidate: 300 } // 5分間キャッシュ
+      next: { revalidate: 60 } // 1分間キャッシュ（設定変更を素早く反映）
     });
     
     return settings || null;

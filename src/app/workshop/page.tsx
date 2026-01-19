@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getSimpleWorkshops } from '@/lib/sanity';
-import { workshopImages } from '@/lib/imageUtils';
+import { workshopImages, getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
 import type { SimpleWorkshop } from '@/types/sanity';
 
 const workshopSizes = [
@@ -80,6 +80,7 @@ export default function WorkshopPage() {
   const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
   const [, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['workshop'].src);
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -93,6 +94,15 @@ export default function WorkshopPage() {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('workshop').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   useEffect(() => {
     async function fetchWorkshops() {
       try {
@@ -104,7 +114,7 @@ export default function WorkshopPage() {
         setLoading(false);
       }
     }
-    
+
     fetchWorkshops();
   }, []);
   return (
@@ -123,10 +133,10 @@ export default function WorkshopPage() {
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 pointer-events-none" />
       {/* Hero Section */}
-      <section 
+      <section
         className="py-20 relative min-h-screen flex items-center"
         style={{
-          backgroundImage: `url('/images/workshop/mosscountry_workshop.png')`,
+          backgroundImage: `url('${heroImageUrl}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -367,6 +368,7 @@ function FAQSection() {
 
 export default function StorePage() {
   const [isMobile, setIsMobile] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['store'].src);
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -380,17 +382,23 @@ export default function StorePage() {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('store').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
-    <div 
+    <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: isMobile 
-          ? `url('/images/misc/moss02_sp.png')` 
-          : `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: `url('${heroImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        filter: isMobile ? 'brightness(1.2)' : 'none'
+        backgroundAttachment: 'fixed'
       }}
     >
       {/* Unified Background Overlay */}

@@ -1,9 +1,10 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
+import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
 
 const timeline = [
   {
@@ -57,8 +58,19 @@ const values = [
 
 
 export default function StoryPage() {
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['story'].src);
+
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('story').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
-    <div 
+    <div
       className="min-h-screen relative"
       style={{
         backgroundImage: `url('/images/misc/moss01.jpeg')`,
@@ -70,10 +82,10 @@ export default function StoryPage() {
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 pointer-events-none" />
       {/* Hero Section */}
-      <section 
+      <section
         className="py-20 relative min-h-screen flex items-center"
         style={{
-          backgroundImage: `url('/images/story/mosscountry_story_kv.png')`,
+          backgroundImage: `url('${heroImageUrl}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
