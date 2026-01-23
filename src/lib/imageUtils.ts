@@ -289,37 +289,50 @@ export const defaultBackgroundImages: Record<string, ImageInfo> = {
  * @returns ヒーロー画像情報（Sanityに設定がない場合はデフォルト画像を返す）
  */
 export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact'): Promise<ImageInfo> {
+  // デフォルト画像を確実に返すため、最初に取得
+  const defaultImage = defaultHeroImages[page] || defaultHeroImages['main'];
+  
   try {
     const settings = await getHeroImageSettings();
     
     if (!settings) {
       // Sanityに設定がない場合はデフォルト画像を返す
-      return defaultHeroImages[page];
+      return defaultImage;
     }
 
     const pageSettings = settings[page];
     
     if (!pageSettings?.image?.asset?._ref) {
       // 該当ページの画像が設定されていない場合はデフォルト画像を返す
-      return defaultHeroImages[page];
+      return defaultImage;
     }
 
-    // Sanityから画像URLを生成
-    const imageUrl = urlFor(pageSettings.image as SanityImage)
-      .width(page === 'main' ? 1920 : 1920)
-      .height(page === 'main' ? 1080 : 600)
-      .url();
+    try {
+      // Sanityから画像URLを生成
+      const imageUrl = urlFor(pageSettings.image as SanityImage)
+        .width(page === 'main' ? 1920 : 1920)
+        .height(page === 'main' ? 1080 : 600)
+        .url();
 
-    return {
-      src: imageUrl,
-      alt: pageSettings.alt || defaultHeroImages[page].alt,
-      width: page === 'main' ? 1920 : 1920,
-      height: page === 'main' ? 1080 : 600,
-    };
+      // URLが有効かチェック
+      if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+        return defaultImage;
+      }
+
+      return {
+        src: imageUrl,
+        alt: pageSettings.alt || defaultImage.alt,
+        width: page === 'main' ? 1920 : 1920,
+        height: page === 'main' ? 1080 : 600,
+      };
+    } catch (urlError) {
+      console.warn(`Failed to generate image URL for ${page}:`, urlError);
+      return defaultImage;
+    }
   } catch (error) {
     console.warn(`Failed to get hero image for ${page}:`, error);
     // エラー時はデフォルト画像を返す
-    return defaultHeroImages[page];
+    return defaultImage;
   }
 }
 
@@ -376,78 +389,105 @@ export async function getBackgroundImage(
   isMobile: boolean = false
 ): Promise<ImageInfo> {
   const mobileKey = `${page}-mobile` as keyof typeof defaultBackgroundImages;
+  // デフォルト画像を確実に返すため、最初に取得
+  const defaultImage = isMobile 
+    ? (defaultBackgroundImages[mobileKey] || defaultBackgroundImages['main-mobile'])
+    : (defaultBackgroundImages[page] || defaultBackgroundImages['main']);
 
   try {
     const settings = await getBackgroundImageSettings();
 
     if (!settings) {
       // Sanityに設定がない場合はデフォルト画像を返す
-      if (isMobile) {
-        return defaultBackgroundImages[mobileKey];
-      }
-      return defaultBackgroundImages[page];
+      return defaultImage;
     }
 
     const pageSettings = settings[page];
 
     // モバイル画像の取得（全ページ対応）
     if (isMobile && pageSettings?.imageMobile?.asset?._ref) {
-      const imageUrl = urlFor(pageSettings.imageMobile as SanityImage)
-        .width(750)
-        .height(1334)
-        .url();
+      try {
+        const imageUrl = urlFor(pageSettings.imageMobile as SanityImage)
+          .width(750)
+          .height(1334)
+          .url();
 
-      return {
-        src: imageUrl,
-        alt: pageSettings.alt || defaultBackgroundImages[mobileKey].alt,
-        width: 750,
-        height: 1334,
-      };
+        // URLが有効かチェック
+        if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+          return defaultImage;
+        }
+
+        return {
+          src: imageUrl,
+          alt: pageSettings.alt || defaultImage.alt,
+          width: 750,
+          height: 1334,
+        };
+      } catch (urlError) {
+        console.warn(`Failed to generate mobile image URL for ${page}:`, urlError);
+        return defaultImage;
+      }
     }
 
     // モバイル画像が設定されていない場合
     if (isMobile && !pageSettings?.imageMobile?.asset?._ref) {
       // PC用画像が設定されている場合はそれを使用、なければデフォルト
       if (pageSettings?.image?.asset?._ref) {
-        const imageUrl = urlFor(pageSettings.image as SanityImage)
-          .width(750)
-          .height(1334)
-          .url();
+        try {
+          const imageUrl = urlFor(pageSettings.image as SanityImage)
+            .width(750)
+            .height(1334)
+            .url();
 
-        return {
-          src: imageUrl,
-          alt: pageSettings.alt || defaultBackgroundImages[mobileKey].alt,
-          width: 750,
-          height: 1334,
-        };
+          if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+            return defaultImage;
+          }
+
+          return {
+            src: imageUrl,
+            alt: pageSettings.alt || defaultImage.alt,
+            width: 750,
+            height: 1334,
+          };
+        } catch (urlError) {
+          console.warn(`Failed to generate PC image URL for mobile ${page}:`, urlError);
+          return defaultImage;
+        }
       }
-      return defaultBackgroundImages[mobileKey];
+      return defaultImage;
     }
 
     if (!pageSettings?.image?.asset?._ref) {
       // 該当ページの画像が設定されていない場合はデフォルト画像を返す
-      return defaultBackgroundImages[page];
+      return defaultImage;
     }
 
     // Sanityから画像URLを生成（PC用）
-    const imageUrl = urlFor(pageSettings.image as SanityImage)
-      .width(1920)
-      .height(1080)
-      .url();
+    try {
+      const imageUrl = urlFor(pageSettings.image as SanityImage)
+        .width(1920)
+        .height(1080)
+        .url();
 
-    return {
-      src: imageUrl,
-      alt: pageSettings.alt || defaultBackgroundImages[page].alt,
-      width: 1920,
-      height: 1080,
-    };
+      // URLが有効かチェック
+      if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+        return defaultImage;
+      }
+
+      return {
+        src: imageUrl,
+        alt: pageSettings.alt || defaultImage.alt,
+        width: 1920,
+        height: 1080,
+      };
+    } catch (urlError) {
+      console.warn(`Failed to generate PC image URL for ${page}:`, urlError);
+      return defaultImage;
+    }
   } catch (error) {
     console.warn(`Failed to get background image for ${page}:`, error);
     // エラー時はデフォルト画像を返す
-    if (isMobile) {
-      return defaultBackgroundImages[mobileKey];
-    }
-    return defaultBackgroundImages[page];
+    return defaultImage;
   }
 }
 

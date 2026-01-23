@@ -393,12 +393,25 @@ export default function StorePage() {
     });
   }, []);
 
-  // 背景画像を取得
+  // 背景画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
-    getBackgroundImage('store').then((imageInfo) => {
-      setBackgroundImageUrl(imageInfo.src);
-    }).catch(() => {
-      // エラー時はデフォルト画像を使用
+    // PC用背景画像
+    getBackgroundImage('store', false).then((imageInfo) => {
+      if (imageInfo?.src) {
+        setBackgroundImageUrl(imageInfo.src);
+      }
+    }).catch((error) => {
+      console.warn('Failed to load background image (PC), using default:', error);
+      // エラー時はデフォルト画像を維持（既に設定済み）
+    });
+    // モバイル用背景画像
+    getBackgroundImage('store', true).then((imageInfo) => {
+      if (imageInfo?.src) {
+        setBackgroundImageMobileUrl(imageInfo.src);
+      }
+    }).catch((error) => {
+      console.warn('Failed to load background image (Mobile), using default:', error);
+      // エラー時はデフォルト画像を維持（既に設定済み）
     });
   }, []);
 

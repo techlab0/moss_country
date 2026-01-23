@@ -84,28 +84,37 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  // ヒーロー画像を取得
+  // ヒーロー画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
     getHeroImage('products').then((imageInfo) => {
-      setHeroImageUrl(imageInfo.src);
-    }).catch(() => {
-      // エラー時はデフォルト画像を使用
+      if (imageInfo?.src) {
+        setHeroImageUrl(imageInfo.src);
+      }
+    }).catch((error) => {
+      console.warn('Failed to load hero image, using default:', error);
+      // エラー時はデフォルト画像を維持（既に設定済み）
     });
   }, []);
 
-  // 背景画像を取得
+  // 背景画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
     // PC用背景画像
     getBackgroundImage('products', false).then((imageInfo) => {
-      setBackgroundImageUrl(imageInfo.src);
-    }).catch(() => {
-      // エラー時はデフォルト画像を使用
+      if (imageInfo?.src) {
+        setBackgroundImageUrl(imageInfo.src);
+      }
+    }).catch((error) => {
+      console.warn('Failed to load background image (PC), using default:', error);
+      // エラー時はデフォルト画像を維持（既に設定済み）
     });
     // モバイル用背景画像
     getBackgroundImage('products', true).then((imageInfo) => {
-      setBackgroundImageMobileUrl(imageInfo.src);
-    }).catch(() => {
-      // エラー時はデフォルト画像を使用
+      if (imageInfo?.src) {
+        setBackgroundImageMobileUrl(imageInfo.src);
+      }
+    }).catch((error) => {
+      console.warn('Failed to load background image (Mobile), using default:', error);
+      // エラー時はデフォルト画像を維持（既に設定済み）
     });
   }, []);
 
