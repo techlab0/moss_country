@@ -66,17 +66,23 @@ export default async function ProductsPage() {
       <div className="absolute inset-0 pointer-events-none" />
       
       {/* Hero Section */}
-      <section className="py-20 relative">
+      <section
+        className="py-20 relative min-h-[60vh] flex items-center"
+        style={{
+          backgroundImage: `url('${heroImage.src}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-emerald-50/70" />
-        <div className="absolute inset-0 bg-emerald-950/10" />
+        <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-moss-green mb-6">
-              <span className="text-emerald-600">MOSS COUNTRY</span>の<br />テラリウムコレクション
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg">
+              MOSS COUNTRYの<br />テラリウムコレクション
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
+            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow">
               一つひとつ手作業で丁寧に作られた本格テラリウム。
               初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。
             </p>

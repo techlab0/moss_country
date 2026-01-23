@@ -414,9 +414,16 @@ export default function StorePage() {
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 pointer-events-none" />
       {/* Hero Section */}
-      <section className="py-20 relative">
+      <section
+        className="py-20 relative min-h-[60vh] flex items-center"
+        style={{
+          backgroundImage: `url('${heroImageUrl}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-stone-900/85 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-black/50" />
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">

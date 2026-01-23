@@ -5,7 +5,7 @@ import type { MossSpecies } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
-import { getBackgroundImage, defaultBackgroundImages } from '@/lib/imageUtils'
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -19,6 +19,7 @@ export default function MossGuidePage() {
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['mossGuide'].src)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['mossGuide'].src)
 
   // 画面サイズを監視してモバイルかどうかを判定
@@ -31,6 +32,15 @@ export default function MossGuidePage() {
     window.addEventListener('resize', checkScreenSize)
 
     return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('mossGuide').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
   }, [])
 
   // 背景画像を取得
@@ -158,17 +168,23 @@ export default function MossGuidePage() {
       <div className="absolute inset-0 pointer-events-none" />
       
       {/* Hero Section */}
-      <section className="py-20 relative">
+      <section
+        className="py-20 relative min-h-[50vh] flex items-center"
+        style={{
+          backgroundImage: `url('${heroImageUrl}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-emerald-50/70" />
-        <div className="absolute inset-0 bg-emerald-950/10" />
+        <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
               苔図鑑
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow">
               北海道の苔テラリウム専門店が厳選した、テラリウムに最適な苔の種類をご紹介。
               育て方のコツや特性を詳しく解説します。
             </p>
