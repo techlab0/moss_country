@@ -372,7 +372,7 @@ export default function ImageManagePage() {
                 <CardContent>
                   {imageUrl ? (
                     <div className="space-y-4">
-                      <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                      <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '300px' }}>
                         <img
                           src={imageUrl}
                           alt={`${info.name} ヒーロー画像`}
@@ -485,7 +485,7 @@ export default function ImageManagePage() {
                       </div>
                       {pcImageUrl ? (
                         <div className="space-y-2">
-                          <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+                          <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '200px' }}>
                             <img
                               src={pcImageUrl}
                               alt={`${info.name} PC背景画像`}
@@ -531,7 +531,7 @@ export default function ImageManagePage() {
                       </div>
                       {mobileImageUrl ? (
                         <div className="space-y-2">
-                          <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+                          <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '9/16', maxHeight: '200px' }}>
                             <img
                               src={mobileImageUrl}
                               alt={`${info.name} モバイル背景画像`}
