@@ -31,7 +31,15 @@
       "Bash(echo:*)",
       "Bash(sed:*)",
       "Bash(git reset:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git log:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(npm update:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(dir:*)"
     ],
     "deny": []
   }

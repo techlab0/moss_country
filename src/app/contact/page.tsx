@@ -5,7 +5,7 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import emailjs from '@emailjs/browser';
-import { getBackgroundImage, defaultBackgroundImages } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 
 const contactMethods = [
   {
@@ -51,6 +51,7 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['contact'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['contact'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['contact-mobile'].src);
 
@@ -64,6 +65,15 @@ export default function ContactPage() {
     window.addEventListener('resize', checkScreenSize);
 
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('contact').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
   }, []);
 
   // 背景画像を取得
@@ -156,22 +166,19 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="py-20 relative" style={{
-        backgroundImage: isMobile
-          ? `url('${backgroundImageMobileUrl}')`
-          : `url('${backgroundImageUrl}')`,
+      <section className="py-20 relative min-h-[50vh] flex items-center" style={{
+        backgroundImage: `url('${heroImageUrl}')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        backgroundPosition: 'center'
       }}>
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-black/40"></div>
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-moss-green mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl">
               お問い合わせ
             </h1>
-            <div className="w-24 h-1 bg-moss-green mx-auto mb-8"></div>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+            <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
+            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg">
               テラリウムに関するご質問、ワークショップのお申し込み、
               オーダーメイドのご相談など、お気軽にお問い合わせください。
             </p>

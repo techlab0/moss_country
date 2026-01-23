@@ -530,35 +530,91 @@ export async function getHeroImageSettings(): Promise<HeroImageSettings | null> 
         _id,
         _type,
         main {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         products {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         workshop {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         story {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         store {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         mossGuide {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         blog {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         contact {
-          image,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         updatedAt
