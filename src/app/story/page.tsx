@@ -4,7 +4,7 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 
 const timeline = [
   {
@@ -59,6 +59,7 @@ const values = [
 
 export default function StoryPage() {
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['story'].src);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['story'].src);
 
   // ヒーロー画像を取得
   useEffect(() => {
@@ -69,11 +70,20 @@ export default function StoryPage() {
     });
   }, []);
 
+  // 背景画像を取得
+  useEffect(() => {
+    getBackgroundImage('story').then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

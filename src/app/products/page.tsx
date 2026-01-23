@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getProducts } from '@/lib/sanity';
-import { getHeroImage } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage } from '@/lib/imageUtils';
 import type { Product } from '@/types/sanity';
 
 const terrariumCategories = [
@@ -47,16 +47,17 @@ const supplyCategories = [
 ];
 
 export default async function ProductsPage() {
-  const [products, heroImage] = await Promise.all([
+  const [products, heroImage, backgroundImage] = await Promise.all([
     getProducts(),
-    getHeroImage('products')
+    getHeroImage('products'),
+    getBackgroundImage('products')
   ]);
 
   return (
     <div
       className="min-h-screen relative bg-fixed-desktop"
       style={{
-        backgroundImage: `url('${heroImage.src}')`,
+        backgroundImage: `url('${backgroundImage.src}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}

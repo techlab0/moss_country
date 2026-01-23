@@ -1,5 +1,5 @@
 // 画像関連のユーティリティ関数
-import { getHeroImageSettings } from './sanity';
+import { getHeroImageSettings, getBackgroundImageSettings } from './sanity';
 import { urlFor } from './sanity';
 import type { SanityImage } from '@/types/sanity';
 
@@ -165,6 +165,46 @@ export const defaultHeroImages: Record<string, ImageInfo> = {
 // 後方互換性のため、heroImagesもエクスポート（defaultHeroImagesのエイリアス）
 export const heroImages = defaultHeroImages;
 
+// 背景画像のデフォルト定義（フォールバック用）
+export const defaultBackgroundImages: Record<string, ImageInfo> = {
+  'main': {
+    src: '/images/background/background01.jpeg',
+    alt: 'MOSS COUNTRY 背景',
+    width: 1920,
+    height: 1080,
+  },
+  'products': {
+    src: '/images/background/background01.jpeg',
+    alt: '商品ページ背景',
+    width: 1920,
+    height: 1080,
+  },
+  'workshop': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'ワークショップページ背景',
+    width: 1920,
+    height: 1080,
+  },
+  'workshop-mobile': {
+    src: '/images/misc/moss02_sp.png',
+    alt: 'ワークショップページ背景（モバイル）',
+    width: 750,
+    height: 1334,
+  },
+  'story': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'ストーリーページ背景',
+    width: 1920,
+    height: 1080,
+  },
+  'store': {
+    src: '/images/background/background01.jpeg',
+    alt: '店舗ページ背景',
+    width: 1920,
+    height: 1080,
+  },
+};
+
 /**
  * Sanityからヒーロー画像を取得する関数
  * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store')
@@ -212,7 +252,7 @@ export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'sto
 export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
   try {
     const settings = await getHeroImageSettings();
-    
+
     if (!settings) {
       return defaultHeroImages;
     }
@@ -222,7 +262,7 @@ export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
 
     for (const page of pages) {
       const pageSettings = settings[page];
-      
+
       if (pageSettings?.image?.asset?._ref) {
         const imageUrl = urlFor(pageSettings.image as SanityImage)
           .width(page === 'main' ? 1920 : 1920)
@@ -244,6 +284,135 @@ export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
   } catch (error) {
     console.warn('Failed to get all hero images:', error);
     return defaultHeroImages;
+  }
+}
+
+/**
+ * Sanityから背景画像を取得する関数
+ * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store')
+ * @param isMobile - モバイル用画像を取得するか（workshopページ用）
+ * @returns 背景画像情報（Sanityに設定がない場合はデフォルト画像を返す）
+ */
+export async function getBackgroundImage(
+  page: 'main' | 'products' | 'workshop' | 'story' | 'store',
+  isMobile: boolean = false
+): Promise<ImageInfo> {
+  try {
+    const settings = await getBackgroundImageSettings();
+
+    if (!settings) {
+      // Sanityに設定がない場合はデフォルト画像を返す
+      if (page === 'workshop' && isMobile) {
+        return defaultBackgroundImages['workshop-mobile'];
+      }
+      return defaultBackgroundImages[page];
+    }
+
+    const pageSettings = settings[page];
+
+    // workshopページのモバイル画像
+    if (page === 'workshop' && isMobile && pageSettings?.imageMobile?.asset?._ref) {
+      const imageUrl = urlFor(pageSettings.imageMobile as SanityImage)
+        .width(750)
+        .height(1334)
+        .url();
+
+      return {
+        src: imageUrl,
+        alt: pageSettings.alt || defaultBackgroundImages['workshop-mobile'].alt,
+        width: 750,
+        height: 1334,
+      };
+    }
+
+    if (!pageSettings?.image?.asset?._ref) {
+      // 該当ページの画像が設定されていない場合はデフォルト画像を返す
+      if (page === 'workshop' && isMobile) {
+        return defaultBackgroundImages['workshop-mobile'];
+      }
+      return defaultBackgroundImages[page];
+    }
+
+    // Sanityから画像URLを生成
+    const imageUrl = urlFor(pageSettings.image as SanityImage)
+      .width(1920)
+      .height(1080)
+      .url();
+
+    return {
+      src: imageUrl,
+      alt: pageSettings.alt || defaultBackgroundImages[page].alt,
+      width: 1920,
+      height: 1080,
+    };
+  } catch (error) {
+    console.warn(`Failed to get background image for ${page}:`, error);
+    // エラー時はデフォルト画像を返す
+    if (page === 'workshop' && isMobile) {
+      return defaultBackgroundImages['workshop-mobile'];
+    }
+    return defaultBackgroundImages[page];
+  }
+}
+
+/**
+ * すべての背景画像を一度に取得する関数（キャッシュ効率化のため）
+ * @returns すべてのページの背景画像情報
+ */
+export async function getAllBackgroundImages(): Promise<Record<string, ImageInfo>> {
+  try {
+    const settings = await getBackgroundImageSettings();
+
+    if (!settings) {
+      return defaultBackgroundImages;
+    }
+
+    const result: Record<string, ImageInfo> = {};
+    const pages: Array<'main' | 'products' | 'workshop' | 'story' | 'store'> = ['main', 'products', 'workshop', 'story', 'store'];
+
+    for (const page of pages) {
+      const pageSettings = settings[page];
+
+      if (pageSettings?.image?.asset?._ref) {
+        const imageUrl = urlFor(pageSettings.image as SanityImage)
+          .width(1920)
+          .height(1080)
+          .url();
+
+        result[page] = {
+          src: imageUrl,
+          alt: pageSettings.alt || defaultBackgroundImages[page].alt,
+          width: 1920,
+          height: 1080,
+        };
+      } else {
+        result[page] = defaultBackgroundImages[page];
+      }
+
+      // workshopのモバイル用
+      if (page === 'workshop') {
+        if (pageSettings?.imageMobile?.asset?._ref) {
+          const mobileImageUrl = urlFor(pageSettings.imageMobile as SanityImage)
+            .width(750)
+            .height(1334)
+            .url();
+
+          result['workshop-mobile'] = {
+            src: mobileImageUrl,
+            alt: pageSettings.alt || defaultBackgroundImages['workshop-mobile'].alt,
+            width: 750,
+            height: 1334,
+          };
+        } else {
+          result['workshop-mobile'] = defaultBackgroundImages['workshop-mobile'];
+        }
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.warn('Failed to get all background images:', error);
+    return defaultBackgroundImages;
   }
 }
 

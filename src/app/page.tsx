@@ -9,11 +9,12 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { CircularCarousel } from '@/components/ui/CircularCarousel';
 import { LatestNews } from '@/components/sections/LatestNews';
-import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['main'].src);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -35,11 +36,20 @@ export default function Home() {
     });
   }, []);
 
+  // 背景画像を取得
+  useEffect(() => {
+    getBackgroundImage('main').then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
     <div
       className="relative"
       style={{
-        backgroundImage: `url('${heroImageUrl}')`,
+        backgroundImage: `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

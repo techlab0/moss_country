@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
-import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies, HeroImageSettings } from '@/types/sanity'
+import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies, HeroImageSettings, BackgroundImageSettings } from '@/types/sanity'
 import { generateSEOFriendlySlug } from '@/lib/slugUtils'
 
 export const client = createClient({
@@ -589,10 +589,93 @@ export async function getHeroImageSettings(): Promise<HeroImageSettings | null> 
     `, {}, {
       next: { revalidate: 60 } // 1分間キャッシュ（設定変更を素早く反映）
     });
-    
+
     return settings || null;
   } catch (error) {
     console.warn('Failed to fetch hero image settings from Sanity:', error);
+    return null;
+  }
+}
+
+// Background Image Settings queries
+export async function getBackgroundImageSettings(): Promise<BackgroundImageSettings | null> {
+  try {
+    const settings = await client.fetch(`
+      *[_type == "backgroundImageSettings"][0] {
+        _id,
+        _type,
+        main {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        products {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        workshop {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        imageMobile {
+          asset-> {
+            _ref,
+            _type
+          },
+          hotspot,
+          crop
+        },
+        story {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        store {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        updatedAt
+      }
+    `, {}, {
+      next: { revalidate: 60 } // 1分間キャッシュ（設定変更を素早く反映）
+    });
+
+    return settings || null;
+  } catch (error) {
+    console.warn('Failed to fetch background image settings from Sanity:', error);
     return null;
   }
 }

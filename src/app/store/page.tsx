@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { getHeroImage, defaultHeroImages } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -369,6 +369,7 @@ function FAQSection() {
 export default function StorePage() {
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['store'].src);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['store'].src);
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -391,11 +392,20 @@ export default function StorePage() {
     });
   }, []);
 
+  // 背景画像を取得
+  useEffect(() => {
+    getBackgroundImage('store').then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
   return (
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('${heroImageUrl}')`,
+        backgroundImage: `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

@@ -8,6 +8,7 @@ import { inventory } from './inventory'
 import { mossSpecies } from './mossSpecies'
 import { maintenanceSettings } from './maintenanceSettings'
 import { heroImageSettings } from './heroImageSettings'
+import { backgroundImageSettings } from './backgroundImageSettings'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -20,4 +21,5 @@ export const schemaTypes = [
   mossSpecies,
   maintenanceSettings,
   heroImageSettings,
+  backgroundImageSettings,
 ]

@@ -199,3 +199,30 @@ export interface HeroImageSettings {
   }
   updatedAt?: string
 }
+
+export interface BackgroundImageSettings {
+  _id: string
+  _type: 'backgroundImageSettings'
+  main?: {
+    image?: SanityImage
+    alt?: string
+  }
+  products?: {
+    image?: SanityImage
+    alt?: string
+  }
+  workshop?: {
+    image?: SanityImage
+    imageMobile?: SanityImage
+    alt?: string
+  }
+  story?: {
+    image?: SanityImage
+    alt?: string
+  }
+  store?: {
+    image?: SanityImage
+    alt?: string
+  }
+  updatedAt?: string
+}
