@@ -21,6 +21,7 @@ export default function BlogPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['blog'].src)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['blog'].src)
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['blog-mobile'].src)
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -45,8 +46,15 @@ export default function BlogPage() {
 
   // 背景画像を取得
   useEffect(() => {
-    getBackgroundImage('blog').then((imageInfo) => {
+    // PC用背景画像
+    getBackgroundImage('blog', false).then((imageInfo) => {
       setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('blog', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
     }).catch(() => {
       // エラー時はデフォルト画像を使用
     });
@@ -100,7 +108,9 @@ export default function BlogPage() {
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('${backgroundImageUrl}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

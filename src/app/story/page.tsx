@@ -58,8 +58,22 @@ const values = [
 
 
 export default function StoryPage() {
+  const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['story'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['story'].src);
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['story-mobile'].src);
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // ヒーロー画像を取得
   useEffect(() => {
@@ -72,8 +86,15 @@ export default function StoryPage() {
 
   // 背景画像を取得
   useEffect(() => {
-    getBackgroundImage('story').then((imageInfo) => {
+    // PC用背景画像
+    getBackgroundImage('story', false).then((imageInfo) => {
       setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('story', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
     }).catch(() => {
       // エラー時はデフォルト画像を使用
     });
@@ -83,7 +104,9 @@ export default function StoryPage() {
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('${backgroundImageUrl}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

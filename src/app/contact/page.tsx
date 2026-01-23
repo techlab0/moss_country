@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import emailjs from '@emailjs/browser';
+import { getBackgroundImage, defaultBackgroundImages } from '@/lib/imageUtils';
 
 const contactMethods = [
   {
@@ -49,6 +50,37 @@ export default function ContactPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['contact'].src);
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['contact-mobile'].src);
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // 背景画像を取得
+  useEffect(() => {
+    // PC用背景画像
+    getBackgroundImage('contact', false).then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('contact', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -125,7 +157,9 @@ export default function ContactPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/store/exterior.jpg)',
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -147,7 +181,9 @@ export default function ContactPage() {
 
       {/* Contact Methods */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/store/exterior.jpg)',
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -206,7 +242,9 @@ export default function ContactPage() {
 
       {/* Contact Form */}
       <section className="py-20 relative" style={{
-        backgroundImage: 'url(/images/store/exterior.jpg)',
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

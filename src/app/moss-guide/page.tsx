@@ -21,6 +21,7 @@ export default function MossGuidePage() {
   const [isMobile, setIsMobile] = useState(false)
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['mossGuide'].src)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['mossGuide'].src)
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['mossGuide-mobile'].src)
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -45,8 +46,15 @@ export default function MossGuidePage() {
 
   // 背景画像を取得
   useEffect(() => {
-    getBackgroundImage('mossGuide').then((imageInfo) => {
+    // PC用背景画像
+    getBackgroundImage('mossGuide', false).then((imageInfo) => {
       setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('mossGuide', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
     }).catch(() => {
       // エラー時はデフォルト画像を使用
     });
@@ -158,7 +166,9 @@ export default function MossGuidePage() {
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('${backgroundImageUrl}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

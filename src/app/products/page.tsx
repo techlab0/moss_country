@@ -1,11 +1,13 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getProducts } from '@/lib/sanity';
-import { getHeroImage, getBackgroundImage } from '@/lib/imageUtils';
+import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import type { Product } from '@/types/sanity';
 
 const terrariumCategories = [
@@ -46,18 +48,88 @@ const supplyCategories = [
   },
 ];
 
-export default async function ProductsPage() {
-  const [products, heroImage, backgroundImage] = await Promise.all([
-    getProducts(),
-    getHeroImage('products'),
-    getBackgroundImage('products')
-  ]);
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['products'].src);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['products'].src);
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['products-mobile'].src);
+
+  // 画面サイズを監視してモバイルかどうかを判定
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // 商品データを取得
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const fetchedProducts = await getProducts();
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error('商品データの取得に失敗しました:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // ヒーロー画像を取得
+  useEffect(() => {
+    getHeroImage('products').then((imageInfo) => {
+      setHeroImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
+  // 背景画像を取得
+  useEffect(() => {
+    // PC用背景画像
+    getBackgroundImage('products', false).then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('products', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-moss-green bg-white">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-moss-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          読み込み中...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className="min-h-screen relative bg-fixed-desktop"
       style={{
-        backgroundImage: `url('${backgroundImage.src}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
@@ -69,7 +141,7 @@ export default async function ProductsPage() {
       <section
         className="py-20 relative min-h-[60vh] flex items-center"
         style={{
-          backgroundImage: `url('${heroImage.src}')`,
+          backgroundImage: `url('${heroImageUrl}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}

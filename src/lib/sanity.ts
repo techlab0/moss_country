@@ -582,43 +582,155 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
         _id,
         _type,
         main {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         products {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         workshop {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         story {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         store {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         mossGuide {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         blog {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         contact {
-          image,
-          imageMobile,
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
           alt
         },
         updatedAt

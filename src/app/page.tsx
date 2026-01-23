@@ -15,6 +15,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['main'].src);
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['main-mobile'].src);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -38,8 +39,15 @@ export default function Home() {
 
   // 背景画像を取得
   useEffect(() => {
-    getBackgroundImage('main').then((imageInfo) => {
+    // PC用背景画像
+    getBackgroundImage('main', false).then((imageInfo) => {
       setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
+    // モバイル用背景画像
+    getBackgroundImage('main', true).then((imageInfo) => {
+      setBackgroundImageMobileUrl(imageInfo.src);
     }).catch(() => {
       // エラー時はデフォルト画像を使用
     });
@@ -49,7 +57,9 @@ export default function Home() {
     <div
       className="relative"
       style={{
-        backgroundImage: `url('${backgroundImageUrl}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

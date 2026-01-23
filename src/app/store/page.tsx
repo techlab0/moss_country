@@ -370,6 +370,7 @@ export default function StorePage() {
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['store'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['store'].src);
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['store-mobile'].src);
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -405,7 +406,9 @@ export default function StorePage() {
     <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: `url('${backgroundImageUrl}')`,
+        backgroundImage: isMobile
+          ? `url('${backgroundImageMobileUrl}')`
+          : `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
