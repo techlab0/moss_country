@@ -530,91 +530,35 @@ export async function getHeroImageSettings(): Promise<HeroImageSettings | null> 
         _id,
         _type,
         main {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         products {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         workshop {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         story {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         store {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         mossGuide {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         blog {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         contact {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         updatedAt
@@ -638,99 +582,36 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
         _id,
         _type,
         main {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         products {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         workshop {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
-          imageMobile {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
+          imageMobile,
           alt
         },
         story {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         store {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         mossGuide {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         blog {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         contact {
-          image {
-            asset-> {
-              _ref,
-              _type
-            },
-            hotspot,
-            crop
-          },
+          image,
           alt
         },
         updatedAt
