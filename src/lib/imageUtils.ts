@@ -160,6 +160,24 @@ export const defaultHeroImages: Record<string, ImageInfo> = {
     width: 1920,
     height: 600,
   },
+  'mossGuide': {
+    src: '/images/misc/moss01.jpeg',
+    alt: '様々な苔の種類を紹介する苔図鑑',
+    width: 1920,
+    height: 600,
+  },
+  'blog': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'MOSS COUNTRYブログ',
+    width: 1920,
+    height: 600,
+  },
+  'contact': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'お問い合わせ',
+    width: 1920,
+    height: 600,
+  },
 };
 
 // 後方互換性のため、heroImagesもエクスポート（defaultHeroImagesのエイリアス）
@@ -203,14 +221,32 @@ export const defaultBackgroundImages: Record<string, ImageInfo> = {
     width: 1920,
     height: 1080,
   },
+  'mossGuide': {
+    src: '/images/misc/moss01.jpeg',
+    alt: '苔図鑑ページ背景',
+    width: 1920,
+    height: 1080,
+  },
+  'blog': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'ブログページ背景',
+    width: 1920,
+    height: 1080,
+  },
+  'contact': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'お問い合わせページ背景',
+    width: 1920,
+    height: 1080,
+  },
 };
 
 /**
  * Sanityからヒーロー画像を取得する関数
- * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store')
+ * @param page - ページ名
  * @returns ヒーロー画像情報（Sanityに設定がない場合はデフォルト画像を返す）
  */
-export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'story' | 'store'): Promise<ImageInfo> {
+export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact'): Promise<ImageInfo> {
   try {
     const settings = await getHeroImageSettings();
     
@@ -294,7 +330,7 @@ export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
  * @returns 背景画像情報（Sanityに設定がない場合はデフォルト画像を返す）
  */
 export async function getBackgroundImage(
-  page: 'main' | 'products' | 'workshop' | 'story' | 'store',
+  page: 'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact',
   isMobile: boolean = false
 ): Promise<ImageInfo> {
   try {

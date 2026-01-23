@@ -584,6 +584,39 @@ export async function getHeroImageSettings(): Promise<HeroImageSettings | null> 
           },
           alt
         },
+        mossGuide {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        blog {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        contact {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
         updatedAt
       }
     `, {}, {
@@ -635,15 +668,15 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
             hotspot,
             crop
           },
-          alt
-        },
-        imageMobile {
-          asset-> {
-            _ref,
-            _type
+          imageMobile {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
           },
-          hotspot,
-          crop
+          alt
         },
         story {
           image {
@@ -657,6 +690,39 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
           alt
         },
         store {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        mossGuide {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        blog {
+          image {
+            asset-> {
+              _ref,
+              _type
+            },
+            hotspot,
+            crop
+          },
+          alt
+        },
+        contact {
           image {
             asset-> {
               _ref,

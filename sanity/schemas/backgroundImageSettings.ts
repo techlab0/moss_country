@@ -130,6 +130,75 @@ export const backgroundImageSettings = defineType({
       ],
     }),
     defineField({
+      name: 'mossGuide',
+      title: '苔図鑑ページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: '苔図鑑ページの背景画像（推奨サイズ: 1920×1080px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: '苔図鑑ページ背景',
+        }),
+      ],
+    }),
+    defineField({
+      name: 'blog',
+      title: 'ブログページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: 'ブログページの背景画像（推奨サイズ: 1920×1080px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: 'ブログページ背景',
+        }),
+      ],
+    }),
+    defineField({
+      name: 'contact',
+      title: 'お問い合わせページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: 'お問い合わせページの背景画像（推奨サイズ: 1920×1080px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: 'お問い合わせページ背景',
+        }),
+      ],
+    }),
+    defineField({
       name: 'updatedAt',
       title: '更新日時',
       type: 'datetime',

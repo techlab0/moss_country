@@ -197,6 +197,18 @@ export interface HeroImageSettings {
     image?: SanityImage
     alt?: string
   }
+  mossGuide?: {
+    image?: SanityImage
+    alt?: string
+  }
+  blog?: {
+    image?: SanityImage
+    alt?: string
+  }
+  contact?: {
+    image?: SanityImage
+    alt?: string
+  }
   updatedAt?: string
 }
 
@@ -221,6 +233,18 @@ export interface BackgroundImageSettings {
     alt?: string
   }
   store?: {
+    image?: SanityImage
+    alt?: string
+  }
+  mossGuide?: {
+    image?: SanityImage
+    alt?: string
+  }
+  blog?: {
+    image?: SanityImage
+    alt?: string
+  }
+  contact?: {
     image?: SanityImage
     alt?: string
   }

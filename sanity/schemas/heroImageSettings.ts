@@ -121,6 +121,75 @@ export const heroImageSettings = defineType({
       ],
     }),
     defineField({
+      name: 'mossGuide',
+      title: '苔図鑑ページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: '苔図鑑ページのヒーロー画像（推奨サイズ: 1920×600px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: '様々な苔の種類を紹介する苔図鑑',
+        }),
+      ],
+    }),
+    defineField({
+      name: 'blog',
+      title: 'ブログページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: 'ブログページのヒーロー画像（推奨サイズ: 1920×600px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: 'MOSS COUNTRYブログ',
+        }),
+      ],
+    }),
+    defineField({
+      name: 'contact',
+      title: 'お問い合わせページ',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'image',
+          title: '画像',
+          type: 'image',
+          options: {
+            hotspot: true,
+          },
+          description: 'お問い合わせページのヒーロー画像（推奨サイズ: 1920×600px）',
+        }),
+        defineField({
+          name: 'alt',
+          title: '代替テキスト',
+          type: 'string',
+          description: '画像の説明文（SEO対策）',
+          initialValue: 'お問い合わせ',
+        }),
+      ],
+    }),
+    defineField({
       name: 'updatedAt',
       title: '更新日時',
       type: 'datetime',
