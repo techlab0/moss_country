@@ -6,6 +6,7 @@ import { Container } from '@/components/layout/Container'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { InlineLoading } from '@/components/ui/LoadingScreen'
+import { getBackgroundImage, defaultBackgroundImages } from '@/lib/imageUtils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -18,6 +19,7 @@ export default function BlogPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['blog'].src)
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -29,6 +31,15 @@ export default function BlogPage() {
     window.addEventListener('resize', checkScreenSize)
 
     return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
+  // 背景画像を取得
+  useEffect(() => {
+    getBackgroundImage('blog').then((imageInfo) => {
+      setBackgroundImageUrl(imageInfo.src);
+    }).catch(() => {
+      // エラー時はデフォルト画像を使用
+    });
   }, [])
 
   // ブログ記事を取得
@@ -76,16 +87,13 @@ export default function BlogPage() {
   }, [posts, searchTerm, selectedCategory])
 
   return (
-    <div 
+    <div
       className="min-h-screen relative"
       style={{
-        backgroundImage: isMobile 
-          ? `url('/images/misc/moss02_sp.png')` 
-          : `url('/images/misc/moss01.jpeg')`,
+        backgroundImage: `url('${backgroundImageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        filter: isMobile ? 'brightness(1.2)' : 'none'
+        backgroundAttachment: 'fixed'
       }}
     >
       {/* Unified Background Overlay */}
