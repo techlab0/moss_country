@@ -191,11 +191,23 @@ export const defaultBackgroundImages: Record<string, ImageInfo> = {
     width: 1920,
     height: 1080,
   },
+  'main-mobile': {
+    src: '/images/background/background01.jpeg',
+    alt: 'MOSS COUNTRY 背景（モバイル）',
+    width: 750,
+    height: 1334,
+  },
   'products': {
     src: '/images/background/background01.jpeg',
     alt: '商品ページ背景',
     width: 1920,
     height: 1080,
+  },
+  'products-mobile': {
+    src: '/images/background/background01.jpeg',
+    alt: '商品ページ背景（モバイル）',
+    width: 750,
+    height: 1334,
   },
   'workshop': {
     src: '/images/misc/moss01.jpeg',
@@ -215,11 +227,23 @@ export const defaultBackgroundImages: Record<string, ImageInfo> = {
     width: 1920,
     height: 1080,
   },
+  'story-mobile': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'ストーリーページ背景（モバイル）',
+    width: 750,
+    height: 1334,
+  },
   'store': {
     src: '/images/background/background01.jpeg',
     alt: '店舗ページ背景',
     width: 1920,
     height: 1080,
+  },
+  'store-mobile': {
+    src: '/images/background/background01.jpeg',
+    alt: '店舗ページ背景（モバイル）',
+    width: 750,
+    height: 1334,
   },
   'mossGuide': {
     src: '/images/misc/moss01.jpeg',
@@ -227,17 +251,35 @@ export const defaultBackgroundImages: Record<string, ImageInfo> = {
     width: 1920,
     height: 1080,
   },
+  'mossGuide-mobile': {
+    src: '/images/misc/moss01.jpeg',
+    alt: '苔図鑑ページ背景（モバイル）',
+    width: 750,
+    height: 1334,
+  },
   'blog': {
     src: '/images/misc/moss01.jpeg',
     alt: 'ブログページ背景',
     width: 1920,
     height: 1080,
   },
+  'blog-mobile': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'ブログページ背景（モバイル）',
+    width: 750,
+    height: 1334,
+  },
   'contact': {
     src: '/images/misc/moss01.jpeg',
     alt: 'お問い合わせページ背景',
     width: 1920,
     height: 1080,
+  },
+  'contact-mobile': {
+    src: '/images/misc/moss01.jpeg',
+    alt: 'お問い合わせページ背景（モバイル）',
+    width: 750,
+    height: 1334,
   },
 };
 
@@ -325,29 +367,31 @@ export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
 
 /**
  * Sanityから背景画像を取得する関数
- * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store')
- * @param isMobile - モバイル用画像を取得するか（workshopページ用）
+ * @param page - ページ名 ('main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact')
+ * @param isMobile - モバイル用画像を取得するか（全ページ対応）
  * @returns 背景画像情報（Sanityに設定がない場合はデフォルト画像を返す）
  */
 export async function getBackgroundImage(
   page: 'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact',
   isMobile: boolean = false
 ): Promise<ImageInfo> {
+  const mobileKey = `${page}-mobile` as keyof typeof defaultBackgroundImages;
+
   try {
     const settings = await getBackgroundImageSettings();
 
     if (!settings) {
       // Sanityに設定がない場合はデフォルト画像を返す
-      if (page === 'workshop' && isMobile) {
-        return defaultBackgroundImages['workshop-mobile'];
+      if (isMobile) {
+        return defaultBackgroundImages[mobileKey];
       }
       return defaultBackgroundImages[page];
     }
 
     const pageSettings = settings[page];
 
-    // workshopページのモバイル画像
-    if (page === 'workshop' && isMobile && pageSettings?.imageMobile?.asset?._ref) {
+    // モバイル画像の取得（全ページ対応）
+    if (isMobile && pageSettings?.imageMobile?.asset?._ref) {
       const imageUrl = urlFor(pageSettings.imageMobile as SanityImage)
         .width(750)
         .height(1334)
@@ -355,21 +399,37 @@ export async function getBackgroundImage(
 
       return {
         src: imageUrl,
-        alt: pageSettings.alt || defaultBackgroundImages['workshop-mobile'].alt,
+        alt: pageSettings.alt || defaultBackgroundImages[mobileKey].alt,
         width: 750,
         height: 1334,
       };
     }
 
+    // モバイル画像が設定されていない場合
+    if (isMobile && !pageSettings?.imageMobile?.asset?._ref) {
+      // PC用画像が設定されている場合はそれを使用、なければデフォルト
+      if (pageSettings?.image?.asset?._ref) {
+        const imageUrl = urlFor(pageSettings.image as SanityImage)
+          .width(750)
+          .height(1334)
+          .url();
+
+        return {
+          src: imageUrl,
+          alt: pageSettings.alt || defaultBackgroundImages[mobileKey].alt,
+          width: 750,
+          height: 1334,
+        };
+      }
+      return defaultBackgroundImages[mobileKey];
+    }
+
     if (!pageSettings?.image?.asset?._ref) {
       // 該当ページの画像が設定されていない場合はデフォルト画像を返す
-      if (page === 'workshop' && isMobile) {
-        return defaultBackgroundImages['workshop-mobile'];
-      }
       return defaultBackgroundImages[page];
     }
 
-    // Sanityから画像URLを生成
+    // Sanityから画像URLを生成（PC用）
     const imageUrl = urlFor(pageSettings.image as SanityImage)
       .width(1920)
       .height(1080)
@@ -384,8 +444,8 @@ export async function getBackgroundImage(
   } catch (error) {
     console.warn(`Failed to get background image for ${page}:`, error);
     // エラー時はデフォルト画像を返す
-    if (page === 'workshop' && isMobile) {
-      return defaultBackgroundImages['workshop-mobile'];
+    if (isMobile) {
+      return defaultBackgroundImages[mobileKey];
     }
     return defaultBackgroundImages[page];
   }
@@ -404,11 +464,14 @@ export async function getAllBackgroundImages(): Promise<Record<string, ImageInfo
     }
 
     const result: Record<string, ImageInfo> = {};
-    const pages: Array<'main' | 'products' | 'workshop' | 'story' | 'store'> = ['main', 'products', 'workshop', 'story', 'store'];
+    const pages: Array<'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact'> =
+      ['main', 'products', 'workshop', 'story', 'store', 'mossGuide', 'blog', 'contact'];
 
     for (const page of pages) {
       const pageSettings = settings[page];
+      const mobileKey = `${page}-mobile`;
 
+      // PC用画像
       if (pageSettings?.image?.asset?._ref) {
         const imageUrl = urlFor(pageSettings.image as SanityImage)
           .width(1920)
@@ -425,23 +488,21 @@ export async function getAllBackgroundImages(): Promise<Record<string, ImageInfo
         result[page] = defaultBackgroundImages[page];
       }
 
-      // workshopのモバイル用
-      if (page === 'workshop') {
-        if (pageSettings?.imageMobile?.asset?._ref) {
-          const mobileImageUrl = urlFor(pageSettings.imageMobile as SanityImage)
-            .width(750)
-            .height(1334)
-            .url();
+      // モバイル用画像（全ページ対応）
+      if (pageSettings?.imageMobile?.asset?._ref) {
+        const mobileImageUrl = urlFor(pageSettings.imageMobile as SanityImage)
+          .width(750)
+          .height(1334)
+          .url();
 
-          result['workshop-mobile'] = {
-            src: mobileImageUrl,
-            alt: pageSettings.alt || defaultBackgroundImages['workshop-mobile'].alt,
-            width: 750,
-            height: 1334,
-          };
-        } else {
-          result['workshop-mobile'] = defaultBackgroundImages['workshop-mobile'];
-        }
+        result[mobileKey] = {
+          src: mobileImageUrl,
+          alt: pageSettings.alt || defaultBackgroundImages[mobileKey].alt,
+          width: 750,
+          height: 1334,
+        };
+      } else {
+        result[mobileKey] = defaultBackgroundImages[mobileKey];
       }
     }
 

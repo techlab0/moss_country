@@ -212,41 +212,23 @@ export interface HeroImageSettings {
   updatedAt?: string
 }
 
+// 背景画像の共通型
+interface BackgroundImagePage {
+  image?: SanityImage
+  imageMobile?: SanityImage
+  alt?: string
+}
+
 export interface BackgroundImageSettings {
   _id: string
   _type: 'backgroundImageSettings'
-  main?: {
-    image?: SanityImage
-    alt?: string
-  }
-  products?: {
-    image?: SanityImage
-    alt?: string
-  }
-  workshop?: {
-    image?: SanityImage
-    imageMobile?: SanityImage
-    alt?: string
-  }
-  story?: {
-    image?: SanityImage
-    alt?: string
-  }
-  store?: {
-    image?: SanityImage
-    alt?: string
-  }
-  mossGuide?: {
-    image?: SanityImage
-    alt?: string
-  }
-  blog?: {
-    image?: SanityImage
-    alt?: string
-  }
-  contact?: {
-    image?: SanityImage
-    alt?: string
-  }
+  main?: BackgroundImagePage
+  products?: BackgroundImagePage
+  workshop?: BackgroundImagePage
+  story?: BackgroundImagePage
+  store?: BackgroundImagePage
+  mossGuide?: BackgroundImagePage
+  blog?: BackgroundImagePage
+  contact?: BackgroundImagePage
   updatedAt?: string
 }

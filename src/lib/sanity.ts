@@ -583,10 +583,12 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
         _type,
         main {
           image,
+          imageMobile,
           alt
         },
         products {
           image,
+          imageMobile,
           alt
         },
         workshop {
@@ -596,22 +598,27 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
         },
         story {
           image,
+          imageMobile,
           alt
         },
         store {
           image,
+          imageMobile,
           alt
         },
         mossGuide {
           image,
+          imageMobile,
           alt
         },
         blog {
           image,
+          imageMobile,
           alt
         },
         contact {
           image,
+          imageMobile,
           alt
         },
         updatedAt
