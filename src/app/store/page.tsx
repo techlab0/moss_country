@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { getHeroImage, getBackgroundImage, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -384,35 +384,47 @@ export default function StorePage() {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
-  // ヒーロー画像を取得
+  // ヒーロー画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
-    getHeroImage('store').then((imageInfo) => {
-      setHeroImageUrl(imageInfo.src);
-    }).catch(() => {
-      // エラー時はデフォルト画像を使用
-    });
+    fetch(`/api/images/hero?page=store`)
+      .then(res => res.json())
+      .then((imageInfo) => {
+        if (imageInfo?.src && !imageInfo.error) {
+          setHeroImageUrl(imageInfo.src);
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load hero image, using default:', error);
+        // エラー時はデフォルト画像を維持（既に設定済み）
+      });
   }, []);
 
   // 背景画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
     // PC用背景画像
-    getBackgroundImage('store', false).then((imageInfo) => {
-      if (imageInfo?.src) {
-        setBackgroundImageUrl(imageInfo.src);
-      }
-    }).catch((error) => {
-      console.warn('Failed to load background image (PC), using default:', error);
-      // エラー時はデフォルト画像を維持（既に設定済み）
-    });
+    fetch(`/api/images/background?page=store&mobile=false`)
+      .then(res => res.json())
+      .then((imageInfo) => {
+        if (imageInfo?.src && !imageInfo.error) {
+          setBackgroundImageUrl(imageInfo.src);
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load background image (PC), using default:', error);
+        // エラー時はデフォルト画像を維持（既に設定済み）
+      });
     // モバイル用背景画像
-    getBackgroundImage('store', true).then((imageInfo) => {
-      if (imageInfo?.src) {
-        setBackgroundImageMobileUrl(imageInfo.src);
-      }
-    }).catch((error) => {
-      console.warn('Failed to load background image (Mobile), using default:', error);
-      // エラー時はデフォルト画像を維持（既に設定済み）
-    });
+    fetch(`/api/images/background?page=store&mobile=true`)
+      .then(res => res.json())
+      .then((imageInfo) => {
+        if (imageInfo?.src && !imageInfo.error) {
+          setBackgroundImageMobileUrl(imageInfo.src);
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load background image (Mobile), using default:', error);
+        // エラー時はデフォルト画像を維持（既に設定済み）
+      });
   }, []);
 
   return (
