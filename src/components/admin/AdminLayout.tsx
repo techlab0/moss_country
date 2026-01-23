@@ -13,6 +13,7 @@ const navigation = [
   { name: 'カレンダー管理', href: '/admin/calendar', icon: '📅' },
   { name: 'FAQ管理', href: '/admin/faqs', icon: '❓' },
   { name: '苔図鑑管理', href: '/admin/moss-guide', icon: '🍃' },
+  { name: '画像管理', href: '/admin/images', icon: '🖼️' },
   { name: 'お問い合わせ管理', href: '/admin/contacts', icon: '📧' },
   { name: '顧客管理', href: '/admin/customers', icon: '👥' },
   { name: 'ユーザー管理', href: '/admin/users', icon: '👤' },
