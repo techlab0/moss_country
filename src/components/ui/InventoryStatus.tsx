@@ -76,7 +76,15 @@ export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
   variant = 'default',
   className = ''
 }) => {
-  const { availableStock, isLowStock, isOutOfStock } = useSanityInventory(productId, variantKey);
+  const { availableStock, isLowStock, isOutOfStock, loading } = useSanityInventory(productId, variantKey);
+
+  if (loading) {
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200 ${className}`}>
+        在庫確認中
+      </span>
+    );
+  }
 
   if (variant === 'compact') {
     return (

@@ -46,9 +46,9 @@ export function useSanityInventory(productId: string, variant?: string) {
   }, [productId, variant]);
 
   // Derived states
-  const isInStock = inventory ? inventory.available > 0 : false;
-  const isLowStock = inventory ? inventory.available <= inventory.reorderLevel && inventory.available > 0 : false;
-  const isOutOfStock = inventory ? inventory.available <= 0 : true; // Default to out of stock if no inventory data
+  const isInStock = !loading && inventory ? inventory.available > 0 : false;
+  const isLowStock = !loading && inventory ? inventory.available <= inventory.reorderLevel && inventory.available > 0 : false;
+  const isOutOfStock = !loading && inventory ? inventory.available <= 0 : false;
   const availableStock = inventory?.available || 0;
   const totalStock = inventory?.quantity || 0;
   const reservedStock = inventory?.reserved || 0;
