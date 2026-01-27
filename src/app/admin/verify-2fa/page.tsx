@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, Suspense, FormEvent } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function Verify2FAContent() {
@@ -39,7 +40,7 @@ function Verify2FAContent() {
       } else {
         setError(data.error || '認証に失敗しました');
       }
-    } catch (err) {
+    } catch {
       setError('ネットワークエラーが発生しました');
     } finally {
       setIsLoading(false);
@@ -47,7 +48,7 @@ function Verify2FAContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -122,12 +123,12 @@ function Verify2FAContent() {
           </div>
 
           <div className="text-center">
-            <a
+            <Link
               href="/admin/login"
               className="font-medium text-gray-600 hover:text-gray-500"
             >
               ← ログイン画面に戻る
-            </a>
+            </Link>
           </div>
         </form>
       </div>
@@ -137,7 +138,7 @@ function Verify2FAContent() {
 
 export default function Verify2FAPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-lg">読み込み中...</div></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"><div className="text-lg">読み込み中...</div></div>}>
       <Verify2FAContent />
     </Suspense>
   );
