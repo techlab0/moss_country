@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ButtonLoading } from '@/components/ui/LoadingScreen';
 
@@ -39,7 +40,7 @@ export default function AdminLoginPage() {
       } else {
         setError(data.error || 'ログインに失敗しました');
       }
-    } catch (err) {
+    } catch {
       setError('ネットワークエラーが発生しました');
     } finally {
       setIsLoading(false);
@@ -47,7 +48,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
@@ -121,12 +122,12 @@ export default function AdminLoginPage() {
         </form>
 
         <div className="text-center">
-          <a
+          <Link
             href="/"
             className="font-semibold text-base text-moss-green hover:text-moss-green/80"
           >
             ← サイトに戻る
-          </a>
+          </Link>
         </div>
       </div>
     </div>

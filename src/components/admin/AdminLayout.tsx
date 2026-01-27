@@ -64,6 +64,7 @@ function LogoutButton() {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const isAuthPage = pathname === '/admin/login' || pathname === '/admin/verify-2fa';
 
   useEffect(() => {
     // 管理画面用のCSSクラスを追加
@@ -74,6 +75,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       document.body.classList.remove('admin-layout');
     };
   }, []);
+
+  // ログイン/2FA画面では管理メニュー等を表示しない
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
