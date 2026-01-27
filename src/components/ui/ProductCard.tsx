@@ -19,7 +19,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock } = useSanityInventory(product._id);
+  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock, loading: inventoryLoading } = useSanityInventory(product._id);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -34,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
     e.preventDefault(); // Linkクリックを防ぐ
     e.stopPropagation();
     
-    if (!hasInventory || isOutOfStock) return;
+    if (inventoryLoading || !hasInventory || isOutOfStock) return;
     
     setIsAdding(true);
     
@@ -47,10 +47,10 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
     } finally {
       setIsAdding(false);
     }
-  }, [product, addToCart, hasInventory, isOutOfStock]);
+  }, [product, addToCart, inventoryLoading, hasInventory, isOutOfStock]);
 
   return (
-    <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${!product.inStock ? 'opacity-75' : ''}`}>
+    <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
       <Link href={`/products/${product.slug.current}`}>
         <div className="h-64 overflow-hidden relative">
           {product.images && product.images[0] ? (
@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
                 sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
                 priority: product.featured
               })}
-              className={`w-full h-full object-cover ${!product.inStock ? 'grayscale' : ''}`}
+              className={`w-full h-full object-cover ${(!inventoryLoading && isOutOfStock) ? 'grayscale' : ''}`}
             />
           ) : (
             <ImagePlaceholder
@@ -82,7 +82,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
                 おすすめ
               </div>
             )}
-            {!product.inStock && (
+            {!inventoryLoading && isOutOfStock && (
               <div className="bg-gray-500 text-white px-2 py-1 rounded text-sm z-10">
                 在庫切れ
               </div>
@@ -106,7 +106,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
               >
                 詳細を見る
               </Button>
-              {product.inStock && (
+              {!inventoryLoading && hasInventory && !isOutOfStock && (
                 <Button
                   size="sm"
                   variant="primary"
@@ -170,7 +170,11 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
 
         {/* アクションボタン */}
         <div className="space-y-2">
-          {hasInventory && !isOutOfStock ? (
+          {inventoryLoading ? (
+            <Button variant="primary" className="w-full" disabled>
+              在庫確認中...
+            </Button>
+          ) : hasInventory && !isOutOfStock ? (
             <Button
               variant="primary"
               className="w-full"
