@@ -5,6 +5,9 @@
 
 import type { Product as SanityProduct } from '@/types/sanity';
 
+/** 商品画像がない・エラー時のフォールバック（ロゴ） */
+export const PRODUCT_IMAGE_FALLBACK_LOGO = '/images/mosscountry_logo.svg';
+
 /** slug が文字列 or { current: string } のどちらでもスラッグ文字列を返す */
 export function getProductSlug(product: { slug?: string | { current?: string } | null }): string {
   if (!product?.slug) return '';
@@ -47,13 +50,12 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
 }
 
 /**
- * Sanity画像の安全なURL取得
+ * Sanity画像の安全なURL取得（画像なし・エラー時はロゴを返す）
  */
 export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] | undefined, width?: number, height?: number): string {
   if (!image?.asset) {
-    return '/images/products/terrarium-standard.jpg';
+    return PRODUCT_IMAGE_FALLBACK_LOGO;
   }
-  
   try {
     let urlBuilder = urlFor(image);
     if (width) urlBuilder = urlBuilder.width(width);
@@ -61,7 +63,7 @@ export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] |
     return urlBuilder.url();
   } catch (error) {
     console.warn('Failed to generate image URL:', error);
-    return '/images/products/terrarium-standard.jpg';
+    return PRODUCT_IMAGE_FALLBACK_LOGO;
   }
 }
 

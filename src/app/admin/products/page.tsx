@@ -344,13 +344,14 @@ export default function AdminProductsPage() {
         
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-900 mb-2">カテゴリ管理</h3>
-          <p className="text-gray-600 text-sm mb-4">商品カテゴリの設定</p>
+          <p className="text-gray-600 text-sm mb-4">商品カテゴリは各商品の登録・編集画面で選択できます。スキーマ変更は Sanity Studio で行います。</p>
           <Link
-            href="/admin/cms/structure/category"
+            href="/admin/cms"
             target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
           >
-            カテゴリ設定
+            Sanity Studio を開く
           </Link>
         </div>
       </div>

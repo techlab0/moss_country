@@ -1,8 +1,8 @@
 import { getProductBySlug, urlFor } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { ProductActions } from '@/components/ui/ProductActions'
+import { PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -41,28 +41,34 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
-            {product.images && product.images.length > 0 && product.images[0]?._ref ? (
+            {product.images && product.images.length > 0 && product.images[0]?.asset?._ref ? (
               <>
-                <div className="aspect-square overflow-hidden rounded-lg">
+                <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
                   <Image
                     src={urlFor(product.images[0]).width(600).height(600).url()}
                     alt={product.name}
                     width={600}
                     height={600}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
+                    }}
                   />
                 </div>
                 {product.images.length > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {product.images.slice(1, 5).map((image, index) => 
-                      image?._ref ? (
-                        <div key={index} className="aspect-square overflow-hidden rounded">
+                    {product.images.slice(1, 5).map((image, index) =>
+                      image?.asset?._ref ? (
+                        <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
                           <Image
                             src={urlFor(image).width(150).height(150).url()}
                             alt={`${product.name} ${index + 2}`}
                             width={150}
                             height={150}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
+                            }}
                           />
                         </div>
                       ) : null
@@ -71,13 +77,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 )}
               </>
             ) : (
-              <div className="aspect-square">
-                <ImagePlaceholder
-                  src=""
+              <div className="aspect-square rounded-lg bg-white/80 flex items-center justify-center overflow-hidden">
+                <Image
+                  src={PRODUCT_IMAGE_FALLBACK_LOGO}
                   alt={product.name}
-                  width={600}
-                  height={600}
-                  className="w-full h-full object-cover rounded-lg"
+                  width={400}
+                  height={400}
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}

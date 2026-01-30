@@ -5,9 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
-import { getSafeImageUrl, getSafeStock, getProductSlug, sanityToEcommerceProduct } from '@/lib/adapters';
+import { getSafeImageUrl, getSafeStock, getProductSlug, sanityToEcommerceProduct, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters';
 import { InventoryBadge, InventoryAlert } from '@/components/ui/InventoryStatus';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
 import { getNextImageProps } from '@/lib/imageOptimization';
@@ -53,7 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
     <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
       <Link href={`/products/${getProductSlug(product)}`}>
         <div className="h-64 overflow-hidden relative">
-          {product.images && product.images[0] ? (
+          {product.images && product.images[0]?.asset ? (
             <Image
               {...getNextImageProps(product.images[0], {
                 width: 400,
@@ -63,15 +62,18 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
                 priority: product.featured
               })}
               className={`w-full h-full object-cover ${(!inventoryLoading && isOutOfStock) ? 'grayscale' : ''}`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
+              }}
             />
           ) : (
-            <ImagePlaceholder
-              src="/images/products/terrarium-standard.jpg"
+            <Image
+              src={PRODUCT_IMAGE_FALLBACK_LOGO}
               alt={product.name}
               width={400}
               height={300}
-              className="w-full h-full object-cover"
-              priority={product.featured}
+              className="w-full h-full object-contain"
+              unoptimized
             />
           )}
           
