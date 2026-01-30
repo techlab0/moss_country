@@ -30,32 +30,69 @@ export function optimizeSanityImage(
     format = 'webp'
   } = options
 
-  let builder = urlFor(image)
-    .width(width)
-    .quality(quality)
-    .format(format)
+  try {
+    // asset が参照形式か展開形式かを判定
+    const hasRef = image.asset && typeof image.asset === 'object' && '_ref' in image.asset
 
-  if (height) {
-    builder = builder.height(height)
-  }
+    if (!hasRef) {
+      // asset が存在しない、または参照がない場合はデフォルト画像を返す
+      return {
+        src: '/images/mosscountry_logo.svg',
+        alt: image.alt || '',
+        width,
+        height,
+        quality,
+        placeholder: 'empty'
+      }
+    }
 
-  // 低品質版をブラープレースホルダーとして生成
-  const blurDataURL = urlFor(image)
-    .width(20)
-    .height(height ? Math.round((height / width) * 20) : 20)
-    .blur(50)
-    .quality(20)
-    .format('jpg')
-    .url()
+    // 参照形式の画像オブジェクトを作成
+    const imageSource = {
+      _type: 'image' as const,
+      asset: {
+        _type: 'reference' as const,
+        _ref: (image.asset as { _ref: string })._ref
+      }
+    }
 
-  return {
-    src: builder.url(),
-    alt: image.alt || '',
-    width,
-    height,
-    quality,
-    placeholder: 'blur',
-    blurDataURL
+    let builder = urlFor(imageSource)
+      .width(width)
+      .quality(quality)
+      .format(format)
+
+    if (height) {
+      builder = builder.height(height)
+    }
+
+    // 低品質版をブラープレースホルダーとして生成
+    const blurDataURL = urlFor(imageSource)
+      .width(20)
+      .height(height ? Math.round((height / width) * 20) : 20)
+      .blur(50)
+      .quality(20)
+      .format('jpg')
+      .url()
+
+    return {
+      src: builder.url(),
+      alt: image.alt || '',
+      width,
+      height,
+      quality,
+      placeholder: 'blur',
+      blurDataURL
+    }
+  } catch (error) {
+    console.warn('Failed to optimize Sanity image:', error)
+    // エラー時はデフォルト画像を返す
+    return {
+      src: '/images/mosscountry_logo.svg',
+      alt: image.alt || '',
+      width,
+      height,
+      quality,
+      placeholder: 'empty'
+    }
   }
 }
 
@@ -65,29 +102,54 @@ export function generateSrcSet(
   widths: number[] = [320, 480, 640, 768, 1024, 1280, 1600],
   format: 'webp' | 'avif' | 'jpg' | 'png' = 'webp'
 ): string {
-  return widths
-    .map(width => {
-      const url = urlFor(image)
-        .width(width)
-        .quality(85)
-        .format(format)
-        .url()
-      return `${url} ${width}w`
-    })
-    .join(', ')
+  try {
+    // asset が参照形式か確認
+    const hasRef = image.asset && typeof image.asset === 'object' && '_ref' in image.asset
+
+    if (!hasRef) {
+      return ''
+    }
+
+    // 参照形式の画像オブジェクトを作成
+    const imageSource = {
+      _type: 'image' as const,
+      asset: {
+        _type: 'reference' as const,
+        _ref: (image.asset as { _ref: string })._ref
+      }
+    }
+
+    return widths
+      .map(width => {
+        const url = urlFor(imageSource)
+          .width(width)
+          .quality(85)
+          .format(format)
+          .url()
+        return `${url} ${width}w`
+      })
+      .join(', ')
+  } catch (error) {
+    console.warn('Failed to generate srcset:', error)
+    return ''
+  }
 }
 
 // 画像の寸法を取得（アスペクト比計算用）
 export function getImageDimensions(image: SanityImage): { width: number; height: number } {
-  // Sanity画像のmetadataから寸法を取得
-  const dimensions = image.asset?.metadata?.dimensions
-  if (dimensions) {
-    return {
-      width: dimensions.width,
-      height: dimensions.height
+  try {
+    // Sanity画像のmetadataから寸法を取得（展開された asset の場合）
+    const dimensions = image.asset?.metadata?.dimensions
+    if (dimensions && dimensions.width && dimensions.height) {
+      return {
+        width: dimensions.width,
+        height: dimensions.height
+      }
     }
+  } catch (error) {
+    console.warn('Failed to get image dimensions:', error)
   }
-  
+
   // デフォルト値
   return { width: 800, height: 600 }
 }

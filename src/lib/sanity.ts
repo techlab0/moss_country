@@ -130,7 +130,7 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
   }
 }
 
-// asset は参照のまま取得（urlFor で URL 生成するため _ref が必要。asset-> で展開すると _ref が消える）
+// asset を展開して _ref と metadata を取得（画像最適化に必要）
 const productBySlugProjection = `{
   _id,
   name,
@@ -141,7 +141,17 @@ const productBySlugProjection = `{
   images[] {
     _type,
     _key,
-    asset,
+    asset-> {
+      _ref,
+      _id,
+      url,
+      metadata {
+        dimensions {
+          width,
+          height
+        }
+      }
+    },
     alt,
     hotspot,
     crop
