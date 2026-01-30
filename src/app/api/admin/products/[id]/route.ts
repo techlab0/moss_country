@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { client } from '@/lib/sanity';
+import { client, writeClient } from '@/lib/sanity';
 
-// 特定商品取得
+// 特定商品取得（useCdn: false で確実に取得）
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const product = await client.getDocument(params.id);
-    
+    const { id } = await params;
+    const product = await writeClient.getDocument(id);
+
     if (!product) {
       return NextResponse.json(
         { error: '商品が見つかりません' },
@@ -29,18 +30,19 @@ export async function GET(
 // 商品更新
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    
+
     // 在庫数に基づいてinStockを自動更新
     if (typeof body.stockQuantity === 'number') {
       body.inStock = body.stockQuantity > 0;
     }
 
     const product = await client
-      .patch(params.id)
+      .patch(id)
       .set({
         ...body,
         _updatedAt: new Date().toISOString()
@@ -59,11 +61,12 @@ export async function PATCH(
 
 // 商品削除
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await client.delete(params.id);
+    const { id } = await params;
+    await client.delete(id);
     
     return NextResponse.json(
       { message: '商品を削除しました' },

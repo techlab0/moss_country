@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { SquareCheckout } from '@/components/ui/SquareCheckout';
 import { useCart } from '@/contexts/CartContext';
-import { getEcommerceImageUrl } from '@/lib/adapters';
+import { getEcommerceImageUrl, getProductSlug } from '@/lib/adapters';
 import type { CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
 
 // 配送料金表（札幌から全国、実際のゆうパック料金を参考）
@@ -879,7 +879,7 @@ export default function CheckoutPage() {
                       return (
                         <div key={itemKey} className="flex gap-4">
                           <div className="relative">
-                            <Link href={`/products/${item.product.slug.current}`}>
+                            <Link href={`/products/${getProductSlug(item.product)}`}>
                               <ImagePlaceholder
                                 src={imageUrl}
                                 alt={item.product.name}
@@ -893,7 +893,7 @@ export default function CheckoutPage() {
                             </span>
                           </div>
                           <div className="flex-grow">
-                            <Link href={`/products/${item.product.slug.current}`}>
+                            <Link href={`/products/${getProductSlug(item.product)}`}>
                               <h3 className="text-white font-medium text-sm line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer">
                                 {item.product.name}
                               </h3>

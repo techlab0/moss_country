@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
-import { getSafeImageUrl, getSafeStock, sanityToEcommerceProduct } from '@/lib/adapters';
+import { getSafeImageUrl, getSafeStock, getProductSlug, sanityToEcommerceProduct } from '@/lib/adapters';
 import { InventoryBadge, InventoryAlert } from '@/components/ui/InventoryStatus';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
 import { getNextImageProps } from '@/lib/imageOptimization';
@@ -51,7 +51,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
 
   return (
     <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
-      <Link href={`/products/${product.slug.current}`}>
+      <Link href={`/products/${getProductSlug(product)}`}>
         <div className="h-64 overflow-hidden relative">
           {product.images && product.images[0] ? (
             <Image
@@ -145,7 +145,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
           <InventoryBadge productId={product._id} />
         </div>
 
-        <Link href={`/products/${product.slug.current}`}>
+        <Link href={`/products/${getProductSlug(product)}`}>
           <h3 className="text-xl font-semibold text-moss-green mb-2 hover:text-moss-green/80 transition-colors line-clamp-2">
             {product.name}
           </h3>
@@ -209,7 +209,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
             </>
           )}
 
-          <Link href={`/products/${product.slug.current}`}>
+          <Link href={`/products/${getProductSlug(product)}`}>
             <Button variant="ghost" className="w-full border border-gray-300 hover:bg-gray-50">
               詳細を見る
             </Button>

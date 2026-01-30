@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getProductSlug } from '@/lib/adapters';
 import type { Product } from '@/types/sanity';
 
 interface ProductWithInventory extends Product {
@@ -233,7 +234,7 @@ export default function AdminProductsPage() {
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {product.slug?.current}
+                            {getProductSlug(product)}
                           </div>
                         </div>
                       </div>
@@ -264,7 +265,7 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Link
-                          href={`/products/${product.slug?.current}`}
+                          href={`/products/${getProductSlug(product)}`}
                           target="_blank"
                           className="text-moss-green hover:text-moss-green/80"
                         >

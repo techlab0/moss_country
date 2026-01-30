@@ -118,9 +118,12 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
       }
     `)
 
+    const { getProductSlug } = await import('@/lib/adapters')
     for (const product of products) {
+      const slug = getProductSlug(product)
+      if (!slug) continue
       dynamicRoutes.push({
-        url: `${baseUrl}/products/${product.slug.current}`,
+        url: `${baseUrl}/products/${slug}`,
         lastModified: new Date(product._updatedAt),
         changeFrequency: 'weekly',
         priority: 0.8,

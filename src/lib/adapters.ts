@@ -4,6 +4,13 @@
  */
 
 import type { Product as SanityProduct } from '@/types/sanity';
+
+/** slug が文字列 or { current: string } のどちらでもスラッグ文字列を返す */
+export function getProductSlug(product: { slug?: string | { current?: string } | null }): string {
+  if (!product?.slug) return '';
+  const s = product.slug;
+  return typeof s === 'string' ? s : (s?.current ?? '');
+}
 import type { Product as EcommerceProduct } from '@/types/ecommerce';
 import { urlFor } from '@/lib/sanity';
 
