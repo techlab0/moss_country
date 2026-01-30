@@ -18,25 +18,26 @@ import type { Product as EcommerceProduct } from '@/types/ecommerce';
 import { urlFor } from '@/lib/sanity';
 
 /**
- * Sanity商品をECサイト商品型に変換
+ * Sanity商品をECサイト商品型に変換（画像URLは getSafeImageUrl で安全に取得）
  */
 export function sanityToEcommerceProduct(sanityProduct: SanityProduct): EcommerceProduct {
+  const name = String(sanityProduct?.name ?? '')
   return {
     _id: sanityProduct._id,
-    name: sanityProduct.name,
+    name,
     slug: sanityProduct.slug,
-    price: sanityProduct.price,
-    description: sanityProduct.description || '',
+    price: Number(sanityProduct?.price) ?? 0,
+    description: String(sanityProduct?.description ?? ''),
     category: {
-      _ref: sanityProduct.category,
-      title: sanityProduct.category
+      _ref: String(sanityProduct?.category ?? ''),
+      title: String(sanityProduct?.category ?? '')
     },
     images: sanityProduct.images?.map(img => ({
       asset: {
-        _ref: img.asset._ref,
-        url: img.asset ? urlFor(img).url() : '/images/placeholder.jpg'
+        _ref: (img?.asset && typeof img.asset === 'object' && '_ref' in img.asset ? (img.asset as { _ref: string })._ref : '') || '',
+        url: getSafeImageUrl(img)
       },
-      alt: `${sanityProduct.name}の商品画像`
+      alt: `${name}の商品画像`
     })) || [],
     inStock: sanityProduct.inStock ?? true,
     stockQuantity: 10, // デフォルト在庫数
@@ -54,18 +55,17 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
  * asset に _ref がある参照のみ urlFor に渡す（展開済み asset だと落ちるため）
  */
 export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] | undefined, width?: number, height?: number): string {
-  const ref = image?.asset && typeof image.asset === 'object' && '_ref' in image.asset ? (image.asset as { _ref: string })._ref : null;
-  if (!ref) {
-    return PRODUCT_IMAGE_FALLBACK_LOGO;
-  }
   try {
+    const ref = image?.asset && typeof image.asset === 'object' && '_ref' in image.asset ? (image.asset as { _ref: string })._ref : null;
+    if (!ref || typeof ref !== 'string') {
+      return PRODUCT_IMAGE_FALLBACK_LOGO;
+    }
     const source = { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: ref } };
     let urlBuilder = urlFor(source);
     if (width) urlBuilder = urlBuilder.width(width);
     if (height) urlBuilder = urlBuilder.height(height);
     return urlBuilder.url();
-  } catch (error) {
-    console.warn('Failed to generate image URL:', error);
+  } catch {
     return PRODUCT_IMAGE_FALLBACK_LOGO;
   }
 }

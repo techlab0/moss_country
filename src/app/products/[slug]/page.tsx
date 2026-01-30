@@ -2,7 +2,7 @@ import { getProductBySlug } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
-import { getSafeImageUrl, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
+import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -14,12 +14,28 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product: Product | null = await getProductBySlug(slug)
+  let product: Product | null = null
+  try {
+    const { slug } = await params
+    product = await getProductBySlug(slug)
+  } catch {
+    notFound()
+  }
 
   if (!product) {
     notFound()
   }
+
+  const price = Number(product?.price) ?? 0
+  const name = String(product?.name ?? '')
+  const category = String(product?.category ?? '')
+  const mainImageUrl = product.images?.[0]
+    ? getSafeImageUrl(product.images[0], 600, 600)
+    : PRODUCT_IMAGE_FALLBACK_LOGO
+  const hasImages = Boolean(
+    product.images?.length &&
+    (product.images[0]?.asset?._ref ?? (product.images[0]?.asset && typeof product.images[0].asset === 'object'))
+  )
 
   return (
     <div 
@@ -41,12 +57,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
-            {product.images && product.images.length > 0 && (product.images[0]?.asset?._ref ?? product.images[0]?.asset) ? (
+            {hasImages ? (
               <>
                 <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
                   <Image
-                    src={getSafeImageUrl(product.images[0], 600, 600)}
-                    alt={product.name}
+                    src={mainImageUrl}
+                    alt={name}
                     width={600}
                     height={600}
                     className="w-full h-full object-contain"
@@ -55,14 +71,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     }}
                   />
                 </div>
-                {product.images.length > 1 && (
+                {(product.images?.length ?? 0) > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {product.images.slice(1, 5).map((image, index) =>
+                    {product.images!.slice(1, 5).map((image, index) =>
                       image?.asset ? (
                         <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
                           <Image
                             src={getSafeImageUrl(image, 150, 150)}
-                            alt={`${product.name} ${index + 2}`}
+                            alt={`${name} ${index + 2}`}
                             width={150}
                             height={150}
                             className="w-full h-full object-contain"
@@ -80,7 +96,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="aspect-square rounded-lg bg-white/80 flex items-center justify-center overflow-hidden">
                 <Image
                   src={PRODUCT_IMAGE_FALLBACK_LOGO}
-                  alt={product.name}
+                  alt={name}
                   width={400}
                   height={400}
                   className="w-full h-full object-contain"
@@ -93,7 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
               <div className="flex items-center gap-3 mb-2">
                 <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
-                  {product.category}
+                  {category}
                 </span>
                 {product.featured && (
                   <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
@@ -101,9 +117,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-moss-green mb-4">{product.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-moss-green mb-4">{name}</h1>
               <div className="text-2xl sm:text-3xl font-bold text-moss-green mb-6">
-                ¥{product.price.toLocaleString()}
+                ¥{price.toLocaleString()}
               </div>
             </div>
 
@@ -160,8 +176,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* 商品アクション（カート追加など） */}
-            <ProductActions product={product} />
+            {/* 商品アクション（カート追加など）。渡す product はシリアライズ可能な形に正規化 */}
+            <ProductActions
+              product={{
+                ...product,
+                name,
+                price,
+                category,
+                slug: typeof product.slug === 'string' ? { current: product.slug, _type: 'slug' } : (product.slug ?? { current: getProductSlug(product), _type: 'slug' }),
+              }}
+            />
           </div>
         </div>
       </Container>
