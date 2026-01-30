@@ -132,7 +132,8 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const product = await client.fetch(
+    // writeClient (useCdn: false) で取得し、登録直後の商品も詳細ページで表示できるようにする
+    const product = await writeClient.fetch(
       `*[_type == "product" && slug.current == $slug][0] {
         _id,
         name,
@@ -153,15 +154,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
         careInstructions,
         featured,
         inStock,
-        dimensions
+        "dimensions": size
       }`,
       { slug },
-      {
-        cache: 'force-cache',
-        next: { revalidate: 3600 } // 1時間キャッシュ
-      }
+      { next: { revalidate: 60 } }
     );
-    
+
     return product;
   } catch (error) {
     console.warn('Failed to fetch product from Sanity:', error);
