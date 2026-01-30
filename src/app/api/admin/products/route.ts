@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { client } from '@/lib/sanity';
+import { writeClient } from '@/lib/sanity';
 
-// 商品一覧取得
+// 商品一覧取得（useCdn: false で登録直後の商品も即時反映）
 export async function GET(request: NextRequest) {
   try {
-    const products = await client.fetch(`
-      *[_type == "product"] | order(_createdAt desc) {
+    const products = await writeClient.fetch(`
+      *[_type == "product"] | order(sortOrder asc, _createdAt desc) {
         _id,
         name,
         slug,
@@ -13,14 +13,17 @@ export async function GET(request: NextRequest) {
         category,
         description,
         images,
+        features,
+        "dimensions": size,
         stockQuantity,
+        reserved,
         lowStockThreshold,
         inStock,
         featured,
         materials,
         careInstructions,
-        dimensions,
         weight,
+        sortOrder,
         _createdAt,
         _updatedAt
       }
@@ -40,25 +43,44 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // スラッグの自動生成（名前がある場合）
-    if (!body.slug && body.name) {
-      body.slug = {
-        current: body.name
-          .toLowerCase()
-          .replace(/[^a-z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '')
-      };
-    }
 
-    const product = await client.create({
+    // スラッグは常に Sanity の slug 型 { current: string } で送る
+    const slugCurrent =
+      typeof body.slug === 'string'
+        ? body.slug
+        : body.slug?.current ||
+          (body.name
+            ? String(body.name)
+                .toLowerCase()
+                .replace(/[^a-z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '')
+            : '');
+    const slug = slugCurrent ? { _type: 'slug' as const, current: slugCurrent } : undefined;
+
+    // フォームの dimensions → スキーマの size
+    const size =
+      body.dimensions && Object.keys(body.dimensions).length > 0
+        ? {
+            width: body.dimensions.width,
+            height: body.dimensions.height,
+            depth: body.dimensions.depth,
+          }
+        : undefined;
+
+    const { dimensions, slug: _s, ...rest } = body;
+    const doc: Record<string, unknown> = {
       _type: 'product',
-      ...body,
-      inStock: (body.stockQuantity || 0) > 0,
+      ...rest,
+      ...(slug && { slug }),
+      ...(size && { size }),
+      inStock: (body.stockQuantity ?? 0) > 0,
       _createdAt: new Date().toISOString(),
-      _updatedAt: new Date().toISOString()
-    });
+      _updatedAt: new Date().toISOString(),
+    };
+
+    const product = await writeClient.create(doc);
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

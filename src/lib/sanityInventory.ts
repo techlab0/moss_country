@@ -16,6 +16,41 @@ export interface SanityInventoryItem {
  */
 export async function getSanityInventory(productId: string, variant?: string): Promise<SanityInventoryItem | null> {
   try {
+    // Inventory should be as fresh as possible (avoid CDN staleness)
+    const inventoryClient = client.withConfig({ useCdn: false })
+
+    // For the storefront we treat product.stockQuantity/reserved as the source of truth
+    // (this is what the admin UI updates). Variant inventory, if used, is stored in the
+    // separate `inventory` document type.
+    if (!variant) {
+      const productStock = await inventoryClient.fetch(
+        `*[_type == "product" && _id == $productId][0]{
+          _id,
+          stockQuantity,
+          reserved,
+          lowStockThreshold
+        }`,
+        { productId }
+      )
+
+      if (!productStock) return null
+
+      const quantity = productStock.stockQuantity ?? 0
+      const reserved = productStock.reserved ?? 0
+      const reorderLevel = productStock.lowStockThreshold ?? 5
+      const available = Math.max(0, quantity - reserved)
+
+      return {
+        _id: `inventory_product_${productId}`,
+        productId,
+        quantity,
+        reserved,
+        available,
+        reorderLevel,
+        trackingEnabled: true,
+      }
+    }
+
     const query = `
       *[_type == "inventory" && product._ref == $productId ${variant ? '&& variant == $variant' : ''}][0] {
         _id,
@@ -29,13 +64,13 @@ export async function getSanityInventory(productId: string, variant?: string): P
       }
     `
     
-    const inventory = await client.fetch(query, { 
+    const inventory = await inventoryClient.fetch(query, { 
       productId, 
       ...(variant && { variant })
     })
     
     if (!inventory) {
-      console.log(`No Sanity inventory found for product: ${productId}`)
+      console.log(`No Sanity inventory found for product variant: ${productId} (${variant})`)
       return null
     }
 
@@ -57,6 +92,7 @@ export async function getSanityInventory(productId: string, variant?: string): P
  */
 export async function getAllSanityInventory(): Promise<SanityInventoryItem[]> {
   try {
+    const inventoryClient = client.withConfig({ useCdn: false })
     const query = `
       *[_type == "inventory"] {
         _id,
@@ -70,7 +106,7 @@ export async function getAllSanityInventory(): Promise<SanityInventoryItem[]> {
       }
     `
     
-    const inventoryItems = await client.fetch(query)
+    const inventoryItems = await inventoryClient.fetch(query)
     
     return (inventoryItems || []).map((item: { quantity: number; reserved?: number; available?: number }) => ({
       ...item,

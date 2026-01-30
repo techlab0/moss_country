@@ -6,7 +6,6 @@ import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
-import { getProducts } from '@/lib/sanity';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import type { Product } from '@/types/sanity';
 
@@ -68,11 +67,13 @@ export default function ProductsPage() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // 商品データを取得
+  // 商品データを取得（API経由で登録直後の商品も即時反映）
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const fetchedProducts = await getProducts();
+        const res = await fetch('/api/products');
+        if (!res.ok) throw new Error('商品の取得に失敗しました');
+        const fetchedProducts = await res.json();
         setProducts(fetchedProducts);
       } catch (error) {
         console.error('商品データの取得に失敗しました:', error);

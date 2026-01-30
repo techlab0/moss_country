@@ -6,7 +6,7 @@ import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
-import { getEcommerceImageUrl } from '@/lib/adapters';
+import { getEcommerceImageUrl, getProductSlug } from '@/lib/adapters';
 import { inventoryService } from '@/lib/inventoryService';
 
 export default function CartPage() {
@@ -100,7 +100,7 @@ export default function CartPage() {
                       <div className="flex flex-col sm:flex-row gap-6">
                         {/* 商品画像 */}
                         <div className="flex-shrink-0">
-                          <Link href={`/products/${item.product.slug.current}`}>
+                          <Link href={`/products/${getProductSlug(item.product)}`}>
                             <ImagePlaceholder
                               src={imageUrl}
                               alt={item.product.name}
@@ -115,7 +115,7 @@ export default function CartPage() {
                         <div className="flex-grow">
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                             <div>
-                              <Link href={`/products/${item.product.slug.current}`}>
+                              <Link href={`/products/${getProductSlug(item.product)}`}>
                                 <h3 className="text-xl font-medium text-white mb-2 hover:text-emerald-400 transition-colors cursor-pointer">
                                   {item.product.name}
                                 </h3>
