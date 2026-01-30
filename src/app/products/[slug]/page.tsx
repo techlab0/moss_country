@@ -32,9 +32,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const mainImageUrl = product.images?.[0]
     ? getSafeImageUrl(product.images[0], 600, 600)
     : PRODUCT_IMAGE_FALLBACK_LOGO
+
+  // 展開形式（url または _id あり）と参照形式（_ref あり）の両方に対応
   const hasImages = Boolean(
     product.images?.length &&
-    (product.images[0]?.asset?._ref ?? (product.images[0]?.asset && typeof product.images[0].asset === 'object'))
+    product.images[0]?.asset &&
+    typeof product.images[0].asset === 'object' &&
+    (
+      ('url' in product.images[0].asset && product.images[0].asset.url) ||
+      ('_id' in product.images[0].asset && product.images[0].asset._id) ||
+      ('_ref' in product.images[0].asset && product.images[0].asset._ref)
+    )
   )
 
   return (
@@ -73,8 +81,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </div>
                 {(product.images?.length ?? 0) > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {product.images!.slice(1, 5).map((image, index) =>
-                      image?.asset ? (
+                    {product.images!.slice(1, 5).map((image, index) => {
+                      const asset = image?.asset as any;
+                      const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
+
+                      return hasValidAsset ? (
                         <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
                           <Image
                             src={getSafeImageUrl(image, 150, 150)}
@@ -87,8 +98,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             }}
                           />
                         </div>
-                      ) : null
-                    )}
+                      ) : null;
+                    })}
                   </div>
                 )}
               </>
