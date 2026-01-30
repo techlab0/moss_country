@@ -6,7 +6,13 @@ import Link from 'next/link';
 
 interface SanityImageRef {
   _type: 'image';
+  _key?: string;
   asset: { _type: 'reference'; _ref: string };
+}
+
+interface ImageWithPreview {
+  image: SanityImageRef;
+  previewUrl?: string;
 }
 
 interface ProductFormData {
@@ -41,7 +47,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [images, setImages] = useState<SanityImageRef[]>([]);
+  const [images, setImages] = useState<ImageWithPreview[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -98,8 +104,14 @@ export default function EditProductPage() {
           lowStockThreshold: Number(product.lowStockThreshold ?? 5),
           featured: Boolean(product.featured),
         });
-        const imgs = product.images as SanityImageRef[] | undefined;
-        setImages(Array.isArray(imgs) ? imgs.filter((i) => i?.asset?._ref) : []);
+        const imgs = product.images as (SanityImageRef & { url?: string })[] | undefined;
+        setImages(
+          Array.isArray(imgs)
+            ? imgs
+                .filter((i) => i?.asset?._ref)
+                .map((i) => ({ image: { _type: i._type, _key: i._key, asset: i.asset }, previewUrl: i.url }))
+            : []
+        );
       })
       .catch((err) => {
         if (mounted) setError(err instanceof Error ? err.message : 'エラーが発生しました');
@@ -119,8 +131,8 @@ export default function EditProductPage() {
       fd.append('file', file);
       const res = await fetch('/api/admin/images/upload', { method: 'POST', body: fd });
       if (!res.ok) throw new Error(await res.text());
-      const { image } = await res.json();
-      setImages((prev) => [...prev, image]);
+      const { image, thumbnailUrl } = await res.json();
+      setImages((prev) => [...prev, { image, previewUrl: thumbnailUrl }]);
     } catch (err) {
       console.error(err);
       alert('画像のアップロードに失敗しました');
@@ -150,7 +162,7 @@ export default function EditProductPage() {
         lowStockThreshold: formData.lowStockThreshold,
         featured: formData.featured,
         size: formData.dimensions,
-        images,
+        images: images.map(({ image }) => image),
       };
       if (formData.weight != null) payload.weight = formData.weight;
       const response = await fetch(`/api/admin/products/${id}`, {
@@ -248,10 +260,18 @@ export default function EditProductPage() {
             <p className="text-xs text-gray-500 mb-2">1枚以上あると商品詳細で表示されます。未設定時はロゴが表示されます。</p>
             {images.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
-                {images.map((_, index) => (
-                  <div key={index} className="relative">
-                    <div className="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
-                      画像{index + 1}
+                {images.map((item, index) => (
+                  <div key={item.image._key ?? index} className="relative">
+                    <div className="w-20 h-20 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {item.previewUrl ? (
+                        <img
+                          src={item.previewUrl}
+                          alt={`画像${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500">画像{index + 1}</span>
+                      )}
                     </div>
                     <button
                       type="button"

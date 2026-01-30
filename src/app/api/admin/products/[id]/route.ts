@@ -1,14 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client, writeClient } from '@/lib/sanity';
 
-// 特定商品取得（useCdn: false で確実に取得）
+// 特定商品取得（useCdn: false で確実に取得。画像は url 付きで返す＝編集画面サムネイル用）
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const product = await writeClient.getDocument(id);
+    const product = await writeClient.fetch(
+      `*[_id == $id][0] {
+        _id,
+        _type,
+        name,
+        slug,
+        description,
+        price,
+        category,
+        images[] {
+          _type,
+          _key,
+          asset,
+          "url": asset->url
+        },
+        size,
+        dimensions,
+        materials,
+        careInstructions,
+        stockQuantity,
+        reserved,
+        lowStockThreshold,
+        featured,
+        weight,
+        inStock,
+        _createdAt,
+        _updatedAt
+      }`,
+      { id }
+    );
 
     if (!product) {
       return NextResponse.json(
@@ -41,7 +70,7 @@ export async function PATCH(
       body.inStock = body.stockQuantity > 0;
     }
 
-    const product = await client
+    const product = await writeClient
       .patch(id)
       .set({
         ...body,

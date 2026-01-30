@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeClient } from '@/lib/sanity';
+import { writeClient, urlFor } from '@/lib/sanity';
 import { logAuditEvent } from '@/lib/auditLog';
 import { verifyJWT } from '@/lib/auth';
 import { findUserById } from '@/lib/userManager';
@@ -88,19 +88,28 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // 画像オブジェクトを返す（Sanityの形式に合わせる）
+    // 画像オブジェクトを返す（Sanityの形式に合わせる。_key は配列用に必須）
+    const _key = (imageAsset as { _id?: string })._id?.replace(/^image-/, '').slice(0, 8) || `img-${Date.now().toString(36)}`;
     const imageObject = {
       _type: 'image',
+      _key,
       asset: {
         _type: 'reference',
         _ref: imageAsset._id
       }
     };
 
+    // サムネイル表示用URL（150x150）
+    const thumbnailUrl = urlFor({ _type: 'image', asset: { _ref: imageAsset._id } } as Parameters<typeof urlFor>[0])
+      .width(150)
+      .height(150)
+      .url();
+
     return NextResponse.json({
       success: true,
       image: imageObject,
-      asset: imageAsset
+      asset: imageAsset,
+      thumbnailUrl
     });
 
   } catch (error) {

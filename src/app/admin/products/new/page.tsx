@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 
 interface SanityImageRef {
   _type: 'image';
+  _key?: string;
   asset: { _type: 'reference'; _ref: string };
+}
+
+interface ImageWithPreview {
+  image: SanityImageRef;
+  previewUrl?: string;
 }
 
 interface ProductFormData {
@@ -40,7 +46,7 @@ const NewProductPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [images, setImages] = useState<SanityImageRef[]>([]);
+  const [images, setImages] = useState<ImageWithPreview[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     slug: '',
@@ -62,8 +68,8 @@ const NewProductPage = () => {
       fd.append('file', file);
       const res = await fetch('/api/admin/images/upload', { method: 'POST', body: fd });
       if (!res.ok) throw new Error(await res.text());
-      const { image } = await res.json();
-      setImages((prev) => [...prev, image]);
+      const { image, thumbnailUrl } = await res.json();
+      setImages((prev) => [...prev, { image, previewUrl: thumbnailUrl }]);
     } catch (err) {
       console.error(err);
       alert('画像のアップロードに失敗しました');
@@ -90,7 +96,7 @@ const NewProductPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...formData, images }),
+        body: JSON.stringify({ ...formData, images: images.map(({ image }) => image) }),
       });
 
       if (!response.ok) {
@@ -178,10 +184,18 @@ const NewProductPage = () => {
             <p className="text-xs text-gray-500 mb-2">1枚以上追加することを推奨します（商品詳細で表示されます）</p>
             {images.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
-                {images.map((_, index) => (
-                  <div key={index} className="relative">
-                    <div className="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
-                      画像{index + 1}
+                {images.map((item, index) => (
+                  <div key={item.image._key ?? index} className="relative">
+                    <div className="w-20 h-20 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {item.previewUrl ? (
+                        <img
+                          src={item.previewUrl}
+                          alt={`画像${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500">画像{index + 1}</span>
+                      )}
                     </div>
                     <button
                       type="button"

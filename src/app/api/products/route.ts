@@ -11,7 +11,9 @@ export async function GET() {
         slug,
         price,
         category,
-        "image": images[0] {
+        images[] {
+          _type,
+          _key,
           asset-> {
             _ref,
             url
