@@ -133,8 +133,9 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
     // writeClient (useCdn: false) で取得し、登録直後の商品も詳細ページで表示できるようにする
+    // slug がオブジェクト { current } と文字列の両方に対応（昔のデータは文字列のことがある）
     const product = await writeClient.fetch(
-      `*[_type == "product" && slug.current == $slug][0] {
+      `*[_type == "product" && (slug.current == $slug || slug == $slug)][0] {
         _id,
         name,
         slug,
