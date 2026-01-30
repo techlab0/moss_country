@@ -51,13 +51,16 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
 
 /**
  * Sanity画像の安全なURL取得（画像なし・エラー時はロゴを返す）
+ * asset に _ref がある参照のみ urlFor に渡す（展開済み asset だと落ちるため）
  */
 export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] | undefined, width?: number, height?: number): string {
-  if (!image?.asset) {
+  const ref = image?.asset && typeof image.asset === 'object' && '_ref' in image.asset ? (image.asset as { _ref: string })._ref : null;
+  if (!ref) {
     return PRODUCT_IMAGE_FALLBACK_LOGO;
   }
   try {
-    let urlBuilder = urlFor(image);
+    const source = { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: ref } };
+    let urlBuilder = urlFor(source);
     if (width) urlBuilder = urlBuilder.width(width);
     if (height) urlBuilder = urlBuilder.height(height);
     return urlBuilder.url();

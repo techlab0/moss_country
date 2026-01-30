@@ -1,8 +1,8 @@
-import { getProductBySlug, urlFor } from '@/lib/sanity'
+import { getProductBySlug } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
-import { PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
+import { getSafeImageUrl, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -41,11 +41,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
-            {product.images && product.images.length > 0 && product.images[0]?.asset?._ref ? (
+            {product.images && product.images.length > 0 && (product.images[0]?.asset?._ref ?? product.images[0]?.asset) ? (
               <>
                 <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
                   <Image
-                    src={urlFor(product.images[0]).width(600).height(600).url()}
+                    src={getSafeImageUrl(product.images[0], 600, 600)}
                     alt={product.name}
                     width={600}
                     height={600}
@@ -58,10 +58,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.images.length > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {product.images.slice(1, 5).map((image, index) =>
-                      image?.asset?._ref ? (
+                      image?.asset ? (
                         <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
                           <Image
-                            src={urlFor(image).width(150).height(150).url()}
+                            src={getSafeImageUrl(image, 150, 150)}
                             alt={`${product.name} ${index + 2}`}
                             width={150}
                             height={150}
