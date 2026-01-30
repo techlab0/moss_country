@@ -130,36 +130,47 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
   }
 }
 
+const productBySlugProjection = `{
+  _id,
+  name,
+  slug,
+  description,
+  price,
+  category,
+  images[] {
+    asset-> {
+      _ref,
+      url
+    },
+    alt,
+    hotspot,
+    crop
+  },
+  materials,
+  careInstructions,
+  featured,
+  inStock,
+  "dimensions": size
+}`;
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
     // writeClient (useCdn: false) で取得し、登録直後の商品も詳細ページで表示できるようにする
     // slug がオブジェクト { current } と文字列の両方に対応（昔のデータは文字列のことがある）
-    const product = await writeClient.fetch(
-      `*[_type == "product" && (slug.current == $slug || slug == $slug)][0] {
-        _id,
-        name,
-        slug,
-        description,
-        price,
-        category,
-        images[] {
-          asset-> {
-            _ref,
-            url
-          },
-          alt,
-          hotspot,
-          crop
-        },
-        materials,
-        careInstructions,
-        featured,
-        inStock,
-        "dimensions": size
-      }`,
+    let product = await writeClient.fetch(
+      `*[_type == "product" && (slug.current == $slug || slug == $slug)][0] ${productBySlugProjection}`,
       { slug },
       { next: { revalidate: 60 } }
     );
+
+    // スラッグで見つからない場合、商品名で検索（日本語スラッグや slug 未設定の古いデータ用）
+    if (!product && slug) {
+      product = await writeClient.fetch(
+        `*[_type == "product" && name == $slug][0] ${productBySlugProjection}`,
+        { slug },
+        { next: { revalidate: 60 } }
+      );
+    }
 
     return product;
   } catch (error) {
