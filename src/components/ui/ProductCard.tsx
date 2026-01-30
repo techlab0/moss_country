@@ -19,7 +19,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock, loading: inventoryLoading } = useSanityInventory(product._id);
+  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock, hasData: inventoryHasData, loading: inventoryLoading } = useSanityInventory(product._id);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -170,7 +170,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
 
         {/* アクションボタン */}
         <div className="space-y-2">
-          {inventoryLoading ? (
+          {inventoryLoading || !inventoryHasData ? (
             <Button variant="primary" className="w-full" disabled>
               在庫確認中...
             </Button>
@@ -200,7 +200,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
           ) : (
             <>
               <Button variant="primary" className="w-full" disabled>
-                在庫切れ
+                {inventoryHasData ? '在庫切れ' : '在庫確認中...'}
               </Button>
               <InventoryAlert 
                 productId={product._id}

@@ -18,9 +18,9 @@ export const InventoryStatus: React.FC<InventoryStatusProps> = ({
   showThreshold = true,
   className = ''
 }) => {
-  const { availableStock, isInStock, isLowStock, isOutOfStock, loading } = useSanityInventory(productId, variantKey);
+  const { availableStock, isInStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey);
 
-  if (loading) {
+  if (loading || !hasData) {
     return (
       <div className={`inline-flex items-center gap-2 ${className}`}>
         <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
@@ -76,9 +76,9 @@ export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
   variant = 'default',
   className = ''
 }) => {
-  const { availableStock, isLowStock, isOutOfStock, loading } = useSanityInventory(productId, variantKey);
+  const { availableStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey);
 
-  if (loading) {
+  if (loading || !hasData) {
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200 ${className}`}>
         在庫確認中
