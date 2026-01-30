@@ -32,13 +32,16 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
       _ref: String(sanityProduct?.category ?? ''),
       title: String(sanityProduct?.category ?? '')
     },
-    images: sanityProduct.images?.map(img => ({
-      asset: {
-        _ref: (img?.asset && typeof img.asset === 'object' && '_ref' in img.asset ? (img.asset as { _ref: string })._ref : '') || '',
-        url: getSafeImageUrl(img)
-      },
-      alt: `${name}の商品画像`
-    })) || [],
+    images: sanityProduct.images?.map(img => {
+      const asset = img?.asset as any;
+      return {
+        asset: {
+          _ref: asset?._ref || asset?._id || '',
+          url: getSafeImageUrl(img)
+        },
+        alt: img?.alt || `${name}の商品画像`
+      };
+    }) || [],
     inStock: sanityProduct.inStock ?? true,
     stockQuantity: 10, // デフォルト在庫数
     size: 'M', // デフォルトサイズ
@@ -52,19 +55,38 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
 
 /**
  * Sanity画像の安全なURL取得（画像なし・エラー時はロゴを返す）
- * asset に _ref がある参照のみ urlFor に渡す（展開済み asset だと落ちるため）
+ * 展開形式（url あり）と参照形式（_ref あり）の両方に対応
  */
 export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] | undefined, width?: number, height?: number): string {
   try {
-    const ref = image?.asset && typeof image.asset === 'object' && '_ref' in image.asset ? (image.asset as { _ref: string })._ref : null;
-    if (!ref || typeof ref !== 'string') {
+    if (!image?.asset) {
       return PRODUCT_IMAGE_FALLBACK_LOGO;
     }
-    const source = { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: ref } };
-    let urlBuilder = urlFor(source);
-    if (width) urlBuilder = urlBuilder.width(width);
-    if (height) urlBuilder = urlBuilder.height(height);
-    return urlBuilder.url();
+
+    const asset = image.asset as any;
+
+    // 展開形式（url が存在する）の場合
+    if (asset.url) {
+      const params = new URLSearchParams();
+      if (width) params.set('w', width.toString());
+      if (height) params.set('h', height.toString());
+      params.set('fit', 'max');
+      params.set('q', '85');
+
+      const queryString = params.toString();
+      return queryString ? `${asset.url}?${queryString}` : asset.url;
+    }
+
+    // 参照形式（_ref が存在する）の場合
+    if (asset._ref && typeof asset._ref === 'string') {
+      const source = { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: asset._ref } };
+      let urlBuilder = urlFor(source);
+      if (width) urlBuilder = urlBuilder.width(width);
+      if (height) urlBuilder = urlBuilder.height(height);
+      return urlBuilder.url();
+    }
+
+    return PRODUCT_IMAGE_FALLBACK_LOGO;
   } catch {
     return PRODUCT_IMAGE_FALLBACK_LOGO;
   }

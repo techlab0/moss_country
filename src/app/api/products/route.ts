@@ -15,10 +15,18 @@ export async function GET() {
           _type,
           _key,
           asset-> {
-            _ref,
-            url
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
           },
-          alt
+          alt,
+          hotspot,
+          crop
         },
         featured,
         inStock,

@@ -31,14 +31,11 @@ export function optimizeSanityImage(
   } = options
 
   try {
-    // asset が参照形式か展開形式かを判定
-    const hasRef = image.asset && typeof image.asset === 'object' && '_ref' in image.asset
-
-    if (!hasRef) {
-      // asset が存在しない、または参照がない場合はデフォルト画像を返す
+    if (!image?.asset) {
+      // asset が存在しない場合はデフォルト画像を返す
       return {
         src: '/images/mosscountry_logo.svg',
-        alt: image.alt || '',
+        alt: image?.alt || '',
         width,
         height,
         quality,
@@ -46,48 +43,96 @@ export function optimizeSanityImage(
       }
     }
 
-    // 参照形式の画像オブジェクトを作成
-    const imageSource = {
-      _type: 'image' as const,
-      asset: {
-        _type: 'reference' as const,
-        _ref: (image.asset as { _ref: string })._ref
+    const asset = image.asset as any
+
+    // 展開形式（url が存在する）の場合
+    if (asset.url) {
+      // Sanity CDNのURLパラメータを使って最適化
+      const baseUrl = asset.url
+      const params = new URLSearchParams()
+      params.set('w', width.toString())
+      if (height) params.set('h', height.toString())
+      params.set('q', quality.toString())
+      params.set('fm', format)
+      params.set('fit', 'max')
+
+      const optimizedUrl = `${baseUrl}?${params.toString()}`
+
+      // ブラープレースホルダー用のURL
+      const blurParams = new URLSearchParams()
+      blurParams.set('w', '20')
+      blurParams.set('h', height ? Math.round((height / width) * 20).toString() : '20')
+      blurParams.set('q', '20')
+      blurParams.set('blur', '50')
+      blurParams.set('fm', 'jpg')
+
+      const blurDataURL = `${baseUrl}?${blurParams.toString()}`
+
+      return {
+        src: optimizedUrl,
+        alt: image.alt || '',
+        width,
+        height,
+        quality,
+        placeholder: 'blur',
+        blurDataURL
       }
     }
 
-    let builder = urlFor(imageSource)
-      .width(width)
-      .quality(quality)
-      .format(format)
+    // 参照形式（_ref が存在する）の場合
+    if (asset._ref) {
+      const imageSource = {
+        _type: 'image' as const,
+        asset: {
+          _type: 'reference' as const,
+          _ref: asset._ref
+        }
+      }
 
-    if (height) {
-      builder = builder.height(height)
+      let builder = urlFor(imageSource)
+        .width(width)
+        .quality(quality)
+        .format(format)
+
+      if (height) {
+        builder = builder.height(height)
+      }
+
+      // 低品質版をブラープレースホルダーとして生成
+      const blurDataURL = urlFor(imageSource)
+        .width(20)
+        .height(height ? Math.round((height / width) * 20) : 20)
+        .blur(50)
+        .quality(20)
+        .format('jpg')
+        .url()
+
+      return {
+        src: builder.url(),
+        alt: image.alt || '',
+        width,
+        height,
+        quality,
+        placeholder: 'blur',
+        blurDataURL
+      }
     }
 
-    // 低品質版をブラープレースホルダーとして生成
-    const blurDataURL = urlFor(imageSource)
-      .width(20)
-      .height(height ? Math.round((height / width) * 20) : 20)
-      .blur(50)
-      .quality(20)
-      .format('jpg')
-      .url()
-
+    // どちらの形式でもない場合はデフォルト画像
     return {
-      src: builder.url(),
+      src: '/images/mosscountry_logo.svg',
       alt: image.alt || '',
       width,
       height,
       quality,
-      placeholder: 'blur',
-      blurDataURL
+      placeholder: 'empty'
     }
   } catch (error) {
     console.warn('Failed to optimize Sanity image:', error)
     // エラー時はデフォルト画像を返す
     return {
       src: '/images/mosscountry_logo.svg',
-      alt: image.alt || '',
+      alt: image?.alt || '',
       width,
       height,
       quality,
@@ -103,32 +148,51 @@ export function generateSrcSet(
   format: 'webp' | 'avif' | 'jpg' | 'png' = 'webp'
 ): string {
   try {
-    // asset が参照形式か確認
-    const hasRef = image.asset && typeof image.asset === 'object' && '_ref' in image.asset
-
-    if (!hasRef) {
+    if (!image?.asset) {
       return ''
     }
 
-    // 参照形式の画像オブジェクトを作成
-    const imageSource = {
-      _type: 'image' as const,
-      asset: {
-        _type: 'reference' as const,
-        _ref: (image.asset as { _ref: string })._ref
-      }
+    const asset = image.asset as any
+
+    // 展開形式（url が存在する）の場合
+    if (asset.url) {
+      const baseUrl = asset.url
+      return widths
+        .map(width => {
+          const params = new URLSearchParams()
+          params.set('w', width.toString())
+          params.set('q', '85')
+          params.set('fm', format)
+          params.set('fit', 'max')
+          const url = `${baseUrl}?${params.toString()}`
+          return `${url} ${width}w`
+        })
+        .join(', ')
     }
 
-    return widths
-      .map(width => {
-        const url = urlFor(imageSource)
-          .width(width)
-          .quality(85)
-          .format(format)
-          .url()
-        return `${url} ${width}w`
-      })
-      .join(', ')
+    // 参照形式（_ref が存在する）の場合
+    if (asset._ref) {
+      const imageSource = {
+        _type: 'image' as const,
+        asset: {
+          _type: 'reference' as const,
+          _ref: asset._ref
+        }
+      }
+
+      return widths
+        .map(width => {
+          const url = urlFor(imageSource)
+            .width(width)
+            .quality(85)
+            .format(format)
+            .url()
+          return `${url} ${width}w`
+        })
+        .join(', ')
+    }
+
+    return ''
   } catch (error) {
     console.warn('Failed to generate srcset:', error)
     return ''
