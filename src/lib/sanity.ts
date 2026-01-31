@@ -130,6 +130,7 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
   }
 }
 
+// asset を展開して url と metadata を取得（画像最適化に必要）
 const productBySlugProjection = `{
   _id,
   name,
@@ -138,9 +139,17 @@ const productBySlugProjection = `{
   price,
   category,
   images[] {
+    _type,
+    _key,
     asset-> {
-      _ref,
-      url
+      _id,
+      url,
+      metadata {
+        dimensions {
+          width,
+          height
+        }
+      }
     },
     alt,
     hotspot,

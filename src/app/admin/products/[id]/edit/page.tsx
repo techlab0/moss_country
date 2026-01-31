@@ -4,6 +4,17 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
+interface SanityImageRef {
+  _type: 'image';
+  _key?: string;
+  asset: { _type: 'reference'; _ref: string };
+}
+
+interface ImageWithPreview {
+  image: SanityImageRef;
+  previewUrl?: string;
+}
+
 interface ProductFormData {
   name: string;
   slug: string;
@@ -35,6 +46,8 @@ export default function EditProductPage() {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [images, setImages] = useState<ImageWithPreview[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -91,6 +104,14 @@ export default function EditProductPage() {
           lowStockThreshold: Number(product.lowStockThreshold ?? 5),
           featured: Boolean(product.featured),
         });
+        const imgs = product.images as (SanityImageRef & { url?: string })[] | undefined;
+        setImages(
+          Array.isArray(imgs)
+            ? imgs
+                .filter((i) => i?.asset?._ref)
+                .map((i) => ({ image: { _type: i._type, _key: i._key, asset: i.asset }, previewUrl: i.url }))
+            : []
+        );
       })
       .catch((err) => {
         if (mounted) setError(err instanceof Error ? err.message : 'エラーが発生しました');
@@ -103,12 +124,33 @@ export default function EditProductPage() {
     };
   }, [id]);
 
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/images/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error(await res.text());
+      const { image, thumbnailUrl } = await res.json();
+      setImages((prev) => [...prev, { image, previewUrl: thumbnailUrl }]);
+    } catch (err) {
+      console.error(err);
+      alert('画像のアップロードに失敗しました');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!id) return;
     setLoading(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: formData.name,
         slug: { _type: 'slug' as const, current: formData.slug },
         description: formData.description,
@@ -120,12 +162,13 @@ export default function EditProductPage() {
         lowStockThreshold: formData.lowStockThreshold,
         featured: formData.featured,
         size: formData.dimensions,
+        images: images.map(({ image }) => image),
       };
-      if (formData.weight != null) (payload as Record<string, unknown>).weight = formData.weight;
+      if (formData.weight != null) payload.weight = formData.weight;
       const response = await fetch(`/api/admin/products/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload as Record<string, unknown>),
       });
       if (!response.ok) throw new Error('更新に失敗しました');
       alert('商品を更新しました');
@@ -210,6 +253,49 @@ export default function EditProductPage() {
                 placeholder="product-slug"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">商品画像</label>
+            <p className="text-xs text-gray-500 mb-2">1枚以上あると商品詳細で表示されます。未設定時はロゴが表示されます。</p>
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {images.map((item, index) => (
+                  <div key={item.image._key ?? index} className="relative">
+                    <div className="w-20 h-20 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {item.previewUrl ? (
+                        <img
+                          src={item.previewUrl}
+                          alt={`画像${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500">画像{index + 1}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={uploadingImage}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-moss-green file:text-white"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+                e.target.value = '';
+              }}
+            />
+            {uploadingImage && <p className="text-sm text-gray-500 mt-1">アップロード中...</p>}
           </div>
 
           <div>

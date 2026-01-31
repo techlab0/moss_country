@@ -11,12 +11,22 @@ export async function GET() {
         slug,
         price,
         category,
-        "image": images[0] {
+        images[] {
+          _type,
+          _key,
           asset-> {
-            _ref,
-            url
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
           },
-          alt
+          alt,
+          hotspot,
+          crop
         },
         featured,
         inStock,

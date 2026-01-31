@@ -1,9 +1,9 @@
-import { getProductBySlug, urlFor } from '@/lib/sanity'
+import { getProductBySlug } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { ProductActions } from '@/components/ui/ProductActions'
-import Image from 'next/image'
+import { ProductImageWithFallback } from '@/components/ui/ProductImageWithFallback'
+import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -14,12 +14,42 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product: Product | null = await getProductBySlug(slug)
+  let product: Product | null = null
+  try {
+    const { slug } = await params
+    product = await getProductBySlug(slug)
+  } catch {
+    notFound()
+  }
 
   if (!product) {
     notFound()
   }
+
+  const price = Number(product?.price) ?? 0
+  const name = String(product?.name ?? '')
+  const category = String(product?.category ?? '')
+
+  // 画像URLは getSafeImageUrl 内で try/catch しているが、念のためここでも try で囲む
+  let mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
+  try {
+    if (product.images?.[0]) {
+      mainImageUrl = getSafeImageUrl(product.images[0], 600, 600)
+    }
+  } catch {
+    mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
+  }
+
+  const hasImages = Boolean(
+    product.images?.length &&
+    product.images[0]?.asset &&
+    typeof product.images[0].asset === 'object' &&
+    (
+      ('url' in product.images[0].asset && (product.images[0].asset as { url?: string }).url) ||
+      ('_id' in product.images[0].asset) ||
+      ('_ref' in product.images[0].asset && (product.images[0].asset as { _ref?: string })._ref)
+    )
+  )
 
   return (
     <div 
@@ -41,43 +71,53 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
-            {product.images && product.images.length > 0 && product.images[0]?._ref ? (
+            {hasImages ? (
               <>
-                <div className="aspect-square overflow-hidden rounded-lg">
-                  <Image
-                    src={urlFor(product.images[0]).width(600).height(600).url()}
-                    alt={product.name}
+                <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
+                  <ProductImageWithFallback
+                    src={mainImageUrl}
+                    alt={name}
                     width={600}
                     height={600}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
+                    fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
                   />
                 </div>
-                {product.images.length > 1 && (
+                {(product.images?.length ?? 0) > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {product.images.slice(1, 5).map((image, index) => 
-                      image?._ref ? (
-                        <div key={index} className="aspect-square overflow-hidden rounded">
-                          <Image
-                            src={urlFor(image).width(150).height(150).url()}
-                            alt={`${product.name} ${index + 2}`}
+                    {product.images!.slice(1, 5).map((image, index) => {
+                      const asset = image?.asset as Record<string, unknown> | undefined;
+                      const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
+                      let thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
+                      try {
+                        if (hasValidAsset) thumbUrl = getSafeImageUrl(image, 150, 150);
+                      } catch {
+                        thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
+                      }
+                      return hasValidAsset ? (
+                        <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
+                          <ProductImageWithFallback
+                            src={thumbUrl}
+                            alt={`${name} ${index + 2}`}
                             width={150}
                             height={150}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
+                            fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
                           />
                         </div>
-                      ) : null
-                    )}
+                      ) : null;
+                    })}
                   </div>
                 )}
               </>
             ) : (
-              <div className="aspect-square">
-                <ImagePlaceholder
-                  src=""
-                  alt={product.name}
-                  width={600}
-                  height={600}
-                  className="w-full h-full object-cover rounded-lg"
+              <div className="aspect-square rounded-lg bg-white/80 flex items-center justify-center overflow-hidden">
+                <img
+                  src={PRODUCT_IMAGE_FALLBACK_LOGO}
+                  alt={name}
+                  width={400}
+                  height={400}
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
@@ -87,7 +127,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
               <div className="flex items-center gap-3 mb-2">
                 <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
-                  {product.category}
+                  {category}
                 </span>
                 {product.featured && (
                   <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
@@ -95,9 +135,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-moss-green mb-4">{product.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-moss-green mb-4">{name}</h1>
               <div className="text-2xl sm:text-3xl font-bold text-moss-green mb-6">
-                ¥{product.price.toLocaleString()}
+                ¥{price.toLocaleString()}
               </div>
             </div>
 
@@ -154,8 +194,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* 商品アクション（カート追加など） */}
-            <ProductActions product={product} />
+            {/* 商品アクション（カート追加など）。渡す product はシリアライズ可能な形に正規化 */}
+            <ProductActions
+              product={{
+                ...product,
+                name,
+                price,
+                category,
+                slug: typeof product.slug === 'string' ? { current: product.slug, _type: 'slug' } : (product.slug ?? { current: getProductSlug(product), _type: 'slug' }),
+              }}
+            />
           </div>
         </div>
       </Container>

@@ -5,6 +5,9 @@
 
 import type { Product as SanityProduct } from '@/types/sanity';
 
+/** 商品画像がない・エラー時のフォールバック（ロゴ） */
+export const PRODUCT_IMAGE_FALLBACK_LOGO = '/images/mosscountry_logo.svg';
+
 /** slug が文字列 or { current: string } のどちらでもスラッグ文字列を返す */
 export function getProductSlug(product: { slug?: string | { current?: string } | null }): string {
   if (!product?.slug) return '';
@@ -15,26 +18,30 @@ import type { Product as EcommerceProduct } from '@/types/ecommerce';
 import { urlFor } from '@/lib/sanity';
 
 /**
- * Sanity商品をECサイト商品型に変換
+ * Sanity商品をECサイト商品型に変換（画像URLは getSafeImageUrl で安全に取得）
  */
 export function sanityToEcommerceProduct(sanityProduct: SanityProduct): EcommerceProduct {
+  const name = String(sanityProduct?.name ?? '')
   return {
     _id: sanityProduct._id,
-    name: sanityProduct.name,
+    name,
     slug: sanityProduct.slug,
-    price: sanityProduct.price,
-    description: sanityProduct.description || '',
+    price: Number(sanityProduct?.price) ?? 0,
+    description: String(sanityProduct?.description ?? ''),
     category: {
-      _ref: sanityProduct.category,
-      title: sanityProduct.category
+      _ref: String(sanityProduct?.category ?? ''),
+      title: String(sanityProduct?.category ?? '')
     },
-    images: sanityProduct.images?.map(img => ({
-      asset: {
-        _ref: img.asset._ref,
-        url: img.asset ? urlFor(img).url() : '/images/placeholder.jpg'
-      },
-      alt: `${sanityProduct.name}の商品画像`
-    })) || [],
+    images: sanityProduct.images?.map(img => {
+      const asset = img?.asset as any;
+      return {
+        asset: {
+          _ref: asset?._ref || asset?._id || '',
+          url: getSafeImageUrl(img)
+        },
+        alt: img?.alt || `${name}の商品画像`
+      };
+    }) || [],
     inStock: sanityProduct.inStock ?? true,
     stockQuantity: 10, // デフォルト在庫数
     size: 'M', // デフォルトサイズ
@@ -47,21 +54,41 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
 }
 
 /**
- * Sanity画像の安全なURL取得
+ * Sanity画像の安全なURL取得（画像なし・エラー時はロゴを返す）
+ * 展開形式（url あり）と参照形式（_ref あり）の両方に対応
  */
 export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] | undefined, width?: number, height?: number): string {
-  if (!image?.asset) {
-    return '/images/products/terrarium-standard.jpg';
-  }
-  
   try {
-    let urlBuilder = urlFor(image);
-    if (width) urlBuilder = urlBuilder.width(width);
-    if (height) urlBuilder = urlBuilder.height(height);
-    return urlBuilder.url();
-  } catch (error) {
-    console.warn('Failed to generate image URL:', error);
-    return '/images/products/terrarium-standard.jpg';
+    if (!image?.asset) {
+      return PRODUCT_IMAGE_FALLBACK_LOGO;
+    }
+
+    const asset = image.asset as any;
+
+    // 展開形式（url が存在する）の場合
+    if (asset.url) {
+      const params = new URLSearchParams();
+      if (width) params.set('w', width.toString());
+      if (height) params.set('h', height.toString());
+      params.set('fit', 'max');
+      params.set('q', '85');
+
+      const queryString = params.toString();
+      return queryString ? `${asset.url}?${queryString}` : asset.url;
+    }
+
+    // 参照形式（_ref が存在する）の場合
+    if (asset._ref && typeof asset._ref === 'string') {
+      const source = { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: asset._ref } };
+      let urlBuilder = urlFor(source);
+      if (width) urlBuilder = urlBuilder.width(width);
+      if (height) urlBuilder = urlBuilder.height(height);
+      return urlBuilder.url();
+    }
+
+    return PRODUCT_IMAGE_FALLBACK_LOGO;
+  } catch {
+    return PRODUCT_IMAGE_FALLBACK_LOGO;
   }
 }
 
