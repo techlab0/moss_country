@@ -2,6 +2,7 @@ import { getProductBySlug } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
+import { ProductImageWithFallback } from '@/components/ui/ProductImageWithFallback'
 import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -73,16 +74,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {hasImages ? (
               <>
                 <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
-                  {/* 通常の img を使用（Next/Image の SSR 最適化で落ちるのを防ぐ） */}
-                  <img
+                  <ProductImageWithFallback
                     src={mainImageUrl}
                     alt={name}
                     width={600}
                     height={600}
                     className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.src = PRODUCT_IMAGE_FALLBACK_LOGO;
-                    }}
+                    fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
                   />
                 </div>
                 {(product.images?.length ?? 0) > 1 && (
@@ -98,15 +96,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       }
                       return hasValidAsset ? (
                         <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
-                          <img
+                          <ProductImageWithFallback
                             src={thumbUrl}
                             alt={`${name} ${index + 2}`}
                             width={150}
                             height={150}
                             className="w-full h-full object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = PRODUCT_IMAGE_FALLBACK_LOGO;
-                            }}
+                            fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
                           />
                         </div>
                       ) : null;

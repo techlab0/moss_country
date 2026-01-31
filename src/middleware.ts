@@ -1,48 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth';
-import { getMaintenanceSettings } from '@/lib/sanity';
 
-// メンテナンス設定をキャッシュ付きで読み込む関数
-let settingsCache: { data: any; timestamp: number } | null = null;
-const CACHE_DURATION = 30000; // 30秒
-
-async function fetchMaintenanceSettings() {
-  try {
-    // キャッシュが有効な場合はそれを使用
-    if (settingsCache && Date.now() - settingsCache.timestamp < CACHE_DURATION) {
-      return settingsCache.data;
-    }
-
-    const settings = await getMaintenanceSettings();
-    const result = settings || { isEnabled: false, password: '' };
-    
-    // キャッシュを更新
-    settingsCache = {
-      data: result,
-      timestamp: Date.now()
-    };
-    
-    return result;
-  } catch (error) {
-    console.error('Failed to fetch maintenance settings:', error);
-    // エラーの場合は環境変数フォールバック
-    return { 
-      isEnabled: process.env.MAINTENANCE_MODE === 'true', 
-      password: process.env.MAINTENANCE_PASSWORD || '' 
-    };
-  }
+// ミドルウェアは Edge ランタイムで動作するため、@sanity/client は使用不可。
+// メンテナンスモードは環境変数のみで判定する（Sanity の設定は API/管理画面で利用）。
+function getMaintenanceFromEnv() {
+  return {
+    isEnabled: process.env.MAINTENANCE_MODE === 'true',
+    password: process.env.MAINTENANCE_PASSWORD || '',
+  };
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // メンテナンスモードチェック（Sanityから読み込み）
-  const maintenanceSettings = await fetchMaintenanceSettings();
-  const isMaintenanceMode = maintenanceSettings.isEnabled;
-  
-  console.log('Middleware - pathname:', pathname);
-  console.log('Middleware - maintenance settings:', maintenanceSettings);
-  console.log('Middleware - isMaintenanceMode:', isMaintenanceMode);
+  const maintenanceFromEnv = getMaintenanceFromEnv();
+  const isMaintenanceMode = maintenanceFromEnv.isEnabled;
   
   if (isMaintenanceMode) {
     // 管理画面、API、メンテナンス関連のパスは除外
@@ -63,14 +35,10 @@ export async function middleware(request: NextRequest) {
     } else {
       // メンテナンス認証クッキーをチェック
       const maintenanceAccess = request.cookies.get('maintenance-access');
-      console.log('Middleware - maintenance cookie:', maintenanceAccess?.value);
-      
+
       if (maintenanceAccess?.value !== 'allowed') {
-        console.log('Middleware - redirecting to maintenance page');
         const maintenanceUrl = new URL('/maintenance', request.url);
         return NextResponse.redirect(maintenanceUrl);
-      } else {
-        console.log('Middleware - maintenance access allowed, continuing');
       }
     }
   }
