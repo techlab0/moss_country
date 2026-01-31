@@ -3,7 +3,6 @@ import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
 import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -29,19 +28,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const price = Number(product?.price) ?? 0
   const name = String(product?.name ?? '')
   const category = String(product?.category ?? '')
-  const mainImageUrl = product.images?.[0]
-    ? getSafeImageUrl(product.images[0], 600, 600)
-    : PRODUCT_IMAGE_FALLBACK_LOGO
 
-  // 展開形式（url または _id あり）と参照形式（_ref あり）の両方に対応
+  // 画像URLは getSafeImageUrl 内で try/catch しているが、念のためここでも try で囲む
+  let mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
+  try {
+    if (product.images?.[0]) {
+      mainImageUrl = getSafeImageUrl(product.images[0], 600, 600)
+    }
+  } catch {
+    mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
+  }
+
   const hasImages = Boolean(
     product.images?.length &&
     product.images[0]?.asset &&
     typeof product.images[0].asset === 'object' &&
     (
-      ('url' in product.images[0].asset && product.images[0].asset.url) ||
-      ('_id' in product.images[0].asset && product.images[0].asset._id) ||
-      ('_ref' in product.images[0].asset && product.images[0].asset._ref)
+      ('url' in product.images[0].asset && (product.images[0].asset as { url?: string }).url) ||
+      ('_id' in product.images[0].asset) ||
+      ('_ref' in product.images[0].asset && (product.images[0].asset as { _ref?: string })._ref)
     )
   )
 
@@ -68,33 +73,39 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {hasImages ? (
               <>
                 <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
-                  <Image
+                  {/* 通常の img を使用（Next/Image の SSR 最適化で落ちるのを防ぐ） */}
+                  <img
                     src={mainImageUrl}
                     alt={name}
                     width={600}
                     height={600}
                     className="w-full h-full object-contain"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
+                      e.currentTarget.src = PRODUCT_IMAGE_FALLBACK_LOGO;
                     }}
                   />
                 </div>
                 {(product.images?.length ?? 0) > 1 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {product.images!.slice(1, 5).map((image, index) => {
-                      const asset = image?.asset as any;
+                      const asset = image?.asset as Record<string, unknown> | undefined;
                       const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
-
+                      let thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
+                      try {
+                        if (hasValidAsset) thumbUrl = getSafeImageUrl(image, 150, 150);
+                      } catch {
+                        thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
+                      }
                       return hasValidAsset ? (
                         <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
-                          <Image
-                            src={getSafeImageUrl(image, 150, 150)}
+                          <img
+                            src={thumbUrl}
                             alt={`${name} ${index + 2}`}
                             width={150}
                             height={150}
                             className="w-full h-full object-contain"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
+                              e.currentTarget.src = PRODUCT_IMAGE_FALLBACK_LOGO;
                             }}
                           />
                         </div>
@@ -105,7 +116,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </>
             ) : (
               <div className="aspect-square rounded-lg bg-white/80 flex items-center justify-center overflow-hidden">
-                <Image
+                <img
                   src={PRODUCT_IMAGE_FALLBACK_LOGO}
                   alt={name}
                   width={400}
