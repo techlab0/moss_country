@@ -7,6 +7,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* 基本の文字色（コンポーネントで明示しないときのフォールバック） */
+  --color-text-base: #171717;
+  --color-text-muted: #525252;
+  /* フォーム用：入力欄は常に黒系文字・白系背景で可読性を確保 */
+  --color-form-text: #171717;
+  --color-form-bg: #ffffff;
+  --color-form-border: #d4d4d4;
+  --color-form-placeholder: #737373;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,6 +62,31 @@ img {
   }
 }
 
+/* フォームの文字色・背景を常に黒系・白系で統一（暗い画面でも読みやすく） */
+input,
+textarea,
+select,
+[role="combobox"],
+[role="listbox"] {
+  color: var(--color-form-text) !important;
+  background-color: var(--color-form-bg) !important;
+  border-color: var(--color-form-border);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-form-placeholder);
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-form-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-form-bg) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-form-bg) inset !important;
+}
+
 /* フォーカス可視性の向上 */
 button:focus-visible,
 a:focus-visible,
@@ -92,9 +125,19 @@ body:not(.admin-layout)::after {
   z-index: -1;
 }
 
-/* 管理画面用のクリーンな背景 */
+/* 管理画面用のクリーンな背景・文字色（白背景で黒文字を基本に） */
 body.admin-layout {
   background: #f9fafb;
+  color: var(--color-text-base);
+}
+/* 管理画面内のカード・モーダル・ラベルは黒系で統一 */
+body.admin-layout .bg-white,
+body.admin-layout [role="dialog"],
+body.admin-layout [class*="modal"] {
+  color: var(--color-text-base);
+}
+body.admin-layout label {
+  color: var(--color-form-text);
 }
 
 /* カスタムスタイル */

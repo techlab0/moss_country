@@ -147,7 +147,8 @@ export interface MossSpecies {
     waterRequirement: 'low' | 'medium' | 'high'
     lightRequirement: 'weak' | 'medium' | 'strong'
     temperatureAdaptability: 'cold' | 'temperate' | 'warm'
-    growthSpeed: 'slow' | 'normal' | 'fast'
+    growthSpeed?: 'slow' | 'normal' | 'fast'
+    growthDescription?: string
   }
   basicInfo?: {
     habitat?: string

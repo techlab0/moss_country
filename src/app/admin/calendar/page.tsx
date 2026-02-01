@@ -536,10 +536,10 @@ export default function CalendarManagePage() {
       {/* 編集モーダル */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
+          <Card className="w-full max-w-md mx-4 text-gray-900">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-xl font-semibold text-gray-900">
                   {selectedDate} の編集
                 </h3>
                 <Button
@@ -553,10 +553,10 @@ export default function CalendarManagePage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-gray-900">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">種類</label>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">種類</label>
                   <select
                     value={editEvent.type}
                     onChange={(e) => {
@@ -576,7 +576,7 @@ export default function CalendarManagePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">タイトル</label>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">タイトル</label>
                   <input
                     type="text"
                     value={editEvent.title}
@@ -587,7 +587,7 @@ export default function CalendarManagePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     {editEvent.type === 'event' ? '場所' : '補足事項'}
                   </label>
                   <input

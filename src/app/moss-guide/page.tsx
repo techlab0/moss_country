@@ -78,27 +78,39 @@ export default function MossGuidePage() {
       });
   }, [])
 
-  // 苔データを取得
+  // 苔データを取得（タイムアウト付きでハング防止）
   useEffect(() => {
+    let cancelled = false
+    const timeoutMs = 15000
+
     const fetchMossSpecies = async () => {
       try {
-        const fetchedSpecies = await getMossSpecies()
-        setMossSpecies(fetchedSpecies)
-        setFilteredSpecies(fetchedSpecies)
-        
-        // カテゴリー一覧を作成
+        const fetchedSpecies = await Promise.race([
+          getMossSpecies(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('タイムアウト')), timeoutMs)
+          )
+        ])
+        if (cancelled) return
+        setMossSpecies(fetchedSpecies ?? [])
+        setFilteredSpecies(fetchedSpecies ?? [])
+        const list = fetchedSpecies ?? []
         const uniqueCategories = Array.from(
-          new Set(fetchedSpecies.map(species => species.category).filter(Boolean))
+          new Set(list.map(species => species.category).filter(Boolean))
         )
         setCategories(uniqueCategories)
       } catch (error) {
+        if (cancelled) return
         console.error('苔図鑑データの取得に失敗しました:', error)
+        setMossSpecies([])
+        setFilteredSpecies([])
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     fetchMossSpecies()
+    return () => { cancelled = true }
   }, [])
 
   // 検索・フィルター機能
@@ -112,8 +124,8 @@ export default function MossGuidePage() {
 
     // 難易度フィルター
     if (selectedDifficulty !== 'all') {
-      const difficulty = parseInt(selectedDifficulty)
-      filtered = filtered.filter(species => species.characteristics.beginnerFriendly === difficulty)
+      const difficulty = parseInt(selectedDifficulty, 10)
+      filtered = filtered.filter(species => (species.characteristics?.beginnerFriendly ?? 0) === difficulty)
     }
 
   
@@ -144,37 +156,28 @@ export default function MossGuidePage() {
     }
   }
 
-  // 育成特性のラベル
+  // 育成特性のラベル（管理画面の表記に合わせる）
   const getCharacteristicLabel = (type: string, value: string | number) => {
     switch (type) {
       case 'waterRequirement':
         switch (value) {
-          case 'low': return '低（週1-2回）'
-          case 'medium': return '中（週2-3回）'
-          case 'high': return '高（毎日〜隔日）'
+          case 'low': return '少なめ'
+          case 'medium': return '普通'
+          case 'high': return '多め'
           default: return value
         }
       case 'lightRequirement':
         switch (value) {
-          case 'weak': return '弱光'
-          case 'medium': return '中光'
-          case 'strong': return '強光'
-          default: return value
-        }
-      case 'temperatureAdaptability':
-        switch (value) {
-          case 'cold': return '寒冷向け'
-          case 'temperate': return '温帯向け'
-          case 'warm': return '高温向け'
+          case 'weak': return '弱光（明るい日陰・LED弱）'
+          case 'medium': return '中光（明るい室内・LED中）'
+          case 'strong': return '強光（直射日光可・LED強）'
           default: return value
         }
       case 'growthSpeed':
-        switch (value) {
-          case 'slow': return '遅'
-          case 'normal': return '普通'
-          case 'fast': return '早'
-          default: return value
-        }
+        if (value === 'slow') return '解放'
+        if (value === 'normal') return '半開放'
+        if (value === 'fast') return '密閉'
+        return value && String(value).trim() ? String(value) : '—'
       default:
         return value
     }
@@ -315,9 +318,7 @@ export default function MossGuidePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-              {filteredSpecies.map((species) => {
-                console.log('Species data:', { name: species.name, slug: species.slug, _id: species._id });
-                return (
+              {filteredSpecies.map((species) => (
                 <Link key={species._id} href={`/moss-guide/${species.slug?.current || 'no-slug'}`} className="block group">
                   <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white/80 backdrop-blur-sm">
                     {/* 画像部分 */}
@@ -375,23 +376,23 @@ export default function MossGuidePage() {
                           </h3>
                         </div>
                         
-                        {/* 特性 */}
+                        {/* 特性：難易度・水やり・光量・容器を2x2で表示 */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-800">難易度</span>
+                            <span className="font-medium text-amber-600">{renderStars(species.characteristics?.beginnerFriendly ?? 0)}</span>
+                          </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-800">水分:</span>
-                            <span className="font-medium text-gray-900">{getCharacteristicLabel('waterRequirement', species.characteristics.waterRequirement)}</span>
+                            <span className="text-gray-800">水やり:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('waterRequirement', species.characteristics?.waterRequirement)}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-800">光量:</span>
-                            <span className="font-medium text-gray-900">{getCharacteristicLabel('lightRequirement', species.characteristics.lightRequirement)}</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('lightRequirement', species.characteristics?.lightRequirement)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-800">温度:</span>
-                            <span className="font-medium text-gray-900">{getCharacteristicLabel('temperatureAdaptability', species.characteristics.temperatureAdaptability)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-800">成長:</span>
-                            <span className="font-medium text-gray-900">{getCharacteristicLabel('growthSpeed', species.characteristics.growthSpeed)}</span>
+                            <span className="text-gray-800">容器:</span>
+                            <span className="font-medium text-gray-900">{getCharacteristicLabel('growthSpeed', species.characteristics?.growthSpeed ?? '')}</span>
                           </div>
                         </div>
                         
@@ -415,7 +416,7 @@ export default function MossGuidePage() {
                     </CardContent>
                   </Card>
                 </Link>
-              )})}
+              ))}
             </div>
           )}
         </Container>

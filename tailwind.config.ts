@@ -21,6 +21,13 @@ const config: Config = {
         'cream': '#FFF8DC',
         'light-blue': '#F8F8FF',
         'nature-gray': '#6B7280',
+        /* globals.css の変数と連動（基本・フォームの文字色） */
+        ink: 'var(--color-text-base)',
+        muted: 'var(--color-text-muted)',
+        'form-text': 'var(--color-form-text)',
+        'form-bg': 'var(--color-form-bg)',
+        'form-border': 'var(--color-form-border)',
+        'form-placeholder': 'var(--color-form-placeholder)',
       },
       fontFamily: {
         'sans': ['Noto Sans JP', 'system-ui', 'sans-serif'],

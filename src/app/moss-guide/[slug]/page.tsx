@@ -89,37 +89,29 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
     }
   }
 
-  // 育成特性のラベル
+  // 育成特性のラベル（管理画面の表記に合わせる）
   const getCharacteristicLabel = (type: string, value: string | number) => {
     switch (type) {
       case 'waterRequirement':
         switch (value) {
-          case 'low': return '低 - 週1-2回の霧吹き'
-          case 'medium': return '中 - 週2-3回の霧吹き'
-          case 'high': return '高 - 毎日〜隔日の霧吹き'
+          case 'low': return '少なめ'
+          case 'medium': return '普通'
+          case 'high': return '多め'
           default: return value
         }
       case 'lightRequirement':
         switch (value) {
-          case 'weak': return '弱光 - 間接光・LED弱設定'
-          case 'medium': return '中光 - 明るい室内・LED中設定'
-          case 'strong': return '強光 - 直射日光可・LED強設定'
-          default: return value
-        }
-      case 'temperatureAdaptability':
-        switch (value) {
-          case 'cold': return '寒冷向け - 5-15℃が最適'
-          case 'temperate': return '温帯向け - 15-25℃が最適'
-          case 'warm': return '高温向け - 25℃以上でも適応'
+          case 'weak': return '弱光（明るい日陰・LED弱）'
+          case 'medium': return '中光（明るい室内・LED中）'
+          case 'strong': return '強光（直射日光可・LED強）'
           default: return value
         }
       case 'growthSpeed':
-        switch (value) {
-          case 'slow': return '遅 - 年数回のメンテナンス'
-          case 'normal': return '普通 - 月1回程度のメンテナンス'
-          case 'fast': return '早 - 週1回程度のメンテナンス'
-          default: return value
-        }
+        // 容器: 旧値 slow/normal/fast は 解放/半開放/密閉、それ以外は自由記述としてそのまま表示
+        if (value === 'slow') return '解放'
+        if (value === 'normal') return '半開放'
+        if (value === 'fast') return '密閉'
+        return value && String(value).trim() ? String(value) : '—'
       default:
         return value
     }
@@ -274,59 +266,48 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
                       特性
                     </h2>
-                    <div className="space-y-4">
-                      {/* 初心者適応度 */}
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg">
-                        <span className="font-medium text-gray-700">育てやすさ</span>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-amber-600">
-                            {renderStars(species.characteristics.beginnerFriendly)}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {species.characteristics.beginnerFriendly === 5 ? 'とても育てやすい' :
-                             species.characteristics.beginnerFriendly === 4 ? '育てやすい' :
-                             species.characteristics.beginnerFriendly === 3 ? '普通' :
-                             species.characteristics.beginnerFriendly === 2 ? '難しい' : 'とても難しい'}
-                          </div>
+                    {/* 難易度・水やり・光量・容器を2x2でバランスよく */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="p-4 bg-amber-50 rounded-lg flex flex-col justify-center">
+                        <div className="text-sm font-semibold text-gray-800 mb-1">難易度</div>
+                        <div className="text-base font-bold text-amber-600">
+                          {renderStars(species.characteristics?.beginnerFriendly ?? 0)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {species.characteristics?.beginnerFriendly === 5 ? 'とても育てやすい' :
+                           species.characteristics?.beginnerFriendly === 4 ? '育てやすい' :
+                           species.characteristics?.beginnerFriendly === 3 ? '普通' :
+                           species.characteristics?.beginnerFriendly === 2 ? '難しい' : 'とても難しい'}
                         </div>
                       </div>
-                      
-                      {/* その他の特性 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-blue-50 rounded-lg">
-                          <div className="text-sm font-semibold text-gray-800 mb-2">
-                            水やり
-                          </div>
-                          <div className="text-sm text-blue-700 font-medium">
-                            {getCharacteristicLabel('waterRequirement', species.characteristics.waterRequirement)}
-                          </div>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="text-sm font-semibold text-gray-800 mb-1">水やり</div>
+                        <div className="text-sm text-blue-700 font-medium">
+                          {getCharacteristicLabel('waterRequirement', species.characteristics?.waterRequirement ?? '')}
                         </div>
-                        <div className="p-4 bg-yellow-50 rounded-lg">
-                          <div className="text-sm font-semibold text-gray-800 mb-2">
-                            光量
-                          </div>
-                          <div className="text-sm text-yellow-700 font-medium">
-                            {getCharacteristicLabel('lightRequirement', species.characteristics.lightRequirement)}
-                          </div>
+                      </div>
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <div className="text-sm font-semibold text-gray-800 mb-1">光量</div>
+                        <div className="text-sm text-yellow-700 font-medium">
+                          {getCharacteristicLabel('lightRequirement', species.characteristics?.lightRequirement ?? '')}
                         </div>
-                        <div className="p-4 bg-red-50 rounded-lg">
-                          <div className="text-sm font-semibold text-gray-800 mb-2">
-                            温度
-                          </div>
-                          <div className="text-sm text-red-700 font-medium">
-                            {getCharacteristicLabel('temperatureAdaptability', species.characteristics.temperatureAdaptability)}
-                          </div>
-                        </div>
-                        <div className="p-4 bg-green-50 rounded-lg">
-                          <div className="text-sm font-semibold text-gray-800 mb-2">
-                            メンテナンス
-                          </div>
-                          <div className="text-sm text-green-700 font-medium">
-                            {getCharacteristicLabel('growthSpeed', species.characteristics.growthSpeed)}
-                          </div>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="text-sm font-semibold text-gray-800 mb-1">容器</div>
+                        <div className="text-sm text-green-700 font-medium">
+                          {getCharacteristicLabel('growthSpeed', species.characteristics?.growthSpeed ?? '')}
                         </div>
                       </div>
                     </div>
+                    {/* その下に育ち方（内容がある場合のみ表示） */}
+                    {species.characteristics?.growthDescription?.trim() && (
+                      <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <div className="text-sm font-semibold text-gray-800 mb-2">育ち方</div>
+                        <div className="text-sm text-emerald-800 font-medium whitespace-pre-wrap leading-relaxed">
+                          {species.characteristics.growthDescription}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

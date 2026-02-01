@@ -63,10 +63,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // ファイルサイズチェック (2MB制限に変更)
-    if (file.size > 2 * 1024 * 1024) {
+    // ファイルサイズチェック (5MB制限)
+    const maxSizeBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
       console.log('❌ ファイルサイズ制限超過:', file.size);
-      return NextResponse.json({ error: 'File too large (max 2MB)' }, { status: 400 });
+      return NextResponse.json({ error: 'File too large (max 5MB)', maxMB: 5 }, { status: 400 });
     }
 
     // ファイルタイプチェック

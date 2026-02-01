@@ -31,7 +31,8 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
       waterRequirement: 'medium',
       lightRequirement: 'medium',
       temperatureAdaptability: 'temperate',
-      growthSpeed: 'normal'
+      growthSpeed: 'normal',
+      growthDescription: ''
     },
     basicInfo: '',
     supplementaryInfo: '',
@@ -72,7 +73,8 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
           waterRequirement: data.characteristics?.waterRequirement || 'medium',
           lightRequirement: data.characteristics?.lightRequirement || 'medium',
           temperatureAdaptability: data.characteristics?.temperatureAdaptability || 'temperate',
-          growthSpeed: data.characteristics?.growthSpeed || 'normal'
+          growthSpeed: (data.characteristics?.growthSpeed === 'slow' || data.characteristics?.growthSpeed === 'fast' ? data.characteristics.growthSpeed : 'normal') as 'slow' | 'normal' | 'fast',
+          growthDescription: data.characteristics?.growthDescription ?? ''
         },
         basicInfo: data.basicInfo || '',
         supplementaryInfo: data.supplementaryInfo || '',
@@ -492,7 +494,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   )}
                 </div>
                 <p className="text-xs text-gray-500">
-                  JPEG, PNG, WebP (最大2MB)
+                  JPEG, PNG, WebP (最大5MB)
                 </p>
               </div>
             </label>
@@ -505,7 +507,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                初心者適応度
+                難易度
               </label>
               <select
                 value={formData.characteristics.beginnerFriendly}
@@ -534,14 +536,14 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="low">低（週1-2回）</option>
-                <option value="medium">中（週2-3回）</option>
-                <option value="high">高（毎日〜隔日）</option>
+                <option value="high">多め</option>
+                <option value="medium">普通</option>
+                <option value="low">少なめ</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                光量要求
+                光量
               </label>
               <select
                 value={formData.characteristics.lightRequirement}
@@ -551,44 +553,42 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="weak">弱光（間接光・LED弱）</option>
+                <option value="weak">弱光（明るい日陰・LED弱）</option>
                 <option value="medium">中光（明るい室内・LED中）</option>
                 <option value="strong">強光（直射日光可・LED強）</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                温度適応性
+                容器
               </label>
               <select
-                value={formData.characteristics.temperatureAdaptability}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  characteristics: { ...prev.characteristics, temperatureAdaptability: e.target.value as any }
-                }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
-              >
-                <option value="cold">寒冷（5-15℃が最適）</option>
-                <option value="temperate">温帯（15-25℃が最適）</option>
-                <option value="warm">高温（25℃以上でも適応）</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                成長スピード
-              </label>
-              <select
-                value={formData.characteristics.growthSpeed}
+                value={formData.characteristics.growthSpeed ?? 'normal'}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
                   characteristics: { ...prev.characteristics, growthSpeed: e.target.value as any }
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="slow">遅（年数回のメンテナンス）</option>
-                <option value="normal">普通（月1回程度のメンテナンス）</option>
-                <option value="fast">早（週1回程度のメンテナンス）</option>
+                <option value="slow">解放</option>
+                <option value="normal">半開放</option>
+                <option value="fast">密閉</option>
               </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                育ち方
+              </label>
+              <textarea
+                value={formData.characteristics.growthDescription ?? ''}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  characteristics: { ...prev.characteristics, growthDescription: e.target.value }
+                }))}
+                rows={3}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="育ち方・成長の様子を自由に記載（例：ゆっくり伸びる、密閉向きなど）"
+              />
             </div>
           </div>
         </div>

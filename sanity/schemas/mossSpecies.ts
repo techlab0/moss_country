@@ -141,16 +141,21 @@ export const mossSpecies = defineType({
         },
         {
           name: 'growthSpeed',
-          title: '成長スピード',
+          title: '容器',
           type: 'string',
           options: {
             list: [
-              { title: '遅（年数回のメンテナンス）', value: 'slow' },
-              { title: '普通（月1回程度のメンテナンス）', value: 'normal' },
-              { title: '早（週1回程度のメンテナンス）', value: 'fast' },
+              { title: '解放', value: 'slow' },
+              { title: '半開放', value: 'normal' },
+              { title: '密閉', value: 'fast' },
             ]
           },
-          validation: Rule => Rule.required(),
+        },
+        {
+          name: 'growthDescription',
+          title: '育ち方',
+          type: 'text',
+          description: '育ち方・成長の様子を自由に記載（例：ゆっくり伸びる、密閉向きなど）',
         },
       ],
       validation: Rule => Rule.required()
