@@ -43,14 +43,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // ファイルサイズチェック (5MB制限)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
+    // ファイルサイズチェック (4MB制限・Vercel無料プランのボディ制限に合わせる)
+    const maxSizeBytes = 4 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      return NextResponse.json(
+        { error: `ファイルが大きすぎます（最大4MB）。現在: ${(file.size / 1024 / 1024).toFixed(1)}MB。圧縮するか解像度を下げてください。` },
+        { status: 400 }
+      );
     }
 
-    // ファイルタイプチェック
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    // ファイルタイプチェック（PNG は image/png のほか image/x-png になる場合あり）
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/x-png', 'image/webp'];
+    const ext = file.name?.toLowerCase().split('.').pop();
+    const isAllowedByType = allowedTypes.includes(file.type);
+    const isAllowedByExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
+    if (!isAllowedByType && !isAllowedByExt) {
       return NextResponse.json(
         { error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed' },
         { status: 400 }

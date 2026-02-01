@@ -65,14 +65,14 @@ export const metadata: Metadata = {
     follow: false,
     noarchive: true,
     nosnippet: true,
-    noimageindex: true,
+    noimageindex: false,
     nocache: true,
     googleBot: {
       index: false,
       follow: false,
-      'max-video-preview': 0,
-      'max-image-preview': 'none',
-      'max-snippet': 0,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
   verification: {

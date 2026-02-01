@@ -114,6 +114,16 @@ export default function ImageManagePage() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
+      const maxMB = 4;
+      if (file.size > maxMB * 1024 * 1024) {
+        setMessage({
+          type: 'error',
+          text: `ファイルが大きすぎます（最大${maxMB}MB）。現在: ${(file.size / 1024 / 1024).toFixed(1)}MB。圧縮するか、解像度を下げてください。`,
+        });
+        setTimeout(() => setMessage(null), 5000);
+        return;
+      }
+
       const uploadKey = `${page}-${imageType}-${isMobile ? 'mobile' : 'pc'}`;
       setUploading(prev => ({ ...prev, [uploadKey]: true }));
 
@@ -127,11 +137,16 @@ export default function ImageManagePage() {
           body: formData,
         });
 
-        if (!uploadRes.ok) {
-          throw new Error('画像のアップロードに失敗しました');
+        let uploadResult: { image?: unknown; error?: string; details?: string } = {};
+        try {
+          uploadResult = await uploadRes.json();
+        } catch {
+          uploadResult = {};
         }
-
-        const uploadResult = await uploadRes.json();
+        if (!uploadRes.ok) {
+          const msg = uploadResult?.error || uploadResult?.details || '画像のアップロードに失敗しました';
+          throw new Error(typeof msg === 'string' ? msg : '画像のアップロードに失敗しました');
+        }
         const imageObject = uploadResult.image;
 
         // 設定を更新
