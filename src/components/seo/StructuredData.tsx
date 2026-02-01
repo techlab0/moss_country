@@ -1,5 +1,7 @@
-'use client';
-
+/**
+ * JSON-LD 構造化データ（Server Component）。
+ * クライアント不要のため Server で描画し、layout チャンクを軽くする。
+ */
 export function StructuredData() {
   const organizationData = {
     "@context": "https://schema.org",

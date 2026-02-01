@@ -14,6 +14,12 @@ const storeInfo = {
     regular: '11:00 - 20:00',
     closed: '不定休（カレンダーをご確認ください）',
   },
+  /** 営業カレンダー下の注記（3行） */
+  calendarNotes: [
+    '営業時間: 11:00 - 20:00',
+    'イベント出店日は店舗が営業していないことがあります',
+    'ワークショップは予約優先制のため、ご来店前にお電話でご確認いただけますと確実です',
+  ],
   parking: '近隣のコインパーキングをご利用ください',
   access: {
     subway: 'JR函館本線「発寒駅」より徒歩8分',
@@ -51,17 +57,17 @@ function StoreCalendar() {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
-  // カレンダーデータを取得
+  // カレンダーデータを取得（失敗時は空で表示）
   useEffect(() => {
     const fetchCalendarData = async () => {
       try {
         const response = await fetch('/api/admin/calendar');
         if (response.ok) {
           const data = await response.json();
-          setCalendarEvents(data);
+          setCalendarEvents(data ?? {});
         }
-      } catch (error) {
-        console.error('カレンダーデータの取得に失敗しました:', error);
+      } catch {
+        setCalendarEvents({});
       } finally {
         setIsLoading(false);
       }
@@ -234,12 +240,15 @@ function StoreCalendar() {
         {renderCalendarDays()}
       </div>
       
-      {/* 注意事項 */}
+      {/* 注意事項（storeInfo.calendarNotes で編集） */}
       <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
         <p className="text-sm text-yellow-800">
-          <strong>営業時間:</strong> 11:00 - 20:00<br/>
-          <strong>※</strong> イベント出店日は店舗での営業は行っておりません<br/>
-          <strong>※</strong> 予約優先制のため、ご来店前にお電話でご確認いただけますと確実です
+          {storeInfo.calendarNotes.map((line, i) => (
+            <span key={i}>
+              {i > 0 ? <><strong>※</strong> {line}</> : <><strong>{line.split(':')[0]}:</strong> {line.split(':').slice(1).join(':').trim()}</>}
+              {i < storeInfo.calendarNotes.length - 1 && <br />}
+            </span>
+          ))}
         </p>
       </div>
     </div>
@@ -263,7 +272,7 @@ const services = [
   {
     title: '商品販売',
     description: '完成品テラリウムの販売',
-    price: '¥500〜',
+    price: '¥1000〜',
     details: ['初心者向けから上級者向けまで', '様々なサイズ・デザインをご用意', 'ギフト包装無料'],
     link: '/products'
   },
@@ -277,7 +286,7 @@ const services = [
     title: 'メンテナンス',
     description: 'テラリウムのお手入れ・修理',
     price: '¥1,500〜',
-    details: ['植物の植え替え', '容器のクリーニング', '1年間の保証付き'],
+    details: ['植物の植え替え', '容器のクリーニング'],
   },
   {
     title: 'ワークショップ',
@@ -308,12 +317,12 @@ function FAQSection() {
         const response = await fetch('/api/admin/faqs');
         if (response.ok) {
           const data = await response.json();
-          setFaqs(data);
+          setFaqs(Array.isArray(data) ? data : []);
         } else {
-          console.error('FAQ取得に失敗しました');
+          setFaqs([]);
         }
-      } catch (error) {
-        console.error('FAQ取得エラー:', error);
+      } catch {
+        setFaqs([]);
       } finally {
         setIsLoading(false);
       }
@@ -504,7 +513,14 @@ export default function StorePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white mb-1">住所</h3>
-                    <p className="text-gray-200 break-all overflow-wrap-anywhere">{storeInfo.address}</p>
+                    <a
+                      href="https://maps.app.goo.gl/zbnf4tynQAj2X5B98"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-200 break-all overflow-wrap-anywhere hover:text-white underline"
+                    >
+                      {storeInfo.address}
+                    </a>
                   </div>
                 </div>
 
@@ -556,18 +572,18 @@ export default function StorePage() {
             <div className="bg-amber-950/20 backdrop-blur-md p-4 sm:p-8 rounded-3xl">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8">アクセスマップ</h2>
               <div className="h-64 rounded-lg overflow-hidden mb-6">
-                <iframe 
+                <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2913.5264158063487!2d141.29211759999998!3d43.0934509!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b2967fe4c6bc9%3A0x5f6284f1ebb2447c!2zTW9zcyBDb3VudHJ544CQ6IuU44OG44Op44Oq44Km44Og5L2c5oiQ44O744Ov44O844Kv44K344On44OD44OX44CR!5e0!3m2!1sja!2sjp!4v1752175558799!5m2!1sja!2sjp"
-                  width="100%" 
-                  height="100%" 
+                  width="100%"
+                  height="100%"
                   style={{ border: 0 }}
-                  allowFullScreen={true}
-                  loading="lazy" 
-                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="fullscreen"
                   title="MOSS COUNTRY地図"
                 />
               </div>
-              
               <div className="space-y-3">
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-3">
