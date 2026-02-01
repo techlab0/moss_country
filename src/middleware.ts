@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSessionFromRequest } from '@/lib/auth';
 
-// ミドルウェアは Edge ランタイムで動作するため、@sanity/client は使用不可。
-// メンテナンスモードは環境変数のみで判定する（Sanity の設定は API/管理画面で利用）。
-function getMaintenanceFromEnv() {
-  return {
-    isEnabled: process.env.MAINTENANCE_MODE === 'true',
-    password: process.env.MAINTENANCE_PASSWORD || '',
-  };
+// メンテナンス状態取得APIはチェック対象外（fetch ループ防止）
+const MAINTENANCE_STATUS_PATH = '/api/maintenance/status';
+
+async function getIsMaintenanceMode(request: NextRequest): Promise<boolean> {
+  if (process.env.MAINTENANCE_MODE === 'true') return true;
+  try {
+    const statusUrl = new URL(MAINTENANCE_STATUS_PATH, request.url);
+    const res = await fetch(statusUrl, { cache: 'no-store' });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data?.isEnabled === true;
+  } catch {
+    return false;
+  }
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const maintenanceFromEnv = getMaintenanceFromEnv();
-  const isMaintenanceMode = maintenanceFromEnv.isEnabled;
-  
+  if (pathname === MAINTENANCE_STATUS_PATH) {
+    return NextResponse.next();
+  }
+
+  const isMaintenanceMode = await getIsMaintenanceMode(request);
+
   if (isMaintenanceMode) {
     // 管理画面、API、メンテナンス関連のパスは除外
     if (
