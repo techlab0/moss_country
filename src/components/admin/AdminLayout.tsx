@@ -125,8 +125,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
       )}
 
-      {/* メインコンテンツエリア */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-screen">
+      {/* メインコンテンツエリア（横はみ出しは非表示） */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-screen overflow-x-hidden">
         {/* ヘッダー */}
         <header className="relative z-10 bg-white shadow-sm border-b">
           <div className="px-6 py-4">
@@ -166,8 +166,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* メインコンテンツ */}
-        <main className="flex-1 px-6 py-8 bg-gray-50">
+        {/* メインコンテンツ（はみ出し部分は非表示） */}
+        <main className="flex-1 px-6 py-8 bg-gray-50 overflow-x-hidden min-w-0">
           {children}
         </main>
       </div>

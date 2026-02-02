@@ -308,20 +308,20 @@ export default function CalendarManagePage() {
       days.push(
         <div
           key={day}
-          className={`p-2 min-h-[80px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg cursor-pointer transition-all duration-200`}
+          className={`p-2 min-h-[80px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg cursor-pointer transition-all duration-200 overflow-hidden min-w-0`}
           onClick={() => openEditModal(dateStr)}
         >
           <div className="font-semibold mb-1">{day}</div>
           {event && (
-            <div className="text-xs leading-tight">
-              <div className="font-medium">{event.title}</div>
+            <div className="text-xs leading-tight overflow-hidden min-w-0">
+              <div className="font-medium truncate" title={event.title}>{event.title}</div>
               {event.location && (
-                <div className="text-xs opacity-75 mt-1">
+                <div className="text-xs opacity-75 mt-1 truncate" title={event.location}>
                   📍 {event.location}
                 </div>
               )}
               {event.notes && (
-                <div className="text-xs opacity-75 mt-1">
+                <div className="text-xs opacity-75 mt-1 truncate" title={event.notes}>
                   💭 {event.notes}
                 </div>
               )}
