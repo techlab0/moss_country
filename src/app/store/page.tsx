@@ -53,9 +53,18 @@ function StoreCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarEvents, setCalendarEvents] = useState<{[key: string]: CalendarEvent}>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [modalEvent, setModalEvent] = useState<{ dateLabel: string; dateStr: string; event: CalendarEvent } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
+
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // カレンダーデータを取得（失敗時は空で表示）
   useEffect(() => {
@@ -120,19 +129,19 @@ function StoreCalendar() {
       if (event) {
         switch (event.type) {
           case 'open':
-            bgColor = 'bg-emerald-50';
-            textColor = 'text-emerald-700';
-            borderColor = 'border-emerald-200';
+            bgColor = 'bg-emerald-200';
+            textColor = 'text-emerald-900';
+            borderColor = 'border-emerald-400';
             break;
           case 'event':
-            bgColor = 'bg-amber-50';
-            textColor = 'text-amber-700';
-            borderColor = 'border-amber-200';
+            bgColor = 'bg-amber-200';
+            textColor = 'text-amber-900';
+            borderColor = 'border-amber-400';
             break;
           case 'closed':
-            bgColor = 'bg-red-50';
-            textColor = 'text-red-700';
-            borderColor = 'border-red-200';
+            bgColor = 'bg-red-200';
+            textColor = 'text-red-900';
+            borderColor = 'border-red-400';
             break;
         }
       }
@@ -140,30 +149,63 @@ function StoreCalendar() {
       if (isToday) {
         borderColor = 'border-moss-green border-2';
       }
-      
-      days.push(
-        <div
-          key={day}
-          className={`p-2 min-h-[60px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg relative hover:shadow-md transition-all duration-200`}
-        >
-          <div className="font-semibold mb-1">{day}</div>
-          {event && (
-            <div className="text-xs leading-tight">
-              <div className="font-medium">{event.title}</div>
-              {event.location && (
-                <div className="text-xs opacity-75 mt-1">
-                  📍 {event.location}
-                </div>
-              )}
-              {event.notes && (
-                <div className="text-xs opacity-75 mt-1">
-                  💭 {event.notes}
-                </div>
-              )}
+
+      const dateLabel = `${currentYear}年${currentMonth}月${day}日`;
+      const hasDetail = event && (event.location?.trim() || event.notes?.trim());
+
+      const cellClass = `p-2 min-h-[60px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg relative hover:shadow-md transition-all duration-200 text-left w-full`;
+
+      // スマホ: 数字 + 営/イ/休、詳細ありは≫（上端揃え）
+      if (isMobile) {
+        const typeLabel = event?.type === 'open' ? '営' : event?.type === 'event' ? 'イ' : event?.type === 'closed' ? '休' : null;
+        days.push(
+          event ? (
+            <button
+              key={day}
+              type="button"
+              onClick={() => setModalEvent({ dateLabel, dateStr, event })}
+              className={`${cellClass} cursor-pointer flex flex-col items-center justify-start min-h-[44px] pt-1.5 pb-1 px-1`}
+            >
+              <span className="font-semibold text-sm leading-tight">{day}</span>
+              <span className="text-xs font-medium leading-tight mt-0.5">{typeLabel}</span>
+              {hasDetail && <span className="text-xs opacity-80 mt-0.5">≫</span>}
+            </button>
+          ) : (
+            <div key={day} className={`${cellClass} flex flex-col items-center justify-start min-h-[44px] pt-1.5 pb-1 px-1`}>
+              <span className="font-semibold text-sm leading-tight">{day}</span>
             </div>
-          )}
-        </div>
+          )
+        );
+      } else {
+        // PC: タイトル表示、詳細ありの日だけ≫でモーダル
+        days.push(
+        event ? (
+          hasDetail ? (
+            <button
+              key={day}
+              type="button"
+              onClick={() => setModalEvent({ dateLabel, dateStr, event })}
+              className={`${cellClass} cursor-pointer`}
+            >
+              <div className="font-semibold mb-1">{day}</div>
+              <div className="text-xs leading-tight flex items-end justify-between gap-1">
+                <span className="font-medium line-clamp-2 flex-1 min-w-0">{event.title}</span>
+                <span className="flex-shrink-0 opacity-70">≫</span>
+              </div>
+            </button>
+          ) : (
+            <div key={day} className={cellClass}>
+              <div className="font-semibold mb-1">{day}</div>
+              <div className="text-xs font-medium line-clamp-2">{event.title}</div>
+            </div>
+          )
+        ) : (
+          <div key={day} className={cellClass}>
+            <div className="font-semibold">{day}</div>
+          </div>
+        )
       );
+      }
     }
     
     return days;
@@ -171,7 +213,7 @@ function StoreCalendar() {
   
   if (isLoading) {
     return (
-      <div className="bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
+      <div className="bg-amber-950/50 md:bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
         <div className="flex items-center justify-center py-20">
           <div className="text-lg text-white">カレンダーを読み込み中...</div>
         </div>
@@ -180,7 +222,7 @@ function StoreCalendar() {
   }
 
   return (
-    <div className="bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
+    <div className="bg-amber-950/50 md:bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-bold text-white">
           {currentYear}年 {monthNames[currentMonth - 1]}
@@ -208,15 +250,15 @@ function StoreCalendar() {
       {/* カレンダー凡例 */}
       <div className="flex flex-wrap gap-4 mb-6 text-sm">
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-emerald-50 border border-emerald-200 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-emerald-200 border border-emerald-400 rounded mr-2"></div>
           <span className="text-white">営業日</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-amber-50 border border-amber-200 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-amber-200 border border-amber-400 rounded mr-2"></div>
           <span className="text-white">イベント出店</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-red-50 border border-red-200 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-red-200 border border-red-400 rounded mr-2"></div>
           <span className="text-white">休業日</span>
         </div>
       </div>
@@ -251,6 +293,69 @@ function StoreCalendar() {
           ))}
         </p>
       </div>
+
+      {/* 日付詳細モーダル */}
+      {modalEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setModalEvent(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calendar-modal-title"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col min-w-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 overflow-y-auto flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4 mb-4 min-w-0">
+                <h3 id="calendar-modal-title" className="text-xl font-bold text-gray-900 break-words min-w-0 flex-1">
+                  {modalEvent.dateLabel}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setModalEvent(null)}
+                  className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+                  aria-label="閉じる"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${
+                modalEvent.event.type === 'open' ? 'bg-emerald-100 text-emerald-800' :
+                modalEvent.event.type === 'event' ? 'bg-amber-100 text-amber-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {modalEvent.event.type === 'open' ? '営業日' : modalEvent.event.type === 'event' ? 'イベント出店' : '休業日'}
+              </span>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2 break-words min-w-0">{modalEvent.event.title}</h4>
+              {modalEvent.event.location && (
+                <p className="text-gray-600 mb-2 flex items-start gap-2 min-w-0">
+                  <span className="flex-shrink-0">📍</span>
+                  <span className="break-words min-w-0">{modalEvent.event.location}</span>
+                </p>
+              )}
+              {modalEvent.event.notes && (
+                <p className="text-gray-600 whitespace-pre-wrap flex items-start gap-2 min-w-0 break-words">
+                  <span className="flex-shrink-0">💭</span>
+                  <span className="min-w-0 break-words">{modalEvent.event.notes}</span>
+                </p>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setModalEvent(null)}
+                className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
