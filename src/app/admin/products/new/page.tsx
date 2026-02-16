@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
 
 interface SanityImageRef {
   _type: 'image';
@@ -33,14 +34,7 @@ interface ProductFormData {
   featured: boolean;
 }
 
-const categories = [
-  '初心者向け',
-  'プレミアム', 
-  'カスタム',
-  'ギフト',
-  'セット商品',
-  'メンテナンス',
-];
+const categories = PRODUCT_CATEGORIES;
 
 const NewProductPage = () => {
   const router = useRouter();
@@ -52,7 +46,7 @@ const NewProductPage = () => {
     slug: '',
     description: '',
     price: 0,
-    category: '初心者向け',
+    category: PRODUCT_CATEGORIES[0],
     materials: [],
     careInstructions: '',
     dimensions: {},

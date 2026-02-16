@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 
 const terrariumCategories = [
@@ -284,7 +285,7 @@ export default function ProductsPage() {
         </Container>
       </section>
 
-      {/* Product Grid */}
+      {/* Product Grid - カテゴリ別セクション */}
       <section id="products" className="py-20 relative">
         <Container>
           <div className="text-center mb-16">
@@ -298,7 +299,7 @@ export default function ProductsPage() {
               </p>
             </div>
           </div>
-          
+
           {products.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <div className="bg-black/60 backdrop-blur-sm p-8 rounded-lg">
@@ -306,10 +307,27 @@ export default function ProductsPage() {
               </div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
+            <div className="space-y-16">
+              {PRODUCT_CATEGORIES.map((category) => {
+                const categoryProducts = products.filter(
+                  (p) => resolveCategory(p.category) === category
+                );
+                if (categoryProducts.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <div className="bg-black/50 backdrop-blur-sm p-6 mb-8">
+                      <h3 className="text-2xl md:text-3xl font-bold text-white text-center">
+                        {category}
+                      </h3>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {categoryProducts.map((product) => (
+                        <ProductCard key={product._id} product={product} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Container>
