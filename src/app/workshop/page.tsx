@@ -10,12 +10,12 @@ import type { SimpleWorkshop } from '@/types/sanity';
 
 const workshopSizes = [
   {
-    id: 'mini-terrarium',
-    name: 'ミニテラリウム',
+    id: 'glass-canister-ss',
+    name: 'ガラスキャニスターSS',
     dimensions: '6cm × 11cm',
-    price: '¥1,500',
+    price: '¥2,500',
     description: '手のひらサイズの小さな苔の世界。初めての方にも気軽に楽しめる癒しの一本です。',
-    image: '/images/products/moss-country_products_bottle.png',
+    image: '/images/workshop/glass-canister-ss.JPG',
   },
   {
     id: 'glass-ball-s',
@@ -23,29 +23,37 @@ const workshopSizes = [
     dimensions: '10cm × 8cm',
     price: '¥4,000',
     description: '丸いガラスの中に広がる小さな苔の森。日常に緑を添える、柔らかな印象のテラリウムです。',
-    image: '/images/products/moss-country_products_glass.png',
+    image: '/images/workshop/glass-ball-s.JPG',
   },
   {
     id: 'pop-jar',
     name: 'ポップジャー',
     dimensions: '11cm × 6cm',
-    price: '¥4,500',
+    price: '¥5,000',
     description: 'ころんと可愛い形の容器に、立体的な苔の世界。インテリアにも映える明るい雰囲気です。',
-    image: '/images/products/moss-country_products_bottle.png',
+    image: '/images/workshop/pop-jar.JPG',
   },
   {
     id: 'glass-ball-m',
     name: 'ガラスボールM',
     dimensions: '15cm × 12cm',
-    price: '¥7,500',
-    description: '存在感あるサイズに豊かな景色を凝縮。苔の奥行きや地形の変化をじっくり楽しめます。',
-    image: '/images/products/moss-country_products_glass.png',
+    price: '¥8,500',
+    description: '【所要時間：120~180分】存在感あるサイズに豊かな景色を凝縮。苔の奥行きや地形の変化をじっくり楽しめます。',
+    image: '/images/workshop/glass-ball-m.JPG',
+  },
+  {
+    id: 'glass-ball-box-ll',
+    name: 'ガラスボール・ボックスLL',
+    dimensions: '15cm × 12cm',
+    price: '¥25,000',
+    description: '※他ワークショップ参加経験者限定。\n※【2週間前予約必須】1~2日間で完成',
+    image: '/images/workshop/glass-ball-box-ll.JPG',
   },
   {
     id: 'cliff-terrarium',
     name: '崖景のテラリウム',
     dimensions: '8cm × 10cm',
-    price: '¥5,500',
+    price: '¥6,000',
     description: '岩肌と苔が織りなす、崖のような立体構造。小さな容器に自然の迫力と静けさを閉じ込めました。',
     image: '/images/products/moss-country_products_bottle.png',
   },
@@ -279,7 +287,7 @@ export default function WorkshopPage() {
                     <span className="text-moss-green font-bold text-xl">{size.price}</span>
                   </div>
                   <p className="text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
-                  <p className="text-gray-600">{size.description}</p>
+                  <p className="text-gray-600 whitespace-pre-line">{size.description}</p>
                 </CardHeader>
               </Card>
             ))}

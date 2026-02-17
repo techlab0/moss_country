@@ -396,7 +396,7 @@ const services = [
   {
     title: 'ワークショップ',
     description: '手作り体験教室',
-    price: '¥1,500〜',
+    price: '¥2,500〜',
     details: ['初心者から上級者まで', '材料・道具込み', '作品持ち帰り可'],
     link: '/workshop'
   },
