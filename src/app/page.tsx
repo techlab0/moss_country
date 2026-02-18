@@ -216,22 +216,23 @@ export default function Home() {
                 category: 'Workshop',
                 link: '/workshop'
               },
-              {
-                id: '5',
-                title: 'レンタルテラリウム',
-                description: 'いつも美しいままに佇む、洗練された苔の景色。上質な緑が、空間に安らぎを広げます。',
-                image: '/images/products/moss-country_products_big.png',
-                category: 'Rental',
-                link: '/products'
-              },
-              {
-                id: '6',
-                title: '苔セラピー',
-                description: '静かな緑に心をゆだねて、やさしくととのう時間。苔の癒しが、あなたの内側にそっと寄り添います。',
-                image: '/images/products/moss-country_products_bottle.png',
-                category: 'Therapy',
-                link: '/workshop'
-              }
+              // 一時的に非表示
+              // {
+              //   id: '5',
+              //   title: 'レンタルテラリウム',
+              //   description: 'いつも美しいままに佇む、洗練された苔の景色。上質な緑が、空間に安らぎを広げます。',
+              //   image: '/images/products/moss-country_products_big.png',
+              //   category: 'Rental',
+              //   link: '/products'
+              // },
+              // {
+              //   id: '6',
+              //   title: '苔セラピー',
+              //   description: '静かな緑に心をゆだねて、やさしくととのう時間。苔の癒しが、あなたの内側にそっと寄り添います。',
+              //   image: '/images/products/moss-country_products_bottle.png',
+              //   category: 'Therapy',
+              //   link: '/workshop'
+              // }
             ]}
           />
         </Container>
