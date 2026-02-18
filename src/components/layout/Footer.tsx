@@ -94,6 +94,11 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/workshop/mobile" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  出張ワークショップ
+                </Link>
+              </li>
+              <li>
                 <Link href="/story" className="text-emerald-600 hover:text-white transition-colors duration-200">
                   ストーリー
                 </Link>

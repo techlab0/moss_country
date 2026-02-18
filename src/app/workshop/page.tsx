@@ -486,6 +486,43 @@ export default function WorkshopPage() {
         </Container>
       </section>
 
+      {/* Mobile Workshop Banner */}
+      <section className="py-20">
+        <Container>
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-moss-green rounded-lg overflow-hidden shadow-lg">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="p-8 md:p-12 flex flex-col justify-center">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                    出張ワークショップ
+                  </h2>
+                  <p className="text-white/90 mb-6">
+                    イベントや会場にお伺いして、ワークショップを開催します。マルシェ、企業イベント、学校行事など、さまざまなシーンでご利用いただけます。
+                  </p>
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
+                      onClick={() => window.location.href = '/workshop/mobile'}
+                    >
+                      詳しく見る
+                    </Button>
+                  </div>
+                </div>
+                <div className="hidden md:block">
+                  <img
+                    src="/images/workshop/mosscountry_workshop.png"
+                    alt="出張ワークショップ"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-moss-green text-white">
         <Container>
