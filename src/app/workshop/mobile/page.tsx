@@ -11,7 +11,7 @@ const mobileWorkshopMenus = [
     id: 'glass-canister-ss',
     name: 'ガラスキャニスターSS',
     dimensions: '6cm × 11cm',
-    price: '¥2,500〜',
+    price: '基本容器',
     description: '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。',
     image: '/images/workshop/glass-canister-ss.JPG',
     time: '約60分',
@@ -20,7 +20,7 @@ const mobileWorkshopMenus = [
     id: 'glass-ball-s',
     name: 'ガラスボールS',
     dimensions: '10cm × 8cm',
-    price: '¥4,000〜',
+    price: '応相談',
     description: '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。',
     image: '/images/workshop/glass-ball-s.JPG',
     time: '約90分',
@@ -29,7 +29,7 @@ const mobileWorkshopMenus = [
     id: 'pop-jar',
     name: 'ポップジャー',
     dimensions: '11cm × 6cm',
-    price: '¥5,000〜',
+    price: '応相談',
     description: 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。',
     image: '/images/workshop/pop-jar.JPG',
     time: '約90分',
@@ -112,6 +112,49 @@ const features = [
       </svg>
     ),
   },
+];
+
+const pricingBasics = [
+  { label: '講師料', value: '30,000円／日' },
+  { label: '材料費', value: '1名あたり 1,500円' },
+  { label: '交通費', value: '実費' },
+  { label: '基本容器サイズ', value: '縦11cm × 横6cm' },
+];
+
+const assistanceFees = [
+  { people: '〜20名', fee: '加算なし' },
+  { people: '21〜30名', fee: '+10,000円' },
+  { people: '31〜40名', fee: '+20,000円' },
+  { people: '41〜50名', fee: '+30,000円' },
+];
+
+const hostingConditions = [
+  '最小開催人数の定めはございません。講師料・材料費・交通費をお支払いいただければ開催いたします。',
+  '1回あたり最大10名までを目安とし、1日最大2回まで開催可能です（原則20名まで）。',
+  '20名以上での開催は、内容・運営体制を相談の上決定します。',
+  '開催可能な最大人数は50名までです。51名以上での開催は承っておりません。',
+  '少人数プランもございます。詳細はお問い合わせください。',
+];
+
+const cancellationFees = [
+  { timing: '開催日の14日前以降', fee: '料金の30%' },
+  { timing: '開催日の7日前以降', fee: '料金の50%' },
+  { timing: '前日〜当日', fee: '料金の100%' },
+];
+
+const facilityGuides = [
+  '所要時間は60〜120分です。人数・内容により前後します。',
+  '準備は約60分、撤収は約60分を目安としています。',
+  '会議テーブル（180cm）1台につき、参加目安は3名までです。',
+  '対象年齢は小学生以上です。小学生は保護者同伴で参加可能です。',
+];
+
+const importantNotes = [
+  'ワークショップ中の怪我、衣服の汚れ等につきましては十分に配慮いたしますが、責任を負いかねる場合がございます。',
+  '制作後の管理環境や経年変化により、植物の状態が変化する場合がございます。',
+  '記録・広報を目的として、制作風景を撮影させていただく場合がございます。',
+  '天候不良、災害、交通機関の影響等により開催が困難な場合、日程変更または中止をご相談させていただく場合がございます。',
+  'お支払いは事前精算をお願いしております。内容追加や人数変更等による追加費用は後日精算をお願いいたします。',
 ];
 
 const bookingSteps = [
@@ -357,11 +400,134 @@ export default function MobileWorkshopPage() {
           <div className="text-center mt-8">
             <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
               <p className="text-white text-sm">
-                ※ 料金はイベントの規模・開催場所により変動する場合があります。<br />
+                ※ 出張ワークショップの基本材料費は1名あたり1,500円です。<br />
                 ※ 上記以外のメニューもご相談に応じて対応可能です。<br />
-                ※ 大人数の場合は複数テーブルでの同時開催も可能です。
+                ※ 容器・内容の変更により追加費用が発生する場合があります。
               </p>
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
+        <Container className="relative z-10">
+          <div className="text-center mb-16">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                料金・開催条件
+              </h2>
+              <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+              <p className="text-lg text-gray-100">
+                出張ワークショップの基本料金と人数ごとの目安です
+              </p>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <Card>
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">基本料金</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y divide-gray-200">
+                  {pricingBasics.map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-4 py-4">
+                      <span className="text-gray-600">{item.label}</span>
+                      <span className="text-right text-lg font-semibold text-gray-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">運営補助費</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-2 bg-light-green text-moss-green font-semibold">
+                    <div className="px-4 py-3">参加人数</div>
+                    <div className="px-4 py-3 text-right">加算額</div>
+                  </div>
+                  {assistanceFees.map((item) => (
+                    <div key={item.people} className="grid grid-cols-2 border-t border-gray-200 bg-white">
+                      <div className="px-4 py-3 text-gray-700">{item.people}</div>
+                      <div className="px-4 py-3 text-right font-semibold text-gray-900">{item.fee}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">開催条件</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {hostingConditions.map((condition) => (
+                    <div key={condition} className="rounded-lg bg-gray-50 p-4 text-gray-700 leading-relaxed">
+                      {condition}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">キャンセル料</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {cancellationFees.map((item) => (
+                    <div key={item.timing} className="flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4">
+                      <span className="text-gray-700">{item.timing}</span>
+                      <span className="text-lg font-semibold text-gray-900">{item.fee}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm text-gray-600 leading-relaxed">
+                  キャンセル料は、講師料・材料費・運営補助費・交通費等を含む総額を基準として算出いたします。
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">所要時間・設備目安</h3>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {facilityGuides.map((guide) => (
+                    <li key={guide} className="rounded-lg bg-gray-50 p-4 text-gray-700 leading-relaxed">
+                      {guide}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">補足事項・注意事項</h3>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {importantNotes.map((note) => (
+                    <p key={note} className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700 leading-relaxed">
+                      {note}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-5 text-sm text-gray-600">
+                  上記内容は目安です。会場条件・安全配慮・スタッフ状況により調整する場合がございます。
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </Container>
       </section>
