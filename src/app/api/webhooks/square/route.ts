@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
-import { client } from '@/lib/sanity'
+// 決済直後に作成した注文をすぐ検索するため、CDNキャッシュではなく常に最新を返す writeClient を使う
+import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
 // 注文確認メールはSquare側のレシート機能を使用するため、EmailJSは不要
 import type { SquareWebhookEvent } from '@/types/ecommerce'

@@ -171,8 +171,8 @@ export const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           </label>
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
             <p className="text-sm text-blue-700">
-              <strong>日本のお客様へ：</strong> ZIP Codeには郵便番号の最初の5桁を入力してください。<br/>
-              例：郵便番号が 123-0001 の場合は　12300」と入力
+              <strong>ZIP Code欄が表示された場合：</strong> 郵便番号の最初の5桁を入力してください。<br/>
+              例：郵便番号が 123-0001 の場合は「12300」と入力
             </p>
           </div>
           <div 

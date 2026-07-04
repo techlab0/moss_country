@@ -1,4 +1,5 @@
-import { client } from '@/lib/sanity';
+// 価格改ざん対策の再計算はCDNキャッシュの古い価格を見てはいけないため、常に最新を返す writeClient を使う
+import { writeClient as client } from '@/lib/sanity';
 import type { Cart } from '@/types/ecommerce';
 
 /**

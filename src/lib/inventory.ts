@@ -1,5 +1,7 @@
 // 在庫管理システム - Sanity CMS連携
-import { client } from '@/lib/sanity';
+// 決済前の在庫確認など「今この瞬間の正確な在庫数」が必須の処理のため、
+// CDNキャッシュが効く client ではなく、常に最新を返す writeClient を使う
+import { writeClient as client } from '@/lib/sanity';
 import type { Product } from '@/types/ecommerce';
 
 export interface InventoryUpdate {
