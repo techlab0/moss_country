@@ -52,14 +52,21 @@ export async function GET(
     );
     const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-    // 店頭QRコード決済のその日の支払い済み分を自動集計する
-    const paidCharges: Array<{ amount?: number }> = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount }`,
+    // 店頭QRコード決済のその日の支払い済み分を自動集計する（商品明細も分類ごとに集計し、手入力分と合算できるようにする）
+    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }> = await writeClient.fetch(
+      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, "category": salesItem->category } }`,
       { start, end }
     );
     const qrChargeTotal = paidCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
+    const qrChargeCategorySubtotals: Record<string, number> = {};
+    for (const charge of paidCharges) {
+      for (const li of charge.lineItems || []) {
+        const category = li.category || 'other';
+        qrChargeCategorySubtotals[category] = (qrChargeCategorySubtotals[category] || 0) + (li.amount || 0);
+      }
+    }
 
-    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal });
+    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeCategorySubtotals });
   } catch (error) {
     console.error('日別売上取得エラー:', error);
     return NextResponse.json(
@@ -167,22 +174,29 @@ async function syncToSheetBestEffort(
     }
 
     const { start, end } = getJstDayBoundariesUtc(date);
-    const [paidOrders, paidCharges]: [Array<{ total?: number }>, Array<{ amount?: number }>] = await Promise.all([
+    const [paidOrders, paidCharges]: [Array<{ total?: number }>, Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }>] = await Promise.all([
       writeClient.fetch(
         `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
         { start, end }
       ),
       writeClient.fetch(
-        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount }`,
+        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, "category": salesItem->category } }`,
         { start, end }
       ),
     ]);
     const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const qrChargeTotal = paidCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
+    // 店頭QR決済の商品明細も、手入力分と同じカテゴリ小計に合算する（同じ店舗商品の販売のため）
+    for (const charge of paidCharges) {
+      for (const li of charge.lineItems || []) {
+        const category = li.category || 'other';
+        categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
+      }
+    }
 
     const paymentTotal =
-      doc.cashAmount + doc.payPayAmount + doc.manualCardAmount + doc.adjustment - doc.wordOfMouthDiscount;
-    const grandTotal = paymentTotal + ecTotal + qrChargeTotal;
+      doc.cashAmount + doc.payPayAmount + doc.manualCardAmount + qrChargeTotal + doc.adjustment - doc.wordOfMouthDiscount;
+    const grandTotal = paymentTotal + ecTotal;
 
     await syncDailySalesToSheet({
       date,

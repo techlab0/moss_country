@@ -17,6 +17,28 @@ export const inStoreCharge = defineType({
       type: 'string',
     }),
     defineField({
+      name: 'lineItems',
+      title: '商品明細',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'lineItem',
+          fields: [
+            defineField({
+              name: 'salesItem',
+              title: '項目',
+              type: 'reference',
+              to: [{ type: 'salesItem' }],
+            }),
+            defineField({ name: 'name', title: '項目名（記録用）', type: 'string' }),
+            defineField({ name: 'quantity', title: '数量', type: 'number' }),
+            defineField({ name: 'amount', title: '金額', type: 'number' }),
+          ],
+        },
+      ],
+    }),
+    defineField({
       name: 'squareOrderId',
       title: 'Square注文ID',
       type: 'string',

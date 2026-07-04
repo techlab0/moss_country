@@ -54,6 +54,7 @@ export default function SalesPage() {
   const [notes, setNotes] = useState('');
   const [ecTotal, setEcTotal] = useState(0);
   const [qrChargeTotal, setQrChargeTotal] = useState(0);
+  const [qrChargeCategorySubtotals, setQrChargeCategorySubtotals] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -95,6 +96,7 @@ export default function SalesPage() {
       setNotes(d?.notes || '');
       setEcTotal(dayData.ecTotal || 0);
       setQrChargeTotal(dayData.qrChargeTotal || 0);
+      setQrChargeCategorySubtotals(dayData.qrChargeCategorySubtotals || {});
     } catch (err) {
       console.error('売上データ取得エラー:', err);
     } finally {
@@ -107,7 +109,7 @@ export default function SalesPage() {
   }, [date, loadDay]);
 
   const categorySubtotal = useCallback((category: string) => {
-    return salesItems
+    const manual = salesItems
       .filter(item => item.category === category)
       .reduce((sum, item) => {
         const state = lineItemState[item._id];
@@ -117,24 +119,27 @@ export default function SalesPage() {
         }
         return sum + toNumber(state.amount);
       }, 0);
-  }, [salesItems, lineItemState]);
+    return manual + (qrChargeCategorySubtotals[category] || 0);
+  }, [salesItems, lineItemState, qrChargeCategorySubtotals]);
 
   const itemsTotal = useMemo(() => {
     return categoryOrder.reduce((sum, cat) => sum + categorySubtotal(cat), 0);
   }, [categorySubtotal]);
 
+  // 店頭QR決済も店舗での支払い手段の一つのため、店舗入金合計に含める
   const paymentTotal = useMemo(() => {
     return (
       toNumber(cashAmount) +
       toNumber(payPayAmount) +
       toNumber(manualCardAmount) +
+      qrChargeTotal +
       toNumber(adjustment) -
       toNumber(wordOfMouthDiscount)
     );
-  }, [cashAmount, payPayAmount, manualCardAmount, adjustment, wordOfMouthDiscount]);
+  }, [cashAmount, payPayAmount, manualCardAmount, qrChargeTotal, adjustment, wordOfMouthDiscount]);
 
   const discrepancy = itemsTotal - paymentTotal;
-  const grandTotal = paymentTotal + ecTotal + qrChargeTotal;
+  const grandTotal = paymentTotal + ecTotal;
 
   const updateLineItem = (id: string, field: 'quantity' | 'amount', value: string) => {
     setLineItemState(prev => ({
@@ -328,11 +333,11 @@ export default function SalesPage() {
           <div className="bg-white shadow rounded-lg p-4 space-y-2">
             <h2 className="font-medium text-gray-900 mb-2">集計</h2>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">店舗売上（商品明細の合計）</span>
+              <span className="text-gray-600">店舗売上（商品明細の合計、QR決済分含む）</span>
               <span>¥{itemsTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">店舗入金合計（現金+PayPay+カード+調整-割引）</span>
+              <span className="text-gray-600">店舗入金合計（現金+PayPay+カード+QR決済+調整-割引）</span>
               <span>¥{paymentTotal.toLocaleString()}</span>
             </div>
             {discrepancy !== 0 && (
@@ -340,13 +345,13 @@ export default function SalesPage() {
                 ⚠️ 明細合計と入金合計が¥{Math.abs(discrepancy).toLocaleString()}ズレています。入力を確認してください。
               </div>
             )}
+            <div className="flex justify-between text-sm text-gray-500">
+              <span className="pl-3">うち店頭QRコード決済（自動集計・明細に反映済み）</span>
+              <span>¥{qrChargeTotal.toLocaleString()}</span>
+            </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">EC（オンライン）売上（自動集計）</span>
               <span>¥{ecTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">店頭QRコード決済（自動集計）</span>
-              <span>¥{qrChargeTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between font-bold text-lg border-t pt-2">
               <span>その日の総売上</span>

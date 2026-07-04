@@ -4,8 +4,15 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 
+interface LineItemInput {
+  salesItemId: string;
+  quantity?: number;
+  amount?: number;
+}
+
 // 店頭でカード決済端末を使わずに決済を受け付けるためのQRコード決済リンクを発行する。
 // お客様が自分のスマホで読み取り、Squareのホスト型決済ページで支払う（カード情報は当システムを経由しない）。
+// 金額はクライアントの申告値を信用せず、カタログの単価から必ずサーバー側で再計算する。
 export async function POST(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -14,12 +21,58 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return NextResponse.json({ error: '金額が不正です' }, { status: 400 });
-    }
+    const lineItemsInput: LineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
 
+    if (lineItemsInput.length === 0) {
+      return NextResponse.json({ error: '商品を1つ以上選択してください' }, { status: 400 });
+    }
+
+    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
+    const salesItemsMeta: Array<{ _id: string; name: string; pricingType: string; unitPrice?: number }> = await writeClient.fetch(
+      `*[_type == "salesItem" && _id in $ids]{ _id, name, pricingType, unitPrice }`,
+      { ids: salesItemIds }
+    );
+    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
+
+    let amount = 0;
+    const lineItems = [];
+    for (const item of lineItemsInput) {
+      const meta = metaById.get(item.salesItemId);
+      if (!meta) {
+        return NextResponse.json({ error: `商品が見つかりません: ${item.salesItemId}` }, { status: 400 });
+      }
+      const lineTotal = meta.pricingType === 'fixed'
+        ? (item.quantity || 0) * (meta.unitPrice || 0)
+        : (item.amount || 0);
+      if (lineTotal <= 0) continue;
+
+      amount += lineTotal;
+      lineItems.push({
+        _type: 'lineItem',
+        _key: item.salesItemId,
+        salesItem: { _type: 'reference', _ref: item.salesItemId },
+        name: meta.name,
+        quantity: meta.pricingType === 'fixed' ? item.quantity : undefined,
+        amount: meta.pricingType === 'fixed' ? lineTotal : item.amount,
+      });
+    }
+
+    if (amount <= 0) {
+      return NextResponse.json({ error: '合計金額が0円です。数量または金額を入力してください' }, { status: 400 });
+    }
+
+    // 先にドキュメントを作成してIDを確定させ、決済完了後のレシートURLに使う
+    const charge = await writeClient.create({
+      _type: 'inStoreCharge',
+      amount,
+      description,
+      lineItems,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    });
+
+    const receiptUrl = `${SQUARE_CONFIG.appBaseUrl}/receipt/${charge._id}`;
     const idempotencyKey = uuidv4();
     const paymentLink = await createPaymentLink({
       idempotencyKey,
@@ -33,27 +86,24 @@ export async function POST(request: NextRequest) {
       },
       checkoutOptions: {
         allowTipping: false,
-        redirectUrl: `${SQUARE_CONFIG.appBaseUrl}/payment/success`,
+        // 決済完了後、お客様のスマホにレシート画面を表示する
+        redirectUrl: receiptUrl,
       },
     });
 
-    const charge = await writeClient.create({
-      _type: 'inStoreCharge',
-      amount,
-      description,
-      squareOrderId: paymentLink.orderId,
-      paymentLinkUrl: paymentLink.url,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
+    const updatedCharge = await writeClient
+      .patch(charge._id)
+      .set({ squareOrderId: paymentLink.orderId, paymentLinkUrl: paymentLink.url })
+      .commit();
 
     const QRCode = await import('qrcode');
     const qrCodeDataUrl = await QRCode.toDataURL(paymentLink.url, { width: 400 });
 
     return NextResponse.json({
-      charge,
+      charge: updatedCharge,
       paymentUrl: paymentLink.url,
       qrCodeDataUrl,
+      receiptUrl,
     });
   } catch (error) {
     console.error('店頭決済リンク作成エラー:', error);
@@ -74,7 +124,8 @@ export async function GET(request: NextRequest) {
 
     const charges = await writeClient.fetch(`
       *[_type == "inStoreCharge"] | order(createdAt desc) [0...30] {
-        _id, amount, description, status, createdAt, paidAt
+        _id, amount, description, status, createdAt, paidAt,
+        lineItems[]{ name, quantity, amount }
       }
     `);
 
