@@ -51,7 +51,14 @@ export async function GET(
     );
     const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-    return NextResponse.json({ dailySales: dailySales || null, ecTotal });
+    // 店頭QRコード決済のその日の支払い済み分を自動集計する
+    const paidCharges: Array<{ amount?: number }> = await writeClient.fetch(
+      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount }`,
+      { start, end }
+    );
+    const qrChargeTotal = paidCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
+
+    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal });
   } catch (error) {
     console.error('日別売上取得エラー:', error);
     return NextResponse.json(

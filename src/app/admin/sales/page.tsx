@@ -53,6 +53,7 @@ export default function SalesPage() {
   const [adjustment, setAdjustment] = useState('0');
   const [notes, setNotes] = useState('');
   const [ecTotal, setEcTotal] = useState(0);
+  const [qrChargeTotal, setQrChargeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -93,6 +94,7 @@ export default function SalesPage() {
       setAdjustment(String(d?.adjustment ?? 0));
       setNotes(d?.notes || '');
       setEcTotal(dayData.ecTotal || 0);
+      setQrChargeTotal(dayData.qrChargeTotal || 0);
     } catch (err) {
       console.error('売上データ取得エラー:', err);
     } finally {
@@ -132,7 +134,7 @@ export default function SalesPage() {
   }, [cashAmount, payPayAmount, manualCardAmount, adjustment, wordOfMouthDiscount]);
 
   const discrepancy = itemsTotal - paymentTotal;
-  const grandTotal = paymentTotal + ecTotal;
+  const grandTotal = paymentTotal + ecTotal + qrChargeTotal;
 
   const updateLineItem = (id: string, field: 'quantity' | 'amount', value: string) => {
     setLineItemState(prev => ({
@@ -185,6 +187,9 @@ export default function SalesPage() {
           <p className="text-gray-600 mt-1">その日の店舗売上を入力・確認します</p>
         </div>
         <div className="flex gap-2 text-sm">
+          <Link href="/admin/sales/charge" className="px-3 py-2 bg-moss-green text-white rounded-md hover:bg-moss-green/90">
+            QR決済を発行
+          </Link>
           <Link href="/admin/sales/items" className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
             項目カタログ
           </Link>
@@ -338,6 +343,10 @@ export default function SalesPage() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">EC（オンライン）売上（自動集計）</span>
               <span>¥{ecTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">店頭QRコード決済（自動集計）</span>
+              <span>¥{qrChargeTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between font-bold text-lg border-t pt-2">
               <span>その日の総売上</span>

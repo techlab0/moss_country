@@ -89,7 +89,8 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
     })
 
     if (!order) {
-      console.error(`Order not found for Square payment ID: ${paymentId} (order ID: ${(payment as { order_id?: string }).order_id})`)
+      // ECの注文ではない場合、店頭QR決済（inStoreCharge）の可能性を確認する
+      await handleInStoreChargeUpdate(payment, paymentId)
       return
     }
 
@@ -121,6 +122,60 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
 
   } catch (error) {
     console.error('Error handling payment update:', error)
+    throw error
+  }
+}
+
+/**
+ * 店頭QRコード決済（inStoreCharge）の決済結果を反映する。
+ * ECの注文と異なり在庫操作は不要。金額・ステータスのみ更新する。
+ */
+async function handleInStoreChargeUpdate(payment: { status: string; id: string; order_id?: string }, paymentId: string) {
+  try {
+    const chargeQuery = `
+      *[_type == "inStoreCharge" && (squareOrderId == $orderId || squarePaymentId == $paymentId)][0] {
+        _id,
+        status
+      }
+    `
+    const charge = await client.fetch(chargeQuery, {
+      orderId: (payment as { order_id?: string }).order_id ?? null,
+      paymentId,
+    })
+
+    if (!charge) {
+      console.error(`Order or in-store charge not found for Square payment ID: ${paymentId}`)
+      return
+    }
+
+    // 同一Webhookの重複配信に対する二重処理防止
+    if (charge.status !== 'pending') {
+      console.log(`In-store charge ${charge._id} already processed (status: ${charge.status}) - skipping`)
+      return
+    }
+
+    if (payment.status === 'COMPLETED') {
+      await client
+        .patch(charge._id)
+        .set({
+          status: 'paid',
+          squarePaymentId: payment.id,
+          paidAt: new Date().toISOString(),
+        })
+        .commit()
+      console.log(`In-store charge ${charge._id} marked as paid`)
+    } else if (payment.status === 'FAILED' || payment.status === 'CANCELED') {
+      await client
+        .patch(charge._id)
+        .set({
+          status: 'cancelled',
+          squarePaymentId: payment.id,
+        })
+        .commit()
+      console.log(`In-store charge ${charge._id} marked as cancelled`)
+    }
+  } catch (error) {
+    console.error('Error handling in-store charge update:', error)
     throw error
   }
 }

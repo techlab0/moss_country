@@ -11,6 +11,7 @@ import { heroImageSettings } from './heroImageSettings'
 import { backgroundImageSettings } from './backgroundImageSettings'
 import { salesItem } from './salesItem'
 import { dailySales } from './dailySales'
+import { inStoreCharge } from './inStoreCharge'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -26,4 +27,5 @@ export const schemaTypes = [
   backgroundImageSettings,
   salesItem,
   dailySales,
+  inStoreCharge,
 ]
