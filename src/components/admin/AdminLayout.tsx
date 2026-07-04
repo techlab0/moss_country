@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 const navigation = [
   { name: 'ダッシュボード', href: '/admin/dashboard', icon: '📊' },
   { name: '注文管理', href: '/admin/orders', icon: '📦' },
+  { name: '売上管理', href: '/admin/sales', icon: '💰' },
   { name: '在庫管理', href: '/admin/inventory', icon: '📋' },
   { name: '商品管理', href: '/admin/products', icon: '🌱' },
   { name: 'ブログ・ニュース管理', href: '/admin/blog', icon: '📝' },
