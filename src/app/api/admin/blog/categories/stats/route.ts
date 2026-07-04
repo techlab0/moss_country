@@ -1,8 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBlogCategoryStats } from '@/lib/sanity';
+import { verifyAdminSession } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const stats = await getBlogCategoryStats();
     return NextResponse.json(stats);
   } catch (error) {

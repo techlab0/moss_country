@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client, writeClient } from '@/lib/sanity';
+import { verifyAdminSession } from '@/lib/auth';
 
 // 特定商品取得（useCdn: false で確実に取得。画像は url 付きで返す＝編集画面サムネイル用）
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const { id } = await params;
     const product = await writeClient.fetch(
       `*[_id == $id][0] {
@@ -62,6 +68,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -90,10 +101,15 @@ export async function PATCH(
 
 // 商品削除
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const { id } = await params;
     await client.delete(id);
     

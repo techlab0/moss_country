@@ -1,9 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAllBlogPosts } from '@/lib/sanity';
 import type { BlogPost } from '@/types/sanity';
+import { verifyAdminSession } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const posts: BlogPost[] = await getAllBlogPosts();
 
     // 基本統計を計算

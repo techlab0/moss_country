@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
 import { client } from '@/lib/sanity'
+import { InventoryService } from '@/lib/inventory'
 // 注文確認メールはSquare側のレシート機能を使用するため、EmailJSは不要
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
@@ -65,9 +66,12 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
 
     console.log(`Payment ${paymentId} status: ${payment.status}`)
 
-    // Find the order associated with this payment
+    // Find the order associated with this payment.
+    // squareOrderId は Square が決済に紐づけて自動作成する Order の ID。
+    // 万一 squareOrderId が保存されていない/一致しない場合に備え、
+    // 決済作成時に同期的に保存される squarePaymentId でもフォールバック検索する。
     const orderQuery = `
-      *[_type == "order" && squareOrderId == $orderId][0] {
+      *[_type == "order" && (squareOrderId == $orderId || squarePaymentId == $paymentId)][0] {
         _id,
         orderNumber,
         customer,
@@ -77,13 +81,25 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
         paymentStatus
       }
     `
-    
-    const order = await client.fetch(orderQuery, { 
-      orderId: payment.orderId 
+
+    const order = await client.fetch(orderQuery, {
+      orderId: (payment as { order_id?: string }).order_id ?? null,
+      paymentId,
     })
 
     if (!order) {
-      console.error(`Order not found for Square order ID: ${payment.orderId}`)
+      console.error(`Order not found for Square payment ID: ${paymentId} (order ID: ${(payment as { order_id?: string }).order_id})`)
+      return
+    }
+
+    // Square は同一Webhookを複数回配信することがあるため、
+    // 既に反映済みのステータスであれば処理をスキップする（在庫の二重減算・二重復元を防止）
+    if (payment.status === 'COMPLETED' && order.paymentStatus === 'paid') {
+      console.log(`Order ${order.orderNumber} is already marked as paid - skipping duplicate webhook`)
+      return
+    }
+    if ((payment.status === 'FAILED' || payment.status === 'CANCELED') && order.paymentStatus === 'failed') {
+      console.log(`Order ${order.orderNumber} is already marked as failed - skipping duplicate webhook`)
       return
     }
 
@@ -92,12 +108,12 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
       case 'COMPLETED':
         await processSuccessfulPayment(order, payment)
         break
-      
+
       case 'FAILED':
       case 'CANCELED':
         await processFailedPayment(order, payment)
         break
-      
+
       default:
         console.log(`Payment ${paymentId} status ${payment.status} - no action needed`)
     }
@@ -187,7 +203,8 @@ async function processSuccessfulPayment(order: { _id: string; orderNumber: strin
       .commit()
 
     // Convert reserved inventory to actual reduction
-    await finalizeInventoryReduction(order.items)
+    const inventoryItems = order.items.map(item => ({ productId: item.product._ref, quantity: item.quantity }))
+    await InventoryService.confirmCartPurchase(inventoryItems, order._id)
 
     // 注文確認メールはSquareの自動レシート送信機能を使用
     console.log(`Payment processed for order ${order.orderNumber}. Customer will receive Square receipt automatically.`)
@@ -219,7 +236,8 @@ async function processFailedPayment(order: { _id: string; orderNumber: string; i
       .commit()
 
     // Release reserved inventory
-    await releaseReservedInventory(order.items)
+    const inventoryItems = order.items.map(item => ({ productId: item.product._ref, quantity: item.quantity }))
+    await InventoryService.releaseCartItems(inventoryItems, order._id)
 
     console.log(`Successfully processed failed payment for order ${order.orderNumber}`)
 
@@ -229,84 +247,3 @@ async function processFailedPayment(order: { _id: string; orderNumber: string; i
   }
 }
 
-/**
- * Finalize inventory reduction after successful payment
- */
-async function finalizeInventoryReduction(items: Array<{ product: { _ref: string }; quantity: number }>) {
-  for (const item of items) {
-    try {
-      const inventoryQuery = `
-        *[_type == "inventory" && product._ref == $productId][0] {
-          _id,
-          quantity,
-          reserved
-        }
-      `
-      
-      const inventory = await client.fetch(inventoryQuery, { 
-        productId: item.product._ref 
-      })
-
-      if (inventory) {
-        const newQuantity = Math.max(0, inventory.quantity - item.quantity)
-        const newReserved = Math.max(0, (inventory.reserved || 0) - item.quantity)
-        const newAvailable = newQuantity - newReserved
-
-        await client
-          .patch(inventory._id)
-          .set({
-            quantity: newQuantity,
-            reserved: newReserved,
-            available: newAvailable,
-            lastUpdated: new Date().toISOString(),
-          })
-          .commit()
-
-        console.log(`Reduced inventory for product ${item.product._ref}: -${item.quantity} units`)
-      }
-    } catch (error) {
-      console.error(`Failed to reduce inventory for product ${item.product._ref}:`, error)
-      // Continue with other items
-    }
-  }
-}
-
-/**
- * Release reserved inventory for cancelled orders
- */
-async function releaseReservedInventory(items: Array<{ product: { _ref: string }; quantity: number }>) {
-  for (const item of items) {
-    try {
-      const inventoryQuery = `
-        *[_type == "inventory" && product._ref == $productId][0] {
-          _id,
-          quantity,
-          reserved
-        }
-      `
-      
-      const inventory = await client.fetch(inventoryQuery, { 
-        productId: item.product._ref 
-      })
-
-      if (inventory) {
-        const newReserved = Math.max(0, (inventory.reserved || 0) - item.quantity)
-        const newAvailable = inventory.quantity - newReserved
-
-        await client
-          .patch(inventory._id)
-          .set({
-            reserved: newReserved,
-            available: newAvailable,
-            lastUpdated: new Date().toISOString(),
-          })
-          .commit()
-
-        console.log(`Released reserved inventory for product ${item.product._ref}: +${item.quantity} units`)
-      }
-    } catch (error) {
-      console.error(`Failed to release reserved inventory for product ${item.product._ref}:`, error)
-      // Continue with other items
-    }
-  }
-}

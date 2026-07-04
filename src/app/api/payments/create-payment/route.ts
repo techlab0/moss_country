@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { client } from '@/lib/sanity';
 import { convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
+import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing';
+import { InventoryService } from '@/lib/inventory';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 export async function POST(request: NextRequest) {
@@ -27,6 +29,31 @@ export async function POST(request: NextRequest) {
         { error: 'Cart is empty' },
         { status: 400 }
       );
+    }
+
+    // 価格改ざん対策: クライアント申告額を信用せず、Sanityの正規価格から再計算する
+    let totals;
+    try {
+      totals = await recalculateCartTotals(cart);
+    } catch (error) {
+      if (error instanceof InvalidCartError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
+    }
+
+    // 決済前に在庫を確保する（開発環境ではSanityへのアクセスをスキップ）
+    // Sanityの product.stockQuantity/reserved に対するアトミックな増減を使うため、
+    // 同時に複数の注文が入っても在庫の売り越しが起きない
+    const inventoryItems = cart.items.map(item => ({ productId: item.product._id, quantity: item.quantity }));
+    if (process.env.NODE_ENV !== 'development') {
+      const reservation = await InventoryService.reserveCartItems(inventoryItems);
+      if (!reservation.success) {
+        return NextResponse.json(
+          { error: `在庫が不足しています（商品ID: ${reservation.productId}）` },
+          { status: 400 }
+        );
+      }
     }
 
     // Generate unique order number
@@ -56,10 +83,10 @@ export async function POST(request: NextRequest) {
           price: item.price,
           variant: item.variant?.name || null,
         })),
-        subtotal: cart.subtotal,
-        shippingCost: cart.shippingCost,
-        tax: cart.tax,
-        total: cart.total,
+        subtotal: totals.subtotal,
+        shippingCost: totals.shippingCost,
+        tax: totals.tax,
+        total: totals.total,
         status: 'pending',
         paymentStatus: 'pending',
         shippingAddress: orderData.shippingAddress,
@@ -95,7 +122,7 @@ export async function POST(request: NextRequest) {
     // Process payment with Square
     const paymentResult = await processSquarePayment({
       token: paymentToken.token,
-      amount: cart.total,
+      amount: totals.total,
       orderNumber,
       customerEmail: customerData.email,
       orderId: createdOrder._id,
@@ -114,6 +141,11 @@ export async function POST(request: NextRequest) {
           .commit();
       }
 
+      // 決済が失敗したため、確保しておいた在庫予約を解放する
+      if (process.env.NODE_ENV !== 'development') {
+        await InventoryService.releaseCartItems(inventoryItems);
+      }
+
       return NextResponse.json(
         {
           error: 'Payment failed',
@@ -125,26 +157,33 @@ export async function POST(request: NextRequest) {
 
     // Update order with payment success (開発環境ではスキップ)
     if (process.env.NODE_ENV !== 'development' && createdOrder._id.startsWith('temp-') === false) {
+      const paidFields: Record<string, unknown> = {
+        status: 'paid',
+        paymentStatus: 'paid',
+        squarePaymentId: paymentResult.paymentId,
+        updatedAt: new Date().toISOString(),
+      };
+      // Squareは注文IDを指定しない決済でも自動的にOrderを作成するため、
+      // Webhook側で squareOrderId から注文を特定できるように保存しておく
+      if (paymentResult.orderId) {
+        paidFields.squareOrderId = paymentResult.orderId;
+      }
       await client
         .patch(createdOrder._id)
-        .set({
-          status: 'paid',
-          paymentStatus: 'paid',
-          squarePaymentId: paymentResult.paymentId,
-          updatedAt: new Date().toISOString(),
-        })
+        .set(paidFields)
         .commit();
     } else {
       console.log('✅ 開発環境: 決済成功 - Sanity更新をスキップ');
     }
 
-    // Reserve inventory (開発環境ではスキップ)
+    // 決済がその場で完了しているため、予約済み在庫を実在庫の減算に確定する
+    // （Webhookが後から届いても、既に paymentStatus: 'paid' のため二重処理はされない）
     if (process.env.NODE_ENV !== 'development') {
       try {
-        await reserveInventory(cart.items);
+        await InventoryService.confirmCartPurchase(inventoryItems, createdOrder._id);
       } catch (inventoryError) {
-        console.warn('Failed to reserve inventory:', inventoryError);
-        // Continue - inventory management can be handled separately
+        console.error('Failed to finalize inventory after successful payment:', inventoryError);
+        // 決済は既に成立しているため処理は継続する（在庫は管理画面で手動調整が必要）
       }
     }
 
@@ -154,7 +193,7 @@ export async function POST(request: NextRequest) {
         orderId: createdOrder._id,
         orderNumber,
         paymentId: paymentResult.paymentId,
-        total: cart.total,
+        total: totals.total,
         redirectUrl: `/payment/success?order=${orderNumber}`,
       },
     });
@@ -187,7 +226,7 @@ async function processSquarePayment({
   orderNumber: string;
   customerEmail: string;
   orderId: string;
-}): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+}): Promise<{ success: boolean; paymentId?: string; orderId?: string; error?: string }> {
   try {
     // 設定確認のログ
     console.log('Square Payment Configuration:', {
@@ -296,6 +335,7 @@ async function processSquarePayment({
     return {
       success: true,
       paymentId: result.payment?.id,
+      orderId: result.payment?.order_id,
     };
 
   } catch (error) {
@@ -307,42 +347,3 @@ async function processSquarePayment({
   }
 }
 
-/**
- * Reserve inventory for order items
- */
-async function reserveInventory(items: Cart['items']) {
-  for (const item of items) {
-    try {
-      const inventoryQuery = `
-        *[_type == "inventory" && product._ref == $productId][0] {
-          _id,
-          quantity,
-          reserved
-        }
-      `;
-      
-      const inventory = await client.fetch(inventoryQuery, { 
-        productId: item.product._id 
-      });
-
-      if (inventory) {
-        const newReserved = (inventory.reserved || 0) + item.quantity;
-        const newAvailable = inventory.quantity - newReserved;
-
-        await client
-          .patch(inventory._id)
-          .set({
-            reserved: newReserved,
-            available: newAvailable,
-            lastUpdated: new Date().toISOString(),
-          })
-          .commit();
-
-        console.log(`Reserved ${item.quantity} units of product ${item.product._id}`);
-      }
-    } catch (error) {
-      console.error(`Failed to reserve inventory for product ${item.product._id}:`, error);
-      // Continue with other items
-    }
-  }
-}

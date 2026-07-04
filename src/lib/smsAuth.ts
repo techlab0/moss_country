@@ -20,8 +20,43 @@ export interface SMSCode {
   userId: string;
 }
 
-// メモリ内のSMSコード保存（本来はRedisやデータベース）
+// メモリ内のSMSコード保存（DB未設定時、およびフォールバック用）
 const smsCodeStore = new Map<string, SMSCode>();
+
+// 環境変数でデータベース使用を制御（sms_verification_codesテーブル未作成の環境ではメモリにフォールバック）
+const USE_DATABASE = process.env.USE_SUPABASE === 'true';
+
+async function getSupabaseClientForSMS() {
+  if (!USE_DATABASE) return null;
+  try {
+    const { supabaseAdmin } = await import('./supabase');
+    return supabaseAdmin;
+  } catch (error) {
+    console.warn('Supabaseモジュールの読み込みに失敗:', error);
+    return null;
+  }
+}
+
+// SMSコードを保存（DB優先、フォールバックでメモリベース）
+async function persistSMSCode(userId: string, code: string, phoneNumber: string, expiresAt: Date): Promise<void> {
+  const supabase = await getSupabaseClientForSMS();
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('sms_verification_codes').upsert({
+        user_id: userId,
+        code,
+        phone_number: phoneNumber,
+        expires_at: expiresAt.toISOString(),
+      });
+      if (error) throw error;
+      return;
+    } catch (error) {
+      console.warn('SMS認証コードのDB保存に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+
+  smsCodeStore.set(userId, { code, phoneNumber, expiresAt, userId });
+}
 
 // SMSで認証コードを送信
 export async function sendSMSCode(phoneNumber: string, userId: string): Promise<boolean> {
@@ -30,18 +65,13 @@ export async function sendSMSCode(phoneNumber: string, userId: string): Promise<
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5分後に失効
 
+    await persistSMSCode(userId, code, phoneNumber, expiresAt);
+
     // Twilioクライアントを取得
     const client = await getTwilioClient();
-    
+
     if (!client) {
       console.warn('Twilio client not configured. SMS code generated but not sent:', code);
-      // 開発環境ではコードを保存して続行
-      smsCodeStore.set(userId, {
-        code,
-        phoneNumber,
-        expiresAt,
-        userId,
-      });
       return true;
     }
 
@@ -52,14 +82,6 @@ export async function sendSMSCode(phoneNumber: string, userId: string): Promise<
       to: phoneNumber,
     });
 
-    // コードを保存
-    smsCodeStore.set(userId, {
-      code,
-      phoneNumber,
-      expiresAt,
-      userId,
-    });
-
     console.log(`SMS sent successfully: ${message.sid}`);
     return true;
   } catch (error) {
@@ -68,26 +90,58 @@ export async function sendSMSCode(phoneNumber: string, userId: string): Promise<
   }
 }
 
-// SMSコードを検証
-export function verifySMSCode(userId: string, inputCode: string): boolean {
+// SMSコードを検証（DB優先、フォールバックでメモリベース）
+export async function verifySMSCode(userId: string, inputCode: string): Promise<boolean> {
+  const supabase = await getSupabaseClientForSMS();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('sms_verification_codes')
+        .select('code, expires_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+
+      if (data) {
+        const isValid = data.code === inputCode && new Date() < new Date(data.expires_at);
+        if (isValid) {
+          await supabase.from('sms_verification_codes').delete().eq('user_id', userId);
+        }
+        return isValid;
+      }
+      // DB側に該当データがない場合はメモリ側（フォールバック時に保存された可能性）を確認する
+    } catch (error) {
+      console.warn('SMS認証コードのDB照会に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+
   const storedCode = smsCodeStore.get(userId);
-  
+
   if (!storedCode) {
     return false;
   }
 
   const isValid = storedCode.code === inputCode && new Date() < storedCode.expiresAt;
-  
+
   if (isValid) {
     // 使用済みコードを削除
     smsCodeStore.delete(userId);
   }
-  
+
   return isValid;
 }
 
 // 期限切れのコードを清理
-export function cleanupExpiredCodes(): void {
+export async function cleanupExpiredCodes(): Promise<void> {
+  const supabase = await getSupabaseClientForSMS();
+  if (supabase) {
+    try {
+      await supabase.from('sms_verification_codes').delete().lt('expires_at', new Date().toISOString());
+    } catch (error) {
+      console.warn('SMS認証コードのDBクリーンアップに失敗:', error);
+    }
+  }
+
   const now = new Date();
   for (const [userId, codeData] of smsCodeStore.entries()) {
     if (now > codeData.expiresAt) {

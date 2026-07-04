@@ -4,8 +4,8 @@ import { verifyJWT } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // JWTトークンを検証
-    const token = request.cookies.get('admin-token')?.value;
+    // JWTトークンを検証（2FA設定はログイン済みユーザーのみ実行可能）
+    const token = request.cookies.get('admin-session')?.value;
     if (!token) {
       return NextResponse.json(
         { error: '認証が必要です' },

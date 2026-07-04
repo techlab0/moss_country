@@ -36,9 +36,9 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/images') ||
       pathname.includes('.') // 静的ファイル
     ) {
-      // 管理画面の場合は既存の認証処理を継続
-      if (pathname.startsWith('/admin')) {
-        // 下の管理画面処理に続く
+      // 管理画面・管理APIの場合は既存の認証処理を継続（メンテナンス中も管理者はアクセス可能にする）
+      if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+        // 下の処理に続く
       } else {
         return NextResponse.next();
       }
@@ -51,6 +51,31 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(maintenanceUrl);
       }
     }
+  }
+
+  // 管理APIのルートをチェック（ログイン前後で必要になる一部のエンドポイントは除外）
+  if (pathname.startsWith('/api/admin')) {
+    const publicAdminApiPaths = new Set([
+      '/api/admin/login',
+      '/api/admin/auth/login',
+      '/api/admin/2fa/verify',
+      '/api/admin/2fa/webauthn/authenticate',
+      '/api/admin/logout',
+    ]);
+
+    if (!publicAdminApiPaths.has(pathname)) {
+      const session = await getAdminSessionFromRequest(request);
+      if (!session) {
+        return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      }
+
+      const is2FAEnabled = process.env.ADMIN_2FA_ENABLED === 'true';
+      if (is2FAEnabled && !session.twoFactorVerified) {
+        return NextResponse.json({ error: '2段階認証が必要です' }, { status: 401 });
+      }
+    }
+
+    return NextResponse.next();
   }
 
   // 管理画面のルートをチェック

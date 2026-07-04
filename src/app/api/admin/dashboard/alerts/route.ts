@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductsWithInventory } from '@/lib/sanity';
+import { verifyAdminSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     // 商品データを取得
     const products = await getProductsWithInventory();
     

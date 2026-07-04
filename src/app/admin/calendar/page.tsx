@@ -368,13 +368,6 @@ export default function CalendarManagePage() {
             🔄 データ再読み込み
           </button>
           <Link
-            href="/api/admin/calendar/test"
-            target="_blank"
-            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            🔧 API接続テスト
-          </Link>
-          <Link
             href="/store"
             target="_blank"
             className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"

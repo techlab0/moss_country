@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
+import { verifyAdminSession } from '@/lib/auth';
 
 // 商品一覧取得（useCdn: false で登録直後の商品も即時反映）
 export async function GET(request: NextRequest) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const products = await writeClient.fetch(`
       *[_type == "product"] | order(sortOrder asc, _createdAt desc) {
         _id,
@@ -42,6 +48,11 @@ export async function GET(request: NextRequest) {
 // 新商品作成
 export async function POST(request: NextRequest) {
   try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     // スラッグは常に Sanity の slug 型 { current: string } で送る

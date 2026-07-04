@@ -8,7 +8,7 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { SquareCheckout } from '@/components/ui/SquareCheckout';
 import { useCart } from '@/contexts/CartContext';
 import { getEcommerceImageUrl, getProductSlug } from '@/lib/adapters';
-import type { CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
+import type { Cart, CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
 
 // 配送料金表（札幌から全国、実際のゆうパック料金を参考）
 const SHIPPING_RATES = {
@@ -467,44 +467,59 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // 注文データの準備
-      const orderData = {
-        customer: formData.customer,
-        shippingAddress: formData.shippingAddress,
-        billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
-        items: cart.items,
-        shippingMethod: formData.shippingMethod,
-        paymentMethod: formData.paymentMethod,
-        pricing: shippingCalculation,
-        notes: formData.notes,
-        newsletter: formData.newsletter
-      };
-
-      // 支払い方法による分岐
+      // 支払い方法による分岐（クレジットカード決済の場合はSquareCheckoutコンポーネント側で処理）
       if (formData.paymentMethod !== 'credit_card') {
-        // 銀行振込・代金引換の場合：注文確定処理
-        await processNonCardPayment(orderData);
+        // 銀行振込・代金引換の場合：注文を確定する
+        await processNonCardPayment();
+
+        sessionStorage.setItem('completedOrder', JSON.stringify({ paymentMethod: formData.paymentMethod }));
         setOrderComplete(true);
         clearCart();
       }
-      // クレジットカード決済の場合はコンポーネントで処理
     } catch (error) {
       console.error('Order processing failed:', error);
-      alert('注文の処理中にエラーが発生しました。もう一度お試しください。');
+      alert(error instanceof Error ? error.message : '注文の処理中にエラーが発生しました。もう一度お試しください。');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // 非カード決済の処理（振込・代金引換）
-  const processNonCardPayment = async (orderData: { customer: object; items: object; pricing: object; paymentMethod: object; shippingAddress: object }) => {
-    // ここでは注文処理をシミュレート
-    // 実際の実装では、APIに注文データを送信
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 注文確認メールはSquareの自動レシート機能を使用
-    
-    console.log('Order processed:', orderData);
+  // 非カード決済の処理（振込・代金引換）: 実際に注文をサーバーへ保存する
+  const processNonCardPayment = async () => {
+    const cartPayload: Cart = {
+      items: cart.items,
+      subtotal: cart.subtotal,
+      shippingCost: shippingCalculation.finalShippingCost,
+      baseShippingCost: shippingCalculation.baseShippingCost,
+      shippingDiscount: shippingCalculation.shippingDiscount,
+      tax: shippingCalculation.tax,
+      total: shippingCalculation.total,
+      itemCount: cart.itemCount,
+    };
+
+    const response = await fetch('/api/orders/create-offline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cart: cartPayload,
+        customerData: formData.customer,
+        orderData: {
+          shippingAddress: formData.shippingAddress,
+          billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+          shippingMethod: formData.shippingMethod,
+          paymentMethod: formData.paymentMethod,
+          sameAsShipping: formData.sameAsShipping,
+          terms: formData.terms,
+          newsletter: formData.newsletter,
+          notes: formData.notes,
+        },
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || '注文の作成に失敗しました');
+    }
   };
   // 注文完了画面
   if (orderComplete) {
@@ -1024,14 +1039,21 @@ export default function CheckoutPage() {
                   {formData.paymentMethod === 'credit_card' ? (
                     <SquareCheckout
                       cart={{
-                        ...shippingCalculation,
-                        items: cart.items
+                        items: cart.items,
+                        subtotal: cart.subtotal,
+                        shippingCost: shippingCalculation.finalShippingCost,
+                        baseShippingCost: shippingCalculation.baseShippingCost,
+                        shippingDiscount: shippingCalculation.shippingDiscount,
+                        tax: shippingCalculation.tax,
+                        total: shippingCalculation.total,
+                        itemCount: cart.itemCount,
                       }}
                       customerData={formData.customer}
                       orderData={{
                         shippingAddress: formData.shippingAddress,
                         billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
                         shippingMethod: formData.shippingMethod,
+                        paymentMethod: formData.paymentMethod,
                         sameAsShipping: formData.sameAsShipping,
                         terms: formData.terms,
                         newsletter: formData.newsletter,

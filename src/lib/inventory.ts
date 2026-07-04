@@ -232,6 +232,49 @@ export class InventoryService {
     }
   }
 
+  /**
+   * カート内の全アイテムを一括で予約する。
+   * 途中の商品で在庫不足が発生した場合、それまでに予約済みのアイテムはロールバックし、
+   * 部分的な予約が残らないようにする（決済前の在庫確保に使用）。
+   */
+  static async reserveCartItems(
+    items: Array<{ productId: string; quantity: number }>,
+    orderId?: string
+  ): Promise<{ success: true } | { success: false; error: string; productId: string }> {
+    const reserved: Array<{ productId: string; quantity: number }> = [];
+
+    for (const item of items) {
+      const ok = await this.reserveStock(item.productId, item.quantity, orderId);
+      if (!ok) {
+        for (const r of reserved) {
+          await this.releaseStock(r.productId, r.quantity, orderId);
+        }
+        return { success: false, error: '在庫が不足しています', productId: item.productId };
+      }
+      reserved.push(item);
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * カート内の全アイテムの予約を解放する（決済失敗・注文キャンセル時に使用）。
+   */
+  static async releaseCartItems(items: Array<{ productId: string; quantity: number }>, orderId?: string): Promise<void> {
+    for (const item of items) {
+      await this.releaseStock(item.productId, item.quantity, orderId);
+    }
+  }
+
+  /**
+   * カート内の全アイテムの購入を確定する（予約済み在庫を実在庫から減算。決済成功時に使用）。
+   */
+  static async confirmCartPurchase(items: Array<{ productId: string; quantity: number }>, orderId: string): Promise<void> {
+    for (const item of items) {
+      await this.confirmPurchase(item.productId, item.quantity, orderId);
+    }
+  }
+
   // 在庫変更ログを記録
   private static async logInventoryChange(update: InventoryUpdate): Promise<void> {
     try {

@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
           }, { status: 400 });
         }
 
-        const loginCheck = checkLoginAttempts(email, ip);
+        const loginCheck = await checkLoginAttempts(email, ip);
         return NextResponse.json({ loginCheck });
 
       case 'check-ip':
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
           }, { status: 400 });
         }
 
-        const loginAttempt = recordLoginAttempt(
+        const loginAttempt = await recordLoginAttempt(
           data.email,
           userIP,
           userAgent,

@@ -82,11 +82,25 @@ export interface IPRestriction {
   isActive: boolean;
 }
 
-// メモリベースストレージ（開発・テスト用）
+// メモリベースストレージ（開発・テスト用、およびDB未設定時のフォールバック）
 let securitySettings: SecuritySettings | null = null;
 let loginAttempts: LoginAttempt[] = [];
 let ipRestrictions: IPRestriction[] = [];
 let securityReports: SecurityReport[] = [];
+
+// 環境変数でデータベース使用を制御（login_attemptsテーブル未作成の環境ではメモリにフォールバック）
+const USE_DATABASE = process.env.USE_SUPABASE === 'true';
+
+async function getSupabaseClientForSecurity() {
+  if (!USE_DATABASE) return null;
+  try {
+    const { supabaseAdmin } = await import('./supabase');
+    return supabaseAdmin;
+  } catch (error) {
+    console.warn('Supabaseモジュールの読み込みに失敗:', error);
+    return null;
+  }
+}
 
 /**
  * デフォルトセキュリティ設定を初期化
@@ -153,16 +167,16 @@ export function updateSecuritySettings(
 }
 
 /**
- * ログイン試行を記録
+ * ログイン試行を記録（DB優先、フォールバックでメモリベース）
  */
-export function recordLoginAttempt(
+export async function recordLoginAttempt(
   email: string,
   ipAddress: string,
   userAgent: string,
   success: boolean,
   failureReason?: string,
   geolocation?: LoginAttempt['geolocation']
-): LoginAttempt {
+): Promise<LoginAttempt> {
   const attempt: LoginAttempt = {
     id: `login_attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     email,
@@ -173,45 +187,119 @@ export function recordLoginAttempt(
     failureReason,
     geolocation
   };
-  
+
+  const supabase = await getSupabaseClientForSecurity();
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('login_attempts').insert({
+        email,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        success,
+        failure_reason: failureReason || null,
+      });
+      if (error) throw error;
+      return attempt;
+    } catch (error) {
+      console.warn('ログイン試行のDB記録に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+
+  // メモリベース（フォールバック）
   loginAttempts.unshift(attempt);
-  
+
   // メモリ制限（最新5000件まで保持）
   if (loginAttempts.length > 5000) {
     loginAttempts = loginAttempts.slice(0, 5000);
   }
-  
+
   return attempt;
 }
 
 /**
- * 指定メールアドレスの最近のログイン試行回数をチェック
+ * 指定メールアドレスの最近のログイン試行回数をチェック（DB優先、フォールバックでメモリベース）
  */
-export function checkLoginAttempts(email: string, ipAddress: string): {
+export async function checkLoginAttempts(email: string, ipAddress: string): Promise<{
   isBlocked: boolean;
   remainingAttempts: number;
   lockoutUntil?: Date;
   reason?: string;
-} {
+}> {
   const settings = getSecuritySettings();
   const now = new Date();
   const windowStart = new Date(now.getTime() - settings.loginAttemptWindow * 60 * 1000);
-  
-  // 指定時間窓での失敗試行を取得
-  const recentFailures = loginAttempts.filter(attempt => 
+
+  const supabase = await getSupabaseClientForSecurity();
+  if (supabase) {
+    try {
+      // email/ip のいずれかに一致する失敗試行を数える。
+      // PostgRESTの .or() に生の値を組み込むとフィルタ構文インジェクションの
+      // リスクがあるため、.eq() を使った2クエリに分けて安全に取得する。
+      const [byEmail, byIp] = await Promise.all([
+        supabase
+          .from('login_attempts')
+          .select('created_at')
+          .eq('email', email)
+          .eq('success', false)
+          .gte('created_at', windowStart.toISOString())
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('login_attempts')
+          .select('created_at')
+          .eq('ip_address', ipAddress)
+          .eq('success', false)
+          .gte('created_at', windowStart.toISOString())
+          .order('created_at', { ascending: false }),
+      ]);
+
+      if (byEmail.error) throw byEmail.error;
+      if (byIp.error) throw byIp.error;
+
+      const emailFailures = byEmail.data || [];
+      const ipFailures = byIp.data || [];
+      // email基準・IP基準のどちらか厳しい方（多い方）を採用する
+      const failureCount = Math.max(emailFailures.length, ipFailures.length);
+
+      if (failureCount >= settings.loginAttemptLimit) {
+        const latest = [...emailFailures, ...ipFailures]
+          .map(row => new Date(row.created_at))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
+        const lockoutUntil = new Date(latest.getTime() + settings.lockoutDuration * 60 * 1000);
+
+        if (now < lockoutUntil) {
+          return {
+            isBlocked: true,
+            remainingAttempts: 0,
+            lockoutUntil,
+            reason: 'ログイン試行回数の制限に達しました'
+          };
+        }
+      }
+
+      return {
+        isBlocked: false,
+        remainingAttempts: Math.max(0, settings.loginAttemptLimit - failureCount)
+      };
+    } catch (error) {
+      console.warn('ログイン試行のDB照会に失敗、メモリベースにフォールバック:', error);
+    }
+  }
+
+  // メモリベース（フォールバック）
+  const recentFailures = loginAttempts.filter(attempt =>
     (attempt.email === email || attempt.ipAddress === ipAddress) &&
     !attempt.success &&
     attempt.timestamp >= windowStart
   );
-  
+
   const failureCount = recentFailures.length;
-  
+
   if (failureCount >= settings.loginAttemptLimit) {
     const lastFailure = recentFailures[0];
     const lockoutUntil = new Date(
       lastFailure.timestamp.getTime() + settings.lockoutDuration * 60 * 1000
     );
-    
+
     if (now < lockoutUntil) {
       return {
         isBlocked: true,
@@ -221,7 +309,7 @@ export function checkLoginAttempts(email: string, ipAddress: string): {
       };
     }
   }
-  
+
   return {
     isBlocked: false,
     remainingAttempts: Math.max(0, settings.loginAttemptLimit - failureCount)

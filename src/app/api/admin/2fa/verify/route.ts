@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createTwoFactorVerifiedToken } from '@/lib/auth';
+import { createTwoFactorVerifiedToken, verifyJWT } from '@/lib/auth';
 import { verifyTwoFactorToken, verifyBackupCode, getTwoFactorSecret, getBackupCodes } from '@/lib/twoFactor';
+import { checkLoginAttempts, recordLoginAttempt } from '@/lib/advancedSecurity';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +11,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: '認証コードが必要です' },
         { status: 400 }
+      );
+    }
+
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // 一時セッションからユーザー情報を取得（コード検証前に取得し、試行回数制限のキーに使う）
+    const tempToken = request.cookies.get('admin-temp-session')?.value;
+    let userId = 'admin';
+    let userEmail = process.env.ADMIN_EMAIL!;
+
+    if (tempToken) {
+      try {
+        const payload = await verifyJWT(tempToken);
+        if (payload) {
+          userId = payload.userId as string;
+          userEmail = payload.email as string;
+        }
+      } catch (error) {
+        console.log('Temp token verification failed, using default admin');
+      }
+    }
+
+    // 総当たり攻撃対策: 6桁のTOTPコードは試行回数を制限しないと現実的に破られうる
+    const attemptCheck = await checkLoginAttempts(userEmail, ipAddress);
+    if (attemptCheck.isBlocked) {
+      await recordLoginAttempt(userEmail, ipAddress, userAgent, false, attemptCheck.reason);
+      const message = attemptCheck.lockoutUntil
+        ? `認証試行回数の制限に達しました。${attemptCheck.lockoutUntil.toLocaleString('ja-JP')}まで待ってからお試しください。`
+        : '認証試行回数の制限に達しました。しばらく待ってからお試しください。';
+      return NextResponse.json(
+        { error: message, lockoutUntil: attemptCheck.lockoutUntil },
+        { status: 429 }
       );
     }
 
@@ -28,7 +62,7 @@ export async function POST(request: NextRequest) {
       // バックアップコードを確認
       const backupCodes = getBackupCodes();
       isValid = verifyBackupCode(code, backupCodes);
-      
+
       if (isValid) {
         // 使用されたバックアップコードを削除（実際の実装では環境変数の更新が必要）
         console.log(`バックアップコード ${code} が使用されました。環境変数から削除してください。`);
@@ -39,29 +73,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValid) {
+      await recordLoginAttempt(userEmail, ipAddress, userAgent, false, 'invalid_2fa_code');
       return NextResponse.json(
         { error: '認証コードが正しくありません' },
         { status: 401 }
       );
     }
 
-    // 一時セッションからユーザー情報を取得
-    const tempToken = request.cookies.get('admin-temp-session')?.value;
-    let userId = 'admin';
-    let userEmail = process.env.ADMIN_EMAIL!;
-    
-    if (tempToken) {
-      try {
-        const { verifyJWT } = await import('@/lib/auth');
-        const payload = await verifyJWT(tempToken);
-        if (payload) {
-          userId = payload.userId as string;
-          userEmail = payload.email as string;
-        }
-      } catch (error) {
-        console.log('Temp token verification failed, using default admin');
-      }
-    }
+    await recordLoginAttempt(userEmail, ipAddress, userAgent, true);
 
     // 2FA認証済みトークンを生成
     const token = await createTwoFactorVerifiedToken(userId, userEmail);

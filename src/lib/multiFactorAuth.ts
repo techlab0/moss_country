@@ -17,8 +17,8 @@ export interface AuthResult {
 
 // パスワード認証
 export async function authenticateUser(email: string, password: string): Promise<AuthResult> {
-  const user = findUserByEmail(email);
-  
+  const user = await findUserByEmail(email);
+
   if (!user) {
     return { success: false, message: '認証情報が正しくありません' };
   }
@@ -68,7 +68,7 @@ export async function verifyTwoFactor(tempToken: string, code: string, method: s
       return { success: false, message: '無効なトークンです' };
     }
 
-    const user = findUserById(payload.userId);
+    const user = await findUserById(payload.userId);
     if (!user) {
       return { success: false, message: 'ユーザーが見つかりません' };
     }
@@ -77,7 +77,7 @@ export async function verifyTwoFactor(tempToken: string, code: string, method: s
     
     switch (method) {
       case 'sms':
-        isValid = verifySMSCode(user.id, code);
+        isValid = await verifySMSCode(user.id, code);
         break;
       case 'device':
         isValid = verifyDeviceCode(user.id, code);
@@ -95,9 +95,9 @@ export async function verifyTwoFactor(tempToken: string, code: string, method: s
 
     // 最終認証済みトークンを生成
     const finalToken = await createUserToken(user.id, user.email, user.role, true);
-    
+
     // 最終ログイン時刻を更新
-    updateUser(user.id, { lastLogin: new Date() });
+    await updateUser(user.id, { lastLogin: new Date() });
     
     return {
       success: true,
@@ -112,7 +112,7 @@ export async function verifyTwoFactor(tempToken: string, code: string, method: s
 
 // 2FAを設定
 export async function setupTwoFactor(userId: string, method: 'sms' | 'device', phoneNumber?: string): Promise<AuthResult> {
-  const user = findUserById(userId);
+  const user = await findUserById(userId);
   if (!user) {
     return { success: false, message: 'ユーザーが見つかりません' };
   }
@@ -121,15 +121,15 @@ export async function setupTwoFactor(userId: string, method: 'sms' | 'device', p
     if (!phoneNumber || !isValidPhoneNumber(phoneNumber)) {
       return { success: false, message: '有効な電話番号を入力してください' };
     }
-    
+
     const normalizedPhone = normalizePhoneNumber(phoneNumber);
-    updateUser(userId, {
+    await updateUser(userId, {
       twoFactorEnabled: true,
       twoFactorMethod: 'sms',
       phoneNumber: normalizedPhone,
     });
   } else if (method === 'device') {
-    updateUser(userId, {
+    await updateUser(userId, {
       twoFactorEnabled: true,
       twoFactorMethod: 'device',
     });

@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 import { Cart, CartItem, Product, ProductVariant, ShippingMethod } from '@/types/ecommerce';
 import { debounce } from '@/lib/debounce';
-import { inventoryService } from '@/lib/inventoryService';
 
 // 配送方法の定義（札幌からの配送）
 const SHIPPING_METHODS: ShippingMethod[] = [
@@ -290,118 +289,56 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart, debouncedSaveCart]);
 
   // カート操作関数（バリデーション付き）
-  const addToCart = (product: Product, quantity: number, variant?: ProductVariant) => {
+  // 在庫の可否はここでは判定しない（ブラウザローカルの在庫情報は信頼できるソースにならないため）。
+  // 実際の在庫確保・上限チェックは決済作成時にサーバー側（Sanityのproduct.stockQuantity/reserved）で行う。
+  const addToCart = useCallback((product: Product, quantity: number, variant?: ProductVariant) => {
     try {
       // 入力バリデーション
       if (!product || !product._id) {
         throw new Error('有効な商品が指定されていません');
       }
-      
+
       if (!Number.isInteger(quantity) || quantity < 1) {
         throw new Error('数量は1以上の整数である必要があります');
       }
-      
+
       if (quantity > 99) {
         throw new Error('一度に追加できる数量は99個までです');
       }
-      
-      // 在庫サービスによる在庫チェック（開発中は一時的に無効化）
-      if (process.env.NODE_ENV !== 'development') {
-        if (!inventoryService.isInStock(product._id, variant?._key, quantity)) {
-          const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
-          throw new Error(`在庫不足です。残り${availableStock}個まで追加可能です`);
-        }
-        
-        // 在庫予約の実行
-        const reserveSuccess = inventoryService.reserveStock(product._id, quantity, variant?._key);
-        if (!reserveSuccess) {
-          const availableStock = inventoryService.getAvailableStock(product._id, variant?._key);
-          throw new Error(`在庫予約に失敗しました。残り${availableStock}個まで追加可能です`);
-        }
-      } else {
-        // 開発環境では在庫チェックをスキップ（Web Payments SDKテスト用）
-        console.log(`🛒 在庫チェックをスキップして商品を追加: ${product.name} x${quantity}`);
-      }
-      
+
       dispatch({ type: 'ADD_ITEM', payload: { product, quantity, variant } });
     } catch (error) {
       console.error('Failed to add item to cart:', error);
       // UIに表示するためのエラーを再投げ
       throw error;
     }
-  };
+  }, []);
 
   const removeFromCart = useCallback((productId: string, variantKey?: string) => {
-    // カートから削除前に在庫予約を解除
-    const itemKey = getItemKey(productId, variantKey);
-    const existingItem = cart.items.find(item => 
-      getItemKey(item.product._id, item.variant?._key) === itemKey
-    );
-    
-    if (existingItem) {
-      // 在庫予約を解除
-      inventoryService.releaseStock(productId, existingItem.quantity, variantKey);
-    }
-    
     dispatch({ type: 'REMOVE_ITEM', payload: { productId, variantKey } });
-  }, [cart.items]);
+  }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number, variantKey?: string) => {
     try {
-      const itemKey = getItemKey(productId, variantKey);
-      const existingItem = cart.items.find(item => 
-        getItemKey(item.product._id, item.variant?._key) === itemKey
-      );
-      
-      if (!existingItem) return;
-      
       // 入力値のバリデーション
       if (!Number.isInteger(quantity) || quantity < 1) {
         throw new Error('数量は1以上の整数である必要があります');
       }
-      
+
       if (quantity > 99) {
         throw new Error('一度に選択できる数量は99個までです');
       }
-      
-      const quantityDiff = quantity - existingItem.quantity;
-      
-      if (quantityDiff > 0) {
-        // 数量増加：追加の在庫予約が必要
-        if (!inventoryService.isInStock(productId, variantKey, quantityDiff)) {
-          const availableStock = inventoryService.getAvailableStock(productId, variantKey);
-          throw new Error(`在庫不足です。残り${availableStock + existingItem.quantity}個まで変更可能です`);
-        }
-        
-        const reserveSuccess = inventoryService.reserveStock(productId, quantityDiff, variantKey);
-        if (!reserveSuccess) {
-          const availableStock = inventoryService.getAvailableStock(productId, variantKey);
-          throw new Error(`在庫予約に失敗しました。残り${availableStock + existingItem.quantity}個まで変更可能です`);
-        }
-      } else if (quantityDiff < 0) {
-        // 数量減少：在庫予約を解除
-        inventoryService.releaseStock(productId, Math.abs(quantityDiff), variantKey);
-      }
-      
+
       dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity, variantKey } });
     } catch (error) {
       console.error('Cart quantity update failed:', error);
       throw error; // エラーを再投げして呼び出し元で処理
     }
-  }, [cart.items]);
+  }, []);
 
   const clearCart = useCallback(() => {
-    // カート内のすべてのアイテムの在庫予約を解除
-    cart.items.forEach(item => {
-      inventoryService.releaseStock(
-        item.product._id, 
-        item.quantity, 
-        item.variant?._key
-      );
-    });
-    
     dispatch({ type: 'CLEAR_CART' });
-  }, [cart.items]);
+  }, []);
 
   const setShippingMethod = useCallback((method: ShippingMethod) => {
     dispatch({ type: 'SET_SHIPPING_METHOD', payload: method });

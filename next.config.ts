@@ -23,6 +23,38 @@ const nextConfig: NextConfig = {
   trailingSlash: false,
   compress: true, // gzip圧縮
   poweredByHeader: false, // セキュリティのためX-Powered-Byヘッダーを非表示
+  async headers() {
+    // 注意: Content-Security-Policyは、Square Web Payments SDK（外部スクリプト・iframe）や
+    // Sanity Studio（/admin/cms）を壊さないよう、本番の決済導線で十分に検証してから
+    // 別途追加すること。ここではCSPを除く、互換性リスクの低いヘッダーのみ設定する。
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ];
+  },
   experimental: {
     scrollRestoration: true,
   },

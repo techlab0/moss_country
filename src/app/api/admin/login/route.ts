@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // ログイン試行制限をチェック
-    const loginCheck = checkLoginAttempts(email, ipAddress);
+    const loginCheck = await checkLoginAttempts(email, ipAddress);
     if (loginCheck.isBlocked) {
       console.log('Login blocked for:', email, 'IP:', ipAddress, 'Reason:', loginCheck.reason);
-      
+
       // ブロック状態を記録
-      recordLoginAttempt(email, ipAddress, userAgent, false, loginCheck.reason);
+      await recordLoginAttempt(email, ipAddress, userAgent, false, loginCheck.reason);
       
       const message = loginCheck.lockoutUntil 
         ? `ログイン試行回数の制限に達しました。${loginCheck.lockoutUntil.toLocaleString('ja-JP')}まで待ってからお試しください。`
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       );
       
       // ログイン失敗を記録（高度セキュリティシステム）
-      recordLoginAttempt(email, ipAddress, userAgent, false, 'user_not_found');
+      await recordLoginAttempt(email, ipAddress, userAgent, false, 'user_not_found');
       
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       );
       
       // ログイン失敗を記録（高度セキュリティシステム）
-      recordLoginAttempt(email, ipAddress, userAgent, false, 'invalid_password');
+      await recordLoginAttempt(email, ipAddress, userAgent, false, 'invalid_password');
       
       return NextResponse.json(
         { error: '認証情報が正しくありません' },
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       );
 
       // ログイン成功を記録（高度セキュリティシステム）
-      recordLoginAttempt(email, ipAddress, userAgent, true);
+      await recordLoginAttempt(email, ipAddress, userAgent, true);
 
       return response;
     }

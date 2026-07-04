@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square'
 import { client } from '@/lib/sanity'
+import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing'
+import { InventoryService } from '@/lib/inventory'
 import type { Cart, CheckoutFormData } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -24,6 +26,28 @@ export async function POST(request: NextRequest) {
     if (!cart.items || cart.items.length === 0) {
       return NextResponse.json(
         { error: 'Cart is empty' },
+        { status: 400 }
+      )
+    }
+
+    // 価格改ざん対策: クライアント申告額を信用せず、Sanityの正規価格から再計算する
+    let totals
+    try {
+      totals = await recalculateCartTotals(cart)
+    } catch (error) {
+      if (error instanceof InvalidCartError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
+    }
+
+    // 決済リンクを発行する前に在庫を確保する。Sanityのproduct.stockQuantity/reservedに
+    // 対するアトミックな増減を使うため、同時に複数の注文が入っても売り越しが起きない。
+    const inventoryItems = cart.items.map(item => ({ productId: item.product._id, quantity: item.quantity }))
+    const reservation = await InventoryService.reserveCartItems(inventoryItems)
+    if (!reservation.success) {
+      return NextResponse.json(
+        { error: `在庫が不足しています（商品ID: ${reservation.productId}）` },
         { status: 400 }
       )
     }
@@ -51,10 +75,10 @@ export async function POST(request: NextRequest) {
         price: item.price,
         variant: item.variant?.name || null,
       })),
-      subtotal: cart.subtotal,
-      shippingCost: cart.shippingCost,
-      tax: cart.tax,
-      total: cart.total,
+      subtotal: totals.subtotal,
+      shippingCost: totals.shippingCost,
+      tax: totals.tax,
+      total: totals.total,
       status: 'pending',
       paymentStatus: 'pending',
       shippingAddress: orderData.shippingAddress,
@@ -79,64 +103,65 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     }
 
-    // Save order to Sanity
-    const createdOrder = await client.create(orderDoc)
-    
-    if (!createdOrder._id) {
-      throw new Error('Failed to create order in database')
-    }
+    let createdOrder: { _id: string }
+    let paymentLink: Awaited<ReturnType<typeof createPaymentLink>>
 
-    // Create Square Payment Link
-    const idempotencyKey = uuidv4()
-    const paymentNote = `Order ${orderNumber} - ${cart.items.length} item(s)`
-    
-    const squareRequest = {
-      idempotencyKey,
-      quickPay: {
-        name: `MOSS COUNTRY Order ${orderNumber}`,
-        priceMoney: {
-          amount: convertToSquareAmount(cart.total),
-          currency: SQUARE_CONFIG.currency,
-        },
-        locationId: SQUARE_CONFIG.locationId,
-      },
-      paymentNote,
-      checkoutOptions: {
-        allowTipping: false,
-        redirectUrl: `${SQUARE_CONFIG.appBaseUrl}/payment/success?order=${orderNumber}`,
-        merchantSupportEmail: 'support@moss-country.com',
-      },
-      prePopulatedData: {
-        buyerEmail: customerData.email,
-        buyerPhoneNumber: customerData.phone,
-        buyerAddress: {
-          addressLine1: orderData.shippingAddress.address1,
-          addressLine2: orderData.shippingAddress.address2 || undefined,
-          locality: orderData.shippingAddress.city,
-          administrativeDistrictLevel1: orderData.shippingAddress.state,
-          postalCode: orderData.shippingAddress.postalCode,
-          country: orderData.shippingAddress.country,
-        },
-      },
-    }
-
-    const paymentLink = await createPaymentLink(squareRequest)
-
-    // Update order with Square IDs
-    await client
-      .patch(createdOrder._id)
-      .set({
-        squareOrderId: paymentLink.orderId,
-        updatedAt: new Date().toISOString(),
-      })
-      .commit()
-
-    // Reserve inventory for this order
     try {
-      await reserveInventory(cart.items)
-    } catch (inventoryError) {
-      console.warn('Failed to reserve inventory:', inventoryError)
-      // Continue with payment flow even if inventory reservation fails
+      // Save order to Sanity
+      createdOrder = await client.create(orderDoc)
+
+      if (!createdOrder._id) {
+        throw new Error('Failed to create order in database')
+      }
+
+      // Create Square Payment Link
+      const idempotencyKey = uuidv4()
+      const paymentNote = `Order ${orderNumber} - ${cart.items.length} item(s)`
+
+      const squareRequest = {
+        idempotencyKey,
+        quickPay: {
+          name: `MOSS COUNTRY Order ${orderNumber}`,
+          priceMoney: {
+            amount: convertToSquareAmount(totals.total),
+            currency: SQUARE_CONFIG.currency,
+          },
+          locationId: SQUARE_CONFIG.locationId,
+        },
+        paymentNote,
+        checkoutOptions: {
+          allowTipping: false,
+          redirectUrl: `${SQUARE_CONFIG.appBaseUrl}/payment/success?order=${orderNumber}`,
+          merchantSupportEmail: 'support@moss-country.com',
+        },
+        prePopulatedData: {
+          buyerEmail: customerData.email,
+          buyerPhoneNumber: customerData.phone,
+          buyerAddress: {
+            addressLine1: orderData.shippingAddress.address1,
+            addressLine2: orderData.shippingAddress.address2 || undefined,
+            locality: orderData.shippingAddress.city,
+            administrativeDistrictLevel1: orderData.shippingAddress.state,
+            postalCode: orderData.shippingAddress.postalCode,
+            country: orderData.shippingAddress.country,
+          },
+        },
+      }
+
+      paymentLink = await createPaymentLink(squareRequest)
+
+      // Update order with Square IDs
+      await client
+        .patch(createdOrder._id)
+        .set({
+          squareOrderId: paymentLink.orderId,
+          updatedAt: new Date().toISOString(),
+        })
+        .commit()
+    } catch (error) {
+      // 注文作成・決済リンク発行に失敗した場合、確保済みの在庫予約を解放する
+      await InventoryService.releaseCartItems(inventoryItems)
+      throw error
     }
 
     return NextResponse.json({
@@ -146,7 +171,7 @@ export async function POST(request: NextRequest) {
         orderId: createdOrder._id,
         orderNumber,
         squareOrderId: paymentLink.orderId,
-        total: cart.total,
+        total: totals.total,
       },
     })
 
@@ -163,46 +188,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Reserve inventory for order items
- */
-async function reserveInventory(items: Cart['items']) {
-  for (const item of items) {
-    try {
-      // Find inventory record for this product
-      const inventoryQuery = `
-        *[_type == "inventory" && product._ref == $productId][0] {
-          _id,
-          quantity,
-          reserved
-        }
-      `
-      
-      const inventory = await client.fetch(inventoryQuery, { 
-        productId: item.product._id 
-      })
-
-      if (inventory) {
-        // Update reserved quantity
-        const newReserved = (inventory.reserved || 0) + item.quantity
-        const newAvailable = inventory.quantity - newReserved
-
-        await client
-          .patch(inventory._id)
-          .set({
-            reserved: newReserved,
-            available: newAvailable,
-            lastUpdated: new Date().toISOString(),
-          })
-          .commit()
-
-        console.log(`Reserved ${item.quantity} units of product ${item.product._id}`)
-      } else {
-        console.warn(`No inventory record found for product ${item.product._id}`)
-      }
-    } catch (error) {
-      console.error(`Failed to reserve inventory for product ${item.product._id}:`, error)
-      throw error
-    }
-  }
-}

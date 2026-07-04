@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
     
     // 認証オプション生成の場合
     if (body.action === 'generate-options') {
-      const token = request.cookies.get('admin-token')?.value;
+      // ログイン時の2FA検証はパスワード認証直後の一時セッションを使う（本セッションはまだ発行されていない）
+      const token = request.cookies.get('admin-temp-session')?.value;
       if (!token) {
         return NextResponse.json(
           { error: '認証が必要です' },
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
 
     // 認証検証の場合
     if (body.action === 'verify-authentication') {
-      const token = request.cookies.get('admin-token')?.value;
+      // ログイン時の2FA検証はパスワード認証直後の一時セッションを使う（本セッションはまだ発行されていない）
+      const token = request.cookies.get('admin-temp-session')?.value;
       if (!token) {
         return NextResponse.json(
           { error: '認証が必要です' },
