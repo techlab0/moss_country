@@ -106,9 +106,10 @@ export class InventoryService {
         return false;
       }
 
-      // 予約在庫を増加
+      // 予約在庫を増加（reservedフィールドが未設定のドキュメントでも失敗しないよう、先に0で初期化する）
       await client
         .patch(productId)
+        .setIfMissing({ reserved: 0 })
         .inc({ reserved: quantity })
         .commit();
 
@@ -141,6 +142,7 @@ export class InventoryService {
       if (releaseAmount > 0) {
         await client
           .patch(productId)
+          .setIfMissing({ reserved: 0 })
           .inc({ reserved: -releaseAmount })
           .commit();
 
@@ -185,7 +187,8 @@ export class InventoryService {
       // 実在庫と予約在庫の両方を減少
       await client
         .patch(productId)
-        .dec({ 
+        .setIfMissing({ stockQuantity: 0, reserved: 0 })
+        .dec({
           stockQuantity: quantity,
           reserved: Math.min(quantity, currentReserved)
         })
@@ -214,6 +217,7 @@ export class InventoryService {
     try {
       await client
         .patch(productId)
+        .setIfMissing({ stockQuantity: 0 })
         .inc({ stockQuantity: quantity })
         .commit();
 
