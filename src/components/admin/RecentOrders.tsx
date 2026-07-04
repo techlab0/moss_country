@@ -8,16 +8,21 @@ interface Order {
   orderNumber: string;
   customerName: string;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered';
-  createdAt: Date;
+  status: string;
+  createdAt: string;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: '未処理', color: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: '支払い済み', color: 'bg-emerald-100 text-emerald-800' },
+  confirmed: { label: '確認済み', color: 'bg-blue-100 text-blue-800' },
   processing: { label: '処理中', color: 'bg-blue-100 text-blue-800' },
   shipped: { label: '発送済', color: 'bg-green-100 text-green-800' },
   delivered: { label: '配達完了', color: 'bg-gray-100 text-gray-800' },
+  cancelled: { label: 'キャンセル', color: 'bg-red-100 text-red-800' },
+  refunded: { label: '返金済み', color: 'bg-orange-100 text-orange-800' },
 };
+const defaultStatusConfig = { label: '不明', color: 'bg-gray-100 text-gray-800' };
 
 export function RecentOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -29,16 +34,20 @@ export function RecentOrders() {
 
   const fetchOrders = async () => {
     try {
-      // 注文システムが実装されたらここでAPIを呼び出し
-      // const response = await fetch('/api/admin/orders/recent');
-      // if (!response.ok) {
-      //   throw new Error('注文データの取得に失敗しました');
-      // }
-      // const data = await response.json();
-      // setOrders(data.orders);
-      
-      // 現在は注文システムが未実装のため空の状態を表示
-      setOrders([]);
+      const response = await fetch('/api/admin/orders/recent');
+      if (!response.ok) {
+        throw new Error('注文データの取得に失敗しました');
+      }
+      const data = await response.json();
+      const fetchedOrders: Order[] = (data.orders || []).map((order: { _id: string; orderNumber: string; customerName?: string; total?: number; status?: string; createdAt?: string }) => ({
+        id: order._id,
+        orderNumber: order.orderNumber,
+        customerName: order.customerName?.trim() || '不明',
+        total: order.total || 0,
+        status: order.status || 'pending',
+        createdAt: order.createdAt || new Date().toISOString(),
+      }));
+      setOrders(fetchedOrders);
       setLoading(false);
     } catch (error) {
       console.error('Orders fetch error:', error);
@@ -96,14 +105,14 @@ export function RecentOrders() {
                   </Link>
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      statusConfig[order.status].color
+                      (statusConfig[order.status] || defaultStatusConfig).color
                     }`}
                   >
-                    {statusConfig[order.status].label}
+                    {(statusConfig[order.status] || defaultStatusConfig).label}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  {order.customerName} • {order.createdAt.toLocaleDateString('ja-JP')}
+                  {order.customerName} • {new Date(order.createdAt).toLocaleDateString('ja-JP')}
                 </p>
               </div>
               <div className="text-right">
@@ -115,12 +124,11 @@ export function RecentOrders() {
           </div>
         ))}
       </div>
-      
+
       {orders.length === 0 && (
         <div className="px-6 py-8 text-center">
           <div className="text-gray-400 text-4xl mb-2">📦</div>
           <p className="text-gray-500 mb-2">最近の注文がありません</p>
-          <p className="text-sm text-gray-400">注文システムが実装されるとここに表示されます</p>
         </div>
       )}
     </div>

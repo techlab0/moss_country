@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductsWithInventory } from '@/lib/sanity';
+import { getProductsWithInventory, writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -20,10 +20,14 @@ export async function GET(request: NextRequest) {
       (product.stockQuantity || 0) <= (product.lowStockThreshold || 5)
     ).length;
     
-    // 現在は注文データがないため、統計は0に設定
-    // 注文システムが実装されたら実際のデータを使用
-    const totalOrders = 0;
-    const totalRevenue = 0;
+    // 注文データを取得して集計（キャッシュのない writeClient で常に最新を取得）
+    const orders: Array<{ total?: number; paymentStatus?: string }> = await writeClient.fetch(
+      `*[_type == "order"]{ total, paymentStatus }`
+    );
+    const totalOrders = orders.length;
+    const totalRevenue = orders
+      .filter(order => order.paymentStatus === 'paid')
+      .reduce((sum, order) => sum + (order.total || 0), 0);
     
     // 在庫切れ商品数
     const outOfStockItems = products.filter(product => 
