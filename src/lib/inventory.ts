@@ -281,6 +281,15 @@ export class InventoryService {
     }
   }
 
+  /**
+   * カート内の全アイテムの在庫を復元する（決済確定済みの注文を管理者がキャンセル/削除した場合に使用）。
+   */
+  static async restoreCartItems(items: Array<{ productId: string; quantity: number }>, orderId?: string): Promise<void> {
+    for (const item of items) {
+      await this.restockProduct(item.productId, item.quantity, `管理者による注文キャンセル - ${item.quantity}個復元${orderId ? ` (注文: ${orderId})` : ''}`);
+    }
+  }
+
   // 在庫変更ログを記録
   private static async logInventoryChange(update: InventoryUpdate): Promise<void> {
     try {

@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       status: 'pending',
       // 銀行振込は入金確認まで、代金引換は配達完了まで未入金として扱う
       paymentStatus: 'pending',
+      paymentMethod: orderData.paymentMethod,
       shippingAddress: orderData.shippingAddress,
       billingAddress: orderData.sameAsShipping
         ? orderData.shippingAddress

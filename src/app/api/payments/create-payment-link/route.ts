@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       total: totals.total,
       status: 'pending',
       paymentStatus: 'pending',
+      paymentMethod: 'credit_card',
       shippingAddress: orderData.shippingAddress,
       billingAddress: orderData.sameAsShipping 
         ? orderData.shippingAddress 

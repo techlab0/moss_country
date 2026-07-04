@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
+import { writeClient } from '@/lib/sanity';
 
-// モック顧客データ
+interface OrderForCustomerAggregation {
+  customer?: { email?: string; firstName?: string; lastName?: string; phone?: string };
+  total?: number;
+  paymentStatus?: string;
+  createdAt?: string;
+  shippingAddress?: { state?: string; city?: string };
+}
+
+// 顧客は独立したデータベースを持たず、全注文をメールアドレスで集計して算出する
+// （GROQはgroup-by集計ができないため、既存のdashboard/statsと同じ「全件取得→JSでreduce」方式）
 export async function GET(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -9,50 +19,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // 実際はデータベースから取得することになります
-    const customers = [
-      {
-        id: 'cust_001',
-        name: '田中 太郎',
-        email: 'tanaka@example.com',
-        phone: '090-1234-5678',
-        address: '北海道札幌市中央区',
-        totalOrders: 3,
-        totalSpent: 15800,
-        lastOrderDate: '2024-01-15',
-        createdAt: '2023-12-01'
-      },
-      {
-        id: 'cust_002', 
-        name: '佐藤 花子',
-        email: 'sato@example.com',
-        phone: '080-9876-5432',
-        address: '北海道札幌市北区',
-        totalOrders: 1,
-        totalSpent: 4500,
-        lastOrderDate: '2024-01-10',
-        createdAt: '2024-01-08'
-      },
-      {
-        id: 'cust_003',
-        name: '鈴木 一郎',
-        email: 'suzuki@example.com',
-        phone: '070-5555-1111',
-        totalOrders: 5,
-        totalSpent: 28900,
-        lastOrderDate: '2024-01-18',
-        createdAt: '2023-11-15'
-      },
-      {
-        id: 'cust_004',
-        name: '高橋 美奈',
-        email: 'takahashi@example.com',
-        totalOrders: 2,
-        totalSpent: 8600,
-        lastOrderDate: '2024-01-12',
-        createdAt: '2023-12-20'
+    const orders: OrderForCustomerAggregation[] = await writeClient.fetch(
+      `*[_type == "order"]{ customer, total, paymentStatus, createdAt, shippingAddress }`
+    );
+
+    const byEmail = new Map<string, {
+      id: string;
+      name: string;
+      email: string;
+      phone?: string;
+      address?: string;
+      totalOrders: number;
+      totalSpent: number;
+      lastOrderDate?: string;
+      createdAt?: string;
+    }>();
+
+    for (const order of orders) {
+      const email = order.customer?.email;
+      if (!email) continue;
+
+      const existing = byEmail.get(email);
+      const orderDate = order.createdAt;
+      const name = `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim() || '不明';
+      const address = order.shippingAddress
+        ? `${order.shippingAddress.state || ''}${order.shippingAddress.city || ''}`
+        : undefined;
+
+      if (!existing) {
+        byEmail.set(email, {
+          id: email,
+          name,
+          email,
+          phone: order.customer?.phone,
+          address,
+          totalOrders: 1,
+          totalSpent: order.paymentStatus === 'paid' ? (order.total || 0) : 0,
+          lastOrderDate: orderDate,
+          createdAt: orderDate,
+        });
+      } else {
+        existing.totalOrders += 1;
+        if (order.paymentStatus === 'paid') {
+          existing.totalSpent += order.total || 0;
+        }
+        if (orderDate && (!existing.lastOrderDate || orderDate > existing.lastOrderDate)) {
+          existing.lastOrderDate = orderDate;
+          existing.name = name;
+          existing.phone = order.customer?.phone || existing.phone;
+          existing.address = address || existing.address;
+        }
+        if (orderDate && (!existing.createdAt || orderDate < existing.createdAt)) {
+          existing.createdAt = orderDate;
+        }
       }
-    ];
+    }
+
+    const customers = Array.from(byEmail.values()).sort((a, b) =>
+      (b.lastOrderDate || '').localeCompare(a.lastOrderDate || '')
+    );
 
     return NextResponse.json({
       success: true,

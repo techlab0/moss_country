@@ -45,9 +45,9 @@ function PaymentSuccessContent() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/orders" className="w-full sm:w-auto">
+            <Link href="/" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto">
-                注文履歴を確認
+                トップページに戻る
               </Button>
             </Link>
             <Link href="/products" className="w-full sm:w-auto">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface OrderDetail {
@@ -8,46 +9,57 @@ interface OrderDetail {
   orderNumber: string;
   customerName: string;
   customerEmail: string;
-  customerPhone: string;
+  customerPhone?: string;
   shippingAddress: {
-    zip: string;
-    prefecture: string;
-    city: string;
-    address1: string;
+    postalCode?: string;
+    state?: string;
+    city?: string;
+    address1?: string;
     address2?: string;
   };
   total: number;
   subtotal: number;
-  shippingFee: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  paymentMethod: string;
+  shippingCost: number;
+  tax: number;
+  status: string;
+  paymentMethod?: string;
   paymentStatus: string;
-  createdAt: Date;
-  updatedAt: Date;
+  trackingNumber?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
   items: OrderItem[];
-  statusHistory: StatusHistoryItem[];
 }
 
 interface OrderItem {
-  id: string;
-  name: string;
+  productName: string;
   quantity: number;
   price: number;
-  image?: string;
+  variant?: string;
 }
 
-interface StatusHistoryItem {
-  status: string;
-  timestamp: Date;
-  note?: string;
-}
-
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "未処理", color: "bg-yellow-100 text-yellow-800" },
+  paid: { label: "支払い済み", color: "bg-emerald-100 text-emerald-800" },
   processing: { label: "処理中", color: "bg-blue-100 text-blue-800" },
   shipped: { label: "発送済", color: "bg-green-100 text-green-800" },
   delivered: { label: "配達完了", color: "bg-gray-100 text-gray-800" },
   cancelled: { label: "キャンセル", color: "bg-red-100 text-red-800" },
+  refunded: { label: "返金済み", color: "bg-orange-100 text-orange-800" },
+};
+
+const paymentStatusLabels: Record<string, string> = {
+  pending: "未払い",
+  paid: "支払い済み",
+  failed: "失敗",
+  refunded: "返金済み",
+  partially_refunded: "一部返金",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  credit_card: "クレジットカード",
+  bank_transfer: "銀行振込",
+  cash_on_delivery: "代金引換",
 };
 
 interface OrderDetailPageProps {
@@ -55,91 +67,159 @@ interface OrderDetailPageProps {
 }
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
+  const router = useRouter();
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // 編集用フォーム状態
+  const [statusInput, setStatusInput] = useState("pending");
+  const [paymentStatusInput, setPaymentStatusInput] = useState("pending");
+  const [trackingNumberInput, setTrackingNumberInput] = useState("");
+  const [notesInput, setNotesInput] = useState("");
 
   useEffect(() => {
     const fetchOrder = async () => {
       const { id } = await params;
+      setOrderId(id);
 
-      // TODO: 実際のAPIから注文詳細を取得
-      // 現在はモックデータを使用
-      setTimeout(() => {
-        setOrder({
-          id,
-          orderNumber: "ORD-20241224-001",
-          customerName: "田中 花子",
-          customerEmail: "tanaka@example.com",
-          customerPhone: "090-1234-5678",
+      try {
+        const response = await fetch(`/api/admin/orders/${id}`);
+        if (response.status === 404) {
+          setNotFound(true);
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("注文詳細の取得に失敗しました");
+        }
+        const data = await response.json();
+        const o = data.order;
+
+        const mapped: OrderDetail = {
+          id: o._id,
+          orderNumber: o.orderNumber,
+          customerName: `${o.customer?.firstName || ""} ${o.customer?.lastName || ""}`.trim() || "不明",
+          customerEmail: o.customer?.email || "不明",
+          customerPhone: o.customer?.phone,
           shippingAddress: {
-            zip: "060-0001",
-            prefecture: "北海道",
-            city: "札幌市中央区",
-            address1: "北1条西1丁目1-1",
-            address2: "マンション101",
+            postalCode: o.shippingAddress?.postalCode,
+            state: o.shippingAddress?.state,
+            city: o.shippingAddress?.city,
+            address1: o.shippingAddress?.address1,
+            address2: o.shippingAddress?.address2,
           },
-          total: 8500,
-          subtotal: 7700,
-          shippingFee: 800,
-          status: "pending",
-          paymentMethod: "クレジットカード",
-          paymentStatus: "支払済み",
-          createdAt: new Date("2024-12-24T10:30:00"),
-          updatedAt: new Date("2024-12-24T10:30:00"),
-          items: [
-            {
-              id: "1",
-              name: "ミニカプセルテラリウム",
-              quantity: 1,
-              price: 5500,
-              image: "/images/products/mini-terrarium.jpg",
-            },
-            {
-              id: "2",
-              name: "苔玉セット",
-              quantity: 1,
-              price: 2200,
-              image: "/images/products/moss-ball.jpg",
-            },
-          ],
-          statusHistory: [
-            {
-              status: "注文受付",
-              timestamp: new Date("2024-12-24T10:30:00"),
-              note: "注文が正常に受け付けられました",
-            },
-          ],
-        });
+          total: o.total || 0,
+          subtotal: o.subtotal || 0,
+          shippingCost: o.shippingCost || 0,
+          tax: o.tax || 0,
+          status: o.status || "pending",
+          paymentMethod: o.paymentMethod,
+          paymentStatus: o.paymentStatus || "pending",
+          trackingNumber: o.trackingNumber,
+          notes: o.notes,
+          createdAt: o.createdAt || new Date().toISOString(),
+          updatedAt: o.updatedAt,
+          items: (o.items || []).map((item: { product?: { name?: string }; quantity: number; price: number; variant?: string }) => ({
+            productName: item.product?.name || "商品名不明",
+            quantity: item.quantity,
+            price: item.price,
+            variant: item.variant,
+          })),
+        };
+
+        setOrder(mapped);
+        setStatusInput(mapped.status);
+        setPaymentStatusInput(mapped.paymentStatus);
+        setTrackingNumberInput(mapped.trackingNumber || "");
+        setNotesInput(mapped.notes || "");
+      } catch (err) {
+        console.error("Order fetch error:", err);
+        setNotFound(true);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
     fetchOrder();
   }, [params]);
 
-  const updateStatus = async (newStatus: OrderDetail["status"]) => {
-    if (!order) return;
+  const handleSave = async () => {
+    if (!orderId || !order) return;
+    setSaving(true);
 
-    setUpdating(true);
-
-    // TODO: APIでステータス更新
-    setTimeout(() => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: statusInput,
+          paymentStatus: paymentStatusInput,
+          trackingNumber: trackingNumberInput,
+          notes: notesInput,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("注文の更新に失敗しました");
+      }
       setOrder({
         ...order,
-        status: newStatus,
-        updatedAt: new Date(),
-        statusHistory: [
-          ...order.statusHistory,
-          {
-            status: statusConfig[newStatus].label,
-            timestamp: new Date(),
-            note: `ステータスを${statusConfig[newStatus].label}に更新`,
-          },
-        ],
+        status: statusInput,
+        paymentStatus: paymentStatusInput,
+        trackingNumber: trackingNumberInput,
+        notes: notesInput,
+        updatedAt: new Date().toISOString(),
       });
-      setUpdating(false);
-    }, 500);
+      alert("保存しました");
+    } catch (err) {
+      console.error("Order update error:", err);
+      alert(err instanceof Error ? err.message : "注文の更新に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!orderId || !window.confirm("この注文をキャンセルしますか？在庫が確保・確定済みの場合は自動的に戻されます。")) {
+      return;
+    }
+    setStatusInput("cancelled");
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      if (!response.ok) {
+        throw new Error("注文のキャンセルに失敗しました");
+      }
+      setOrder(prev => prev ? { ...prev, status: "cancelled" } : prev);
+    } catch (err) {
+      console.error("Order cancel error:", err);
+      alert(err instanceof Error ? err.message : "注文のキャンセルに失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!orderId || !order) return;
+    if (!window.confirm(`注文「${order.orderNumber}」を完全に削除しますか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("注文の削除に失敗しました");
+      }
+      router.push("/admin/orders");
+    } catch (err) {
+      console.error("Order delete error:", err);
+      alert(err instanceof Error ? err.message : "注文の削除に失敗しました");
+    }
   };
 
   if (loading) {
@@ -151,7 +231,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     );
   }
 
-  if (!order) {
+  if (notFound || !order) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">
@@ -167,10 +247,12 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     );
   }
 
+  const isFinalStatus = order.status === "cancelled" || order.status === "refunded";
+
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <Link
             href="/admin/orders"
@@ -182,18 +264,36 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             {order.orderNumber}
           </h1>
           <p className="text-gray-600">
-            {order.createdAt.toLocaleDateString("ja-JP")}{" "}
-            {order.createdAt.toLocaleTimeString("ja-JP")}
+            {new Date(order.createdAt).toLocaleDateString("ja-JP")}{" "}
+            {new Date(order.createdAt).toLocaleTimeString("ja-JP")}
+            {order.updatedAt && (
+              <span className="ml-3 text-sm text-gray-400">
+                (更新: {new Date(order.updatedAt).toLocaleString("ja-JP")})
+              </span>
+            )}
           </p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <span
-            className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${
-              statusConfig[order.status].color
-            }`}
+            className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${(statusConfig[order.status] || statusConfig.pending).color}`}
           >
-            {statusConfig[order.status].label}
+            {(statusConfig[order.status] || { label: order.status }).label}
           </span>
+          {!isFinalStatus && (
+            <button
+              onClick={handleCancel}
+              disabled={saving}
+              className="px-3 py-1.5 text-sm font-medium text-red-700 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+            >
+              注文をキャンセル
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+          >
+            完全に削除
+          </button>
         </div>
       </div>
 
@@ -206,16 +306,19 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <h2 className="text-lg font-medium">注文商品</h2>
             </div>
             <div className="divide-y">
-              {order.items.map((item) => (
+              {order.items.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={index}
                   className="px-6 py-4 flex items-center space-x-4"
                 >
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
                     🌱
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{item.name}</h3>
+                    <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                    {item.variant && (
+                      <p className="text-sm text-gray-500">バリエーション: {item.variant}</p>
+                    )}
                     <p className="text-sm text-gray-600">
                       単価: ¥{item.price.toLocaleString()} × {item.quantity}
                     </p>
@@ -236,7 +339,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">送料</span>
-                  <span>¥{order.shippingFee.toLocaleString()}</span>
+                  <span>¥{order.shippingCost.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">消費税</span>
+                  <span>¥{order.tax.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span>合計</span>
@@ -246,31 +353,19 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             </div>
           </div>
 
-          {/* ステータス履歴 */}
+          {/* 備考 */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-medium">ステータス履歴</h2>
+              <h2 className="text-lg font-medium">備考</h2>
             </div>
             <div className="px-6 py-4">
-              <div className="space-y-4">
-                {order.statusHistory.map((item, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-moss-green rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{item.status}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.timestamp.toLocaleDateString("ja-JP")}{" "}
-                        {item.timestamp.toLocaleTimeString("ja-JP")}
-                      </p>
-                      {item.note && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {item.note}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <textarea
+                value={notesInput}
+                onChange={(e) => setNotesInput(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green text-sm"
+                placeholder="管理者用のメモを入力"
+              />
             </div>
           </div>
         </div>
@@ -280,26 +375,54 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           {/* ステータス更新 */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-medium">ステータス更新</h2>
+              <h2 className="text-lg font-medium">ステータス編集</h2>
             </div>
-            <div className="px-6 py-4">
-              <select
-                value={order.status}
-                onChange={(e) =>
-                  updateStatus(e.target.value as OrderDetail["status"])
-                }
-                disabled={updating}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">注文ステータス</label>
+                <select
+                  value={statusInput}
+                  onChange={(e) => setStatusInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                >
+                  {Object.entries(statusConfig).map(([status, config]) => (
+                    <option key={status} value={status}>
+                      {config.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">支払いステータス</label>
+                <select
+                  value={paymentStatusInput}
+                  onChange={(e) => setPaymentStatusInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                >
+                  {Object.entries(paymentStatusLabels).map(([status, label]) => (
+                    <option key={status} value={status}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">追跡番号</label>
+                <input
+                  type="text"
+                  value={trackingNumberInput}
+                  onChange={(e) => setTrackingNumberInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                  placeholder="未設定"
+                />
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full px-4 py-2 bg-moss-green text-white rounded-md hover:bg-moss-green/90 disabled:opacity-50"
               >
-                {Object.entries(statusConfig).map(([status, config]) => (
-                  <option key={status} value={status}>
-                    {config.label}
-                  </option>
-                ))}
-              </select>
-              {updating && (
-                <p className="text-sm text-gray-600 mt-2">更新中...</p>
-              )}
+                {saving ? "保存中..." : "保存"}
+              </button>
             </div>
           </div>
 
@@ -319,7 +442,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               </div>
               <div>
                 <p className="text-sm text-gray-600">電話番号</p>
-                <p className="font-medium">{order.customerPhone}</p>
+                <p className="font-medium">{order.customerPhone || "不明"}</p>
               </div>
             </div>
           </div>
@@ -330,9 +453,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <h2 className="text-lg font-medium">配送先情報</h2>
             </div>
             <div className="px-6 py-4">
-              <p className="font-medium">〒{order.shippingAddress.zip}</p>
+              <p className="font-medium">〒{order.shippingAddress.postalCode || "不明"}</p>
               <p className="font-medium">
-                {order.shippingAddress.prefecture}
+                {order.shippingAddress.state}
                 {order.shippingAddress.city}
               </p>
               <p className="font-medium">{order.shippingAddress.address1}</p>
@@ -350,11 +473,13 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             <div className="px-6 py-4 space-y-3">
               <div>
                 <p className="text-sm text-gray-600">支払方法</p>
-                <p className="font-medium">{order.paymentMethod}</p>
+                <p className="font-medium">
+                  {order.paymentMethod ? (paymentMethodLabels[order.paymentMethod] || order.paymentMethod) : "不明"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">支払状況</p>
-                <p className="font-medium">{order.paymentStatus}</p>
+                <p className="font-medium">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</p>
               </div>
             </div>
           </div>
@@ -363,4 +488,3 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     </div>
   );
 }
-

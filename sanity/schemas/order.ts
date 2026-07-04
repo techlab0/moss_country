@@ -148,6 +148,18 @@ export const order = defineType({
       validation: Rule => Rule.required()
     }),
     defineField({
+      name: 'paymentMethod',
+      title: 'Payment Method',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Credit Card', value: 'credit_card' },
+          { title: 'Bank Transfer', value: 'bank_transfer' },
+          { title: 'Cash on Delivery', value: 'cash_on_delivery' }
+        ]
+      }
+    }),
+    defineField({
       name: 'shippingAddress',
       title: 'Shipping Address',
       type: 'object',
