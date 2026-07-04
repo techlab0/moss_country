@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
+import { syncDailySalesToSheet } from '@/lib/googleSheets';
 
 interface LineItemInput {
   salesItemId: string;
@@ -115,6 +116,9 @@ export async function PUT(
 
     const saved = await writeClient.createOrReplace(doc);
 
+    // バックアップ用のGoogleスプレッドシート同期（ベストエフォート、失敗しても保存は成功のまま返す）
+    await syncToSheetBestEffort(date, doc, lineItemsInput);
+
     return NextResponse.json({ dailySales: saved });
   } catch (error) {
     console.error('日別売上保存エラー:', error);
@@ -122,5 +126,77 @@ export async function PUT(
       { error: '日別売上の保存に失敗しました' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * 保存した日別売上のサマリーを計算し、バックアップ用Googleスプレッドシートへ同期する。
+ * ここでの失敗は保存処理の成功に影響させない（ログのみ）。
+ */
+async function syncToSheetBestEffort(
+  date: string,
+  doc: {
+    visitorCount: number;
+    purchaseGroupCount: number;
+    cashAmount: number;
+    payPayAmount: number;
+    manualCardAmount: number;
+    wordOfMouthDiscount: number;
+    adjustment: number;
+  },
+  lineItemsInput: LineItemInput[]
+) {
+  try {
+    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
+    const salesItemsMeta: Array<{ _id: string; category: string; pricingType: string; unitPrice?: number }> = salesItemIds.length
+      ? await writeClient.fetch(
+          `*[_type == "salesItem" && _id in $ids]{ _id, category, pricingType, unitPrice }`,
+          { ids: salesItemIds }
+        )
+      : [];
+    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
+
+    const categorySubtotals: Record<string, number> = {};
+    for (const item of lineItemsInput) {
+      const meta = metaById.get(item.salesItemId);
+      if (!meta) continue;
+      const lineTotal = meta.pricingType === 'fixed'
+        ? (item.quantity || 0) * (meta.unitPrice || 0)
+        : (item.amount || 0);
+      categorySubtotals[meta.category] = (categorySubtotals[meta.category] || 0) + lineTotal;
+    }
+
+    const { start, end } = getJstDayBoundariesUtc(date);
+    const [paidOrders, paidCharges]: [Array<{ total?: number }>, Array<{ amount?: number }>] = await Promise.all([
+      writeClient.fetch(
+        `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
+        { start, end }
+      ),
+      writeClient.fetch(
+        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount }`,
+        { start, end }
+      ),
+    ]);
+    const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const qrChargeTotal = paidCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
+
+    const paymentTotal =
+      doc.cashAmount + doc.payPayAmount + doc.manualCardAmount + doc.adjustment - doc.wordOfMouthDiscount;
+    const grandTotal = paymentTotal + ecTotal + qrChargeTotal;
+
+    await syncDailySalesToSheet({
+      date,
+      visitorCount: doc.visitorCount,
+      purchaseGroupCount: doc.purchaseGroupCount,
+      categorySubtotals,
+      cashAmount: doc.cashAmount,
+      payPayAmount: doc.payPayAmount,
+      manualCardAmount: doc.manualCardAmount,
+      ecTotal,
+      qrChargeTotal,
+      grandTotal,
+    });
+  } catch (error) {
+    console.error('売上サマリー計算またはシート同期に失敗しました（保存自体は成功しています）:', error);
   }
 }
