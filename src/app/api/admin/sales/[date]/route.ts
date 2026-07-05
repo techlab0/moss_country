@@ -4,6 +4,8 @@ import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
 
+type PaymentMethod = 'cash' | 'payPay' | 'card';
+
 interface LineItemInput {
   salesItemId: string;
   cashQuantity?: number;
@@ -12,6 +14,12 @@ interface LineItemInput {
   payPayAmount?: number;
   cardQuantity?: number;
   cardAmount?: number;
+}
+
+interface CustomLineItemInput {
+  name: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
 }
 
 interface SalesItemMeta {
@@ -54,6 +62,7 @@ export async function GET(
           payPayQuantity, payPayAmount,
           cardQuantity, cardAmount
         },
+        customLineItems[]{ name, amount, paymentMethod },
         cashAmount,
         payPayAmount,
         manualCardAmount,
@@ -73,24 +82,29 @@ export async function GET(
     );
     const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-    // 店頭QRコード決済のその日の支払い済み分を、商品ごとに自動集計する（手入力欄には出さず、表示・合計に自動反映するため）
-    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; quantity?: number; salesItemId?: string }> }> = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, quantity, "salesItemId": salesItem._ref } }`,
+    // 店頭QRコード決済のその日の支払い済み分を、商品ごとに自動集計する（カタログ商品はクレジット欄に自動反映、
+    // カタログにない都度入力の商品は「その他」として一覧だけ返す）
+    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; quantity?: number; name?: string; salesItemId?: string }> }> = await writeClient.fetch(
+      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, quantity, name, "salesItemId": salesItem._ref } }`,
       { start, end }
     );
     const qrChargeTotal = paidCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
     const qrChargeItemTotals: Record<string, { quantity: number; amount: number }> = {};
+    const qrChargeCustomItems: Array<{ name: string; amount: number }> = [];
     for (const charge of paidCharges) {
       for (const li of charge.lineItems || []) {
-        if (!li.salesItemId) continue;
-        const existing = qrChargeItemTotals[li.salesItemId] || { quantity: 0, amount: 0 };
-        existing.quantity += li.quantity || 0;
-        existing.amount += li.amount || 0;
-        qrChargeItemTotals[li.salesItemId] = existing;
+        if (li.salesItemId) {
+          const existing = qrChargeItemTotals[li.salesItemId] || { quantity: 0, amount: 0 };
+          existing.quantity += li.quantity || 0;
+          existing.amount += li.amount || 0;
+          qrChargeItemTotals[li.salesItemId] = existing;
+        } else if (li.name) {
+          qrChargeCustomItems.push({ name: li.name, amount: li.amount || 0 });
+        }
       }
     }
 
-    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeItemTotals });
+    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeItemTotals, qrChargeCustomItems });
   } catch (error) {
     console.error('日別売上取得エラー:', error);
     return NextResponse.json(
@@ -117,6 +131,7 @@ export async function PUT(
 
     const body = await request.json();
     const lineItemsInput: LineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
+    const customLineItemsInput: CustomLineItemInput[] = Array.isArray(body.customLineItems) ? body.customLineItems : [];
 
     const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
     const salesItemsMeta: SalesItemMeta[] = salesItemIds.length
@@ -158,6 +173,21 @@ export async function PUT(
       });
     }
 
+    // カタログにない都度入力の商品（普段売っていないもの）
+    const customLineItems = [];
+    for (const item of customLineItemsInput) {
+      const name = typeof item.name === 'string' ? item.name.trim() : '';
+      const amount = Number(item.amount) || 0;
+      if (!name || amount <= 0) continue;
+      const paymentMethod: PaymentMethod = ['cash', 'payPay', 'card'].includes(item.paymentMethod) ? item.paymentMethod : 'cash';
+
+      if (paymentMethod === 'cash') cashTotal += amount;
+      else if (paymentMethod === 'payPay') payPayTotal += amount;
+      else cardTotal += amount;
+
+      customLineItems.push({ _type: 'customLineItem', _key: `custom-${customLineItems.length}-${Date.now()}`, name, amount, paymentMethod });
+    }
+
     const docId = dailySalesDocId(date);
     const doc = {
       _id: docId,
@@ -166,6 +196,7 @@ export async function PUT(
       visitorCount: body.visitorCount ?? 0,
       purchaseGroupCount: body.purchaseGroupCount ?? 0,
       lineItems,
+      customLineItems,
       cashAmount: cashTotal,
       payPayAmount: payPayTotal,
       manualCardAmount: cardTotal,
@@ -198,6 +229,7 @@ async function syncToSheetBestEffort(
   date: string,
   doc: {
     lineItems: Array<{ salesItem: { _ref: string }; cashAmount?: number; payPayAmount?: number; cardAmount?: number }>;
+    customLineItems: Array<{ amount: number }>;
     visitorCount: number;
     purchaseGroupCount: number;
     cashAmount: number;
@@ -218,6 +250,10 @@ async function syncToSheetBestEffort(
       const lineTotal = (item.cashAmount || 0) + (item.payPayAmount || 0) + (item.cardAmount || 0);
       categorySubtotals[meta.category] = (categorySubtotals[meta.category] || 0) + lineTotal;
     }
+    // 都度入力の商品（カタログ外）は「その他」として集計する
+    for (const item of doc.customLineItems) {
+      categorySubtotals.other = (categorySubtotals.other || 0) + (item.amount || 0);
+    }
 
     const { start, end } = getJstDayBoundariesUtc(date);
     const [paidOrders, paidCharges]: [Array<{ total?: number }>, Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }>] = await Promise.all([
@@ -232,7 +268,7 @@ async function syncToSheetBestEffort(
     ]);
     const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const qrChargeTotal = paidCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
-    // 店頭QR決済の商品明細も、手入力分と同じカテゴリ小計に合算する（同じ店舗商品の販売のため）
+    // 店頭QR決済の商品明細も、手入力分と同じカテゴリ小計に合算する（カタログ外の都度入力商品は「その他」扱い）
     for (const charge of paidCharges) {
       for (const li of charge.lineItems || []) {
         const category = li.category || 'other';

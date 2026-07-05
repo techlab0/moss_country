@@ -5,9 +5,10 @@ import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 
 interface LineItemInput {
-  salesItemId: string;
+  salesItemId?: string;
   quantity?: number;
   amount?: number;
+  customName?: string;
 }
 
 // 店頭でカード決済端末を使わずに決済を受け付けるためのQRコード決済リンクを発行する。
@@ -28,34 +29,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '商品を1つ以上選択してください' }, { status: 400 });
     }
 
-    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
-    const salesItemsMeta: Array<{ _id: string; name: string; pricingType: string; unitPrice?: number }> = await writeClient.fetch(
-      `*[_type == "salesItem" && _id in $ids]{ _id, name, pricingType, unitPrice }`,
-      { ids: salesItemIds }
-    );
+    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter((id): id is string => !!id);
+    const salesItemsMeta: Array<{ _id: string; name: string; pricingType: string; unitPrice?: number }> = salesItemIds.length
+      ? await writeClient.fetch(
+          `*[_type == "salesItem" && _id in $ids]{ _id, name, pricingType, unitPrice }`,
+          { ids: salesItemIds }
+        )
+      : [];
     const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
 
     let amount = 0;
     const lineItems = [];
     for (const item of lineItemsInput) {
-      const meta = metaById.get(item.salesItemId);
-      if (!meta) {
-        return NextResponse.json({ error: `商品が見つかりません: ${item.salesItemId}` }, { status: 400 });
-      }
-      const lineTotal = meta.pricingType === 'fixed'
-        ? (item.quantity || 0) * (meta.unitPrice || 0)
-        : (item.amount || 0);
-      if (lineTotal <= 0) continue;
+      if (item.salesItemId) {
+        const meta = metaById.get(item.salesItemId);
+        if (!meta) {
+          return NextResponse.json({ error: `商品が見つかりません: ${item.salesItemId}` }, { status: 400 });
+        }
+        const lineTotal = meta.pricingType === 'fixed'
+          ? (item.quantity || 0) * (meta.unitPrice || 0)
+          : (item.amount || 0);
+        if (lineTotal <= 0) continue;
 
-      amount += lineTotal;
-      lineItems.push({
-        _type: 'lineItem',
-        _key: item.salesItemId,
-        salesItem: { _type: 'reference', _ref: item.salesItemId },
-        name: meta.name,
-        quantity: meta.pricingType === 'fixed' ? item.quantity : undefined,
-        amount: meta.pricingType === 'fixed' ? lineTotal : item.amount,
-      });
+        amount += lineTotal;
+        lineItems.push({
+          _type: 'lineItem',
+          _key: item.salesItemId,
+          salesItem: { _type: 'reference', _ref: item.salesItemId },
+          name: meta.name,
+          quantity: meta.pricingType === 'fixed' ? item.quantity : undefined,
+          amount: meta.pricingType === 'fixed' ? lineTotal : item.amount,
+        });
+      } else if (item.customName && item.customName.trim()) {
+        // カタログにない、普段売っていない商品を都度入力する場合
+        const lineTotal = item.amount || 0;
+        if (lineTotal <= 0) continue;
+
+        amount += lineTotal;
+        lineItems.push({
+          _type: 'lineItem',
+          _key: uuidv4(),
+          name: item.customName.trim(),
+          amount: lineTotal,
+        });
+      }
     }
 
     if (amount <= 0) {

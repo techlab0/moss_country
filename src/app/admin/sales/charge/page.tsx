@@ -18,6 +18,16 @@ interface LineItemState {
   amount: string;
 }
 
+interface CustomItemRow {
+  id: string;
+  name: string;
+  amount: string;
+}
+
+function newCustomItemRow(): CustomItemRow {
+  return { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0' };
+}
+
 interface ChargeLineItem {
   name: string;
   quantity?: number;
@@ -54,6 +64,7 @@ function toNumber(value: string): number {
 export default function InStoreChargePage() {
   const [salesItems, setSalesItems] = useState<SalesItem[]>([]);
   const [lineItemState, setLineItemState] = useState<Record<string, LineItemState>>({});
+  const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
   const [description, setDescription] = useState('');
   const [loadingItems, setLoadingItems] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -100,15 +111,25 @@ export default function InStoreChargePage() {
       }, 0);
   }, [salesItems, lineItemState]);
 
+  const customItemsTotal = useMemo(() => {
+    return customItems.reduce((sum, row) => sum + toNumber(row.amount), 0);
+  }, [customItems]);
+
   const total = useMemo(() => {
-    return categoryOrder.reduce((sum, cat) => sum + categorySubtotal(cat), 0);
-  }, [categorySubtotal]);
+    return categoryOrder.reduce((sum, cat) => sum + categorySubtotal(cat), 0) + customItemsTotal;
+  }, [categorySubtotal, customItemsTotal]);
 
   const updateLineItem = (id: string, field: 'quantity' | 'amount', value: string) => {
     setLineItemState(prev => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
+  };
+
+  const addCustomItem = () => setCustomItems(prev => [...prev, newCustomItemRow()]);
+  const removeCustomItem = (id: string) => setCustomItems(prev => prev.filter(row => row.id !== id));
+  const updateCustomItem = (id: string, field: 'name' | 'amount', value: string) => {
+    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
   };
 
   const handleCreate = async () => {
@@ -130,10 +151,14 @@ export default function InStoreChargePage() {
         })
         .filter(item => (item.quantity || 0) > 0 || (item.amount || 0) > 0);
 
+      const customLineItems = customItems
+        .filter(row => row.name.trim() && toNumber(row.amount) > 0)
+        .map(row => ({ customName: row.name.trim(), amount: toNumber(row.amount) }));
+
       const response = await fetch('/api/admin/in-store-charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lineItems, description }),
+        body: JSON.stringify({ lineItems: [...lineItems, ...customLineItems], description }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -180,6 +205,7 @@ export default function InStoreChargePage() {
     if (pollRef.current) clearInterval(pollRef.current);
     setCharge(null);
     setDescription('');
+    setCustomItems([]);
     setLineItemState(prev => {
       const next: Record<string, LineItemState> = {};
       for (const id of Object.keys(prev)) {
@@ -259,6 +285,37 @@ export default function InStoreChargePage() {
                   売上項目が登録されていません。<Link href="/admin/sales/items" className="underline">項目カタログ</Link>から初期データを投入してください。
                 </div>
               )}
+
+              <div className="bg-white shadow rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-medium text-gray-900 text-sm">その他（普段売っていない商品）</h2>
+                  <button onClick={addCustomItem} className="text-sm px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90">
+                    + 追加
+                  </button>
+                </div>
+                <ul className="space-y-2">
+                  {customItems.map(row => (
+                    <li key={row.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={(e) => updateCustomItem(row.id, 'name', e.target.value)}
+                        placeholder="商品名"
+                        className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={row.amount}
+                        onChange={(e) => updateCustomItem(row.id, 'amount', e.target.value)}
+                        placeholder="金額"
+                        className="w-20 px-2 py-2 text-sm text-right border border-gray-300 rounded-md"
+                      />
+                      <button onClick={() => removeCustomItem(row.id)} className="text-red-500 text-sm px-2">✕</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <div className="bg-white shadow rounded-lg p-4">
                 <label className="block text-sm text-gray-600 mb-1">備考（任意）</label>

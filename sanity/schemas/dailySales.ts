@@ -47,6 +47,29 @@ export const dailySales = defineType({
         },
       ],
     }),
+    defineField({
+      name: 'customLineItems',
+      title: 'その他（都度入力の商品）',
+      description: 'カタログにない商品を単発で販売した場合に、商品名と金額を直接記録します',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'customLineItem',
+          fields: [
+            defineField({ name: 'name', title: '商品名', type: 'string', validation: Rule => Rule.required() }),
+            defineField({ name: 'amount', title: '金額', type: 'number', validation: Rule => Rule.required().positive() }),
+            defineField({
+              name: 'paymentMethod',
+              title: '支払い方法',
+              type: 'string',
+              options: { list: [{ title: '現金', value: 'cash' }, { title: 'PayPay', value: 'payPay' }, { title: 'クレジット', value: 'card' }] },
+              initialValue: 'cash',
+            }),
+          ],
+        },
+      ],
+    }),
     defineField({ name: 'cashAmount', title: '現金合計（自動計算）', type: 'number', readOnly: true }),
     defineField({ name: 'payPayAmount', title: 'PayPay合計（自動計算）', type: 'number', readOnly: true }),
     defineField({ name: 'manualCardAmount', title: 'クレジット合計・手入力分（自動計算）', type: 'number', readOnly: true }),
