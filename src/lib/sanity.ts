@@ -494,14 +494,16 @@ export async function getMaintenanceSettings(): Promise<{
   message?: string;
 } | null> {
   try {
-    const settings = await client.fetch(`
+    // ミドルウェアが毎リクエスト参照するため、CDNキャッシュ(client)ではなく
+    // 常に最新を返すwriteClientを使う（管理画面で切り替えた直後に反映されないと困るため）
+    const settings = await writeClient.fetch(`
       *[_type == "maintenanceSettings"][0] {
         isEnabled,
         password,
         message
       }
     `);
-    
+
     return settings || null;
   } catch (error) {
     console.warn('Failed to fetch maintenance settings from Sanity:', error);
