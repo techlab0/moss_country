@@ -14,9 +14,30 @@ interface SalesItem {
 }
 
 interface LineItemState {
-  quantity: string;
-  amount: string;
+  cashQuantity: string;
+  cashAmount: string;
+  payPayQuantity: string;
+  payPayAmount: string;
+  cardQuantity: string;
+  cardAmount: string;
 }
+
+type PaymentMethod = 'cash' | 'payPay' | 'card';
+
+const emptyLineItemState: LineItemState = {
+  cashQuantity: '0',
+  cashAmount: '0',
+  payPayQuantity: '0',
+  payPayAmount: '0',
+  cardQuantity: '0',
+  cardAmount: '0',
+};
+
+const paymentMethodLabels: Record<PaymentMethod, string> = {
+  cash: '現金',
+  payPay: 'PayPay',
+  card: 'クレジット',
+};
 
 const categoryLabels: Record<string, string> = {
   moss: 'コケ',
@@ -40,21 +61,28 @@ function toNumber(value: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+// 数量入力(fixed)なら単価×数量、金額直接入力(variable)ならその金額を返す
+function methodAmount(item: SalesItem, state: LineItemState, method: PaymentMethod): number {
+  if (item.pricingType === 'fixed') {
+    const qty = method === 'cash' ? state.cashQuantity : method === 'payPay' ? state.payPayQuantity : state.cardQuantity;
+    return toNumber(qty) * (item.unitPrice || 0);
+  }
+  const amt = method === 'cash' ? state.cashAmount : method === 'payPay' ? state.payPayAmount : state.cardAmount;
+  return toNumber(amt);
+}
+
 export default function SalesPage() {
   const [date, setDate] = useState(todayJstString());
   const [salesItems, setSalesItems] = useState<SalesItem[]>([]);
   const [lineItemState, setLineItemState] = useState<Record<string, LineItemState>>({});
   const [visitorCount, setVisitorCount] = useState('0');
   const [purchaseGroupCount, setPurchaseGroupCount] = useState('0');
-  const [cashAmount, setCashAmount] = useState('0');
-  const [payPayAmount, setPayPayAmount] = useState('0');
-  const [manualCardAmount, setManualCardAmount] = useState('0');
   const [wordOfMouthDiscount, setWordOfMouthDiscount] = useState('0');
   const [adjustment, setAdjustment] = useState('0');
   const [notes, setNotes] = useState('');
   const [ecTotal, setEcTotal] = useState(0);
   const [qrChargeTotal, setQrChargeTotal] = useState(0);
-  const [qrChargeCategorySubtotals, setQrChargeCategorySubtotals] = useState<Record<string, number>>({});
+  const [qrChargeItemTotals, setQrChargeItemTotals] = useState<Record<string, { quantity: number; amount: number }>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -66,21 +94,29 @@ export default function SalesPage() {
         fetch(`/api/admin/sales/${targetDate}`),
       ]);
       const itemsData = itemsRes.ok ? await itemsRes.json() : { items: [] };
-      const dayData = dayRes.ok ? await dayRes.json() : { dailySales: null, ecTotal: 0 };
+      const dayData = dayRes.ok ? await dayRes.json() : { dailySales: null, ecTotal: 0, qrChargeTotal: 0, qrChargeItemTotals: {} };
 
       const items: SalesItem[] = itemsData.items || [];
       setSalesItems(items);
 
-      const existingLineItems: Array<{ salesItemId: string; quantity?: number; amount?: number }> =
-        dayData.dailySales?.lineItems || [];
+      const existingLineItems: Array<{
+        salesItemId: string;
+        cashQuantity?: number; cashAmount?: number;
+        payPayQuantity?: number; payPayAmount?: number;
+        cardQuantity?: number; cardAmount?: number;
+      }> = dayData.dailySales?.lineItems || [];
       const byId = new Map(existingLineItems.map(li => [li.salesItemId, li]));
 
       const nextState: Record<string, LineItemState> = {};
       for (const item of items) {
         const existing = byId.get(item._id);
         nextState[item._id] = {
-          quantity: String(existing?.quantity ?? 0),
-          amount: String(existing?.amount ?? 0),
+          cashQuantity: String(existing?.cashQuantity ?? 0),
+          cashAmount: String(existing?.cashAmount ?? 0),
+          payPayQuantity: String(existing?.payPayQuantity ?? 0),
+          payPayAmount: String(existing?.payPayAmount ?? 0),
+          cardQuantity: String(existing?.cardQuantity ?? 0),
+          cardAmount: String(existing?.cardAmount ?? 0),
         };
       }
       setLineItemState(nextState);
@@ -88,15 +124,12 @@ export default function SalesPage() {
       const d = dayData.dailySales;
       setVisitorCount(String(d?.visitorCount ?? 0));
       setPurchaseGroupCount(String(d?.purchaseGroupCount ?? 0));
-      setCashAmount(String(d?.cashAmount ?? 0));
-      setPayPayAmount(String(d?.payPayAmount ?? 0));
-      setManualCardAmount(String(d?.manualCardAmount ?? 0));
       setWordOfMouthDiscount(String(d?.wordOfMouthDiscount ?? 0));
       setAdjustment(String(d?.adjustment ?? 0));
       setNotes(d?.notes || '');
       setEcTotal(dayData.ecTotal || 0);
       setQrChargeTotal(dayData.qrChargeTotal || 0);
-      setQrChargeCategorySubtotals(dayData.qrChargeCategorySubtotals || {});
+      setQrChargeItemTotals(dayData.qrChargeItemTotals || {});
     } catch (err) {
       console.error('売上データ取得エラー:', err);
     } finally {
@@ -108,43 +141,44 @@ export default function SalesPage() {
     loadDay(date);
   }, [date, loadDay]);
 
+  const itemTotal = useCallback((item: SalesItem) => {
+    const state = lineItemState[item._id] || emptyLineItemState;
+    const manual = methodAmount(item, state, 'cash') + methodAmount(item, state, 'payPay') + methodAmount(item, state, 'card');
+    return manual + (qrChargeItemTotals[item._id]?.amount || 0);
+  }, [lineItemState, qrChargeItemTotals]);
+
   const categorySubtotal = useCallback((category: string) => {
-    const manual = salesItems
+    return salesItems
       .filter(item => item.category === category)
-      .reduce((sum, item) => {
-        const state = lineItemState[item._id];
-        if (!state) return sum;
-        if (item.pricingType === 'fixed') {
-          return sum + toNumber(state.quantity) * (item.unitPrice || 0);
-        }
-        return sum + toNumber(state.amount);
-      }, 0);
-    return manual + (qrChargeCategorySubtotals[category] || 0);
-  }, [salesItems, lineItemState, qrChargeCategorySubtotals]);
+      .reduce((sum, item) => sum + itemTotal(item), 0);
+  }, [salesItems, itemTotal]);
 
   const itemsTotal = useMemo(() => {
     return categoryOrder.reduce((sum, cat) => sum + categorySubtotal(cat), 0);
   }, [categorySubtotal]);
 
+  const methodTotal = useCallback((method: PaymentMethod) => {
+    return salesItems.reduce((sum, item) => {
+      const state = lineItemState[item._id] || emptyLineItemState;
+      return sum + methodAmount(item, state, method);
+    }, 0);
+  }, [salesItems, lineItemState]);
+
+  const cashTotal = useMemo(() => methodTotal('cash'), [methodTotal]);
+  const payPayTotal = useMemo(() => methodTotal('payPay'), [methodTotal]);
+  const cardManualTotal = useMemo(() => methodTotal('card'), [methodTotal]);
+
   // 店頭QR決済も店舗での支払い手段の一つのため、店舗入金合計に含める
   const paymentTotal = useMemo(() => {
-    return (
-      toNumber(cashAmount) +
-      toNumber(payPayAmount) +
-      toNumber(manualCardAmount) +
-      qrChargeTotal +
-      toNumber(adjustment) -
-      toNumber(wordOfMouthDiscount)
-    );
-  }, [cashAmount, payPayAmount, manualCardAmount, qrChargeTotal, adjustment, wordOfMouthDiscount]);
+    return cashTotal + payPayTotal + cardManualTotal + qrChargeTotal + toNumber(adjustment) - toNumber(wordOfMouthDiscount);
+  }, [cashTotal, payPayTotal, cardManualTotal, qrChargeTotal, adjustment, wordOfMouthDiscount]);
 
-  const discrepancy = itemsTotal - paymentTotal;
   const grandTotal = paymentTotal + ecTotal;
 
-  const updateLineItem = (id: string, field: 'quantity' | 'amount', value: string) => {
+  const updateLineItem = (id: string, field: keyof LineItemState, value: string) => {
     setLineItemState(prev => ({
       ...prev,
-      [id]: { ...prev[id], [field]: value },
+      [id]: { ...(prev[id] || emptyLineItemState), [field]: value },
     }));
   };
 
@@ -152,11 +186,16 @@ export default function SalesPage() {
     setSaving(true);
     try {
       const lineItems = salesItems.map(item => {
-        const state = lineItemState[item._id] || { quantity: '0', amount: '0' };
+        const state = lineItemState[item._id] || emptyLineItemState;
+        const isFixed = item.pricingType === 'fixed';
         return {
           salesItemId: item._id,
-          quantity: item.pricingType === 'fixed' ? toNumber(state.quantity) : undefined,
-          amount: item.pricingType === 'variable' ? toNumber(state.amount) : undefined,
+          cashQuantity: isFixed ? toNumber(state.cashQuantity) : undefined,
+          cashAmount: isFixed ? undefined : toNumber(state.cashAmount),
+          payPayQuantity: isFixed ? toNumber(state.payPayQuantity) : undefined,
+          payPayAmount: isFixed ? undefined : toNumber(state.payPayAmount),
+          cardQuantity: isFixed ? toNumber(state.cardQuantity) : undefined,
+          cardAmount: isFixed ? undefined : toNumber(state.cardAmount),
         };
       });
 
@@ -167,9 +206,6 @@ export default function SalesPage() {
           visitorCount: toNumber(visitorCount),
           purchaseGroupCount: toNumber(purchaseGroupCount),
           lineItems,
-          cashAmount: toNumber(cashAmount),
-          payPayAmount: toNumber(payPayAmount),
-          manualCardAmount: toNumber(manualCardAmount),
           wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
           adjustment: toNumber(adjustment),
           notes,
@@ -177,6 +213,7 @@ export default function SalesPage() {
       });
       if (!response.ok) throw new Error('保存に失敗しました');
       alert('保存しました');
+      loadDay(date);
     } catch (err) {
       alert(err instanceof Error ? err.message : '保存に失敗しました');
     } finally {
@@ -238,6 +275,10 @@ export default function SalesPage() {
             </div>
           </div>
 
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+            商品ごとに現金・PayPay・クレジット（手入力）の内訳を入力してください。クレジットのQR決済分（{'/admin/sales/charge'}で発行したもの）は自動で反映されるので入力不要です。
+          </div>
+
           {categoryOrder.map(category => {
             const itemsInCategory = salesItems.filter(item => item.category === category && item.isActive);
             if (itemsInCategory.length === 0) return null;
@@ -250,32 +291,50 @@ export default function SalesPage() {
                 </summary>
                 <ul className="divide-y">
                   {itemsInCategory.map(item => {
-                    const state = lineItemState[item._id] || { quantity: '0', amount: '0' };
+                    const state = lineItemState[item._id] || emptyLineItemState;
+                    const isFixed = item.pricingType === 'fixed';
+                    const qrAuto = qrChargeItemTotals[item._id];
                     return (
-                      <li key={item._id} className="px-4 py-3 flex items-center justify-between gap-3">
-                        <div className="flex-1">
+                      <li key={item._id} className="px-4 py-3">
+                        <div className="flex items-center justify-between gap-3 mb-2">
                           <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          {item.pricingType === 'fixed' && (
-                            <p className="text-xs text-gray-500">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
+                          {isFixed && (
+                            <p className="text-xs text-gray-500 whitespace-nowrap">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
                           )}
                         </div>
-                        {item.pricingType === 'fixed' ? (
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            value={state.quantity}
-                            onChange={(e) => updateLineItem(item._id, 'quantity', e.target.value)}
-                            className="w-20 px-2 py-2 text-lg text-right border border-gray-300 rounded-md"
-                          />
-                        ) : (
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            value={state.amount}
-                            onChange={(e) => updateLineItem(item._id, 'amount', e.target.value)}
-                            placeholder="金額"
-                            className="w-28 px-2 py-2 text-lg text-right border border-gray-300 rounded-md"
-                          />
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['cash', 'payPay', 'card'] as PaymentMethod[]).map(method => {
+                            const qtyField = method === 'cash' ? 'cashQuantity' : method === 'payPay' ? 'payPayQuantity' : 'cardQuantity';
+                            const amtField = method === 'cash' ? 'cashAmount' : method === 'payPay' ? 'payPayAmount' : 'cardAmount';
+                            return (
+                              <div key={method}>
+                                <label className="block text-[10px] text-gray-500 mb-0.5">{paymentMethodLabels[method]}</label>
+                                {isFixed ? (
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={state[qtyField]}
+                                    onChange={(e) => updateLineItem(item._id, qtyField, e.target.value)}
+                                    className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                  />
+                                ) : (
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={state[amtField]}
+                                    onChange={(e) => updateLineItem(item._id, amtField, e.target.value)}
+                                    placeholder="金額"
+                                    className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {qrAuto && qrAuto.amount > 0 && (
+                          <p className="text-[10px] text-emerald-600 mt-1">
+                            QR自動集計: {qrAuto.quantity ? `${qrAuto.quantity}個 ` : ''}¥{qrAuto.amount.toLocaleString()}
+                          </p>
                         )}
                       </li>
                     );
@@ -291,27 +350,15 @@ export default function SalesPage() {
             </div>
           )}
 
-          {/* 入金内訳 */}
+          {/* 調整項目 */}
           <div className="bg-white shadow rounded-lg p-4 space-y-3">
-            <h2 className="font-medium text-gray-900">入金内訳</h2>
+            <h2 className="font-medium text-gray-900">調整</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">現金</label>
-                <input type="number" inputMode="numeric" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">PayPay</label>
-                <input type="number" inputMode="numeric" value={payPayAmount} onChange={(e) => setPayPayAmount(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">クレジットカード（手入力）</label>
-                <input type="number" inputMode="numeric" value={manualCardAmount} onChange={(e) => setManualCardAmount(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
-              </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">調整</label>
                 <input type="number" inputMode="numeric" value={adjustment} onChange={(e) => setAdjustment(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
               </div>
-              <div className="col-span-2">
+              <div>
                 <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
                 <input type="number" inputMode="numeric" value={wordOfMouthDiscount} onChange={(e) => setWordOfMouthDiscount(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
               </div>
@@ -331,23 +378,26 @@ export default function SalesPage() {
 
           {/* 集計サマリー */}
           <div className="bg-white shadow rounded-lg p-4 space-y-2">
-            <h2 className="font-medium text-gray-900 mb-2">集計</h2>
+            <h2 className="font-medium text-gray-900 mb-2">集計（すべて商品明細から自動計算）</h2>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">店舗売上（商品明細の合計、QR決済分含む）</span>
-              <span>¥{itemsTotal.toLocaleString()}</span>
+              <span className="text-gray-600">現金</span>
+              <span>¥{cashTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">店舗入金合計（現金+PayPay+カード+QR決済+調整-割引）</span>
-              <span>¥{paymentTotal.toLocaleString()}</span>
+              <span className="text-gray-600">PayPay</span>
+              <span>¥{payPayTotal.toLocaleString()}</span>
             </div>
-            {discrepancy !== 0 && (
-              <div className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
-                ⚠️ 明細合計と入金合計が¥{Math.abs(discrepancy).toLocaleString()}ズレています。入力を確認してください。
-              </div>
-            )}
-            <div className="flex justify-between text-sm text-gray-500">
-              <span className="pl-3">うち店頭QRコード決済（自動集計・明細に反映済み）</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">クレジット（手入力分）</span>
+              <span>¥{cardManualTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">クレジット（QR決済・自動集計）</span>
               <span>¥{qrChargeTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm font-medium border-t pt-2">
+              <span className="text-gray-700">店舗売上合計（商品明細）</span>
+              <span>¥{itemsTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">EC（オンライン）売上（自動集計）</span>

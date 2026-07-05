@@ -6,8 +6,24 @@ import { syncDailySalesToSheet } from '@/lib/googleSheets';
 
 interface LineItemInput {
   salesItemId: string;
-  quantity?: number;
-  amount?: number;
+  cashQuantity?: number;
+  cashAmount?: number;
+  payPayQuantity?: number;
+  payPayAmount?: number;
+  cardQuantity?: number;
+  cardAmount?: number;
+}
+
+interface SalesItemMeta {
+  _id: string;
+  category: string;
+  pricingType: string;
+  unitPrice?: number;
+}
+
+// 数量入力(fixed)なら単価×数量、金額直接入力(variable)ならその金額を返す
+function resolveAmount(meta: SalesItemMeta, quantity?: number, amount?: number): number {
+  return meta.pricingType === 'fixed' ? (quantity || 0) * (meta.unitPrice || 0) : (amount || 0);
 }
 
 export async function GET(
@@ -32,7 +48,12 @@ export async function GET(
         date,
         visitorCount,
         purchaseGroupCount,
-        lineItems[]{ "salesItemId": salesItem._ref, quantity, amount },
+        lineItems[]{
+          "salesItemId": salesItem._ref,
+          cashQuantity, cashAmount,
+          payPayQuantity, payPayAmount,
+          cardQuantity, cardAmount
+        },
         cashAmount,
         payPayAmount,
         manualCardAmount,
@@ -52,21 +73,24 @@ export async function GET(
     );
     const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-    // 店頭QRコード決済のその日の支払い済み分を自動集計する（商品明細も分類ごとに集計し、手入力分と合算できるようにする）
-    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }> = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, "category": salesItem->category } }`,
+    // 店頭QRコード決済のその日の支払い済み分を、商品ごとに自動集計する（手入力欄には出さず、表示・合計に自動反映するため）
+    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; quantity?: number; salesItemId?: string }> }> = await writeClient.fetch(
+      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, quantity, "salesItemId": salesItem._ref } }`,
       { start, end }
     );
     const qrChargeTotal = paidCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
-    const qrChargeCategorySubtotals: Record<string, number> = {};
+    const qrChargeItemTotals: Record<string, { quantity: number; amount: number }> = {};
     for (const charge of paidCharges) {
       for (const li of charge.lineItems || []) {
-        const category = li.category || 'other';
-        qrChargeCategorySubtotals[category] = (qrChargeCategorySubtotals[category] || 0) + (li.amount || 0);
+        if (!li.salesItemId) continue;
+        const existing = qrChargeItemTotals[li.salesItemId] || { quantity: 0, amount: 0 };
+        existing.quantity += li.quantity || 0;
+        existing.amount += li.amount || 0;
+        qrChargeItemTotals[li.salesItemId] = existing;
       }
     }
 
-    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeCategorySubtotals });
+    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeItemTotals });
   } catch (error) {
     console.error('日別売上取得エラー:', error);
     return NextResponse.json(
@@ -94,15 +118,45 @@ export async function PUT(
     const body = await request.json();
     const lineItemsInput: LineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
 
-    const lineItems = lineItemsInput
-      .filter(item => item.salesItemId)
-      .map(item => ({
+    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
+    const salesItemsMeta: SalesItemMeta[] = salesItemIds.length
+      ? await writeClient.fetch(
+          `*[_type == "salesItem" && _id in $ids]{ _id, category, pricingType, unitPrice }`,
+          { ids: salesItemIds }
+        )
+      : [];
+    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
+
+    // 金額はクライアントの申告値を信用せず、カタログの単価からサーバー側で再計算する
+    let cashTotal = 0;
+    let payPayTotal = 0;
+    let cardTotal = 0;
+    const lineItems = [];
+    for (const item of lineItemsInput) {
+      const meta = metaById.get(item.salesItemId);
+      if (!meta) continue;
+
+      const cashAmount = resolveAmount(meta, item.cashQuantity, item.cashAmount);
+      const payPayAmount = resolveAmount(meta, item.payPayQuantity, item.payPayAmount);
+      const cardAmount = resolveAmount(meta, item.cardQuantity, item.cardAmount);
+      if (cashAmount <= 0 && payPayAmount <= 0 && cardAmount <= 0) continue;
+
+      cashTotal += cashAmount;
+      payPayTotal += payPayAmount;
+      cardTotal += cardAmount;
+
+      lineItems.push({
         _type: 'lineItem',
         _key: item.salesItemId,
         salesItem: { _type: 'reference', _ref: item.salesItemId },
-        quantity: item.quantity,
-        amount: item.amount,
-      }));
+        cashQuantity: meta.pricingType === 'fixed' ? item.cashQuantity : undefined,
+        cashAmount: meta.pricingType === 'fixed' ? cashAmount : item.cashAmount,
+        payPayQuantity: meta.pricingType === 'fixed' ? item.payPayQuantity : undefined,
+        payPayAmount: meta.pricingType === 'fixed' ? payPayAmount : item.payPayAmount,
+        cardQuantity: meta.pricingType === 'fixed' ? item.cardQuantity : undefined,
+        cardAmount: meta.pricingType === 'fixed' ? cardAmount : item.cardAmount,
+      });
+    }
 
     const docId = dailySalesDocId(date);
     const doc = {
@@ -112,9 +166,9 @@ export async function PUT(
       visitorCount: body.visitorCount ?? 0,
       purchaseGroupCount: body.purchaseGroupCount ?? 0,
       lineItems,
-      cashAmount: body.cashAmount ?? 0,
-      payPayAmount: body.payPayAmount ?? 0,
-      manualCardAmount: body.manualCardAmount ?? 0,
+      cashAmount: cashTotal,
+      payPayAmount: payPayTotal,
+      manualCardAmount: cardTotal,
       wordOfMouthDiscount: body.wordOfMouthDiscount ?? 0,
       adjustment: body.adjustment ?? 0,
       notes: body.notes || '',
@@ -124,7 +178,7 @@ export async function PUT(
     const saved = await writeClient.createOrReplace(doc);
 
     // バックアップ用のGoogleスプレッドシート同期（ベストエフォート、失敗しても保存は成功のまま返す）
-    await syncToSheetBestEffort(date, doc, lineItemsInput);
+    await syncToSheetBestEffort(date, doc, salesItemsMeta);
 
     return NextResponse.json({ dailySales: saved });
   } catch (error) {
@@ -143,6 +197,7 @@ export async function PUT(
 async function syncToSheetBestEffort(
   date: string,
   doc: {
+    lineItems: Array<{ salesItem: { _ref: string }; cashAmount?: number; payPayAmount?: number; cardAmount?: number }>;
     visitorCount: number;
     purchaseGroupCount: number;
     cashAmount: number;
@@ -151,25 +206,16 @@ async function syncToSheetBestEffort(
     wordOfMouthDiscount: number;
     adjustment: number;
   },
-  lineItemsInput: LineItemInput[]
+  salesItemsMeta: SalesItemMeta[]
 ) {
   try {
-    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
-    const salesItemsMeta: Array<{ _id: string; category: string; pricingType: string; unitPrice?: number }> = salesItemIds.length
-      ? await writeClient.fetch(
-          `*[_type == "salesItem" && _id in $ids]{ _id, category, pricingType, unitPrice }`,
-          { ids: salesItemIds }
-        )
-      : [];
     const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
 
     const categorySubtotals: Record<string, number> = {};
-    for (const item of lineItemsInput) {
-      const meta = metaById.get(item.salesItemId);
+    for (const item of doc.lineItems) {
+      const meta = metaById.get(item.salesItem._ref);
       if (!meta) continue;
-      const lineTotal = meta.pricingType === 'fixed'
-        ? (item.quantity || 0) * (meta.unitPrice || 0)
-        : (item.amount || 0);
+      const lineTotal = (item.cashAmount || 0) + (item.payPayAmount || 0) + (item.cardAmount || 0);
       categorySubtotals[meta.category] = (categorySubtotals[meta.category] || 0) + lineTotal;
     }
 
