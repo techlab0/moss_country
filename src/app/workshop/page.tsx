@@ -10,22 +10,23 @@ import type { SimpleWorkshop } from '@/types/sanity';
 import { usePageContent } from '@/hooks/usePageContent';
 
 const planMeta = [
-  { id: 'glass-canister-ss', dimensions: '6cm × 11cm', image: '/images/workshop/glass-canister-ss.JPG' },
-  { id: 'glass-ball-s', dimensions: '10cm × 8cm', image: '/images/workshop/glass-ball-s.JPG' },
-  { id: 'pop-jar', dimensions: '11cm × 6cm', image: '/images/workshop/pop-jar.JPG' },
-  { id: 'glass-ball-m', dimensions: '15cm × 12cm', image: '/images/workshop/glass-ball-m.JPG' },
-  { id: 'glass-ball-box-ll', dimensions: '15cm × 12cm', image: '/images/workshop/glass-ball-box-ll.JPG' },
-  { id: 'cliff-terrarium', dimensions: '8cm × 10cm', image: '/images/products/moss-country_products_bottle.png' },
+  { id: 'glass-canister-ss', dimensions: '6cm × 11cm' },
+  { id: 'glass-ball-s', dimensions: '10cm × 8cm' },
+  { id: 'pop-jar', dimensions: '11cm × 6cm' },
+  { id: 'glass-ball-m', dimensions: '15cm × 12cm' },
+  { id: 'glass-ball-box-ll', dimensions: '15cm × 12cm' },
+  { id: 'cliff-terrarium', dimensions: '8cm × 10cm' },
 ];
 
 export default function WorkshopPage() {
-  // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
-  const { t } = usePageContent('workshop');
+  // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
+  const { t, img } = usePageContent('workshop');
   const workshopSizes = planMeta.map((meta, i) => ({
     ...meta,
     name: t(`plan${i + 1}Name`),
     price: t(`plan${i + 1}Price`),
     description: t(`plan${i + 1}Desc`),
+    image: img(`plan${i + 1}Image`),
   }));
   const testimonials = [1, 2, 3].map(i => ({
     name: t(`testimonial${i}Name`),
@@ -460,7 +461,7 @@ export default function WorkshopPage() {
                 </div>
                 <div className="hidden md:block">
                   <img
-                    src="/images/workshop/mosscountry_workshop.png"
+                    src={img('mobileBannerImage')}
                     alt="出張ワークショップ"
                     className="w-full h-full object-cover"
                   />

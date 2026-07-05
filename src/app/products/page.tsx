@@ -21,15 +21,17 @@ const careGuideMeta = [
 ];
 
 export default function ProductsPage() {
-  // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
-  const { t } = usePageContent('products');
+  // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
+  const { t, img } = usePageContent('products');
   const terrariumCategories = [1, 2, 3, 4].map(i => ({
     name: t(`terrarium${i}Name`),
     description: t(`terrarium${i}Desc`),
+    image: img(`terrarium${i}Image`),
   }));
   const supplyCategories = [1, 2, 3, 4].map(i => ({
     name: t(`supply${i}Name`),
     description: t(`supply${i}Desc`),
+    image: img(`supply${i}Image`),
   }));
   const careGuide = careGuideMeta.map((meta, i) => ({
     title: t(`care${i + 1}Title`),
@@ -188,21 +190,13 @@ export default function ProductsPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {terrariumCategories.map((category, index) => {
-              const terrariumImages = [
-                '/images/products/moss-country_products_bottle.png',
-                '/images/products/moss-country_products_glass.png',
-                '/images/products/moss-country_products_mossball.png',
-                '/images/products/moss-country_products_big.png',
-              ];
-              const getImageSrc = () => terrariumImages[index] || terrariumImages[0];
-
               return (
                 <Card key={index} className="text-center glass-card-dark">
                   <CardHeader>
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
-                      <img 
-                        src={getImageSrc()} 
-                        alt={category.name} 
+                      <img
+                        src={category.image}
+                        alt={category.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -230,21 +224,13 @@ export default function ProductsPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {supplyCategories.map((category, index) => {
-              const supplyImages = [
-                '/images/products/terrarium-starter.jpg',
-                '/images/products/terrarium-standard.jpg',
-                '/images/products/terrarium-premium.jpg',
-                '/images/products/terrarium-custom.jpg',
-              ];
-              const getImageSrc = () => supplyImages[index] || supplyImages[0];
-
               return (
                 <Card key={index} className="text-center glass-card-dark">
                   <CardHeader>
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
-                      <img 
-                        src={getImageSrc()} 
-                        alt={category.name} 
+                      <img
+                        src={category.image}
+                        alt={category.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
