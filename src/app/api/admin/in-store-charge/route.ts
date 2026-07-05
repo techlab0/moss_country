@@ -3,13 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
-
-interface LineItemInput {
-  salesItemId?: string;
-  quantity?: number;
-  amount?: number;
-  customName?: string;
-}
+import { todayJst } from '@/lib/salesAggregation';
+import { resolveStoreLineItems, adjustDailyCounters, StoreLineItemInput } from '@/lib/storeSales';
 
 // 店頭でカード決済端末を使わずに決済を受け付けるためのQRコード決済リンクを発行する。
 // お客様が自分のスマホで読み取り、Squareのホスト型決済ページで支払う（カード情報は当システムを経由しない）。
@@ -22,58 +17,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const lineItemsInput: LineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
+    const lineItemsInput: StoreLineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
+    const visitorCount = Math.max(0, Number(body.visitorCount) || 0);
 
     if (lineItemsInput.length === 0) {
       return NextResponse.json({ error: '商品を1つ以上選択してください' }, { status: 400 });
     }
 
-    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter((id): id is string => !!id);
-    const salesItemsMeta: Array<{ _id: string; name: string; pricingType: string; unitPrice?: number }> = salesItemIds.length
-      ? await writeClient.fetch(
-          `*[_type == "salesItem" && _id in $ids]{ _id, name, pricingType, unitPrice }`,
-          { ids: salesItemIds }
-        )
-      : [];
-    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
-
-    let amount = 0;
-    const lineItems = [];
-    for (const item of lineItemsInput) {
-      if (item.salesItemId) {
-        const meta = metaById.get(item.salesItemId);
-        if (!meta) {
-          return NextResponse.json({ error: `商品が見つかりません: ${item.salesItemId}` }, { status: 400 });
-        }
-        const lineTotal = meta.pricingType === 'fixed'
-          ? (item.quantity || 0) * (meta.unitPrice || 0)
-          : (item.amount || 0);
-        if (lineTotal <= 0) continue;
-
-        amount += lineTotal;
-        lineItems.push({
-          _type: 'lineItem',
-          _key: item.salesItemId,
-          salesItem: { _type: 'reference', _ref: item.salesItemId },
-          name: meta.name,
-          quantity: meta.pricingType === 'fixed' ? item.quantity : undefined,
-          amount: meta.pricingType === 'fixed' ? lineTotal : item.amount,
-        });
-      } else if (item.customName && item.customName.trim()) {
-        // カタログにない、普段売っていない商品を都度入力する場合
-        const lineTotal = item.amount || 0;
-        if (lineTotal <= 0) continue;
-
-        amount += lineTotal;
-        lineItems.push({
-          _type: 'lineItem',
-          _key: uuidv4(),
-          name: item.customName.trim(),
-          amount: lineTotal,
-        });
-      }
-    }
+    const { lineItems, total: amount } = await resolveStoreLineItems(lineItemsInput);
 
     if (amount <= 0) {
       return NextResponse.json({ error: '合計金額が0円です。数量または金額を入力してください' }, { status: 400 });
@@ -84,6 +36,7 @@ export async function POST(request: NextRequest) {
       _type: 'inStoreCharge',
       amount,
       description,
+      visitorCount,
       lineItems,
       status: 'pending',
       createdAt: new Date().toISOString(),
@@ -110,8 +63,15 @@ export async function POST(request: NextRequest) {
 
     const updatedCharge = await writeClient
       .patch(charge._id)
-      .set({ squareOrderId: paymentLink.orderId, paymentLinkUrl: paymentLink.url })
+      .set({
+        squareOrderId: paymentLink.orderId,
+        paymentLinkId: paymentLink.id,
+        paymentLinkUrl: paymentLink.url,
+      })
       .commit();
+
+    // 来店者数・購入組数は発行時点で加算する（未払いキャンセル時にcancel APIが組数を戻す）
+    await adjustDailyCounters(todayJst(), visitorCount, 1);
 
     const QRCode = await import('qrcode');
     const qrCodeDataUrl = await QRCode.toDataURL(paymentLink.url, { width: 400 });
@@ -124,10 +84,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('店頭決済リンク作成エラー:', error);
-    return NextResponse.json(
-      { error: '決済リンクの作成に失敗しました' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : '決済リンクの作成に失敗しました';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -141,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     const charges = await writeClient.fetch(`
       *[_type == "inStoreCharge"] | order(createdAt desc) [0...30] {
-        _id, amount, description, status, createdAt, paidAt,
+        _id, amount, description, status, createdAt, paidAt, visitorCount,
         lineItems[]{ name, quantity, amount }
       }
     `);

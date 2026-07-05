@@ -159,6 +159,33 @@ export async function getOrder(orderId: string) {
 }
 
 /**
+ * 支払い済み決済の全額返金（店頭QR決済のキャンセル用）。
+ * 実際にお客様のカードへ返金されるため、呼び出し側で必ず確認を挟むこと。
+ */
+export async function refundPayment(paymentId: string, amountJpy: number, idempotencyKey: string) {
+  const data = await makeSquareRequest('/refunds', 'POST', {
+    idempotency_key: idempotencyKey,
+    payment_id: paymentId,
+    amount_money: {
+      amount: convertToSquareAmount(amountJpy),
+      currency: SQUARE_CONFIG.currency,
+    },
+  })
+  const refund = data.refund as { id?: string; status?: string } | undefined
+  if (!refund?.id) {
+    throw new Error('Refund not returned from Square API')
+  }
+  return { id: refund.id, status: refund.status }
+}
+
+/**
+ * 未払いの決済リンクをSquare側から削除する（ベストエフォート。失敗しても呼び出し側で握りつぶしてよい）
+ */
+export async function deletePaymentLink(paymentLinkId: string): Promise<void> {
+  await makeSquareRequest(`/online-checkout/payment-links/${paymentLinkId}`, 'DELETE')
+}
+
+/**
  * Verify webhook signature for security
  */
 export function verifyWebhookSignature(

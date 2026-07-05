@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+
+// ========== 型 ==========
 
 interface SalesItem {
   _id: string;
@@ -13,32 +15,107 @@ interface SalesItem {
   isActive: boolean;
 }
 
-interface LineItemState {
-  cashQuantity: string;
-  cashAmount: string;
-  payPayQuantity: string;
-  payPayAmount: string;
-  cardQuantity: string;
-  cardAmount: string;
-}
-
 interface CustomItemRow {
   id: string;
   name: string;
   amount: string;
-  paymentMethod: PaymentMethod;
 }
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
+type EntryMethod = PaymentMethod | 'qr';
 
-const emptyLineItemState: LineItemState = {
-  cashQuantity: '0',
-  cashAmount: '0',
-  payPayQuantity: '0',
-  payPayAmount: '0',
-  cardQuantity: '0',
-  cardAmount: '0',
-};
+interface LineItemView {
+  name: string;
+  quantity?: number;
+  amount?: number;
+  salesItemId?: string;
+}
+
+interface TransactionView {
+  _id: string;
+  createdAt?: string;
+  paymentMethod?: PaymentMethod;
+  visitorCount?: number;
+  total?: number;
+  lineItems?: LineItemView[];
+}
+
+interface ChargeView {
+  _id: string;
+  amount?: number;
+  description?: string;
+  status?: string;
+  createdAt?: string;
+  paidAt?: string;
+  visitorCount?: number;
+  lineItems?: LineItemView[];
+}
+
+interface MethodCell {
+  quantity: number;
+  amount: number;
+}
+
+interface ItemRow {
+  key: string;
+  salesItemId?: string;
+  name: string;
+  cash: MethodCell;
+  payPay: MethodCell;
+  card: MethodCell;
+  qr: MethodCell;
+  total: number;
+}
+
+interface Aggregate {
+  methodTotals: { cash: number; payPay: number; card: number; qr: number };
+  itemRows: ItemRow[];
+  itemsTotal: number;
+  storeTotal: number;
+  ecTotal: number;
+  grandTotal: number;
+}
+
+interface DayData {
+  dailySales: {
+    visitorCount?: number;
+    purchaseGroupCount?: number;
+    wordOfMouthDiscount?: number;
+    adjustment?: number;
+    notes?: string;
+  } | null;
+  transactions: TransactionView[];
+  charges: ChargeView[];
+  aggregate: Aggregate;
+}
+
+interface QrFlowState {
+  chargeId: string;
+  amount: number;
+  qrCodeDataUrl: string;
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  lineItems: LineItemView[];
+}
+
+interface EditLine {
+  salesItemId?: string;
+  name: string;
+  pricingType: 'fixed' | 'variable' | 'custom';
+  unitPrice?: number;
+  quantity: string;
+  amount: string;
+}
+
+interface EditState {
+  id: string;
+  isCharge: boolean;
+  paymentMethod: PaymentMethod;
+  visitorCount: string;
+  lines: EditLine[];
+  paidAmount?: number;
+}
+
+// ========== 定数・ユーティリティ ==========
 
 const categoryLabels: Record<string, string> = {
   moss: 'コケ',
@@ -51,7 +128,20 @@ const categoryLabels: Record<string, string> = {
 
 const categoryOrder = ['moss', 'product', 'figure', 'workshop', 'gacha', 'other'];
 
-// 数値入力欄の共通スタイル（何が入力されているか一目でわかるよう青太字にする）
+const methodLabels: Record<EntryMethod, string> = {
+  cash: '現金',
+  payPay: 'PayPay',
+  qr: 'クレジット(QR)',
+  card: 'クレジット(手動)',
+};
+
+const chargeStatusLabels: Record<string, { label: string; className: string }> = {
+  pending: { label: '支払い待ち', className: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: '支払い済み', className: 'bg-emerald-100 text-emerald-800' },
+  cancelled: { label: 'キャンセル', className: 'bg-gray-100 text-gray-600' },
+  refunded: { label: '返金済み', className: 'bg-red-100 text-red-700' },
+};
+
 const numberInputClass = 'w-full px-1 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md';
 
 function todayJstString(): string {
@@ -65,7 +155,6 @@ function toNumber(value: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// 0はスマホで入力しにくいので空欄表示にし、マイナスは入力させない
 function displayStr(value: string): string {
   return value === '0' ? '' : value;
 }
@@ -78,366 +167,405 @@ function sortByNameJa(items: SalesItem[]): SalesItem[] {
   return [...items].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 }
 
-function newCustomItemRow(): CustomItemRow {
-  return { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0', paymentMethod: 'cash' };
+function formatTime(iso?: string): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' });
 }
 
-// 数量入力(fixed)なら単価×数量、金額直接入力(variable)ならその金額を返す（手入力分のみ、QR分は含まない）
-function methodAmount(item: SalesItem, state: LineItemState, method: PaymentMethod): number {
-  if (item.pricingType === 'fixed') {
-    const qty = method === 'cash' ? state.cashQuantity : method === 'payPay' ? state.payPayQuantity : state.cardQuantity;
-    return toNumber(qty) * (item.unitPrice || 0);
-  }
-  const amt = method === 'cash' ? state.cashAmount : method === 'payPay' ? state.payPayAmount : state.cardAmount;
-  return toNumber(amt);
+function itemsSummary(lineItems?: LineItemView[]): string {
+  if (!lineItems || lineItems.length === 0) return '（商品なし・来店のみ）';
+  return lineItems.map(li => `${li.name}${li.quantity ? `×${li.quantity}` : ''}`).join('、');
 }
+
+// ========== ページ ==========
 
 export default function SalesPage() {
-  const [date, setDate] = useState(todayJstString());
+  const [tab, setTab] = useState<'entry' | 'summary'>('entry');
   const [salesItems, setSalesItems] = useState<SalesItem[]>([]);
-  const [lineItemState, setLineItemState] = useState<Record<string, LineItemState>>({});
-  const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
-  const [visitorCount, setVisitorCount] = useState('0');
-  const [purchaseGroupCount, setPurchaseGroupCount] = useState('0');
-  const [wordOfMouthDiscount, setWordOfMouthDiscount] = useState('0');
-  const [adjustment, setAdjustment] = useState('0');
-  const [notes, setNotes] = useState('');
-  const [ecTotal, setEcTotal] = useState(0);
-  const [qrChargeTotal, setQrChargeTotal] = useState(0);
-  const [qrChargeItemTotals, setQrChargeItemTotals] = useState<Record<string, { quantity: number; amount: number }>>({});
-  const [qrChargeCustomItems, setQrChargeCustomItems] = useState<Array<{ name: string; amount: number }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(true);
+  const [message, setMessage] = useState('');
+  const messageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadDay = useCallback(async (targetDate: string) => {
-    setLoading(true);
-    try {
-      const [itemsRes, dayRes] = await Promise.all([
-        fetch('/api/admin/sales-items'),
-        fetch(`/api/admin/sales/${targetDate}`),
-      ]);
-      const itemsData = itemsRes.ok ? await itemsRes.json() : { items: [] };
-      const dayData = dayRes.ok
-        ? await dayRes.json()
-        : { dailySales: null, ecTotal: 0, qrChargeTotal: 0, qrChargeItemTotals: {}, qrChargeCustomItems: [] };
-
-      const items: SalesItem[] = itemsData.items || [];
-      setSalesItems(items);
-
-      const existingLineItems: Array<{
-        salesItemId: string;
-        cashQuantity?: number; cashAmount?: number;
-        payPayQuantity?: number; payPayAmount?: number;
-        cardQuantity?: number; cardAmount?: number;
-      }> = dayData.dailySales?.lineItems || [];
-      const byId = new Map(existingLineItems.map(li => [li.salesItemId, li]));
-
-      const nextState: Record<string, LineItemState> = {};
-      for (const item of items) {
-        const existing = byId.get(item._id);
-        nextState[item._id] = {
-          cashQuantity: String(existing?.cashQuantity ?? 0),
-          cashAmount: String(existing?.cashAmount ?? 0),
-          payPayQuantity: String(existing?.payPayQuantity ?? 0),
-          payPayAmount: String(existing?.payPayAmount ?? 0),
-          cardQuantity: String(existing?.cardQuantity ?? 0),
-          cardAmount: String(existing?.cardAmount ?? 0),
-        };
-      }
-      setLineItemState(nextState);
-
-      const existingCustomItems: Array<{ name: string; amount: number; paymentMethod: PaymentMethod }> =
-        dayData.dailySales?.customLineItems || [];
-      setCustomItems(existingCustomItems.map(ci => ({
-        id: `${Date.now()}-${Math.random()}`,
-        name: ci.name,
-        amount: String(ci.amount ?? 0),
-        paymentMethod: ci.paymentMethod || 'cash',
-      })));
-
-      const d = dayData.dailySales;
-      setVisitorCount(String(d?.visitorCount ?? 0));
-      setPurchaseGroupCount(String(d?.purchaseGroupCount ?? 0));
-      setWordOfMouthDiscount(String(d?.wordOfMouthDiscount ?? 0));
-      setAdjustment(String(d?.adjustment ?? 0));
-      setNotes(d?.notes || '');
-      setEcTotal(dayData.ecTotal || 0);
-      setQrChargeTotal(dayData.qrChargeTotal || 0);
-      setQrChargeItemTotals(dayData.qrChargeItemTotals || {});
-      setQrChargeCustomItems(dayData.qrChargeCustomItems || []);
-    } catch (err) {
-      console.error('売上データ取得エラー:', err);
-    } finally {
-      setLoading(false);
-    }
+  const showMessage = useCallback((text: string) => {
+    setMessage(text);
+    if (messageTimer.current) clearTimeout(messageTimer.current);
+    messageTimer.current = setTimeout(() => setMessage(''), 4000);
   }, []);
 
   useEffect(() => {
-    loadDay(date);
-  }, [date, loadDay]);
+    (async () => {
+      setLoadingItems(true);
+      try {
+        const response = await fetch('/api/admin/sales-items');
+        const data = response.ok ? await response.json() : { items: [] };
+        setSalesItems(data.items || []);
+      } catch (err) {
+        console.error('売上項目取得エラー:', err);
+      } finally {
+        setLoadingItems(false);
+      }
+    })();
+    return () => {
+      if (messageTimer.current) clearTimeout(messageTimer.current);
+    };
+  }, []);
 
-  const itemTotal = useCallback((item: SalesItem) => {
-    const state = lineItemState[item._id] || emptyLineItemState;
-    const manual = methodAmount(item, state, 'cash') + methodAmount(item, state, 'payPay') + methodAmount(item, state, 'card');
-    return manual + (qrChargeItemTotals[item._id]?.amount || 0);
-  }, [lineItemState, qrChargeItemTotals]);
+  return (
+    <div className="space-y-4 max-w-2xl pb-8">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-3xl font-bold text-gray-900">売上管理</h1>
+        <Link href="/admin/sales/items" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+          項目カタログ
+        </Link>
+      </div>
 
-  const categorySubtotal = useCallback((category: string) => {
-    return salesItems
-      .filter(item => item.category === category)
-      .reduce((sum, item) => sum + itemTotal(item), 0);
-  }, [salesItems, itemTotal]);
+      {/* タブ切り替え */}
+      <div className="flex rounded-lg overflow-hidden border border-gray-300">
+        <button
+          onClick={() => setTab('entry')}
+          className={`flex-1 py-3 font-medium ${tab === 'entry' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          入力
+        </button>
+        <button
+          onClick={() => setTab('summary')}
+          className={`flex-1 py-3 font-medium ${tab === 'summary' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          集計・履歴
+        </button>
+      </div>
 
-  const customItemsTotal = useMemo(() => {
-    return customItems.reduce((sum, row) => sum + toNumber(row.amount), 0);
-  }, [customItems]);
+      {message && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-4 py-3 text-sm">
+          {message}
+        </div>
+      )}
 
-  const qrCustomItemsTotal = useMemo(() => {
-    return qrChargeCustomItems.reduce((sum, ci) => sum + (ci.amount || 0), 0);
-  }, [qrChargeCustomItems]);
+      {tab === 'entry' ? (
+        <EntryTab salesItems={salesItems} loadingItems={loadingItems} onRegistered={showMessage} />
+      ) : (
+        <SummaryTab salesItems={salesItems} onMessage={showMessage} />
+      )}
+    </div>
+  );
+}
 
-  const itemsTotal = useMemo(() => {
-    return categoryOrder.reduce((sum, cat) => sum + categorySubtotal(cat), 0) + customItemsTotal + qrCustomItemsTotal;
-  }, [categorySubtotal, customItemsTotal, qrCustomItemsTotal]);
+// ========== 入力タブ ==========
 
-  const methodTotal = useCallback((method: PaymentMethod) => {
-    const fromItems = salesItems.reduce((sum, item) => {
-      const state = lineItemState[item._id] || emptyLineItemState;
-      return sum + methodAmount(item, state, method);
+function EntryTab({
+  salesItems,
+  loadingItems,
+  onRegistered,
+}: {
+  salesItems: SalesItem[];
+  loadingItems: boolean;
+  onRegistered: (text: string) => void;
+}) {
+  const [visitorCount, setVisitorCount] = useState('1');
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<EntryMethod>('cash');
+  const [submitting, setSubmitting] = useState(false);
+  const [qrFlow, setQrFlow] = useState<QrFlowState | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const itemAmount = useCallback((item: SalesItem) => {
+    if (item.pricingType === 'fixed') {
+      return toNumber(quantities[item._id] || '0') * (item.unitPrice || 0);
+    }
+    return toNumber(amounts[item._id] || '0');
+  }, [quantities, amounts]);
+
+  const total = useMemo(() => {
+    const fromCatalog = salesItems.reduce((sum, item) => sum + itemAmount(item), 0);
+    const fromCustom = customItems.reduce((sum, row) => sum + toNumber(row.amount), 0);
+    return fromCatalog + fromCustom;
+  }, [salesItems, itemAmount, customItems]);
+
+  const itemCount = useMemo(() => {
+    const fromCatalog = salesItems.reduce((sum, item) => {
+      if (item.pricingType === 'fixed') return sum + toNumber(quantities[item._id] || '0');
+      return sum + (toNumber(amounts[item._id] || '0') > 0 ? 1 : 0);
     }, 0);
-    const fromCustom = customItems
-      .filter(row => row.paymentMethod === method)
-      .reduce((sum, row) => sum + toNumber(row.amount), 0);
-    return fromItems + fromCustom;
-  }, [salesItems, lineItemState, customItems]);
+    const fromCustom = customItems.filter(row => row.name.trim() && toNumber(row.amount) > 0).length;
+    return fromCatalog + fromCustom;
+  }, [salesItems, quantities, amounts, customItems]);
 
-  const cashTotal = useMemo(() => methodTotal('cash'), [methodTotal]);
-  const payPayTotal = useMemo(() => methodTotal('payPay'), [methodTotal]);
-  const cardManualTotal = useMemo(() => methodTotal('card'), [methodTotal]);
-  const creditTotal = cardManualTotal + qrChargeTotal;
-
-  // 店頭QR決済も店舗での支払い手段の一つのため、店舗入金合計に含める
-  const paymentTotal = useMemo(() => {
-    return cashTotal + payPayTotal + cardManualTotal + qrChargeTotal + toNumber(adjustment) - toNumber(wordOfMouthDiscount);
-  }, [cashTotal, payPayTotal, cardManualTotal, qrChargeTotal, adjustment, wordOfMouthDiscount]);
-
-  const grandTotal = paymentTotal + ecTotal;
-
-  const updateLineItem = (id: string, field: keyof LineItemState, value: string) => {
-    setLineItemState(prev => ({
-      ...prev,
-      [id]: { ...(prev[id] || emptyLineItemState), [field]: sanitizeNonNegative(value) },
-    }));
+  const setQuantity = (id: string, value: string) => {
+    setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
+  };
+  const stepQuantity = (id: string, delta: number) => {
+    setQuantities(prev => ({ ...prev, [id]: String(Math.max(0, toNumber(prev[id] || '0') + delta)) }));
+  };
+  const setAmount = (id: string, value: string) => {
+    setAmounts(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
   };
 
-  const addCustomItem = () => setCustomItems(prev => [...prev, newCustomItemRow()]);
-  const removeCustomItem = (id: string) => setCustomItems(prev => prev.filter(row => row.id !== id));
-  const updateCustomItem = (id: string, field: 'name' | 'amount' | 'paymentMethod', value: string) => {
-    const clean = field === 'amount' ? sanitizeNonNegative(value) : value;
-    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: clean } : row));
+  const buildLineItems = () => {
+    const catalogLines = salesItems
+      .map(item => ({
+        salesItemId: item._id,
+        quantity: item.pricingType === 'fixed' ? toNumber(quantities[item._id] || '0') : undefined,
+        amount: item.pricingType === 'variable' ? toNumber(amounts[item._id] || '0') : undefined,
+      }))
+      .filter(li => (li.quantity || 0) > 0 || (li.amount || 0) > 0);
+    const customLines = customItems
+      .filter(row => row.name.trim() && toNumber(row.amount) > 0)
+      .map(row => ({ customName: row.name.trim(), amount: toNumber(row.amount) }));
+    return [...catalogLines, ...customLines];
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const resetForm = () => {
+    setVisitorCount('1');
+    setQuantities({});
+    setAmounts({});
+    setCustomItems([]);
+    setPaymentMethod('cash');
+    setQrFlow(null);
+    if (pollRef.current) clearInterval(pollRef.current);
+  };
+
+  const handleRegister = async () => {
+    const lineItems = buildLineItems();
+    const visitors = toNumber(visitorCount);
+
+    if (lineItems.length === 0 && visitors <= 0) {
+      alert('商品または来店人数を入力してください');
+      return;
+    }
+    if (lineItems.length > 0 && total <= 0) {
+      alert('合計金額が0円です。数量または金額を確認してください');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const lineItems = salesItems.map(item => {
-        const state = lineItemState[item._id] || emptyLineItemState;
-        const isFixed = item.pricingType === 'fixed';
-        return {
-          salesItemId: item._id,
-          cashQuantity: isFixed ? toNumber(state.cashQuantity) : undefined,
-          cashAmount: isFixed ? undefined : toNumber(state.cashAmount),
-          payPayQuantity: isFixed ? toNumber(state.payPayQuantity) : undefined,
-          payPayAmount: isFixed ? undefined : toNumber(state.payPayAmount),
-          cardQuantity: isFixed ? toNumber(state.cardQuantity) : undefined,
-          cardAmount: isFixed ? undefined : toNumber(state.cardAmount),
-        };
-      });
-
-      const customLineItems = customItems
-        .filter(row => row.name.trim() && toNumber(row.amount) > 0)
-        .map(row => ({ name: row.name.trim(), amount: toNumber(row.amount), paymentMethod: row.paymentMethod }));
-
-      const response = await fetch(`/api/admin/sales/${date}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorCount: toNumber(visitorCount),
-          purchaseGroupCount: toNumber(purchaseGroupCount),
-          lineItems,
-          customLineItems,
-          wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
-          adjustment: toNumber(adjustment),
-          notes,
-        }),
-      });
-      if (!response.ok) throw new Error('保存に失敗しました');
-
-      alert('保存しました');
-      // サーバー側で再計算された確定値を取り直す（GETの射影に合わせて取得し直すのが確実なため）
-      await loadDay(date);
+      if (paymentMethod === 'qr' && lineItems.length > 0) {
+        // QR決済: 決済リンクを発行してその場でQR表示、支払い完了までポーリング
+        const response = await fetch('/api/admin/in-store-charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lineItems, visitorCount: visitors }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || '決済リンクの発行に失敗しました');
+        }
+        const data = await response.json();
+        setQrFlow({
+          chargeId: data.charge._id,
+          amount: data.charge.amount,
+          qrCodeDataUrl: data.qrCodeDataUrl,
+          status: 'pending',
+          lineItems: data.charge.lineItems || [],
+        });
+        startPolling(data.charge._id);
+      } else {
+        const method: PaymentMethod = paymentMethod === 'qr' ? 'cash' : paymentMethod;
+        const response = await fetch('/api/admin/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentMethod: method, visitorCount: visitors, lineItems }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || '登録に失敗しました');
+        }
+        onRegistered(
+          lineItems.length > 0
+            ? `登録しました（${methodLabels[method]} ¥${total.toLocaleString()}）`
+            : `来店のみ登録しました（${visitors}名）`
+        );
+        resetForm();
+      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : '保存に失敗しました');
+      alert(err instanceof Error ? err.message : '登録に失敗しました');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
 
+  const startPolling = (chargeId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/admin/in-store-charge/${chargeId}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.charge.status !== 'pending') {
+          setQrFlow(prev => (prev ? { ...prev, status: data.charge.status } : prev));
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch {
+        // ポーリング中の一時的なエラーは無視して次回に再試行する
+      }
+    }, 3000);
+  };
+
+  const handleQrAbort = async () => {
+    if (!qrFlow) return;
+    if (!confirm('このQR決済を取り消しますか？')) return;
+    try {
+      await fetch(`/api/admin/in-store-charge/${qrFlow.chargeId}/cancel`, { method: 'POST' });
+    } catch {
+      // 取り消しAPIの失敗は握りつぶす（未払いのまま放置されても実害はない）
+    }
+    resetForm();
+  };
+
+  const handleQrDone = () => {
+    onRegistered(`QR決済が完了しました（¥${qrFlow?.amount.toLocaleString()}）`);
+    resetForm();
+  };
+
+  // QR決済フロー中はフォームの代わりにQR画面を表示
+  if (qrFlow) {
+    return (
+      <div className="bg-white shadow rounded-lg p-6 text-center space-y-4">
+        <p className="text-3xl font-bold text-gray-900">¥{qrFlow.amount.toLocaleString()}</p>
+        <ul className="text-left text-sm text-gray-600 divide-y border rounded-md">
+          {qrFlow.lineItems.map((li, idx) => (
+            <li key={idx} className="px-3 py-2 flex justify-between">
+              <span>{li.name}{li.quantity ? ` × ${li.quantity}` : ''}</span>
+              <span>¥{(li.amount || 0).toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
+
+        {qrFlow.status === 'pending' && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
+            <p className="text-sm text-gray-500">お客様のスマホでQRコードを読み取ってお支払いください</p>
+            <p className="text-sm text-moss-green animate-pulse">支払い待ち...</p>
+            <button onClick={handleQrAbort} className="w-full py-3 border border-gray-300 rounded-md hover:bg-gray-50">
+              取り消す
+            </button>
+          </>
+        )}
+
+        {qrFlow.status === 'paid' && (
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-3xl">✓</span>
+            </div>
+            <p className="text-emerald-600 font-medium">支払いが完了しました</p>
+            <button onClick={handleQrDone} className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90">
+              新しい会計を開始
+            </button>
+          </div>
+        )}
+
+        {(qrFlow.status === 'cancelled' || qrFlow.status === 'refunded') && (
+          <div className="space-y-4">
+            <p className="text-red-600 font-medium">支払いがキャンセル・失敗しました</p>
+            <button onClick={resetForm} className="w-full py-3 border border-gray-300 rounded-md hover:bg-gray-50">
+              新しい会計を開始
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">売上管理</h1>
-          <p className="text-gray-600 mt-1">その日の店舗売上を入力・確認します</p>
-        </div>
-        <div className="flex gap-2 text-sm">
-          <Link href="/admin/sales/charge" className="px-3 py-2 bg-moss-green text-white rounded-md hover:bg-moss-green/90">
-            QR決済を発行
-          </Link>
-          <Link href="/admin/sales/items" className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-            項目カタログ
-          </Link>
+    <div className="space-y-4">
+      {/* 来店人数 */}
+      <div className="bg-white shadow rounded-lg p-4 flex items-center justify-between">
+        <span className="font-medium text-gray-900">来店人数</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setVisitorCount(String(Math.max(0, toNumber(visitorCount) - 1)))}
+            className="w-11 h-11 text-xl border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            inputMode="numeric"
+            min="0"
+            value={displayStr(visitorCount)}
+            onChange={(e) => setVisitorCount(sanitizeNonNegative(e.target.value))}
+            placeholder="0"
+            className="w-16 px-1 py-2 text-lg text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+          />
+          <button
+            onClick={() => setVisitorCount(String(toNumber(visitorCount) + 1))}
+            className="w-11 h-11 text-xl border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            ＋
+          </button>
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-4">
-        <label className="block text-sm text-gray-600 mb-1">日付</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
-        />
-      </div>
-
-      {loading ? (
+      {loadingItems ? (
         <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
       ) : (
         <>
-          <div className="bg-white shadow rounded-lg p-4 grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">来店者数</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={displayStr(visitorCount)}
-                onChange={(e) => setVisitorCount(sanitizeNonNegative(e.target.value))}
-                placeholder="0"
-                className={numberInputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">購入組数</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={displayStr(purchaseGroupCount)}
-                onChange={(e) => setPurchaseGroupCount(sanitizeNonNegative(e.target.value))}
-                placeholder="0"
-                className={numberInputClass}
-              />
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-            商品ごとに現金・PayPay・クレジットの内訳を入力してください。クレジット欄の下に、QR決済（{'/admin/sales/charge'}で発行したもの）の自動集計分を表示しています。QR以外のカード決済があれば、クレジット欄にその分だけ追加で入力してください。
-          </div>
-
           {categoryOrder.map(category => {
             const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
             if (itemsInCategory.length === 0) return null;
 
+            const categoryTotal = itemsInCategory.reduce((sum, item) => sum + itemAmount(item), 0);
             return (
               <details key={category} className="bg-white shadow rounded-lg overflow-hidden" open>
                 <summary className="px-4 py-3 bg-gray-50 font-medium text-gray-900 cursor-pointer flex justify-between items-center">
                   <span>{categoryLabels[category]}</span>
-                  <span className="text-sm text-gray-500">小計 ¥{categorySubtotal(category).toLocaleString()}</span>
+                  {categoryTotal > 0 && <span className="text-sm text-moss-green font-bold">¥{categoryTotal.toLocaleString()}</span>}
                 </summary>
                 <ul className="divide-y">
-                  {itemsInCategory.map(item => {
-                    const state = lineItemState[item._id] || emptyLineItemState;
-                    const isFixed = item.pricingType === 'fixed';
-                    const qrAuto = qrChargeItemTotals[item._id];
-                    return (
-                      <li key={item._id} className="px-4 py-3">
-                        <div className="flex items-center justify-between gap-3 mb-2">
-                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          {isFixed && (
-                            <p className="text-xs text-gray-500 whitespace-nowrap">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
-                          )}
+                  {itemsInCategory.map(item => (
+                    <li key={item._id} className="px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                        {item.pricingType === 'fixed' && (
+                          <p className="text-xs text-gray-500">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
+                        )}
+                      </div>
+                      {item.pricingType === 'fixed' ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => stepQuantity(item._id, -1)}
+                            className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            value={displayStr(quantities[item._id] || '0')}
+                            onChange={(e) => setQuantity(item._id, e.target.value)}
+                            placeholder="0"
+                            className="w-12 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+                          />
+                          <button
+                            onClick={() => stepQuantity(item._id, 1)}
+                            className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
+                          >
+                            ＋
+                          </button>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="block text-[10px] text-gray-500 mb-0.5">現金</label>
-                            {isFixed ? (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.cashQuantity)}
-                                onChange={(e) => updateLineItem(item._id, 'cashQuantity', e.target.value)}
-                                placeholder="0"
-                                className={numberInputClass}
-                              />
-                            ) : (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.cashAmount)}
-                                onChange={(e) => updateLineItem(item._id, 'cashAmount', e.target.value)}
-                                placeholder="金額"
-                                className={numberInputClass}
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-[10px] text-gray-500 mb-0.5">PayPay</label>
-                            {isFixed ? (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.payPayQuantity)}
-                                onChange={(e) => updateLineItem(item._id, 'payPayQuantity', e.target.value)}
-                                placeholder="0"
-                                className={numberInputClass}
-                              />
-                            ) : (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.payPayAmount)}
-                                onChange={(e) => updateLineItem(item._id, 'payPayAmount', e.target.value)}
-                                placeholder="金額"
-                                className={numberInputClass}
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-[10px] text-gray-500 mb-0.5">クレジット</label>
-                            {isFixed ? (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.cardQuantity)}
-                                onChange={(e) => updateLineItem(item._id, 'cardQuantity', e.target.value)}
-                                placeholder="0"
-                                className={numberInputClass}
-                              />
-                            ) : (
-                              <input
-                                type="number" inputMode="numeric" min="0"
-                                value={displayStr(state.cardAmount)}
-                                onChange={(e) => updateLineItem(item._id, 'cardAmount', e.target.value)}
-                                placeholder="金額"
-                                className={numberInputClass}
-                              />
-                            )}
-                            {qrAuto && qrAuto.amount > 0 && (
-                              <p className="text-[10px] text-emerald-600 mt-0.5 whitespace-nowrap">
-                                +QR {qrAuto.quantity ? `${qrAuto.quantity}個 ` : ''}¥{qrAuto.amount.toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
+                      ) : (
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          value={displayStr(amounts[item._id] || '0')}
+                          onChange={(e) => setAmount(item._id, e.target.value)}
+                          placeholder="金額"
+                          className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                        />
+                      )}
+                    </li>
+                  ))}
                 </ul>
               </details>
             );
@@ -449,24 +577,24 @@ export default function SalesPage() {
             </div>
           )}
 
-          {/* 都度入力の商品（カタログにない単発商品） */}
+          {/* カタログ外の商品 */}
           <div className="bg-white shadow rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-medium text-gray-900">その他（普段売っていない商品）</h2>
-              <button onClick={addCustomItem} className="text-sm px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90">
+              <h2 className="font-medium text-gray-900 text-sm">その他（カタログにない商品）</h2>
+              <button
+                onClick={() => setCustomItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0' }])}
+                className="text-sm px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90"
+              >
                 + 追加
               </button>
             </div>
-            {customItems.length === 0 && (
-              <p className="text-xs text-gray-500">単発で販売した、カタログにない商品があれば追加してください。</p>
-            )}
             <ul className="space-y-2">
               {customItems.map(row => (
                 <li key={row.id} className="flex items-center gap-2">
                   <input
                     type="text"
                     value={row.name}
-                    onChange={(e) => updateCustomItem(row.id, 'name', e.target.value)}
+                    onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, name: e.target.value } : r))}
                     placeholder="商品名"
                     className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
                   />
@@ -475,114 +603,679 @@ export default function SalesPage() {
                     inputMode="numeric"
                     min="0"
                     value={displayStr(row.amount)}
-                    onChange={(e) => updateCustomItem(row.id, 'amount', e.target.value)}
+                    onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, amount: sanitizeNonNegative(e.target.value) } : r))}
                     placeholder="金額"
-                    className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                    className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
                   />
-                  <select
-                    value={row.paymentMethod}
-                    onChange={(e) => updateCustomItem(row.id, 'paymentMethod', e.target.value)}
-                    className="px-1 py-2 text-sm border border-gray-300 rounded-md"
+                  <button
+                    onClick={() => setCustomItems(prev => prev.filter(r => r.id !== row.id))}
+                    className="text-red-500 text-sm px-2"
                   >
-                    <option value="cash">現金</option>
-                    <option value="payPay">PayPay</option>
-                    <option value="card">クレジット</option>
-                  </select>
-                  <button onClick={() => removeCustomItem(row.id)} className="text-red-500 text-sm px-2">✕</button>
+                    ✕
+                  </button>
                 </li>
               ))}
             </ul>
-            {qrChargeCustomItems.length > 0 && (
-              <div className="pt-2 border-t">
-                <p className="text-xs text-gray-500 mb-1">QR決済で販売されたカタログ外の商品（自動集計・入力不要）</p>
-                <ul className="text-xs text-emerald-600 space-y-0.5">
-                  {qrChargeCustomItems.map((ci, idx) => (
-                    <li key={idx} className="flex justify-between">
-                      <span>{ci.name}</span>
-                      <span>¥{ci.amount.toLocaleString()}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
 
-          {/* 調整項目 */}
-          <div className="bg-white shadow rounded-lg p-4 space-y-3">
-            <h2 className="font-medium text-gray-900">調整</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">調整（マイナス可）</label>
-                <input
-                  type="number" inputMode="numeric"
-                  value={displayStr(adjustment)}
-                  onChange={(e) => setAdjustment(e.target.value)}
-                  placeholder="0"
-                  className={numberInputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
-                <input
-                  type="number" inputMode="numeric" min="0"
-                  value={displayStr(wordOfMouthDiscount)}
-                  onChange={(e) => setWordOfMouthDiscount(sanitizeNonNegative(e.target.value))}
-                  placeholder="0"
-                  className={numberInputClass}
-                />
-              </div>
+          {/* 会計バー（支払い方法＋登録） */}
+          <div className="sticky bottom-0 bg-white border border-gray-200 shadow-lg rounded-lg p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">{itemCount > 0 ? `${itemCount}点` : '商品未選択'}</span>
+              <span className="text-2xl font-bold text-gray-900">¥{total.toLocaleString()}</span>
             </div>
+            <div className="grid grid-cols-4 gap-2">
+              {(['cash', 'payPay', 'qr', 'card'] as EntryMethod[]).map(method => (
+                <button
+                  key={method}
+                  onClick={() => setPaymentMethod(method)}
+                  className={`py-2.5 text-xs font-medium rounded-md border ${
+                    paymentMethod === method
+                      ? 'bg-moss-green text-white border-moss-green'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {methodLabels[method]}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleRegister}
+              disabled={submitting || (total <= 0 && toNumber(visitorCount) <= 0)}
+              className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+            >
+              {submitting
+                ? '登録中...'
+                : total > 0
+                  ? (paymentMethod === 'qr' ? 'QRコードを発行' : '登録')
+                  : '来店のみ登録'}
+            </button>
           </div>
-
-          {/* 備考 */}
-          <div className="bg-white shadow rounded-lg p-4">
-            <label className="block text-sm text-gray-600 mb-1">備考</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-            />
-          </div>
-
-          {/* 集計サマリー */}
-          <div className="bg-white shadow rounded-lg p-4 space-y-2">
-            <h2 className="font-medium text-gray-900 mb-2">集計（すべて商品明細から自動計算）</h2>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">現金</span>
-              <span>¥{cashTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">PayPay</span>
-              <span>¥{payPayTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">クレジット（QR決済分含む）</span>
-              <span>¥{creditTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm font-medium border-t pt-2">
-              <span className="text-gray-700">店舗売上合計（商品明細）</span>
-              <span>¥{itemsTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">EC（オンライン）売上（自動集計）</span>
-              <span>¥{ecTotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg border-t pt-2">
-              <span>その日の総売上</span>
-              <span>¥{grandTotal.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
-          >
-            {saving ? '保存中...' : '保存'}
-          </button>
         </>
       )}
+    </div>
+  );
+}
+
+// ========== 集計・履歴タブ ==========
+
+function SummaryTab({
+  salesItems,
+  onMessage,
+}: {
+  salesItems: SalesItem[];
+  onMessage: (text: string) => void;
+}) {
+  const [date, setDate] = useState(todayJstString());
+  const [data, setData] = useState<DayData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [visitorCount, setVisitorCount] = useState('0');
+  const [purchaseGroupCount, setPurchaseGroupCount] = useState('0');
+  const [wordOfMouthDiscount, setWordOfMouthDiscount] = useState('0');
+  const [adjustment, setAdjustment] = useState('0');
+  const [notes, setNotes] = useState('');
+  const [edit, setEdit] = useState<EditState | null>(null);
+  const [busyId, setBusyId] = useState('');
+
+  const loadDay = useCallback(async (targetDate: string) => {
+    setLoading(true);
+    setEdit(null);
+    try {
+      const response = await fetch(`/api/admin/sales/${targetDate}`);
+      if (!response.ok) throw new Error('取得に失敗しました');
+      const dayData: DayData = await response.json();
+      setData(dayData);
+      setVisitorCount(String(dayData.dailySales?.visitorCount ?? 0));
+      setPurchaseGroupCount(String(dayData.dailySales?.purchaseGroupCount ?? 0));
+      setWordOfMouthDiscount(String(dayData.dailySales?.wordOfMouthDiscount ?? 0));
+      setAdjustment(String(dayData.dailySales?.adjustment ?? 0));
+      setNotes(dayData.dailySales?.notes || '');
+    } catch (err) {
+      console.error('売上データ取得エラー:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDay(date);
+  }, [date, loadDay]);
+
+  const agg = data?.aggregate;
+  // 調整・割引は保存前でも画面上の総売上に即時反映する
+  const grandTotal = (agg?.storeTotal || 0) + toNumber(adjustment) - toNumber(wordOfMouthDiscount) + (agg?.ecTotal || 0);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/sales/${date}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorCount: toNumber(visitorCount),
+          purchaseGroupCount: toNumber(purchaseGroupCount),
+          wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
+          adjustment: toNumber(adjustment),
+          notes,
+        }),
+      });
+      if (!response.ok) throw new Error('保存に失敗しました');
+      onMessage('保存しました（Googleシートにも同期されます）');
+      await loadDay(date);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ----- 取引の編集 -----
+
+  const openEdit = (tx: TransactionView) => {
+    setEdit({
+      id: tx._id,
+      isCharge: false,
+      paymentMethod: tx.paymentMethod || 'cash',
+      visitorCount: String(tx.visitorCount ?? 0),
+      lines: (tx.lineItems || []).map(li => toEditLine(li, salesItems)),
+    });
+  };
+
+  const openChargeEdit = (charge: ChargeView) => {
+    setEdit({
+      id: charge._id,
+      isCharge: true,
+      paymentMethod: 'card',
+      visitorCount: String(charge.visitorCount ?? 0),
+      lines: (charge.lineItems || []).map(li => toEditLine(li, salesItems)),
+      paidAmount: charge.amount,
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!edit) return;
+    setBusyId(edit.id);
+    try {
+      const lineItems = edit.lines
+        .map(line => {
+          if (line.salesItemId) {
+            return {
+              salesItemId: line.salesItemId,
+              quantity: line.pricingType === 'fixed' ? toNumber(line.quantity) : undefined,
+              amount: line.pricingType === 'variable' ? toNumber(line.amount) : undefined,
+            };
+          }
+          return { customName: line.name, amount: toNumber(line.amount) };
+        })
+        .filter(li => (li.quantity || 0) > 0 || (li.amount || 0) > 0);
+
+      const url = edit.isCharge
+        ? `/api/admin/in-store-charge/${edit.id}`
+        : `/api/admin/transactions/${edit.id}`;
+      const body = edit.isCharge
+        ? { lineItems }
+        : { lineItems, paymentMethod: edit.paymentMethod, visitorCount: toNumber(edit.visitorCount) };
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const resData = await response.json().catch(() => ({}));
+        throw new Error(resData.error || '更新に失敗しました');
+      }
+      onMessage('更新しました');
+      await loadDay(date);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '更新に失敗しました');
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const handleDelete = async (tx: TransactionView) => {
+    if (!confirm(`この取引（¥${(tx.total || 0).toLocaleString()}）を削除しますか？来店者数・組数も戻ります。`)) return;
+    setBusyId(tx._id);
+    try {
+      const response = await fetch(`/api/admin/transactions/${tx._id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('削除に失敗しました');
+      onMessage('削除しました');
+      await loadDay(date);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '削除に失敗しました');
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const handleChargeCancel = async (charge: ChargeView) => {
+    const confirmText = charge.status === 'paid'
+      ? `この決済（¥${(charge.amount || 0).toLocaleString()}）を返金しますか？\nお客様のカードに実際に全額返金されます。この操作は取り消せません。`
+      : 'この未払いのQR決済を取り消しますか？';
+    if (!confirm(confirmText)) return;
+    setBusyId(charge._id);
+    try {
+      const response = await fetch(`/api/admin/in-store-charge/${charge._id}/cancel`, { method: 'POST' });
+      if (!response.ok) {
+        const resData = await response.json().catch(() => ({}));
+        throw new Error(resData.error || 'キャンセルに失敗しました');
+      }
+      onMessage(charge.status === 'paid' ? '返金しました' : '取り消しました');
+      await loadDay(date);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'キャンセルに失敗しました');
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  // 履歴: 手動取引とQR決済を時刻順にマージ
+  const historyEntries = useMemo(() => {
+    const entries: Array<{ kind: 'tx'; tx: TransactionView } | { kind: 'charge'; charge: ChargeView }> = [];
+    for (const tx of data?.transactions || []) entries.push({ kind: 'tx', tx });
+    for (const charge of data?.charges || []) entries.push({ kind: 'charge', charge });
+    return entries.sort((a, b) => {
+      const timeA = a.kind === 'tx' ? a.tx.createdAt || '' : a.charge.createdAt || '';
+      const timeB = b.kind === 'tx' ? b.tx.createdAt || '' : b.charge.createdAt || '';
+      return timeB.localeCompare(timeA);
+    });
+  }, [data]);
+
+  if (loading) {
+    return <div className="animate-pulse h-64 bg-gray-200 rounded"></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white shadow rounded-lg p-4">
+        <label className="block text-sm text-gray-600 mb-1">日付</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
+        />
+      </div>
+
+      {/* 集計サマリー */}
+      <div className="bg-white shadow rounded-lg p-4 space-y-2">
+        <h2 className="font-medium text-gray-900 mb-2">集計（取引から自動計算）</h2>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">現金</span>
+          <span>¥{(agg?.methodTotals.cash || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">PayPay</span>
+          <span>¥{(agg?.methodTotals.payPay || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">クレジット（手動）</span>
+          <span>¥{(agg?.methodTotals.card || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">クレジット（QR）</span>
+          <span>¥{(agg?.methodTotals.qr || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm font-medium border-t pt-2">
+          <span className="text-gray-700">店舗売上合計</span>
+          <span>¥{(agg?.storeTotal || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">EC（オンライン）売上</span>
+          <span>¥{(agg?.ecTotal || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between font-bold text-lg border-t pt-2">
+          <span>その日の総売上</span>
+          <span>¥{grandTotal.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* 商品別明細 */}
+      {agg && agg.itemRows.length > 0 && (
+        <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
+          <h2 className="font-medium text-gray-900 mb-2">商品別明細</h2>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b">
+                <th className="text-left py-1 pr-2">商品</th>
+                <th className="text-right py-1 px-1">現金</th>
+                <th className="text-right py-1 px-1">PayPay</th>
+                <th className="text-right py-1 px-1">カード</th>
+                <th className="text-right py-1 px-1">QR</th>
+                <th className="text-right py-1 pl-1">合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              {agg.itemRows.map(row => (
+                <tr key={row.key} className="border-b last:border-0">
+                  <td className="py-1.5 pr-2 text-gray-900">{row.name}</td>
+                  {(['cash', 'payPay', 'card', 'qr'] as const).map(method => (
+                    <td key={method} className="text-right py-1.5 px-1 text-gray-600">
+                      {row[method].amount > 0
+                        ? (row[method].quantity > 0 ? `${row[method].quantity}個` : `¥${row[method].amount.toLocaleString()}`)
+                        : ''}
+                    </td>
+                  ))}
+                  <td className="text-right py-1.5 pl-1 font-medium">¥{row.total.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* カウンタ・調整・備考 */}
+      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+        <h2 className="font-medium text-gray-900">来店・調整（自動加算済み、手修正可）</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">来店者数</label>
+            <input type="number" inputMode="numeric" min="0" value={displayStr(visitorCount)} onChange={(e) => setVisitorCount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">購入組数</label>
+            <input type="number" inputMode="numeric" min="0" value={displayStr(purchaseGroupCount)} onChange={(e) => setPurchaseGroupCount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">調整（マイナス可）</label>
+            <input type="number" inputMode="numeric" value={displayStr(adjustment)} onChange={(e) => setAdjustment(e.target.value)} placeholder="0" className={numberInputClass} />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
+            <input type="number" inputMode="numeric" min="0" value={displayStr(wordOfMouthDiscount)} onChange={(e) => setWordOfMouthDiscount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">備考</label>
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+        >
+          {saving ? '保存中...' : '保存（Googleシート同期）'}
+        </button>
+      </div>
+
+      {/* 取引履歴 */}
+      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-medium text-gray-900">取引履歴</h2>
+          <a
+            href="https://squareup.com/dashboard/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-moss-green hover:underline"
+          >
+            Squareダッシュボード ↗
+          </a>
+        </div>
+
+        {historyEntries.length === 0 && (
+          <p className="text-sm text-gray-500">この日の取引はまだありません。</p>
+        )}
+
+        <ul className="divide-y">
+          {historyEntries.map(entry => {
+            if (entry.kind === 'tx') {
+              const tx = entry.tx;
+              const isEditing = edit?.id === tx._id;
+              return (
+                <li key={tx._id} className="py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-400">{formatTime(tx.createdAt)}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                          {methodLabels[tx.paymentMethod || 'cash']}
+                        </span>
+                        {(tx.visitorCount || 0) > 0 && (
+                          <span className="text-xs text-gray-500">{tx.visitorCount}名</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 mt-1">{itemsSummary(tx.lineItems)}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-gray-900">¥{(tx.total || 0).toLocaleString()}</p>
+                      <div className="flex gap-2 mt-1 justify-end">
+                        <button
+                          onClick={() => (isEditing ? setEdit(null) : openEdit(tx))}
+                          disabled={busyId === tx._id}
+                          className="text-xs text-moss-green hover:underline"
+                        >
+                          {isEditing ? '閉じる' : '編集'}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(tx)}
+                          disabled={busyId === tx._id}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {isEditing && edit && (
+                    <EditPanel
+                      edit={edit}
+                      setEdit={setEdit}
+                      salesItems={salesItems}
+                      onSave={handleEditSave}
+                      saving={busyId === tx._id}
+                    />
+                  )}
+                </li>
+              );
+            }
+
+            const charge = entry.charge;
+            const status = chargeStatusLabels[charge.status || 'pending'] || chargeStatusLabels.pending;
+            const isEditing = edit?.id === charge._id;
+            return (
+              <li key={charge._id} className="py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-gray-400">{formatTime(charge.createdAt)}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">クレジット(QR)</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${status.className}`}>{status.label}</span>
+                      {(charge.visitorCount || 0) > 0 && (
+                        <span className="text-xs text-gray-500">{charge.visitorCount}名</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700 mt-1">{itemsSummary(charge.lineItems)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-gray-900">¥{(charge.amount || 0).toLocaleString()}</p>
+                    <div className="flex gap-2 mt-1 justify-end">
+                      {charge.status === 'paid' && (
+                        <button
+                          onClick={() => (isEditing ? setEdit(null) : openChargeEdit(charge))}
+                          disabled={busyId === charge._id}
+                          className="text-xs text-moss-green hover:underline"
+                        >
+                          {isEditing ? '閉じる' : '記録を編集'}
+                        </button>
+                      )}
+                      {(charge.status === 'pending' || charge.status === 'paid') && (
+                        <button
+                          onClick={() => handleChargeCancel(charge)}
+                          disabled={busyId === charge._id}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          {busyId === charge._id ? '処理中...' : charge.status === 'paid' ? '返金' : '取り消し'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {isEditing && edit && (
+                  <EditPanel
+                    edit={edit}
+                    setEdit={setEdit}
+                    salesItems={salesItems}
+                    onSave={handleEditSave}
+                    saving={busyId === charge._id}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ========== 取引の編集パネル ==========
+
+function toEditLine(li: LineItemView, salesItems: SalesItem[]): EditLine {
+  const catalogItem = li.salesItemId ? salesItems.find(item => item._id === li.salesItemId) : undefined;
+  return {
+    salesItemId: li.salesItemId,
+    name: li.name,
+    pricingType: catalogItem ? catalogItem.pricingType : (li.salesItemId ? 'fixed' : 'custom'),
+    unitPrice: catalogItem?.unitPrice,
+    quantity: String(li.quantity ?? 0),
+    amount: String(li.amount ?? 0),
+  };
+}
+
+function EditPanel({
+  edit,
+  setEdit,
+  salesItems,
+  onSave,
+  saving,
+}: {
+  edit: EditState;
+  setEdit: (edit: EditState | null) => void;
+  salesItems: SalesItem[];
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const [addItemId, setAddItemId] = useState('');
+
+  const updateLine = (index: number, patch: Partial<EditLine>) => {
+    const lines = edit.lines.map((line, i) => (i === index ? { ...line, ...patch } : line));
+    setEdit({ ...edit, lines });
+  };
+
+  const removeLine = (index: number) => {
+    setEdit({ ...edit, lines: edit.lines.filter((_, i) => i !== index) });
+  };
+
+  const addCatalogLine = () => {
+    if (!addItemId) return;
+    const item = salesItems.find(i => i._id === addItemId);
+    if (!item || edit.lines.some(line => line.salesItemId === addItemId)) return;
+    setEdit({
+      ...edit,
+      lines: [
+        ...edit.lines,
+        {
+          salesItemId: item._id,
+          name: item.name,
+          pricingType: item.pricingType,
+          unitPrice: item.unitPrice,
+          quantity: '1',
+          amount: String(item.pricingType === 'fixed' ? item.unitPrice || 0 : 0),
+        },
+      ],
+    });
+    setAddItemId('');
+  };
+
+  const addCustomLine = () => {
+    setEdit({
+      ...edit,
+      lines: [...edit.lines, { name: '', pricingType: 'custom', quantity: '0', amount: '0' }],
+    });
+  };
+
+  const editTotal = edit.lines.reduce((sum, line) => {
+    if (line.pricingType === 'fixed') return sum + toNumber(line.quantity) * (line.unitPrice || 0);
+    return sum + toNumber(line.amount);
+  }, 0);
+
+  const mismatch = edit.isCharge && edit.paidAmount !== undefined && editTotal !== edit.paidAmount;
+
+  return (
+    <div className="mt-3 bg-gray-50 border border-gray-200 rounded-md p-3 space-y-3">
+      {!edit.isCharge && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">支払い方法</label>
+            <select
+              value={edit.paymentMethod}
+              onChange={(e) => setEdit({ ...edit, paymentMethod: e.target.value as PaymentMethod })}
+              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+            >
+              <option value="cash">現金</option>
+              <option value="payPay">PayPay</option>
+              <option value="card">クレジット(手動)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">来店人数</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={displayStr(edit.visitorCount)}
+              onChange={(e) => setEdit({ ...edit, visitorCount: sanitizeNonNegative(e.target.value) })}
+              placeholder="0"
+              className={numberInputClass}
+            />
+          </div>
+        </div>
+      )}
+
+      <ul className="space-y-2">
+        {edit.lines.map((line, index) => (
+          <li key={index} className="flex items-center gap-2">
+            {line.pricingType === 'custom' && !line.salesItemId ? (
+              <input
+                type="text"
+                value={line.name}
+                onChange={(e) => updateLine(index, { name: e.target.value })}
+                placeholder="商品名"
+                className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            ) : (
+              <span className="flex-1 min-w-0 text-sm text-gray-900 truncate">{line.name}</span>
+            )}
+            {line.pricingType === 'fixed' ? (
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(line.quantity)}
+                onChange={(e) => updateLine(index, { quantity: sanitizeNonNegative(e.target.value) })}
+                placeholder="0"
+                className="w-16 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+            ) : (
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(line.amount)}
+                onChange={(e) => updateLine(index, { amount: sanitizeNonNegative(e.target.value) })}
+                placeholder="金額"
+                className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+            )}
+            <button onClick={() => removeLine(index)} className="text-red-500 text-sm px-1">✕</button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex items-center gap-2">
+        <select
+          value={addItemId}
+          onChange={(e) => setAddItemId(e.target.value)}
+          className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+        >
+          <option value="">商品を追加...</option>
+          {sortByNameJa(salesItems.filter(item => item.isActive)).map(item => (
+            <option key={item._id} value={item._id}>
+              {categoryLabels[item.category] || item.category}: {item.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={addCatalogLine} className="text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-white">追加</button>
+        <button onClick={addCustomLine} className="text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-white whitespace-nowrap">自由入力</button>
+      </div>
+
+      <div className="flex justify-between items-center text-sm">
+        <span className="text-gray-600">明細合計</span>
+        <span className="font-bold">¥{editTotal.toLocaleString()}</span>
+      </div>
+      {mismatch && (
+        <p className="text-xs text-yellow-700 bg-yellow-50 rounded px-2 py-1.5">
+          ⚠️ 明細合計が決済金額（¥{(edit.paidAmount || 0).toLocaleString()}）と一致していません。記録として保存はできますが、金額の変更（返金）はできません。
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={onSave}
+          disabled={saving}
+          className="flex-1 py-2.5 bg-moss-green text-white text-sm font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+        >
+          {saving ? '保存中...' : '保存'}
+        </button>
+        <button
+          onClick={() => setEdit(null)}
+          className="px-4 py-2.5 text-sm border border-gray-300 rounded-md hover:bg-white"
+        >
+          キャンセル
+        </button>
+      </div>
     </div>
   );
 }

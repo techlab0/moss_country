@@ -4,37 +4,82 @@ import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
 
+// 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
+// dailySales ドキュメントはカウンタ（来店者数・購入組数）・調整・備考のみを保持する。
+
 type PaymentMethod = 'cash' | 'payPay' | 'card';
 
-interface LineItemInput {
-  salesItemId: string;
-  cashQuantity?: number;
-  cashAmount?: number;
-  payPayQuantity?: number;
-  payPayAmount?: number;
-  cardQuantity?: number;
-  cardAmount?: number;
+interface AggLineItem {
+  name?: string;
+  quantity?: number;
+  amount?: number;
+  salesItemId?: string;
+  category?: string;
 }
 
-interface CustomLineItemInput {
-  name: string;
-  amount: number;
-  paymentMethod: PaymentMethod;
-}
-
-interface SalesItemMeta {
+interface TransactionDoc {
   _id: string;
-  category: string;
-  pricingType: string;
-  unitPrice?: number;
+  createdAt?: string;
+  paymentMethod?: PaymentMethod;
+  visitorCount?: number;
+  total?: number;
+  lineItems?: AggLineItem[];
 }
 
-// 数量入力(fixed)なら単価×数量、金額直接入力(variable)ならその金額を返す
-// クライアントからの申告値は信用せず、マイナス値は0として扱う
-function resolveAmount(meta: SalesItemMeta, quantity?: number, amount?: number): number {
-  return meta.pricingType === 'fixed'
-    ? Math.max(0, quantity || 0) * (meta.unitPrice || 0)
-    : Math.max(0, amount || 0);
+interface ChargeDoc {
+  _id: string;
+  amount?: number;
+  description?: string;
+  status?: string;
+  createdAt?: string;
+  paidAt?: string;
+  visitorCount?: number;
+  lineItems?: AggLineItem[];
+}
+
+interface MethodCell {
+  quantity: number;
+  amount: number;
+}
+
+interface ItemRow {
+  key: string;
+  salesItemId?: string;
+  name: string;
+  cash: MethodCell;
+  payPay: MethodCell;
+  card: MethodCell;
+  qr: MethodCell;
+  total: number;
+}
+
+function emptyCell(): MethodCell {
+  return { quantity: 0, amount: 0 };
+}
+
+function addToRow(
+  rows: Map<string, ItemRow>,
+  li: AggLineItem,
+  method: PaymentMethod | 'qr'
+) {
+  const key = li.salesItemId || `custom:${li.name || '不明'}`;
+  let row = rows.get(key);
+  if (!row) {
+    row = {
+      key,
+      salesItemId: li.salesItemId,
+      name: li.name || '不明',
+      cash: emptyCell(),
+      payPay: emptyCell(),
+      card: emptyCell(),
+      qr: emptyCell(),
+      total: 0,
+    };
+    rows.set(key, row);
+  }
+  row[method].quantity += li.quantity || 0;
+  row[method].amount += li.amount || 0;
+  row.total += li.amount || 0;
 }
 
 export async function GET(
@@ -53,61 +98,87 @@ export async function GET(
     }
 
     const docId = dailySalesDocId(date);
-    const dailySales = await writeClient.fetch(
-      `*[_id == $id][0]{
-        _id,
-        date,
-        visitorCount,
-        purchaseGroupCount,
-        lineItems[]{
-          "salesItemId": salesItem._ref,
-          cashQuantity, cashAmount,
-          payPayQuantity, payPayAmount,
-          cardQuantity, cardAmount
-        },
-        customLineItems[]{ name, amount, paymentMethod },
-        cashAmount,
-        payPayAmount,
-        manualCardAmount,
-        wordOfMouthDiscount,
-        adjustment,
-        notes,
-        updatedAt
-      }`,
-      { id: docId }
-    );
-
-    // EC（オンライン）のその日の支払い済み注文を自動集計する
     const { start, end } = getJstDayBoundariesUtc(date);
-    const paidOrders: Array<{ total?: number }> = await writeClient.fetch(
-      `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
-      { start, end }
-    );
-    const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-    // 店頭QRコード決済のその日の支払い済み分を、商品ごとに自動集計する（カタログ商品はクレジット欄に自動反映、
-    // カタログにない都度入力の商品は「その他」として一覧だけ返す）
-    const paidCharges: Array<{ amount?: number; lineItems?: Array<{ amount?: number; quantity?: number; name?: string; salesItemId?: string }> }> = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, quantity, name, "salesItemId": salesItem._ref } }`,
+    const [dailySales, transactions, charges, paidOrders]: [
+      { visitorCount?: number; purchaseGroupCount?: number; wordOfMouthDiscount?: number; adjustment?: number; notes?: string; updatedAt?: string } | null,
+      TransactionDoc[],
+      ChargeDoc[],
+      Array<{ total?: number }>,
+    ] = await Promise.all([
+      writeClient.fetch(
+        `*[_id == $id][0]{ visitorCount, purchaseGroupCount, wordOfMouthDiscount, adjustment, notes, updatedAt }`,
+        { id: docId }
+      ),
+      writeClient.fetch(
+        `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
+          _id, createdAt, paymentMethod, visitorCount, total,
+          lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
+        }`,
+        { date }
+      ),
+      // 履歴表示用: その日に発行された決済を全ステータスで返す
+      writeClient.fetch(
+        `*[_type == "inStoreCharge" && createdAt >= $start && createdAt < $end] | order(createdAt desc) {
+          _id, amount, description, status, createdAt, paidAt, visitorCount,
+          lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
+        }`,
+        { start, end }
+      ),
+      // EC（オンライン）のその日の支払い済み注文
+      writeClient.fetch(
+        `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
+        { start, end }
+      ),
+    ]);
+
+    // 集計対象のQR決済は「その日に支払われたもの」（発行日ではなく支払い日で金額を帰属させる）
+    const paidChargesForAggregate: ChargeDoc[] = await writeClient.fetch(
+      `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end] {
+        amount, lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
+      }`,
       { start, end }
     );
-    const qrChargeTotal = paidCharges.reduce((sum, charge) => sum + (charge.amount || 0), 0);
-    const qrChargeItemTotals: Record<string, { quantity: number; amount: number }> = {};
-    const qrChargeCustomItems: Array<{ name: string; amount: number }> = [];
-    for (const charge of paidCharges) {
+
+    const rows = new Map<string, ItemRow>();
+    const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
+
+    for (const tx of transactions) {
+      const method: PaymentMethod = tx.paymentMethod || 'cash';
+      methodTotals[method] += tx.total || 0;
+      for (const li of tx.lineItems || []) {
+        addToRow(rows, li, method);
+      }
+    }
+    for (const charge of paidChargesForAggregate) {
+      methodTotals.qr += charge.amount || 0;
       for (const li of charge.lineItems || []) {
-        if (li.salesItemId) {
-          const existing = qrChargeItemTotals[li.salesItemId] || { quantity: 0, amount: 0 };
-          existing.quantity += li.quantity || 0;
-          existing.amount += li.amount || 0;
-          qrChargeItemTotals[li.salesItemId] = existing;
-        } else if (li.name) {
-          qrChargeCustomItems.push({ name: li.name, amount: li.amount || 0 });
-        }
+        addToRow(rows, li, 'qr');
       }
     }
 
-    return NextResponse.json({ dailySales: dailySales || null, ecTotal, qrChargeTotal, qrChargeItemTotals, qrChargeCustomItems });
+    const itemRows = Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    const itemsTotal = itemRows.reduce((sum, row) => sum + row.total, 0);
+    const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+    const adjustment = dailySales?.adjustment || 0;
+    const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
+    const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
+    const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal;
+
+    return NextResponse.json({
+      dailySales: dailySales || null,
+      transactions,
+      charges,
+      aggregate: {
+        methodTotals,
+        itemRows,
+        itemsTotal,
+        storeTotal,
+        ecTotal,
+        grandTotal,
+      },
+    });
   } catch (error) {
     console.error('日別売上取得エラー:', error);
     return NextResponse.json(
@@ -117,6 +188,7 @@ export async function GET(
   }
 }
 
+// カウンタ（来店者数・購入組数）・調整・口コミ割引・備考の保存＋Googleシート同期
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ date: string }> }
@@ -133,86 +205,22 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const lineItemsInput: LineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
-    const customLineItemsInput: CustomLineItemInput[] = Array.isArray(body.customLineItems) ? body.customLineItems : [];
-
-    const salesItemIds = lineItemsInput.map(item => item.salesItemId).filter(Boolean);
-    const salesItemsMeta: SalesItemMeta[] = salesItemIds.length
-      ? await writeClient.fetch(
-          `*[_type == "salesItem" && _id in $ids]{ _id, category, pricingType, unitPrice }`,
-          { ids: salesItemIds }
-        )
-      : [];
-    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
-
-    // 金額はクライアントの申告値を信用せず、カタログの単価からサーバー側で再計算する
-    let cashTotal = 0;
-    let payPayTotal = 0;
-    let cardTotal = 0;
-    const lineItems = [];
-    for (const item of lineItemsInput) {
-      const meta = metaById.get(item.salesItemId);
-      if (!meta) continue;
-
-      const cashAmount = resolveAmount(meta, item.cashQuantity, item.cashAmount);
-      const payPayAmount = resolveAmount(meta, item.payPayQuantity, item.payPayAmount);
-      const cardAmount = resolveAmount(meta, item.cardQuantity, item.cardAmount);
-      if (cashAmount <= 0 && payPayAmount <= 0 && cardAmount <= 0) continue;
-
-      cashTotal += cashAmount;
-      payPayTotal += payPayAmount;
-      cardTotal += cardAmount;
-
-      lineItems.push({
-        _type: 'lineItem',
-        _key: item.salesItemId,
-        salesItem: { _type: 'reference', _ref: item.salesItemId },
-        cashQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.cashQuantity || 0) : undefined,
-        cashAmount,
-        payPayQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.payPayQuantity || 0) : undefined,
-        payPayAmount,
-        cardQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.cardQuantity || 0) : undefined,
-        cardAmount,
-      });
-    }
-
-    // カタログにない都度入力の商品（普段売っていないもの）
-    const customLineItems = [];
-    for (const item of customLineItemsInput) {
-      const name = typeof item.name === 'string' ? item.name.trim() : '';
-      const amount = Number(item.amount) || 0;
-      if (!name || amount <= 0) continue;
-      const paymentMethod: PaymentMethod = ['cash', 'payPay', 'card'].includes(item.paymentMethod) ? item.paymentMethod : 'cash';
-
-      if (paymentMethod === 'cash') cashTotal += amount;
-      else if (paymentMethod === 'payPay') payPayTotal += amount;
-      else cardTotal += amount;
-
-      customLineItems.push({ _type: 'customLineItem', _key: `custom-${customLineItems.length}-${Date.now()}`, name, amount, paymentMethod });
-    }
-
-    const docId = dailySalesDocId(date);
     const doc = {
-      _id: docId,
+      _id: dailySalesDocId(date),
       _type: 'dailySales',
       date,
-      visitorCount: Math.max(0, body.visitorCount ?? 0),
-      purchaseGroupCount: Math.max(0, body.purchaseGroupCount ?? 0),
-      lineItems,
-      customLineItems,
-      cashAmount: cashTotal,
-      payPayAmount: payPayTotal,
-      manualCardAmount: cardTotal,
-      wordOfMouthDiscount: Math.max(0, body.wordOfMouthDiscount ?? 0),
-      adjustment: body.adjustment ?? 0,
-      notes: body.notes || '',
+      visitorCount: Math.max(0, Number(body.visitorCount) || 0),
+      purchaseGroupCount: Math.max(0, Number(body.purchaseGroupCount) || 0),
+      wordOfMouthDiscount: Math.max(0, Number(body.wordOfMouthDiscount) || 0),
+      adjustment: Number(body.adjustment) || 0,
+      notes: typeof body.notes === 'string' ? body.notes : '',
       updatedAt: new Date().toISOString(),
     };
 
     const saved = await writeClient.createOrReplace(doc);
 
     // バックアップ用のGoogleスプレッドシート同期（ベストエフォート、失敗しても保存は成功のまま返す）
-    await syncToSheetBestEffort(date, doc, salesItemsMeta);
+    await syncToSheetBestEffort(date, doc);
 
     return NextResponse.json({ dailySales: saved });
   } catch (error) {
@@ -225,72 +233,76 @@ export async function PUT(
 }
 
 /**
- * 保存した日別売上のサマリーを計算し、バックアップ用Googleスプレッドシートへ同期する。
+ * その日の取引＋支払い済みQR決済からサマリーを再計算し、バックアップ用Googleスプレッドシートへ同期する。
  * ここでの失敗は保存処理の成功に影響させない（ログのみ）。
  */
 async function syncToSheetBestEffort(
   date: string,
   doc: {
-    lineItems: Array<{ salesItem: { _ref: string }; cashAmount?: number; payPayAmount?: number; cardAmount?: number }>;
-    customLineItems: Array<{ amount: number }>;
     visitorCount: number;
     purchaseGroupCount: number;
-    cashAmount: number;
-    payPayAmount: number;
-    manualCardAmount: number;
     wordOfMouthDiscount: number;
     adjustment: number;
-  },
-  salesItemsMeta: SalesItemMeta[]
+  }
 ) {
   try {
-    const metaById = new Map(salesItemsMeta.map(m => [m._id, m]));
-
-    const categorySubtotals: Record<string, number> = {};
-    for (const item of doc.lineItems) {
-      const meta = metaById.get(item.salesItem._ref);
-      if (!meta) continue;
-      const lineTotal = (item.cashAmount || 0) + (item.payPayAmount || 0) + (item.cardAmount || 0);
-      categorySubtotals[meta.category] = (categorySubtotals[meta.category] || 0) + lineTotal;
-    }
-    // 都度入力の商品（カタログ外）は「その他」として集計する
-    for (const item of doc.customLineItems) {
-      categorySubtotals.other = (categorySubtotals.other || 0) + (item.amount || 0);
-    }
-
     const { start, end } = getJstDayBoundariesUtc(date);
-    const [paidOrders, paidCharges]: [Array<{ total?: number }>, Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }>] = await Promise.all([
+    const [transactions, paidCharges, paidOrders]: [
+      Array<{ paymentMethod?: PaymentMethod; total?: number; lineItems?: Array<{ amount?: number; category?: string }> }>,
+      Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }>,
+      Array<{ total?: number }>,
+    ] = await Promise.all([
+      writeClient.fetch(
+        `*[_type == "storeTransaction" && date == $date]{
+          paymentMethod, total, lineItems[]{ amount, "category": salesItem->category }
+        }`,
+        { date }
+      ),
+      writeClient.fetch(
+        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{
+          amount, lineItems[]{ amount, "category": salesItem->category }
+        }`,
+        { start, end }
+      ),
       writeClient.fetch(
         `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
         { start, end }
       ),
-      writeClient.fetch(
-        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{ amount, lineItems[]{ amount, "category": salesItem->category } }`,
-        { start, end }
-      ),
     ]);
-    const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+    const categorySubtotals: Record<string, number> = {};
+    let cashAmount = 0;
+    let payPayAmount = 0;
+    let manualCardAmount = 0;
+    for (const tx of transactions) {
+      if (tx.paymentMethod === 'payPay') payPayAmount += tx.total || 0;
+      else if (tx.paymentMethod === 'card') manualCardAmount += tx.total || 0;
+      else cashAmount += tx.total || 0;
+      for (const li of tx.lineItems || []) {
+        const category = li.category || 'other';
+        categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
+      }
+    }
     const qrChargeTotal = paidCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
-    // 店頭QR決済の商品明細も、手入力分と同じカテゴリ小計に合算する（カタログ外の都度入力商品は「その他」扱い）
     for (const charge of paidCharges) {
       for (const li of charge.lineItems || []) {
         const category = li.category || 'other';
         categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
       }
     }
+    const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
-    const paymentTotal =
-      doc.cashAmount + doc.payPayAmount + doc.manualCardAmount + qrChargeTotal + doc.adjustment - doc.wordOfMouthDiscount;
-    const grandTotal = paymentTotal + ecTotal;
+    const storeTotal = cashAmount + payPayAmount + manualCardAmount + qrChargeTotal;
+    const grandTotal = storeTotal + doc.adjustment - doc.wordOfMouthDiscount + ecTotal;
 
     await syncDailySalesToSheet({
       date,
       visitorCount: doc.visitorCount,
       purchaseGroupCount: doc.purchaseGroupCount,
       categorySubtotals,
-      cashAmount: doc.cashAmount,
-      payPayAmount: doc.payPayAmount,
-      manualCardAmount: doc.manualCardAmount,
+      cashAmount,
+      payPayAmount,
+      manualCardAmount,
       ecTotal,
       qrChargeTotal,
       grandTotal,

@@ -39,9 +39,20 @@ export const inStoreCharge = defineType({
       ],
     }),
     defineField({
+      name: 'visitorCount',
+      title: '来店人数（この会計）',
+      type: 'number',
+    }),
+    defineField({
       name: 'squareOrderId',
       title: 'Square注文ID',
       type: 'string',
+    }),
+    defineField({
+      name: 'paymentLinkId',
+      title: 'Square決済リンクID',
+      type: 'string',
+      description: '未払いキャンセル時にSquare側のリンクを削除するために保存',
     }),
     defineField({
       name: 'squarePaymentId',
@@ -62,9 +73,15 @@ export const inStoreCharge = defineType({
           { title: '発行済み（未決済）', value: 'pending' },
           { title: '支払い済み', value: 'paid' },
           { title: 'キャンセル', value: 'cancelled' },
+          { title: '返金済み', value: 'refunded' },
         ],
       },
       initialValue: 'pending',
+    }),
+    defineField({
+      name: 'refundId',
+      title: 'Square返金ID',
+      type: 'string',
     }),
     defineField({ name: 'createdAt', title: '作成日時', type: 'datetime' }),
     defineField({ name: 'paidAt', title: '支払い日時', type: 'datetime' }),
