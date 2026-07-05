@@ -186,9 +186,10 @@ export function verifyWebhookSignature(
     // Concatenate url + body for Square's signature verification
     const stringToSign = (url || '') + payload
     
-    // Create HMAC-SHA256 signature
+    // Squareのx-square-signatureはHMAC-SHA1（SHA256ではない）
+    // https://developer.squareup.com/docs/webhooks/step3verify
     const expectedSignature = crypto
-      .createHmac('sha256', webhookSignatureKey)
+      .createHmac('sha1', webhookSignatureKey)
       .update(stringToSign, 'utf8')
       .digest('base64')
     
