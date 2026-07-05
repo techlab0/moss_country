@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/layout/Container';
 
 // 顧客データの型定義
@@ -51,9 +49,8 @@ export default function CustomersPage() {
   );
 
   return (
-    <AdminLayout>
-      <Container>
-        <div className="py-8">
+    <Container>
+      <div className="py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">顧客管理</h1>
@@ -197,8 +194,7 @@ export default function CustomersPage() {
               </div>
             </div>
           )}
-        </div>
-      </Container>
-    </AdminLayout>
+      </div>
+    </Container>
   );
 }

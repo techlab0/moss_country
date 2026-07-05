@@ -11,11 +11,19 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
-          <p className="text-gray-700 mt-2 text-base font-medium">MOSS COUNTRY 管理画面へようこそ</p>
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+            <p className="text-gray-700 mt-2 text-base font-medium">MOSS COUNTRY 管理画面へようこそ</p>
+          </div>
+          <Link
+            href="/admin/sales"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-moss-green text-white text-base font-semibold rounded-lg shadow hover:bg-moss-green/90 transition-colors"
+          >
+            💰 売上を入力する
+          </Link>
         </div>
-        
+
         {/* 統計情報 */}
         <DashboardStats />
         

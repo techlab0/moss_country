@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { HideOnAdmin } from "@/components/layout/HideOnAdmin";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { CartProvider } from "@/contexts/CartContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -101,14 +102,18 @@ export default function RootLayout({
         <ErrorBoundary>
           <PageLoadingProvider maxLoadingTime={5000} minLoadingTime={800}>
             <CartProvider>
-              <Header />
+              <HideOnAdmin>
+                <Header />
+              </HideOnAdmin>
               <main>
                 <ErrorBoundary>
                   {children}
                 </ErrorBoundary>
               </main>
-              <Footer />
-              <ScrollToTopButton />
+              <HideOnAdmin>
+                <Footer />
+                <ScrollToTopButton />
+              </HideOnAdmin>
               <PerformanceInit />
               <InventoryNotifications />
             </CartProvider>

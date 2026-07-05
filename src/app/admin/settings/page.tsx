@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/Button';
-import { Container } from '@/components/layout/Container';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
