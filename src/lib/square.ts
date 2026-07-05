@@ -192,11 +192,19 @@ export function verifyWebhookSignature(
       .update(stringToSign, 'utf8')
       .digest('base64')
     
+    const receivedBuffer = Buffer.from(signature, 'base64')
+    const expectedBuffer = Buffer.from(expectedSignature, 'base64')
+
+    // 長さが一致しない場合はtimingSafeEqualが例外を投げるため、原因調査用に長さだけログに残す（値は出さない）
+    if (receivedBuffer.length !== expectedBuffer.length) {
+      console.error(
+        `🚨 Webhook signature length mismatch: received header length=${signature.length} decoded=${receivedBuffer.length} bytes, expected decoded=${expectedBuffer.length} bytes, url=${url}`
+      )
+      return false
+    }
+
     // Secure comparison to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, 'base64'),
-      Buffer.from(expectedSignature, 'base64')
-    )
+    return crypto.timingSafeEqual(receivedBuffer, expectedBuffer)
   } catch (error) {
     console.error('🚨 Webhook signature verification failed:', error)
     return false
