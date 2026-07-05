@@ -18,7 +18,8 @@ interface SalesItem {
 interface CustomItemRow {
   id: string;
   name: string;
-  amount: string;
+  amount: string; // 単価
+  quantity: string;
 }
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
@@ -276,33 +277,43 @@ function EntryTab({
     };
   }, []);
 
+  // 金額直接入力(variable)の商品は数量のデフォルトを1にする（単価だけ入れればそのまま登録できるように）
+  const qtyStr = useCallback((item: SalesItem) => {
+    return quantities[item._id] ?? (item.pricingType === 'fixed' ? '0' : '1');
+  }, [quantities]);
+
   const itemAmount = useCallback((item: SalesItem) => {
     if (item.pricingType === 'fixed') {
-      return toNumber(quantities[item._id] || '0') * (item.unitPrice || 0);
+      return toNumber(qtyStr(item)) * (item.unitPrice || 0);
     }
-    return toNumber(amounts[item._id] || '0');
-  }, [quantities, amounts]);
+    return toNumber(amounts[item._id] || '0') * toNumber(qtyStr(item));
+  }, [qtyStr, amounts]);
 
   const total = useMemo(() => {
     const fromCatalog = salesItems.reduce((sum, item) => sum + itemAmount(item), 0);
-    const fromCustom = customItems.reduce((sum, row) => sum + toNumber(row.amount), 0);
+    const fromCustom = customItems.reduce((sum, row) => sum + toNumber(row.amount) * toNumber(row.quantity), 0);
     return fromCatalog + fromCustom;
   }, [salesItems, itemAmount, customItems]);
 
   const itemCount = useMemo(() => {
     const fromCatalog = salesItems.reduce((sum, item) => {
-      if (item.pricingType === 'fixed') return sum + toNumber(quantities[item._id] || '0');
-      return sum + (toNumber(amounts[item._id] || '0') > 0 ? 1 : 0);
+      if (item.pricingType === 'fixed') return sum + toNumber(qtyStr(item));
+      return sum + (toNumber(amounts[item._id] || '0') > 0 ? toNumber(qtyStr(item)) : 0);
     }, 0);
-    const fromCustom = customItems.filter(row => row.name.trim() && toNumber(row.amount) > 0).length;
+    const fromCustom = customItems
+      .filter(row => row.name.trim() && toNumber(row.amount) > 0)
+      .reduce((sum, row) => sum + toNumber(row.quantity), 0);
     return fromCatalog + fromCustom;
-  }, [salesItems, quantities, amounts, customItems]);
+  }, [salesItems, qtyStr, amounts, customItems]);
 
   const setQuantity = (id: string, value: string) => {
     setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
   };
-  const stepQuantity = (id: string, delta: number) => {
-    setQuantities(prev => ({ ...prev, [id]: String(Math.max(0, toNumber(prev[id] || '0') + delta)) }));
+  const stepQuantity = (item: SalesItem, delta: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [item._id]: String(Math.max(0, toNumber(prev[item._id] ?? (item.pricingType === 'fixed' ? '0' : '1')) + delta)),
+    }));
   };
   const setAmount = (id: string, value: string) => {
     setAmounts(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
@@ -310,15 +321,18 @@ function EntryTab({
 
   const buildLineItems = () => {
     const catalogLines = salesItems
-      .map(item => ({
-        salesItemId: item._id,
-        quantity: item.pricingType === 'fixed' ? toNumber(quantities[item._id] || '0') : undefined,
-        amount: item.pricingType === 'variable' ? toNumber(amounts[item._id] || '0') : undefined,
-      }))
-      .filter(li => (li.quantity || 0) > 0 || (li.amount || 0) > 0);
+      .map(item => {
+        const qty = toNumber(qtyStr(item));
+        return {
+          salesItemId: item._id,
+          quantity: qty,
+          amount: item.pricingType === 'variable' ? toNumber(amounts[item._id] || '0') : undefined,
+        };
+      })
+      .filter(li => (li.quantity || 0) > 0 && (li.amount === undefined || li.amount > 0));
     const customLines = customItems
-      .filter(row => row.name.trim() && toNumber(row.amount) > 0)
-      .map(row => ({ customName: row.name.trim(), amount: toNumber(row.amount) }));
+      .filter(row => row.name.trim() && toNumber(row.amount) > 0 && toNumber(row.quantity) > 0)
+      .map(row => ({ customName: row.name.trim(), amount: toNumber(row.amount), quantity: toNumber(row.quantity) }));
     return [...catalogLines, ...customLines];
   };
 
@@ -522,48 +536,47 @@ function EntryTab({
                 </summary>
                 <ul className="divide-y">
                   {itemsInCategory.map(item => (
-                    <li key={item._id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <li key={item._id} className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{item.name}</p>
                         {item.pricingType === 'fixed' && (
                           <p className="text-xs text-gray-500">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
                         )}
                       </div>
-                      {item.pricingType === 'fixed' ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => stepQuantity(item._id, -1)}
-                            className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
-                          >
-                            −
-                          </button>
+                      <div className="flex items-center gap-1">
+                        {item.pricingType === 'variable' && (
                           <input
                             type="number"
                             inputMode="numeric"
                             min="0"
-                            value={displayStr(quantities[item._id] || '0')}
-                            onChange={(e) => setQuantity(item._id, e.target.value)}
-                            placeholder="0"
-                            className="w-12 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+                            value={displayStr(amounts[item._id] || '0')}
+                            onChange={(e) => setAmount(item._id, e.target.value)}
+                            placeholder="単価"
+                            className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md mr-1"
                           />
-                          <button
-                            onClick={() => stepQuantity(item._id, 1)}
-                            className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
-                          >
-                            ＋
-                          </button>
-                        </div>
-                      ) : (
+                        )}
+                        <button
+                          onClick={() => stepQuantity(item, -1)}
+                          className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
+                        >
+                          −
+                        </button>
                         <input
                           type="number"
                           inputMode="numeric"
                           min="0"
-                          value={displayStr(amounts[item._id] || '0')}
-                          onChange={(e) => setAmount(item._id, e.target.value)}
-                          placeholder="金額"
-                          className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                          value={displayStr(qtyStr(item))}
+                          onChange={(e) => setQuantity(item._id, e.target.value)}
+                          placeholder="0"
+                          className="w-12 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
                         />
-                      )}
+                        <button
+                          onClick={() => stepQuantity(item, 1)}
+                          className="w-10 h-10 text-lg border border-gray-300 rounded-md hover:bg-gray-50"
+                        >
+                          ＋
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -582,7 +595,7 @@ function EntryTab({
             <div className="flex items-center justify-between">
               <h2 className="font-medium text-gray-900 text-sm">その他（カタログにない商品）</h2>
               <button
-                onClick={() => setCustomItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0' }])}
+                onClick={() => setCustomItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0', quantity: '1' }])}
                 className="text-sm px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90"
               >
                 + 追加
@@ -590,7 +603,7 @@ function EntryTab({
             </div>
             <ul className="space-y-2">
               {customItems.map(row => (
-                <li key={row.id} className="flex items-center gap-2">
+                <li key={row.id} className="flex items-center gap-2 flex-wrap">
                   <input
                     type="text"
                     value={row.name}
@@ -604,8 +617,18 @@ function EntryTab({
                     min="0"
                     value={displayStr(row.amount)}
                     onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, amount: sanitizeNonNegative(e.target.value) } : r))}
-                    placeholder="金額"
-                    className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                    placeholder="単価"
+                    className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                  />
+                  <span className="text-gray-400 text-xs">×</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={displayStr(row.quantity)}
+                    onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, quantity: sanitizeNonNegative(e.target.value) } : r))}
+                    placeholder="個数"
+                    className="w-14 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
                   />
                   <button
                     onClick={() => setCustomItems(prev => prev.filter(r => r.id !== row.id))}
@@ -757,18 +780,19 @@ function SummaryTab({
     if (!edit) return;
     setBusyId(edit.id);
     try {
+      // amount は「単価」として送る（サーバー側で 単価 × 数量 に確定される）
       const lineItems = edit.lines
         .map(line => {
           if (line.salesItemId) {
             return {
               salesItemId: line.salesItemId,
-              quantity: line.pricingType === 'fixed' ? toNumber(line.quantity) : undefined,
+              quantity: toNumber(line.quantity),
               amount: line.pricingType === 'variable' ? toNumber(line.amount) : undefined,
             };
           }
-          return { customName: line.name, amount: toNumber(line.amount) };
+          return { customName: line.name, amount: toNumber(line.amount), quantity: toNumber(line.quantity) };
         })
-        .filter(li => (li.quantity || 0) > 0 || (li.amount || 0) > 0);
+        .filter(li => (li.quantity || 0) > 0 && (li.amount === undefined || li.amount > 0));
 
       const url = edit.isCharge
         ? `/api/admin/in-store-charge/${edit.id}`
@@ -1094,13 +1118,19 @@ function SummaryTab({
 
 function toEditLine(li: LineItemView, salesItems: SalesItem[]): EditLine {
   const catalogItem = li.salesItemId ? salesItems.find(item => item._id === li.salesItemId) : undefined;
+  const pricingType = catalogItem ? catalogItem.pricingType : (li.salesItemId ? 'fixed' : 'custom');
+  // variable/custom は保存時に行合計で記録されているため、編集用に 単価 = 合計 ÷ 数量 へ戻す
+  const quantity = li.quantity && li.quantity > 0 ? li.quantity : (pricingType === 'fixed' ? 0 : 1);
+  const unitAmount = pricingType === 'fixed'
+    ? (li.amount ?? 0)
+    : Math.round((li.amount ?? 0) / (quantity || 1));
   return {
     salesItemId: li.salesItemId,
     name: li.name,
-    pricingType: catalogItem ? catalogItem.pricingType : (li.salesItemId ? 'fixed' : 'custom'),
+    pricingType,
     unitPrice: catalogItem?.unitPrice,
-    quantity: String(li.quantity ?? 0),
-    amount: String(li.amount ?? 0),
+    quantity: String(quantity),
+    amount: String(unitAmount),
   };
 }
 
@@ -1152,13 +1182,13 @@ function EditPanel({
   const addCustomLine = () => {
     setEdit({
       ...edit,
-      lines: [...edit.lines, { name: '', pricingType: 'custom', quantity: '0', amount: '0' }],
+      lines: [...edit.lines, { name: '', pricingType: 'custom', quantity: '1', amount: '0' }],
     });
   };
 
   const editTotal = edit.lines.reduce((sum, line) => {
     if (line.pricingType === 'fixed') return sum + toNumber(line.quantity) * (line.unitPrice || 0);
-    return sum + toNumber(line.amount);
+    return sum + toNumber(line.amount) * toNumber(line.quantity);
   }, 0);
 
   const mismatch = edit.isCharge && edit.paidAmount !== undefined && editTotal !== edit.paidAmount;
@@ -1208,27 +1238,26 @@ function EditPanel({
             ) : (
               <span className="flex-1 min-w-0 text-sm text-gray-900 truncate">{line.name}</span>
             )}
-            {line.pricingType === 'fixed' ? (
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={displayStr(line.quantity)}
-                onChange={(e) => updateLine(index, { quantity: sanitizeNonNegative(e.target.value) })}
-                placeholder="0"
-                className="w-16 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
-              />
-            ) : (
+            {line.pricingType !== 'fixed' && (
               <input
                 type="number"
                 inputMode="numeric"
                 min="0"
                 value={displayStr(line.amount)}
                 onChange={(e) => updateLine(index, { amount: sanitizeNonNegative(e.target.value) })}
-                placeholder="金額"
-                className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                placeholder="単価"
+                className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
               />
             )}
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={displayStr(line.quantity)}
+              onChange={(e) => updateLine(index, { quantity: sanitizeNonNegative(e.target.value) })}
+              placeholder="個数"
+              className="w-14 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+            />
             <button onClick={() => removeLine(index)} className="text-red-500 text-sm px-1">✕</button>
           </li>
         ))}

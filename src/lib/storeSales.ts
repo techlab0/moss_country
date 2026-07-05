@@ -29,7 +29,9 @@ interface SalesItemMeta {
 
 /**
  * 入力された明細をカタログ単価で再計算して確定する。
- * fixed: 数量×単価、variable/カタログ外: 金額直接入力。マイナスは0として扱い、0円の行は除外する。
+ * - fixed: 数量 × カタログの単価
+ * - variable / カタログ外: `amount` を「単価」として受け取り、単価 × 数量（数量省略時は1）
+ * マイナスは0として扱い、0円の行は除外する。保存する `amount` は常に行の合計金額。
  */
 export async function resolveStoreLineItems(
   input: StoreLineItemInput[]
@@ -51,10 +53,11 @@ export async function resolveStoreLineItems(
       if (!meta) {
         throw new Error(`商品が見つかりません: ${item.salesItemId}`);
       }
-      const quantity = Math.max(0, item.quantity || 0);
-      const lineTotal = meta.pricingType === 'fixed'
+      const isFixed = meta.pricingType === 'fixed';
+      const quantity = item.quantity === undefined ? (isFixed ? 0 : 1) : Math.max(0, item.quantity);
+      const lineTotal = isFixed
         ? quantity * (meta.unitPrice || 0)
-        : Math.max(0, item.amount || 0);
+        : quantity * Math.max(0, item.amount || 0);
       if (lineTotal <= 0) continue;
 
       total += lineTotal;
@@ -63,12 +66,13 @@ export async function resolveStoreLineItems(
         _key: item.salesItemId,
         salesItem: { _type: 'reference', _ref: item.salesItemId },
         name: meta.name,
-        quantity: meta.pricingType === 'fixed' ? quantity : undefined,
+        quantity,
         amount: lineTotal,
       });
     } else if (item.customName && item.customName.trim()) {
-      // カタログにない、普段売っていない商品の都度入力
-      const lineTotal = Math.max(0, item.amount || 0);
+      // カタログにない、普段売っていない商品の都度入力（amount = 単価）
+      const quantity = item.quantity === undefined ? 1 : Math.max(0, item.quantity);
+      const lineTotal = quantity * Math.max(0, item.amount || 0);
       if (lineTotal <= 0) continue;
 
       total += lineTotal;
@@ -76,6 +80,7 @@ export async function resolveStoreLineItems(
         _type: 'lineItem',
         _key: `custom-${lineItems.length}-${Date.now()}`,
         name: item.customName.trim(),
+        quantity,
         amount: lineTotal,
       });
     }
