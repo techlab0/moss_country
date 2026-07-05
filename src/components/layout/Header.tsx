@@ -1,21 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import { useCart } from '@/contexts/CartContext';
+import { defaultSiteSettings, NavLink } from '@/lib/siteSettingsDefaults';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { cart } = useCart();
+  // 管理画面のサイト設定で保存されたリンク構成を反映する（保存がなければ従来の構成）
+  const [links, setLinks] = useState<NavLink[]>(defaultSiteSettings.headerLinks);
 
-  const navigation = [
-    { name: 'ホーム', href: '/' },
-    { name: '商品', href: '/products' },
-    { name: '苔図鑑', href: '/moss-guide' },
-    { name: 'ワークショップ', href: '/workshop' },
-    { name: 'ブログ', href: '/blog' },
-  ];
+  useEffect(() => {
+    fetch('/api/site-settings')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.settings?.headerLinks?.length) {
+          setLinks(data.settings.headerLinks);
+        }
+      })
+      .catch(() => {
+        // 取得失敗時はデフォルト構成のまま表示する
+      });
+  }, []);
+
+  const navigation = links
+    .filter(link => link.isVisible !== false)
+    .map(link => ({ name: link.label, href: link.href }));
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">

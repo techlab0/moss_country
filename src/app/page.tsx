@@ -10,8 +10,11 @@ import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { CircularCarousel } from '@/components/ui/CircularCarousel';
 import { LatestNews } from '@/components/sections/LatestNews';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { usePageContent } from '@/hooks/usePageContent';
 
 export default function Home() {
+  // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
+  const { t, img, ov } = usePageContent('home');
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['main'].src);
@@ -97,9 +100,15 @@ export default function Home() {
             </AnimatedSection>
             <AnimatedSection animation="slide-up" delay={130} className="mb-6 sm:mb-8">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal text-white leading-tight sm:leading-relaxed px-4">
-                小さな自然、
-                <br className="sm:hidden" />
-                大きな癒し
+                {ov('aboutTitle') !== undefined ? (
+                  <span className="whitespace-pre-line">{ov('aboutTitle')}</span>
+                ) : (
+                  <>
+                    小さな自然、
+                    <br className="sm:hidden" />
+                    大きな癒し
+                  </>
+                )}
               </h2>
             </AnimatedSection>
             <AnimatedSection animation="scale-in" delay={200} className="mb-8 sm:mb-12">
@@ -107,16 +116,28 @@ export default function Home() {
             </AnimatedSection>
             <AnimatedSection animation="fade-in" delay={270}>
               <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-normal text-white max-w-4xl mx-auto leading-relaxed px-4">
-                北海道初の苔テラリウム専門店として、
-                <br className="hidden sm:block" />
-                一つひとつ手作業で作り上げる
-                <br className="sm:hidden" />
-                本格的なテラリウムをお届けします。
+                {ov('aboutLead') !== undefined ? (
+                  <span className="whitespace-pre-line">{ov('aboutLead')}</span>
+                ) : (
+                  <>
+                    北海道初の苔テラリウム専門店として、
+                    <br className="hidden sm:block" />
+                    一つひとつ手作業で作り上げる
+                    <br className="sm:hidden" />
+                    本格的なテラリウムをお届けします。
+                  </>
+                )}
               </p>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-200 max-w-3xl mx-auto leading-relaxed mt-6 sm:mt-8 font-normal px-4">
-                忙しい日常の中で、ふと目に入る小さな緑の世界が、
-                <br className="sm:hidden" />
-                あなたの心に安らぎをもたらします。
+                {ov('aboutSub') !== undefined ? (
+                  <span className="whitespace-pre-line">{ov('aboutSub')}</span>
+                ) : (
+                  <>
+                    忙しい日常の中で、ふと目に入る小さな緑の世界が、
+                    <br className="sm:hidden" />
+                    あなたの心に安らぎをもたらします。
+                  </>
+                )}
               </p>
             </AnimatedSection>
           </AnimatedSection>
@@ -124,25 +145,25 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 px-4">
             <AnimatedSection animation="slide-up" delay={330} className="text-center group">
               <div className="bg-emerald-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:bg-emerald-900/40">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-emerald-200 transition-colors duration-300">職人の技</h3>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-emerald-200 transition-colors duration-300">{t('card1Title')}</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-emerald-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">一つひとつ手作業で<br className="hidden sm:block" />丁寧に作られた<br className="hidden sm:block" />本物のテラリウム</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal whitespace-pre-line">{ov('card1Desc') !== undefined ? ov('card1Desc') : <>一つひとつ手作業で<br className="hidden sm:block" />丁寧に作られた<br className="hidden sm:block" />本物のテラリウム</>}</p>
               </div>
             </AnimatedSection>
             
             <AnimatedSection animation="slide-up" delay={400} className="text-center group">
               <div className="bg-amber-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-amber-600/20 hover:border-amber-600/40 transition-all duration-300 hover:bg-amber-900/40">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-amber-200 transition-colors duration-300">北海道初</h3>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-amber-200 transition-colors duration-300">{t('card2Title')}</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-amber-500 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">苔テラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal whitespace-pre-line">{ov('card2Desc') !== undefined ? ov('card2Desc') : <>苔テラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</>}</p>
               </div>
             </AnimatedSection>
             
             <AnimatedSection animation="slide-up" delay={470} className="text-center group">
               <div className="bg-teal-900/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-teal-400/20 hover:border-teal-400/40 transition-all duration-300 hover:bg-teal-900/40">
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-teal-200 transition-colors duration-300">学べる</h3>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 group-hover:text-teal-200 transition-colors duration-300">{t('card3Title')}</h3>
                 <div className="w-12 sm:w-16 h-0.5 bg-teal-400 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300"></div>
-                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal">初心者から上級者まで<br className="hidden sm:block" />楽しめる<br className="hidden sm:block" />ワークショップ</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed font-normal whitespace-pre-line">{ov('card3Desc') !== undefined ? ov('card3Desc') : <>初心者から上級者まで<br className="hidden sm:block" />楽しめる<br className="hidden sm:block" />ワークショップ</>}</p>
               </div>
             </AnimatedSection>
           </div>
@@ -182,37 +203,37 @@ export default function Home() {
             <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
           </AnimatedSection>
           
-          <CircularCarousel 
+          <CircularCarousel
             items={[
               {
                 id: '1',
-                title: 'テラリウム作品',
-                description: '苔が織りなす穏やかな景色。日常の中に小さな癒しをお届けします。',
-                image: '/images/products/moss-country_products_glass.png',
+                title: t('carousel1Title'),
+                description: t('carousel1Desc'),
+                image: img('carousel1Image'),
                 category: 'Terrarium',
                 link: '/products'
               },
               {
                 id: '2',
-                title: '苔玉・苔盆栽',
-                description: '日本の伝統美と現代のライフスタイルを融合。和洋問わずどんな空間にも。',
-                image: '/images/products/moss-country_products_mossball.png',
+                title: t('carousel2Title'),
+                description: t('carousel2Desc'),
+                image: img('carousel2Image'),
                 category: 'Moss Ball',
                 link: '/products'
               },
               {
                 id: '3',
-                title: '用品販売',
-                description: 'テラリウムづくりに使える道具や素材を揃えています。初心者の方でも安心して苔の世界を楽しめます。',
-                image: '/images/products/care-guide.jpg',
+                title: t('carousel3Title'),
+                description: t('carousel3Desc'),
+                image: img('carousel3Image'),
                 category: 'Tools',
                 link: '/products'
               },
               {
                 id: '4',
-                title: 'ワークショップ',
-                description: '職人による本格指導で自分だけのオリジナル作品を。初心者も安心の充実サポート。',
-                image: '/images/workshop/mosscountry_workshop_blight.png',
+                title: t('carousel4Title'),
+                description: t('carousel4Desc'),
+                image: img('carousel4Image'),
                 category: 'Workshop',
                 link: '/workshop'
               },
@@ -249,39 +270,45 @@ export default function Home() {
                 <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Workshop Experience</span>
               </div>
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-white mb-4 sm:mb-6 leading-tight sm:leading-normal relative z-10">
-                自分の手で作る
+                {t('workshopTitle')}
                 <br />
-                <span className="text-emerald-300 font-bold">特別なテラリウム体験</span>
+                <span className="text-emerald-300 font-bold">{t('workshopTitleAccent')}</span>
               </h2>
               <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-4 sm:mb-6 leading-relaxed font-light relative z-10">
-                経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。
-                <br className="hidden sm:block" />
-                初心者の方でも安心して参加できるよう、基礎から応用まで幅広いコースをご用意しています。
+                {ov('workshopLead') !== undefined ? (
+                  <span className="whitespace-pre-line">{ov('workshopLead')}</span>
+                ) : (
+                  <>
+                    経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。
+                    <br className="hidden sm:block" />
+                    初心者の方でも安心して参加できるよう、基礎から応用まで幅広いコースをご用意しています。
+                  </>
+                )}
               </p>
               <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 relative z-10">
                 <li className="flex items-center text-gray-200">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm sm:text-base">初心者から上級者まで対応</span>
+                  <span className="text-sm sm:text-base">{t('workshopPoint1')}</span>
                 </li>
                 <li className="flex items-center text-gray-200">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm sm:text-base">必要な材料・道具はすべて込み</span>
+                  <span className="text-sm sm:text-base">{t('workshopPoint2')}</span>
                 </li>
                 <li className="flex items-center text-gray-200">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm sm:text-base">作品はそのままお持ち帰り</span>
+                  <span className="text-sm sm:text-base">{t('workshopPoint3')}</span>
                 </li>
                 <li className="flex items-center text-gray-200">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm sm:text-base">アフターフォロー完備</span>
+                  <span className="text-sm sm:text-base">{t('workshopPoint4')}</span>
                 </li>
               </ul>
               <a href="/workshop">
@@ -296,7 +323,7 @@ export default function Home() {
             </div>
             <div className="glass-card-dark rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 h-64 sm:h-80 md:h-96 relative overflow-hidden order-1 md:order-2">
               <ImagePlaceholder
-                src="/images/misc/moss03.jpeg"
+                src={img('workshopImage')}
                 alt="テラリウム制作の様子 - 職人による丁寧な指導"
                 width={800}
                 height={600}
@@ -315,14 +342,26 @@ export default function Home() {
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-200 font-medium">Get Started Today</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-6 sm:mb-8 leading-tight text-white">
-              今すぐテラリウムを
-              <br className="sm:hidden" />
-              始めませんか？
+              {ov('ctaTitle') !== undefined ? (
+                <span className="whitespace-pre-line">{ov('ctaTitle')}</span>
+              ) : (
+                <>
+                  今すぐテラリウムを
+                  <br className="sm:hidden" />
+                  始めませんか？
+                </>
+              )}
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-8 sm:mb-10 md:mb-12 text-emerald-100 max-w-3xl mx-auto leading-relaxed font-light">
-              オンラインストアでは、厳選されたテラリウムを豊富に取り揃えています。
-              <br className="hidden sm:block" />
-              全国配送対応で、あなたのもとへ小さな自然をお届けします。
+              {ov('ctaLead') !== undefined ? (
+                <span className="whitespace-pre-line">{ov('ctaLead')}</span>
+              ) : (
+                <>
+                  オンラインストアでは、厳選されたテラリウムを豊富に取り揃えています。
+                  <br className="hidden sm:block" />
+                  全国配送対応で、あなたのもとへ小さな自然をお届けします。
+                </>
+              )}
             </p>
             <div className="flex flex-col gap-4 sm:gap-6 justify-center items-center sm:flex-row">
               <Link href="/products" className="w-full sm:w-auto">

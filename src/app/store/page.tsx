@@ -4,6 +4,7 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { usePageContent } from '@/hooks/usePageContent';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -360,47 +361,13 @@ function StoreCalendar() {
   );
 }
 
-const facilities = [
-  {
-    name: 'ショールーム',
-    description: '様々なサイズ・デザインのテラリウムを実際に手に取ってご覧いただけます',
-    image: '/images/store/moss-country_store_items.png',
-  },
-  {
-    name: 'ワークショップスペース',
-    description: '少人数制で丁寧に指導する、アットホームな制作スペース',
-    image: '/images/store/moss-country_store_workshopspace.png',
-  },
-];
-
-const services = [
-  {
-    title: '商品販売',
-    description: '完成品テラリウムの販売',
-    price: '¥1000〜',
-    details: ['初心者向けから上級者向けまで', '様々なサイズ・デザインをご用意', 'ギフト包装無料'],
-    link: '/products'
-  },
-  {
-    title: 'オーダーメイド',
-    description: 'お客様のご要望に合わせた特別制作',
-    price: '¥5,000〜',
-    details: ['完全カスタマイズ対応', '制作期間：1-2週間', '事前相談無料'],
-  },
-  {
-    title: 'メンテナンス',
-    description: 'テラリウムのお手入れ・修理',
-    price: '¥1,500〜',
-    details: ['植物の植え替え', '容器のクリーニング'],
-  },
-  {
-    title: 'ワークショップ',
-    description: '手作り体験教室',
-    price: '¥2,500〜',
-    details: ['初心者から上級者まで', '材料・道具込み', '作品持ち帰り可'],
-    link: '/workshop'
-  },
-];
+const serviceDetails: Record<number, string[]> = {
+  0: ['初心者向けから上級者向けまで', '様々なサイズ・デザインをご用意', 'ギフト包装無料'],
+  1: ['完全カスタマイズ対応', '制作期間：1-2週間', '事前相談無料'],
+  2: ['植物の植え替え', '容器のクリーニング'],
+  3: ['初心者から上級者まで', '材料・道具込み', '作品持ち帰り可'],
+};
+const serviceLinks: Record<number, string | undefined> = { 0: '/products', 3: '/workshop' };
 
 
 interface FAQ {
@@ -481,6 +448,20 @@ function FAQSection() {
 }
 
 export default function StorePage() {
+  // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
+  const { t, img } = usePageContent('store');
+  const facilities = [1, 2].map(i => ({
+    name: t(`facility${i}Name`),
+    description: t(`facility${i}Desc`),
+    image: img(`facility${i}Image`),
+  }));
+  const services = [1, 2, 3, 4].map(i => ({
+    title: t(`service${i}Title`),
+    description: t(`service${i}Desc`),
+    price: t(`service${i}Price`),
+    details: serviceDetails[i - 1],
+    link: serviceLinks[i - 1],
+  }));
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['store'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['store'].src);
@@ -569,12 +550,11 @@ export default function StorePage() {
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              北海道で出会う、本物のテラリウム体験
+              {t('heroTitle')}
             </h1>
             <div className="w-24 h-1 bg-emerald-400 mx-auto mb-8"></div>
-            <p className="text-xl text-gray-200 max-w-3xl mx-auto mb-8">
-              札幌の中心部にある私たちの店舗で、実際に手に取って、
-              テラリウムの美しさと職人の技術を感じてください。
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto mb-8 whitespace-pre-line">
+              {t('heroLead')}
             </p>
             <Button 
               variant="primary" 
@@ -817,18 +797,14 @@ export default function StorePage() {
                     ))}
                   </ul>
                   <div className="flex justify-center mt-4">
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       className="cursor-pointer px-6 py-2"
                     onClick={() => {
-                      if ((service as any).link) {
-                        window.location.href = (service as any).link;
-                      } else {
-                        window.location.href = '/contact';
-                      }
+                      window.location.href = service.link || '/contact';
                     }}
                   >
-                      {(service as any).link ? '詳細を見る' : '問い合わせる'}
+                      {service.link ? '詳細を見る' : '問い合わせる'}
                     </Button>
                   </div>
                 </CardContent>
@@ -855,9 +831,9 @@ export default function StorePage() {
 
           <div className="max-w-4xl mx-auto">
             <div className="rounded-2xl overflow-hidden shadow-xl">
-              <img 
-                src="/images/store/moss-country_store_appearance.png" 
-                alt="店舗の様子" 
+              <img
+                src={img('galleryImage')}
+                alt="店舗の様子"
                 className="w-full h-auto object-cover"
               />
             </div>
@@ -886,11 +862,10 @@ export default function StorePage() {
         <Container>
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              ぜひ店舗にお越しください
+              {t('ctaTitle')}
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              実際にテラリウムを手に取って、その美しさと職人の技術を感じてください。
-              スタッフ一同、心よりお待ちしております。
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto whitespace-pre-line">
+              {t('ctaLead')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 

@@ -9,46 +9,33 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
+import { usePageContent } from '@/hooks/usePageContent';
 
-const terrariumCategories = [
-  {
-    name: 'Mini Terrarium（ミニ・テラリウム）',
-    description: '小さなガラスの中に広がる、あなただけの癒しの森。手のひらの中で、穏やかな時間が流れます。',
-  },
-  {
-    name: 'Standard Terrarium（スタンダード・テラリウム）',
-    description: '日々の暮らしに寄り添う、やさしい苔の景色。静かな緑が、心に安らぎを届けます。',
-  },
-  {
-    name: 'Grand Terrarium（グランド・テラリウム）',
-    description: '存在感ある苔の世界が、空間を豊かに彩ります。深みのある緑が、上質な癒しをもたらします。',
-  },
-  {
-    name: 'Premium Terrarium（プレミアム・テラリウム）',
-    description: '時を忘れるほどに美しい、静寂の世界。苔の深みが、空間をやさしく包み込みます。',
-  },
-];
-
-const supplyCategories = [
-  {
-    name: 'ツール',
-    description: 'テラリウム作りに必要な専門道具',
-  },
-  {
-    name: '容器',
-    description: '様々なサイズとデザインのガラス容器',
-  },
-  {
-    name: '素材',
-    description: '苔、土、石などの自然素材',
-  },
-  {
-    name: 'フィギュア',
-    description: 'テラリウムを彩る小さな装飾品',
-  },
+const careGuideMeta = [
+  { list: ['本が読めるくらいの明るさがあればOK', '強い日差しには弱いので、直射日光は避けてください', '蛍光灯やLEDで生育が可能です'] },
+  { list: ['水は葉っぱから吸収するので、苔をしっかり湿らせてください', '土台となる土は常に湿らせるようにしてください', '水は多すぎると苔に悪いので、あげすぎには注意してください'] },
+  { list: ['空気がこもっていると苔の徒長の原因にもなるため、できるときは1日に一回数分程度の換気を行いましょう', '換気をすることで湿気のこもりすぎも防止でき、苔も丈夫に育ちやすくなります'] },
+  { list: ['苔の色が悪くなった場合などには、薬品を溶かした水を散布します', '季節の変わり目の春や秋は温度変化も大きく、苔への負担も少なからず増している状態ですので、必要であればこの時期に散布をしてみましょう'] },
+  { list: ['苔も時間が経つにつれて伸びてくるものもありますので、気になってきたらカットして整えましょう', '色の茶色くなった苔はカットして無くすことでカビの予防にもなります', '適度に容器内の水滴と水垢を拭き取り綺麗に保ちましょう'] },
+  { list: ['苔を取り出し傷んでいる部分や茶色くなっている部分は捨てましょう', '新しい容器に土、石、流木などレイアウト物を入れて移し替えることも可能です'] },
 ];
 
 export default function ProductsPage() {
+  // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
+  const { t } = usePageContent('products');
+  const terrariumCategories = [1, 2, 3, 4].map(i => ({
+    name: t(`terrarium${i}Name`),
+    description: t(`terrarium${i}Desc`),
+  }));
+  const supplyCategories = [1, 2, 3, 4].map(i => ({
+    name: t(`supply${i}Name`),
+    description: t(`supply${i}Desc`),
+  }));
+  const careGuide = careGuideMeta.map((meta, i) => ({
+    title: t(`care${i + 1}Title`),
+    lead: t(`care${i + 1}Lead`),
+    list: meta.list,
+  }));
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -170,13 +157,13 @@ export default function ProductsPage() {
         <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-              MOSS COUNTRYの<br />テラリウムコレクション
-            </h1>
+            <h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg"
+              dangerouslySetInnerHTML={{ __html: t('heroTitle') }}
+            />
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow">
-              一つひとつ手作業で丁寧に作られた本格テラリウム。
-              初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。
+            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow whitespace-pre-line">
+              {t('heroLead')}
             </p>
             <Button variant="primary" size="lg">
               <a href="#products">
@@ -201,21 +188,14 @@ export default function ProductsPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {terrariumCategories.map((category, index) => {
-              const getImageSrc = () => {
-                switch(category.name) {
-                  case 'Mini Terrarium（ミニ・テラリウム）':
-                    return '/images/products/moss-country_products_bottle.png';
-                  case 'Standard Terrarium（スタンダード・テラリウム）':
-                    return '/images/products/moss-country_products_glass.png';
-                  case 'Grand Terrarium（グランド・テラリウム）':
-                    return '/images/products/moss-country_products_mossball.png';
-                  case 'Premium Terrarium（プレミアム・テラリウム）':
-                    return '/images/products/moss-country_products_big.png';
-                  default:
-                    return '/images/products/moss-country_products_bottle.png';
-                }
-              };
-              
+              const terrariumImages = [
+                '/images/products/moss-country_products_bottle.png',
+                '/images/products/moss-country_products_glass.png',
+                '/images/products/moss-country_products_mossball.png',
+                '/images/products/moss-country_products_big.png',
+              ];
+              const getImageSrc = () => terrariumImages[index] || terrariumImages[0];
+
               return (
                 <Card key={index} className="text-center glass-card-dark">
                   <CardHeader>
@@ -250,21 +230,14 @@ export default function ProductsPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {supplyCategories.map((category, index) => {
-              const getImageSrc = () => {
-                switch(category.name) {
-                  case 'ツール':
-                    return '/images/products/terrarium-starter.jpg';
-                  case '容器':
-                    return '/images/products/terrarium-standard.jpg';
-                  case '素材':
-                    return '/images/products/terrarium-premium.jpg';
-                  case 'フィギュア':
-                    return '/images/products/terrarium-custom.jpg';
-                  default:
-                    return '/images/products/terrarium-starter.jpg';
-                }
-              };
-              
+              const supplyImages = [
+                '/images/products/terrarium-starter.jpg',
+                '/images/products/terrarium-standard.jpg',
+                '/images/products/terrarium-premium.jpg',
+                '/images/products/terrarium-custom.jpg',
+              ];
+              const getImageSrc = () => supplyImages[index] || supplyImages[0];
+
               return (
                 <Card key={index} className="text-center glass-card-dark">
                   <CardHeader>
@@ -347,62 +320,17 @@ export default function ProductsPage() {
             </p>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">置き場所と光</h3>
-                <p className="text-gray-900 mb-3 flex-grow">直射日光は避け、ライトの光またはレース越しの光に当てましょう</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・本が読めるくらいの明るさがあればOK</li>
-                  <li>・強い日差しには弱いので、直射日光は避けてください</li>
-                  <li>・蛍光灯やLEDで生育が可能です</li>
-                </ul>
-              </div>
-
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">水やり</h3>
-                <p className="text-gray-900 mb-3 flex-grow">基本用土には、月に一度しっかりと水を与え、普段は週に一度ほど、苔と土の表面を軽く霧吹きで湿らせるだけでOK</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・水は葉っぱから吸収するので、苔をしっかり湿らせてください</li>
-                  <li>・土台となる土は常に湿らせるようにしてください</li>
-                  <li>・水は多すぎると苔に悪いので、あげすぎには注意してください</li>
-                </ul>
-              </div>
-
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">空気の入れ替え</h3>
-                <p className="text-gray-900 mb-3 flex-grow">余裕のある時は換気を行いましょう</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・空気がこもっていると苔の徒長の原因にもなるため、できるときは1日に一回数分程度の換気を行いましょう</li>
-                  <li>・換気をすることで湿気のこもりすぎも防止でき、苔も丈夫に育ちやすくなります</li>
-                </ul>
-              </div>
-
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">肥料</h3>
-                <p className="text-gray-900 mb-3 flex-grow">基本的には苔に肥料は使いません</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・苔の色が悪くなった場合などには、薬品を溶かした水を散布します</li>
-                  <li>・季節の変わり目の春や秋は温度変化も大きく、苔への負担も少なからず増している状態ですので、必要であればこの時期に散布をしてみましょう</li>
-                </ul>
-              </div>
-
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">お手入れ</h3>
-                <p className="text-gray-900 mb-3 flex-grow">適度にお手入れして見た目もきれいで清潔に保ちましょう</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・苔も時間が経つにつれて伸びてくるものもありますので、気になってきたらカットして整えましょう</li>
-                  <li>・色の茶色くなった苔はカットして無くすことでカビの予防にもなります</li>
-                  <li>・適度に容器内の水滴と水垢を拭き取り綺麗に保ちましょう</li>
-                </ul>
-              </div>
-
-              <div className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
-                <h3 className="text-xl font-bold text-moss-green mb-3">移植</h3>
-                <p className="text-gray-900 mb-3 flex-grow">苔は移植先でも成長しやすいため、容器の交換なども行えます</p>
-                <ul className="text-gray-800 space-y-1 text-sm">
-                  <li>・苔を取り出し傷んでいる部分や茶色くなっている部分は捨てましょう</li>
-                  <li>・新しい容器に土、石、流木などレイアウト物を入れて移し替えることも可能です</li>
-                </ul>
-              </div>
+              {careGuide.map((item, index) => (
+                <div key={index} className="bg-white/50 p-6 rounded-lg h-full flex flex-col">
+                  <h3 className="text-xl font-bold text-moss-green mb-3">{item.title}</h3>
+                  <p className="text-gray-900 mb-3 flex-grow">{item.lead}</p>
+                  <ul className="text-gray-800 space-y-1 text-sm">
+                    {item.list.map((line, i) => (
+                      <li key={i}>・{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
         </Container>
@@ -413,11 +341,10 @@ export default function ProductsPage() {
         <Container>
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              あなたにぴったりのテラリウムを見つけませんか？
+              {t('ctaTitle')}
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              どの商品があなたに合うかわからない場合は、お気軽にお問い合わせください。
-              専門スタッフがあなたのライフスタイルに合った最適なテラリウムをご提案します。
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto whitespace-pre-line">
+              {t('ctaLead')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a

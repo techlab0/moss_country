@@ -5,59 +5,27 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { usePageContent } from '@/hooks/usePageContent';
 
-const timeline = [
-  {
-    year: '1990-2000s',
-    title: '自然との出会い',
-    titleEn: 'Meeting Nature',
-    description: '幼い頃から自然や動物が大好きで、両親に連れられて森や山へ出かけていました。中でも心を惹かれたのが、静かに息づく小さな苔。見つめているだけで心が落ち着き、時がたつのを忘れるほどでした。',
-    descriptionEn: 'From childhood, I loved nature and animals. Among them, moss fascinated me - a quiet, living beauty that made time stand still.',
-  },
-  {
-    year: '2024',
-    title: '苔とテラリウムとの再会',
-    titleEn: 'Rediscovering Moss & Terrariums',
-    description: '自分の仕事を持ちたいと考えたとき、心に浮かんだのは苔でした。<br/>人々が知らない苔の魅力を伝え、癒しを届けたい。<br/>北海道には苔テラリウムの文化がまだ少なく、「それなら自分が広めよう」と決意しました。',
-    descriptionEn: 'When I dreamed of creating my own work, moss came to mind.<br/>I wanted to share its quiet beauty and bring healing to people.<br/>Since Hokkaido had few moss terrarium spaces, I decided to create one myself.',
-  },
-  {
-    year: '2025',
-    title: 'MOSS COUNTRY設立',
-    titleEn: 'The Birth of Moss Country',
-    description: '見本のない中、独学で知識を深め、店舗の掃除や改装も自らの手で。<br/>こうして札幌に苔の専門店「Moss Country」が誕生しました。<br/>名前には、「日本を苔の国=Moss Countryにしたい」という願いを込めています。',
-    descriptionEn: 'Without any precedents, I studied on my own, renovated an old space by hand, and opened Moss Country - Hokkaido\'s first moss terrarium specialty Shop.<br/>The name reflects my wish to make Japan a true Moss Country.',
-  },
-  {
-    year: '2026',
-    title: '未来へ',
-    titleEn: 'Looking Ahead',
-    description: 'これからはレンタル事業や苔セラピーを通じて、癒しの空間を広げていきます。<br/>子どもたちや地域の人々にも、苔を通して自然の素晴らしさを伝えたい。',
-    descriptionEn: 'Through moss rental and therapy, I hope to create spaces that soothe the heart.<br/>I wish to share the beauty of nature with children and communities across Japan.',
-  },
+const timelineMeta = [
+  { year: '1990-2000s', titleEn: 'Meeting Nature', descriptionEn: 'From childhood, I loved nature and animals. Among them, moss fascinated me - a quiet, living beauty that made time stand still.' },
+  { year: '2024', titleEn: 'Rediscovering Moss & Terrariums', descriptionEn: 'When I dreamed of creating my own work, moss came to mind. I wanted to share its quiet beauty and bring healing to people. Since Hokkaido had few moss terrarium spaces, I decided to create one myself.' },
+  { year: '2025', titleEn: 'The Birth of Moss Country', descriptionEn: 'Without any precedents, I studied on my own, renovated an old space by hand, and opened Moss Country - Hokkaido\'s first moss terrarium specialty Shop. The name reflects my wish to make Japan a true Moss Country.' },
+  { year: '2026', titleEn: 'Looking Ahead', descriptionEn: 'Through moss rental and therapy, I hope to create spaces that soothe the heart. I wish to share the beauty of nature with children and communities across Japan.' },
 ];
-
-const values = [
-  {
-    title: 'AUTHENTICITY',
-    description: '苔の素晴らしさを伝えるために本物の美しさを追求しています。',
-  },
-  {
-    title: 'CRAFTSMANSHIP',
-    description: '一つひとつ手作りで仕上げる、妥協なき職人技術。',
-  },
-  {
-    title: 'SUSTAINABILITY',
-    description: '自然への敬意を込めた、持続可能な素材選びと製法。',
-  },
-  {
-    title: 'EXPERIENCE',
-    description: '単なる商品ではなく、心に残る特別な体験を提供。',
-  },
-];
-
 
 export default function StoryPage() {
+  // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
+  const { t, img } = usePageContent('story');
+  const timeline = timelineMeta.map((meta, i) => ({
+    ...meta,
+    title: t(`timeline${i + 1}Title`),
+    description: t(`timeline${i + 1}Desc`),
+  }));
+  const values = [1, 2, 3, 4].map(i => ({
+    title: t(`value${i}Title`),
+    description: t(`value${i}Desc`),
+  }));
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['story'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['story'].src);
@@ -146,12 +114,11 @@ export default function StoryPage() {
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-6 drop-shadow-2xl px-4">
-              小さな緑に込めた、大きな想い
+              {t('heroTitle')}
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg">
-              MOSS COUNTRYの想い、職人の技術、テラリウムへの情熱。
-              私たちがなぜテラリウムを作り続けるのか、その理由をお話しします。
+            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg whitespace-pre-line">
+              {t('heroLead')}
             </p>
           </div>
         </Container>
@@ -170,13 +137,11 @@ export default function StoryPage() {
           </div>
           <div className="max-w-4xl mx-auto">
             <div className="glass-card-dark text-center p-8 rounded-3xl">
-              <blockquote className="text-2xl md:text-3xl text-white font-light leading-relaxed mb-8">
-                「苔のある生活をあなたに。<br />
-                生活に癒しと和みを。」
+              <blockquote className="text-2xl md:text-3xl text-white font-light leading-relaxed mb-8 whitespace-pre-line">
+                「{t('missionQuote')}」
               </blockquote>
-              <p className="text-lg text-white/90 font-light">
-                苔の美しさを通して、心と暮らしに穏やかな時間を届けます。<br />
-                代表 立桶が提案する、新しい癒しのかたち。
+              <p className="text-lg text-white/90 font-light whitespace-pre-line">
+                {t('missionSub')}
               </p>
             </div>
           </div>
@@ -272,10 +237,8 @@ export default function StoryPage() {
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 break-words">
                 CRAFTSMANSHIP
               </h2>
-              <p className="text-lg text-white/90 mb-6 leading-relaxed font-light">
-                ひとつひとつ丁寧に仕上げる手仕事。<br/>
-                機械では表現できない繊細さと、苔への愛情が込められた唯一無二の作品です。<br/>
-                自然と調和するように、手のぬくもりを大切にしています。
+              <p className="text-lg text-white/90 mb-6 leading-relaxed font-light whitespace-pre-line">
+                {t('craftsmanshipLead')}
               </p>
               
               <div className="space-y-6">
@@ -330,7 +293,7 @@ export default function StoryPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-light-green/20 via-transparent to-moss-green/20 rounded-2xl"></div>
                 <div className="absolute inset-0 shadow-[0_0_50px_rgba(138,195,157,0.3)] rounded-2xl"></div>
                 <ImagePlaceholder
-                  src="/images/story/mosscountry_story_craftmanship.jpg"
+                  src={img('craftsmanshipImage')}
                   alt="立桶賢による職人技術と北海道の苔テラリウム制作"
                   width={600}
                   height={500}
@@ -357,12 +320,10 @@ export default function StoryPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl font-bold text-moss-green mb-4 tracking-wide">
-                札幌から広がる、苔の癒しの輪
+                {t('futureVisionTitle')}
               </h3>
-              <p className="text-lg text-gray-700 mb-6 leading-relaxed font-light">
-                Moss Countryは札幌を拠点に、まずは北海道各地へ、<br/>
-                そしていずれは全国へと苔の癒しを届けていきます。<br/>
-                苔の美しさや魅力を通じて、心にやすらぎと自然への優しさを育む文化を広げていきたいと考えています。
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed font-light whitespace-pre-line">
+                {t('futureVisionLead')}
               </p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center">
@@ -392,7 +353,7 @@ export default function StoryPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-light-green/20 via-transparent to-moss-green/20 rounded-2xl"></div>
                 <div className="absolute inset-0 shadow-[0_0_50px_rgba(138,195,157,0.3)] rounded-2xl"></div>
                 <ImagePlaceholder
-                  src="/images/story/mosscountry_logo_sign.png"
+                  src={img('futureVisionImage')}
                   alt="MOSS COUNTRY ロゴサイン - 未来への展望"
                   width={600}
                   height={500}
@@ -409,11 +370,10 @@ export default function StoryPage() {
         <Container>
           <div className="text-center">
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
-              あなたも、この特別な世界へ
+              {t('ctaTitle')}
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto font-light">
-              立桶が創り出す、北海道発のテラリウム体験。<br />
-              あなたの日常に、新しい癒しをお届けします。
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto font-light whitespace-pre-line">
+              {t('ctaLead')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 

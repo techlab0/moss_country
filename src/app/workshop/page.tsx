@@ -7,84 +7,38 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getSimpleWorkshops } from '@/lib/sanity';
 import { workshopImages, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import type { SimpleWorkshop } from '@/types/sanity';
+import { usePageContent } from '@/hooks/usePageContent';
 
-const workshopSizes = [
-  {
-    id: 'glass-canister-ss',
-    name: 'ガラスキャニスターSS',
-    dimensions: '6cm × 11cm',
-    price: '¥2,500',
-    description: '手のひらサイズの小さな苔の世界。初めての方にも気軽に楽しめる癒しの一本です。',
-    image: '/images/workshop/glass-canister-ss.JPG',
-  },
-  {
-    id: 'glass-ball-s',
-    name: 'ガラスボールS',
-    dimensions: '10cm × 8cm',
-    price: '¥4,000',
-    description: '丸いガラスの中に広がる小さな苔の森。日常に緑を添える、柔らかな印象のテラリウムです。',
-    image: '/images/workshop/glass-ball-s.JPG',
-  },
-  {
-    id: 'pop-jar',
-    name: 'ポップジャー',
-    dimensions: '11cm × 6cm',
-    price: '¥5,000',
-    description: 'ころんと可愛い形の容器に、立体的な苔の世界。インテリアにも映える明るい雰囲気です。',
-    image: '/images/workshop/pop-jar.JPG',
-  },
-  {
-    id: 'glass-ball-m',
-    name: 'ガラスボールM',
-    dimensions: '15cm × 12cm',
-    price: '¥8,500',
-    description: '【所要時間：120~180分】存在感あるサイズに豊かな景色を凝縮。苔の奥行きや地形の変化をじっくり楽しめます。',
-    image: '/images/workshop/glass-ball-m.JPG',
-  },
-  {
-    id: 'glass-ball-box-ll',
-    name: 'ガラスボール・ボックスLL',
-    dimensions: '15cm × 12cm',
-    price: '¥25,000',
-    description: '※他ワークショップ参加経験者限定。\n※【2週間前予約必須】1~2日間で完成',
-    image: '/images/workshop/glass-ball-box-ll.JPG',
-  },
-  {
-    id: 'cliff-terrarium',
-    name: '崖景のテラリウム',
-    dimensions: '8cm × 10cm',
-    price: '¥6,000',
-    description: '岩肌と苔が織りなす、崖のような立体構造。小さな容器に自然の迫力と静けさを閉じ込めました。',
-    image: '/images/products/moss-country_products_bottle.png',
-  },
-];
-
-
-const testimonials = [
-  {
-    name: '田中 美咲さん',
-    age: '20代女性',
-    course: 'レギュラーサイズ',
-    comment: '初めてのテラリウム作りでしたが、職人さんが丁寧に教えてくださって、とても楽しい2時間でした。作った作品は今も大切に育てています。',
-    rating: 5,
-  },
-  {
-    name: '佐藤 恵子さん・太郎くん',
-    age: '親子参加（太郎くん10歳）',
-    course: 'コンパクトサイズ',
-    comment: '10歳の息子と参加しました。子供でも分かりやすい説明で、親子で楽しく制作できました。息子は自分で作ったテラリウムをとても大切にしています。',
-    rating: 5,
-  },
-  {
-    name: '山田 健太さん',
-    age: '30代男性',
-    course: 'レギュラーサイズ',
-    comment: '職人さんの技術を間近で見ることができて、とても勉強になりました。苔の選び方や配置のコツなど、プロの技術を学べる貴重な体験でした。',
-    rating: 5,
-  },
+const planMeta = [
+  { id: 'glass-canister-ss', dimensions: '6cm × 11cm', image: '/images/workshop/glass-canister-ss.JPG' },
+  { id: 'glass-ball-s', dimensions: '10cm × 8cm', image: '/images/workshop/glass-ball-s.JPG' },
+  { id: 'pop-jar', dimensions: '11cm × 6cm', image: '/images/workshop/pop-jar.JPG' },
+  { id: 'glass-ball-m', dimensions: '15cm × 12cm', image: '/images/workshop/glass-ball-m.JPG' },
+  { id: 'glass-ball-box-ll', dimensions: '15cm × 12cm', image: '/images/workshop/glass-ball-box-ll.JPG' },
+  { id: 'cliff-terrarium', dimensions: '8cm × 10cm', image: '/images/products/moss-country_products_bottle.png' },
 ];
 
 export default function WorkshopPage() {
+  // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
+  const { t } = usePageContent('workshop');
+  const workshopSizes = planMeta.map((meta, i) => ({
+    ...meta,
+    name: t(`plan${i + 1}Name`),
+    price: t(`plan${i + 1}Price`),
+    description: t(`plan${i + 1}Desc`),
+  }));
+  const testimonials = [1, 2, 3].map(i => ({
+    name: t(`testimonial${i}Name`),
+    age: t(`testimonial${i}Age`),
+    course: t(`testimonial${i}Course`),
+    comment: t(`testimonial${i}Comment`),
+    rating: 5,
+  }));
+  const bookingSteps = [1, 2, 3, 4].map(i => ({
+    step: String(i),
+    title: t(`step${i}Title`),
+    description: t(`step${i}Desc`),
+  }));
   const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
   const [, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -190,12 +144,11 @@ export default function WorkshopPage() {
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              自分の手で作る、特別なテラリウム体験
+              {t('heroTitle')}
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8">
-              経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。
-              親御さんにもお手伝いいただくことで小さなお子様も参加可能です。
+            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 whitespace-pre-line">
+              {t('heroLead')}
             </p>
             <Button 
               variant="primary" 
@@ -467,12 +420,7 @@ export default function WorkshopPage() {
 
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-4 gap-8">
-              {[
-                { step: '1', title: 'コース選択', description: 'あなたに合ったコースを選んでください' },
-                { step: '2', title: '日程確認', description: 'ご希望の日時をお選びください' },
-                { step: '3', title: 'お申し込み', description: 'お問い合わせフォームからお申し込み' },
-                { step: '4', title: '当日参加', description: '楽しいテラリウム作りを体験！' },
-              ].map((item, index) => (
+              {bookingSteps.map((item, index) => (
                 <div key={index} className="text-center">
                   <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-white font-bold text-xl">{item.step}</span>
@@ -494,10 +442,10 @@ export default function WorkshopPage() {
               <div className="grid md:grid-cols-2 gap-0">
                 <div className="p-8 md:p-12 flex flex-col justify-center">
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                    出張ワークショップ
+                    {t('mobileBannerTitle')}
                   </h2>
-                  <p className="text-white/90 mb-6">
-                    イベントや会場にお伺いして、ワークショップを開催します。マルシェ、企業イベント、学校行事など、さまざまなシーンでご利用いただけます。
+                  <p className="text-white/90 mb-6 whitespace-pre-line">
+                    {t('mobileBannerLead')}
                   </p>
                   <div>
                     <Button
@@ -528,11 +476,10 @@ export default function WorkshopPage() {
         <Container>
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              今すぐワークショップに参加しませんか？
+              {t('ctaTitle')}
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              職人の技術を間近で学びながら、世界に一つだけのテラリウムを作りましょう。
-              親御さんにもお手伝いいただくことで、小さなお子様も参加可能です。
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto whitespace-pre-line">
+              {t('ctaLead')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 

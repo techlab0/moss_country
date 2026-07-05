@@ -10,6 +10,7 @@ const navigation = [
   { name: '売上管理', href: '/admin/sales', icon: '💰' },
   { name: '在庫管理', href: '/admin/inventory', icon: '📋' },
   { name: '商品管理', href: '/admin/products', icon: '🌱' },
+  { name: 'ページ編集', href: '/admin/pages', icon: '📄' },
   { name: 'ブログ・ニュース管理', href: '/admin/blog', icon: '📝' },
   { name: 'カレンダー管理', href: '/admin/calendar', icon: '📅' },
   { name: 'FAQ管理', href: '/admin/faqs', icon: '❓' },

@@ -1,7 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  SiteSettingsData,
+  NavLink,
+  maintenanceTargetPages,
+  snsPlatformLabels,
+} from '@/lib/siteSettingsDefaults';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
@@ -9,70 +14,147 @@ type MaintenanceSettings = {
   message?: string;
 };
 
+type Tab = 'maintenance' | 'navigation';
+
+type NavListKey = 'headerLinks' | 'footerSitemapLinks' | 'footerLegalLinks';
+
 export default function SettingsPage() {
+  const [tab, setTab] = useState<Tab>('maintenance');
   const [maintenanceSettings, setMaintenanceSettings] = useState<MaintenanceSettings>({
     isEnabled: false,
     password: '',
-    message: ''
+    message: '',
   });
+  const [siteSettings, setSiteSettings] = useState<SiteSettingsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
-  useEffect(() => {
-    fetchMaintenanceSettings();
-  }, []);
+  const showMessage = (text: string, type: 'success' | 'error') => {
+    setMessage(text);
+    setMessageType(type);
+  };
 
-  const fetchMaintenanceSettings = async () => {
+  const loadAll = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/maintenance/settings');
-      if (response.ok) {
-        const data = await response.json();
+      const [maintRes, siteRes] = await Promise.all([
+        fetch('/api/admin/maintenance/settings'),
+        fetch('/api/admin/site-settings'),
+      ]);
+      if (maintRes.ok) {
+        const data = await maintRes.json();
         setMaintenanceSettings(data.settings);
       }
+      if (siteRes.ok) {
+        const data = await siteRes.json();
+        setSiteSettings(data.settings);
+      }
     } catch (error) {
-      console.error('Failed to fetch maintenance settings:', error);
+      console.error('設定の取得に失敗しました:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleSaveSettings = async () => {
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const handleSaveMaintenance = async () => {
     if (!maintenanceSettings.password.trim()) {
-      setMessage('メンテナンスパスワードを入力してください');
-      setMessageType('error');
+      showMessage('メンテナンスパスワードを入力してください', 'error');
       return;
     }
-
     setIsSaving(true);
     setMessage('');
-
     try {
       const response = await fetch('/api/admin/maintenance/settings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(maintenanceSettings),
       });
-
-      if (response.ok) {
-        setMessage('設定を保存しました');
-        setMessageType('success');
-      } else {
-        const data = await response.json();
-        setMessage(data.error || '設定の保存に失敗しました');
-        setMessageType('error');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '設定の保存に失敗しました');
       }
-    } catch (error) {
-      setMessage('設定の保存に失敗しました');
-      setMessageType('error');
+      showMessage('設定を保存しました', 'success');
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '設定の保存に失敗しました', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleSaveSiteSettings = async () => {
+    if (!siteSettings) return;
+    setIsSaving(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/site-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(siteSettings),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '設定の保存に失敗しました');
+      }
+      const data = await response.json();
+      setSiteSettings(data.settings);
+      showMessage('設定を保存しました（サイトに即時反映されます）', 'success');
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '設定の保存に失敗しました', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ----- ナビリンク編集ヘルパー -----
+
+  const updateNavLink = (listKey: NavListKey, index: number, patch: Partial<NavLink>) => {
+    setSiteSettings(prev => {
+      if (!prev) return prev;
+      const list = prev[listKey].map((link, i) => (i === index ? { ...link, ...patch } : link));
+      return { ...prev, [listKey]: list };
+    });
+  };
+
+  const moveNavLink = (listKey: NavListKey, index: number, delta: number) => {
+    setSiteSettings(prev => {
+      if (!prev) return prev;
+      const list = [...prev[listKey]];
+      const target = index + delta;
+      if (target < 0 || target >= list.length) return prev;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...prev, [listKey]: list };
+    });
+  };
+
+  const addNavLink = (listKey: NavListKey) => {
+    setSiteSettings(prev => {
+      if (!prev) return prev;
+      return { ...prev, [listKey]: [...prev[listKey], { label: '', href: '/', isVisible: true }] };
+    });
+  };
+
+  const removeNavLink = (listKey: NavListKey, index: number) => {
+    setSiteSettings(prev => {
+      if (!prev) return prev;
+      return { ...prev, [listKey]: prev[listKey].filter((_, i) => i !== index) };
+    });
+  };
+
+  const toggleMaintenancePage = (path: string) => {
+    setSiteSettings(prev => {
+      if (!prev) return prev;
+      const pages = prev.maintenancePages.includes(path)
+        ? prev.maintenancePages.filter(p => p !== path)
+        : [...prev.maintenancePages, path];
+      return { ...prev, maintenancePages: pages };
+    });
+  };
 
   if (isLoading) {
     return (
@@ -83,26 +165,44 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-        <div>
-            <h1 className="text-3xl font-bold text-gray-900">サイト設定</h1>
-            <p className="text-gray-600 mt-2">サイトの基本設定を管理します</p>
-          </div>
+    <div className="space-y-6 max-w-3xl">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">サイト設定</h1>
+        <p className="text-gray-600 mt-2">サイトの基本設定を管理します</p>
+      </div>
 
-          {message && (
-            <div className={`p-4 rounded-md mb-6 ${
-              messageType === 'success' 
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
-            }`}>
-              {message}
-            </div>
-          )}
+      {/* タブ */}
+      <div className="flex rounded-lg overflow-hidden border border-gray-300">
+        <button
+          onClick={() => setTab('maintenance')}
+          className={`flex-1 py-3 font-medium ${tab === 'maintenance' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          メンテナンス
+        </button>
+        <button
+          onClick={() => setTab('navigation')}
+          className={`flex-1 py-3 font-medium ${tab === 'navigation' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          ヘッダー・フッター
+        </button>
+      </div>
 
-          {/* メンテナンスモード設定 */}
-          <div className="bg-white shadow-sm rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">メンテナンスモード</h2>
-            
+      {message && (
+        <div className={`p-4 rounded-md ${
+          messageType === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      {tab === 'maintenance' && (
+        <>
+          {/* サイト全体のメンテナンスモード */}
+          <div className="bg-white shadow-sm rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">サイト全体のメンテナンスモード</h2>
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
                 <div>
@@ -115,10 +215,7 @@ export default function SettingsPage() {
                   <input
                     type="checkbox"
                     checked={maintenanceSettings.isEnabled}
-                    onChange={(e) => setMaintenanceSettings({
-                      ...maintenanceSettings,
-                      isEnabled: e.target.checked
-                    })}
+                    onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, isEnabled: e.target.checked })}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
@@ -133,16 +230,10 @@ export default function SettingsPage() {
                   type="password"
                   id="maintenance-password"
                   value={maintenanceSettings.password}
-                  onChange={(e) => setMaintenanceSettings({
-                    ...maintenanceSettings,
-                    password: e.target.value
-                  })}
+                  onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, password: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="メンテナンスパスワードを入力"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  メンテナンス中にサイトにアクセスするためのパスワードです
-                </p>
               </div>
 
               <div>
@@ -152,49 +243,266 @@ export default function SettingsPage() {
                 <textarea
                   id="maintenance-message"
                   value={maintenanceSettings.message || ''}
-                  onChange={(e) => setMaintenanceSettings({
-                    ...maintenanceSettings,
-                    message: e.target.value
-                  })}
+                  onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, message: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="メンテナンス中に表示するメッセージ"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  メンテナンスページに表示されるメッセージです
-                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <div className={`w-3 h-3 rounded-full ${maintenanceSettings.isEnabled ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                <span className="text-sm text-gray-700">
+                  現在: {maintenanceSettings.isEnabled ? 'メンテナンス中（一般ユーザーはアクセス不可）' : '公開中'}
+                </span>
               </div>
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <Button
-                onClick={handleSaveSettings}
+              <button
+                onClick={handleSaveMaintenance}
                 disabled={isSaving}
                 className="bg-moss-green hover:bg-moss-green/90 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50"
               >
-                {isSaving ? '保存中...' : '設定を保存'}
-              </Button>
+                {isSaving ? '保存中...' : '全体メンテナンス設定を保存'}
+              </button>
             </div>
           </div>
 
-          {/* 現在の状態表示 */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">現在の状態</h3>
-            <div className="flex items-center space-x-3">
-              <div className={`w-3 h-3 rounded-full ${
-                maintenanceSettings.isEnabled ? 'bg-yellow-500' : 'bg-green-500'
-              }`}></div>
-              <span className="text-gray-900 font-medium">
-                {maintenanceSettings.isEnabled ? 'メンテナンス中' : '公開中'}
-              </span>
+          {/* ページ別の準備中設定 */}
+          {siteSettings && (
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-1">ページ別の準備中設定</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                チェックしたページは「このページは現在準備中です」と表示され、一般ユーザーは閲覧できなくなります（管理者ログイン中は閲覧可能）。
+              </p>
+              <ul className="divide-y border rounded-md">
+                {maintenanceTargetPages.map(page => (
+                  <li key={page.path} className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{page.label}</p>
+                      <p className="text-xs text-gray-500">{page.path}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={siteSettings.maintenancePages.includes(page.path)}
+                        onChange={() => toggleMaintenancePage(page.path)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4">
+                <button
+                  onClick={handleSaveSiteSettings}
+                  disabled={isSaving}
+                  className="bg-moss-green hover:bg-moss-green/90 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? '保存中...' : 'ページ別設定を保存'}
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mt-2">
-              {maintenanceSettings.isEnabled 
-                ? 'サイトはメンテナンスモードです。一般ユーザーはアクセスできません。'
-                : 'サイトは通常運用中です。すべてのユーザーがアクセスできます。'
-              }
-            </p>
+          )}
+        </>
+      )}
+
+      {tab === 'navigation' && siteSettings && (
+        <>
+          <NavLinkListEditor
+            title="ヘッダー・ハンバーガーのリンク"
+            description="サイト上部とスマホのハンバーガーメニューに表示されるリンクです（並び順=表示順）"
+            links={siteSettings.headerLinks}
+            onUpdate={(i, patch) => updateNavLink('headerLinks', i, patch)}
+            onMove={(i, d) => moveNavLink('headerLinks', i, d)}
+            onAdd={() => addNavLink('headerLinks')}
+            onRemove={(i) => removeNavLink('headerLinks', i)}
+          />
+          <NavLinkListEditor
+            title="フッター サイトマップ"
+            description="フッターの「サイトマップ」欄に表示されるリンクです"
+            links={siteSettings.footerSitemapLinks}
+            onUpdate={(i, patch) => updateNavLink('footerSitemapLinks', i, patch)}
+            onMove={(i, d) => moveNavLink('footerSitemapLinks', i, d)}
+            onAdd={() => addNavLink('footerSitemapLinks')}
+            onRemove={(i) => removeNavLink('footerSitemapLinks', i)}
+          />
+          <NavLinkListEditor
+            title="フッター 規約関連リンク"
+            description="フッター最下部の規約関連リンクです"
+            links={siteSettings.footerLegalLinks}
+            onUpdate={(i, patch) => updateNavLink('footerLegalLinks', i, patch)}
+            onMove={(i, d) => moveNavLink('footerLegalLinks', i, d)}
+            onAdd={() => addNavLink('footerLegalLinks')}
+            onRemove={(i) => removeNavLink('footerLegalLinks', i)}
+          />
+
+          {/* SNSリンク */}
+          <div className="bg-white shadow-sm rounded-lg p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gray-900">SNSリンク</h2>
+            <ul className="space-y-2">
+              {siteSettings.snsLinks.map((sns, index) => (
+                <li key={sns.platform} className="flex items-center gap-2">
+                  <span className="w-24 shrink-0 text-sm text-gray-700">{snsPlatformLabels[sns.platform]}</span>
+                  <input
+                    type="text"
+                    value={sns.url}
+                    onChange={(e) => setSiteSettings(prev => {
+                      if (!prev) return prev;
+                      const snsLinks = prev.snsLinks.map((s, i) => (i === index ? { ...s, url: e.target.value } : s));
+                      return { ...prev, snsLinks };
+                    })}
+                    placeholder="URL"
+                    className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+                  />
+                  <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={sns.isVisible !== false}
+                      onChange={(e) => setSiteSettings(prev => {
+                        if (!prev) return prev;
+                        const snsLinks = prev.snsLinks.map((s, i) => (i === index ? { ...s, isVisible: e.target.checked } : s));
+                        return { ...prev, snsLinks };
+                      })}
+                    />
+                    表示
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* フッター文言 */}
+          <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">フッターの文言</h2>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">紹介文</label>
+              <textarea
+                value={siteSettings.footerTagline}
+                onChange={(e) => setSiteSettings(prev => (prev ? { ...prev, footerTagline: e.target.value } : prev))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">営業時間</label>
+                <input
+                  type="text"
+                  value={siteSettings.businessHours}
+                  onChange={(e) => setSiteSettings(prev => (prev ? { ...prev, businessHours: e.target.value } : prev))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">営業日</label>
+                <input
+                  type="text"
+                  value={siteSettings.businessDays}
+                  onChange={(e) => setSiteSettings(prev => (prev ? { ...prev, businessDays: e.target.value } : prev))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">コピーライト表記</label>
+              <input
+                type="text"
+                value={siteSettings.copyrightText}
+                onChange={(e) => setSiteSettings(prev => (prev ? { ...prev, copyrightText: e.target.value } : prev))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveSiteSettings}
+            disabled={isSaving}
+            className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+          >
+            {isSaving ? '保存中...' : 'ヘッダー・フッター設定を保存'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NavLinkListEditor({
+  title,
+  description,
+  links,
+  onUpdate,
+  onMove,
+  onAdd,
+  onRemove,
+}: {
+  title: string;
+  description: string;
+  links: NavLink[];
+  onUpdate: (index: number, patch: Partial<NavLink>) => void;
+  onMove: (index: number, delta: number) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="bg-white shadow-sm rounded-lg p-6 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <p className="text-xs text-gray-500">{description}</p>
         </div>
+        <button onClick={onAdd} className="text-sm px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90 whitespace-nowrap">
+          + 追加
+        </button>
+      </div>
+      <ul className="space-y-2">
+        {links.map((link, index) => (
+          <li key={index} className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-col">
+              <button
+                onClick={() => onMove(index, -1)}
+                disabled={index === 0}
+                className="text-gray-400 hover:text-gray-700 disabled:opacity-30 text-xs leading-none p-1"
+              >
+                ▲
+              </button>
+              <button
+                onClick={() => onMove(index, 1)}
+                disabled={index === links.length - 1}
+                className="text-gray-400 hover:text-gray-700 disabled:opacity-30 text-xs leading-none p-1"
+              >
+                ▼
+              </button>
+            </div>
+            <input
+              type="text"
+              value={link.label}
+              onChange={(e) => onUpdate(index, { label: e.target.value })}
+              placeholder="表示名"
+              className="w-32 px-2 py-2 text-sm border border-gray-300 rounded-md"
+            />
+            <input
+              type="text"
+              value={link.href}
+              onChange={(e) => onUpdate(index, { href: e.target.value })}
+              placeholder="/path または https://..."
+              className="flex-1 min-w-[140px] px-2 py-2 text-sm border border-gray-300 rounded-md"
+            />
+            <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={link.isVisible !== false}
+                onChange={(e) => onUpdate(index, { isVisible: e.target.checked })}
+              />
+              表示
+            </label>
+            <button onClick={() => onRemove(index)} className="text-red-500 text-sm px-1">✕</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

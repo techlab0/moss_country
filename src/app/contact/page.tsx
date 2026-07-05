@@ -6,27 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import emailjs from '@emailjs/browser';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
-
-const contactMethods = [
-  {
-    title: '電話でのお問い合わせ',
-    description: 'お急ぎの方はお電話でお気軽にお問い合わせください',
-    info: '080-3605-6340',
-    hours: '営業時間: 11:00-20:00 / 不定休（カレンダーをご確認ください）',
-  },
-  {
-    title: 'メールでのお問い合わせ',
-    description: '詳しいご相談やお見積りはメールでも承ります',
-    info: 'moss.country.kokenokuni@gmail.com',
-    hours: '通常3営業日以内にご返信いたします',
-  },
-  {
-    title: '店舗でのご相談',
-    description: '実際に商品を見ながらご相談いただけます',
-    info: '札幌市西区発寒11条4丁目3-1',
-    hours: '予約優先（当日来店も歓迎）',
-  },
-];
+import { usePageContent } from '@/hooks/usePageContent';
 
 const inquiryTypes = [
   '商品について',
@@ -38,6 +18,18 @@ const inquiryTypes = [
 ];
 
 export default function ContactPage() {
+  // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
+  const { t } = usePageContent('contact');
+  const contactMethods = [1, 2, 3].map(i => ({
+    title: t(`method${i}Title`),
+    description: t(`method${i}Desc`),
+    info: t(`method${i}Info`),
+    hours: t(`method${i}Hours`),
+  }));
+  const faqItems = [1, 2, 3, 4].map(i => ({
+    question: t(`faq${i}Q`),
+    answer: t(`faq${i}A`),
+  }));
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -193,12 +185,11 @@ export default function ContactPage() {
         <Container className="relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl">
-              お問い合わせ
+              {t('heroTitle')}
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg">
-              テラリウムに関するご質問、ワークショップのお申し込み、
-              オーダーメイドのご相談など、お気軽にお問い合わせください。
+            <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-lg whitespace-pre-line">
+              {t('heroLead')}
             </p>
           </div>
         </Container>
@@ -461,41 +452,16 @@ export default function ContactPage() {
           </div>
 
           <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-moss-green">ワークショップの予約はいつまでにすればよいですか？</h3>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">開催日の3日前までにご予約をお願いいたします。人気のコースは早めに満席になることがありますので、お早めのご予約をお勧めします。</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-moss-green">オーダーメイドの制作期間はどのくらいですか？</h3>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">内容により異なりますが、通常1-2週間程度お時間をいただいております。お急ぎの場合はご相談ください。</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-moss-green">テラリウムの配送は可能ですか？</h3>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">はい、全国配送承っております。配送中の破損を防ぐため、特別な梱包でお送りいたします。送料は商品代金と別途頂戴いたします。</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold text-moss-green">メンテナンスサービスはありますか？</h3>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">ご購入いただいたテラリウムのメンテナンスを承っております。植物の植え替えや容器のクリーニングなど、お気軽にご相談ください。</p>
-              </CardContent>
-            </Card>
+            {faqItems.map((faq, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold text-moss-green">{faq.question}</h3>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700">{faq.answer}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="text-center mt-12">

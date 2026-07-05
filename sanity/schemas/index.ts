@@ -13,6 +13,8 @@ import { salesItem } from './salesItem'
 import { dailySales } from './dailySales'
 import { inStoreCharge } from './inStoreCharge'
 import { storeTransaction } from './storeTransaction'
+import { siteSettings } from './siteSettings'
+import { pageContent } from './pageContent'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -30,4 +32,6 @@ export const schemaTypes = [
   dailySales,
   inStoreCharge,
   storeTransaction,
+  siteSettings,
+  pageContent,
 ]

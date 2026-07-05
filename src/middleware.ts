@@ -4,16 +4,22 @@ import { getAdminSessionFromRequest } from '@/lib/auth';
 // メンテナンス状態取得APIはチェック対象外（fetch ループ防止）
 const MAINTENANCE_STATUS_PATH = '/api/maintenance/status';
 
-async function getIsMaintenanceMode(request: NextRequest): Promise<boolean> {
-  if (process.env.MAINTENANCE_MODE === 'true') return true;
+interface MaintenanceState {
+  isEnabled: boolean;
+  maintenancePages: string[];
+}
+
+async function getMaintenanceState(request: NextRequest): Promise<MaintenanceState> {
   try {
     const statusUrl = new URL(MAINTENANCE_STATUS_PATH, request.url);
     const res = await fetch(statusUrl, { cache: 'no-store' });
-    if (!res.ok) return false;
-    const data = await res.json();
-    return data?.isEnabled === true;
+    const data = res.ok ? await res.json() : {};
+    return {
+      isEnabled: process.env.MAINTENANCE_MODE === 'true' || data?.isEnabled === true,
+      maintenancePages: Array.isArray(data?.maintenancePages) ? data.maintenancePages : [],
+    };
   } catch {
-    return false;
+    return { isEnabled: process.env.MAINTENANCE_MODE === 'true', maintenancePages: [] };
   }
 }
 
@@ -24,7 +30,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isMaintenanceMode = await getIsMaintenanceMode(request);
+  const { isEnabled: isMaintenanceMode, maintenancePages } = await getMaintenanceState(request);
+
+  // ページ別メンテナンス（準備中表示）: サイト設定で指定されたパスは準備中ページに差し替える。
+  // 管理者ログイン中は内容確認のためそのまま閲覧できる。
+  const isPublicPage =
+    !pathname.startsWith('/admin') &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/_next') &&
+    pathname !== '/maintenance' &&
+    pathname !== '/page-unavailable' &&
+    !pathname.includes('.');
+  if (isPublicPage && maintenancePages.includes(pathname)) {
+    const session = await getAdminSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.rewrite(new URL('/page-unavailable', request.url));
+    }
+  }
 
   if (isMaintenanceMode) {
     // 管理画面、API、メンテナンス関連のパスは除外
