@@ -56,9 +56,25 @@ const categoryLabels: Record<string, string> = {
 
 const categoryOrder = ['moss', 'product', 'figure', 'workshop', 'gacha', 'other'];
 
+// 数値入力欄の共通スタイル（何が入力されているか一目でわかるよう青太字にする）
+const numberInputClass = 'w-20 px-2 py-2 text-lg text-right text-blue-700 font-bold border border-gray-300 rounded-md';
+
 function toNumber(value: string): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+// 0はスマホで入力しにくいので空欄表示にし、マイナスは入力させない
+function displayStr(value: string): string {
+  return value === '0' ? '' : value;
+}
+
+function sanitizeNonNegative(value: string): string {
+  return value.replace(/-/g, '');
+}
+
+function sortByNameJa(items: SalesItem[]): SalesItem[] {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 }
 
 export default function InStoreChargePage() {
@@ -122,14 +138,15 @@ export default function InStoreChargePage() {
   const updateLineItem = (id: string, field: 'quantity' | 'amount', value: string) => {
     setLineItemState(prev => ({
       ...prev,
-      [id]: { ...prev[id], [field]: value },
+      [id]: { ...prev[id], [field]: sanitizeNonNegative(value) },
     }));
   };
 
   const addCustomItem = () => setCustomItems(prev => [...prev, newCustomItemRow()]);
   const removeCustomItem = (id: string) => setCustomItems(prev => prev.filter(row => row.id !== id));
   const updateCustomItem = (id: string, field: 'name' | 'amount', value: string) => {
-    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
+    const clean = field === 'amount' ? sanitizeNonNegative(value) : value;
+    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: clean } : row));
   };
 
   const handleCreate = async () => {
@@ -234,7 +251,7 @@ export default function InStoreChargePage() {
           ) : (
             <>
               {categoryOrder.map(category => {
-                const itemsInCategory = salesItems.filter(item => item.category === category && item.isActive);
+                const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
                 if (itemsInCategory.length === 0) return null;
 
                 return (
@@ -258,18 +275,21 @@ export default function InStoreChargePage() {
                               <input
                                 type="number"
                                 inputMode="numeric"
-                                value={state.quantity}
+                                min="0"
+                                value={displayStr(state.quantity)}
                                 onChange={(e) => updateLineItem(item._id, 'quantity', e.target.value)}
-                                className="w-20 px-2 py-2 text-lg text-right border border-gray-300 rounded-md"
+                                placeholder="0"
+                                className={numberInputClass}
                               />
                             ) : (
                               <input
                                 type="number"
                                 inputMode="numeric"
-                                value={state.amount}
+                                min="0"
+                                value={displayStr(state.amount)}
                                 onChange={(e) => updateLineItem(item._id, 'amount', e.target.value)}
                                 placeholder="金額"
-                                className="w-28 px-2 py-2 text-lg text-right border border-gray-300 rounded-md"
+                                className={`w-28 px-2 py-2 text-lg text-right text-blue-700 font-bold border border-gray-300 rounded-md`}
                               />
                             )}
                           </li>
@@ -306,10 +326,11 @@ export default function InStoreChargePage() {
                       <input
                         type="number"
                         inputMode="numeric"
-                        value={row.amount}
+                        min="0"
+                        value={displayStr(row.amount)}
                         onChange={(e) => updateCustomItem(row.id, 'amount', e.target.value)}
                         placeholder="金額"
-                        className="w-20 px-2 py-2 text-sm text-right border border-gray-300 rounded-md"
+                        className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
                       />
                       <button onClick={() => removeCustomItem(row.id)} className="text-red-500 text-sm px-2">✕</button>
                     </li>

@@ -30,8 +30,11 @@ interface SalesItemMeta {
 }
 
 // 数量入力(fixed)なら単価×数量、金額直接入力(variable)ならその金額を返す
+// クライアントからの申告値は信用せず、マイナス値は0として扱う
 function resolveAmount(meta: SalesItemMeta, quantity?: number, amount?: number): number {
-  return meta.pricingType === 'fixed' ? (quantity || 0) * (meta.unitPrice || 0) : (amount || 0);
+  return meta.pricingType === 'fixed'
+    ? Math.max(0, quantity || 0) * (meta.unitPrice || 0)
+    : Math.max(0, amount || 0);
 }
 
 export async function GET(
@@ -164,12 +167,12 @@ export async function PUT(
         _type: 'lineItem',
         _key: item.salesItemId,
         salesItem: { _type: 'reference', _ref: item.salesItemId },
-        cashQuantity: meta.pricingType === 'fixed' ? item.cashQuantity : undefined,
-        cashAmount: meta.pricingType === 'fixed' ? cashAmount : item.cashAmount,
-        payPayQuantity: meta.pricingType === 'fixed' ? item.payPayQuantity : undefined,
-        payPayAmount: meta.pricingType === 'fixed' ? payPayAmount : item.payPayAmount,
-        cardQuantity: meta.pricingType === 'fixed' ? item.cardQuantity : undefined,
-        cardAmount: meta.pricingType === 'fixed' ? cardAmount : item.cardAmount,
+        cashQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.cashQuantity || 0) : undefined,
+        cashAmount,
+        payPayQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.payPayQuantity || 0) : undefined,
+        payPayAmount,
+        cardQuantity: meta.pricingType === 'fixed' ? Math.max(0, item.cardQuantity || 0) : undefined,
+        cardAmount,
       });
     }
 
@@ -193,14 +196,14 @@ export async function PUT(
       _id: docId,
       _type: 'dailySales',
       date,
-      visitorCount: body.visitorCount ?? 0,
-      purchaseGroupCount: body.purchaseGroupCount ?? 0,
+      visitorCount: Math.max(0, body.visitorCount ?? 0),
+      purchaseGroupCount: Math.max(0, body.purchaseGroupCount ?? 0),
       lineItems,
       customLineItems,
       cashAmount: cashTotal,
       payPayAmount: payPayTotal,
       manualCardAmount: cardTotal,
-      wordOfMouthDiscount: body.wordOfMouthDiscount ?? 0,
+      wordOfMouthDiscount: Math.max(0, body.wordOfMouthDiscount ?? 0),
       adjustment: body.adjustment ?? 0,
       notes: body.notes || '',
       updatedAt: new Date().toISOString(),

@@ -40,12 +40,6 @@ const emptyLineItemState: LineItemState = {
   cardAmount: '0',
 };
 
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  cash: '現金',
-  payPay: 'PayPay',
-  card: 'クレジット',
-};
-
 const categoryLabels: Record<string, string> = {
   moss: 'コケ',
   product: '商品',
@@ -57,6 +51,9 @@ const categoryLabels: Record<string, string> = {
 
 const categoryOrder = ['moss', 'product', 'figure', 'workshop', 'gacha', 'other'];
 
+// 数値入力欄の共通スタイル（何が入力されているか一目でわかるよう青太字にする）
+const numberInputClass = 'w-full px-1 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md';
+
 function todayJstString(): string {
   const now = new Date();
   const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
@@ -66,6 +63,19 @@ function todayJstString(): string {
 function toNumber(value: string): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+// 0はスマホで入力しにくいので空欄表示にし、マイナスは入力させない
+function displayStr(value: string): string {
+  return value === '0' ? '' : value;
+}
+
+function sanitizeNonNegative(value: string): string {
+  return value.replace(/-/g, '');
+}
+
+function sortByNameJa(items: SalesItem[]): SalesItem[] {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 }
 
 function newCustomItemRow(): CustomItemRow {
@@ -166,22 +176,6 @@ export default function SalesPage() {
     loadDay(date);
   }, [date, loadDay]);
 
-  // クレジット欄は「手入力分 + QR自動集計分」を1つの数字として表示する（別枠には出さない）
-  const creditDisplayValue = useCallback((item: SalesItem, state: LineItemState) => {
-    const qrAuto = qrChargeItemTotals[item._id];
-    if (item.pricingType === 'fixed') {
-      return toNumber(state.cardQuantity) + (qrAuto?.quantity || 0);
-    }
-    return toNumber(state.cardAmount) + (qrAuto?.amount || 0);
-  }, [qrChargeItemTotals]);
-
-  const updateCreditField = (item: SalesItem, displayedValue: string) => {
-    const qrAuto = qrChargeItemTotals[item._id];
-    const bonus = item.pricingType === 'fixed' ? (qrAuto?.quantity || 0) : (qrAuto?.amount || 0);
-    const newStored = toNumber(displayedValue) - bonus;
-    updateLineItem(item._id, item.pricingType === 'fixed' ? 'cardQuantity' : 'cardAmount', String(newStored));
-  };
-
   const itemTotal = useCallback((item: SalesItem) => {
     const state = lineItemState[item._id] || emptyLineItemState;
     const manual = methodAmount(item, state, 'cash') + methodAmount(item, state, 'payPay') + methodAmount(item, state, 'card');
@@ -232,14 +226,15 @@ export default function SalesPage() {
   const updateLineItem = (id: string, field: keyof LineItemState, value: string) => {
     setLineItemState(prev => ({
       ...prev,
-      [id]: { ...(prev[id] || emptyLineItemState), [field]: value },
+      [id]: { ...(prev[id] || emptyLineItemState), [field]: sanitizeNonNegative(value) },
     }));
   };
 
   const addCustomItem = () => setCustomItems(prev => [...prev, newCustomItemRow()]);
   const removeCustomItem = (id: string) => setCustomItems(prev => prev.filter(row => row.id !== id));
   const updateCustomItem = (id: string, field: 'name' | 'amount' | 'paymentMethod', value: string) => {
-    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
+    const clean = field === 'amount' ? sanitizeNonNegative(value) : value;
+    setCustomItems(prev => prev.map(row => row.id === id ? { ...row, [field]: clean } : row));
   };
 
   const handleSave = async () => {
@@ -277,8 +272,10 @@ export default function SalesPage() {
         }),
       });
       if (!response.ok) throw new Error('保存に失敗しました');
+
       alert('保存しました');
-      loadDay(date);
+      // サーバー側で再計算された確定値を取り直す（GETの射影に合わせて取得し直すのが確実なため）
+      await loadDay(date);
     } catch (err) {
       alert(err instanceof Error ? err.message : '保存に失敗しました');
     } finally {
@@ -323,9 +320,11 @@ export default function SalesPage() {
               <input
                 type="number"
                 inputMode="numeric"
-                value={visitorCount}
-                onChange={(e) => setVisitorCount(e.target.value)}
-                className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
+                min="0"
+                value={displayStr(visitorCount)}
+                onChange={(e) => setVisitorCount(sanitizeNonNegative(e.target.value))}
+                placeholder="0"
+                className={numberInputClass}
               />
             </div>
             <div>
@@ -333,19 +332,21 @@ export default function SalesPage() {
               <input
                 type="number"
                 inputMode="numeric"
-                value={purchaseGroupCount}
-                onChange={(e) => setPurchaseGroupCount(e.target.value)}
-                className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
+                min="0"
+                value={displayStr(purchaseGroupCount)}
+                onChange={(e) => setPurchaseGroupCount(sanitizeNonNegative(e.target.value))}
+                placeholder="0"
+                className={numberInputClass}
               />
             </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-            商品ごとに現金・PayPay・クレジットの内訳を入力してください。クレジット欄にはQR決済（{'/admin/sales/charge'}で発行したもの）の分が自動的に加算されています。QR以外のカード決済があれば、その分だけ追加で入力してください。
+            商品ごとに現金・PayPay・クレジットの内訳を入力してください。クレジット欄の下に、QR決済（{'/admin/sales/charge'}で発行したもの）の自動集計分を表示しています。QR以外のカード決済があれば、クレジット欄にその分だけ追加で入力してください。
           </div>
 
           {categoryOrder.map(category => {
-            const itemsInCategory = salesItems.filter(item => item.category === category && item.isActive);
+            const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
             if (itemsInCategory.length === 0) return null;
 
             return (
@@ -358,6 +359,7 @@ export default function SalesPage() {
                   {itemsInCategory.map(item => {
                     const state = lineItemState[item._id] || emptyLineItemState;
                     const isFixed = item.pricingType === 'fixed';
+                    const qrAuto = qrChargeItemTotals[item._id];
                     return (
                       <li key={item._id} className="px-4 py-3">
                         <div className="flex items-center justify-between gap-3 mb-2">
@@ -371,18 +373,19 @@ export default function SalesPage() {
                             <label className="block text-[10px] text-gray-500 mb-0.5">現金</label>
                             {isFixed ? (
                               <input
-                                type="number" inputMode="numeric"
-                                value={state.cashQuantity}
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.cashQuantity)}
                                 onChange={(e) => updateLineItem(item._id, 'cashQuantity', e.target.value)}
-                                className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                placeholder="0"
+                                className={numberInputClass}
                               />
                             ) : (
                               <input
-                                type="number" inputMode="numeric"
-                                value={state.cashAmount}
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.cashAmount)}
                                 onChange={(e) => updateLineItem(item._id, 'cashAmount', e.target.value)}
                                 placeholder="金額"
-                                className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                className={numberInputClass}
                               />
                             )}
                           </div>
@@ -390,30 +393,46 @@ export default function SalesPage() {
                             <label className="block text-[10px] text-gray-500 mb-0.5">PayPay</label>
                             {isFixed ? (
                               <input
-                                type="number" inputMode="numeric"
-                                value={state.payPayQuantity}
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.payPayQuantity)}
                                 onChange={(e) => updateLineItem(item._id, 'payPayQuantity', e.target.value)}
-                                className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                placeholder="0"
+                                className={numberInputClass}
                               />
                             ) : (
                               <input
-                                type="number" inputMode="numeric"
-                                value={state.payPayAmount}
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.payPayAmount)}
                                 onChange={(e) => updateLineItem(item._id, 'payPayAmount', e.target.value)}
                                 placeholder="金額"
-                                className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
+                                className={numberInputClass}
                               />
                             )}
                           </div>
                           <div>
                             <label className="block text-[10px] text-gray-500 mb-0.5">クレジット</label>
-                            <input
-                              type="number" inputMode="numeric"
-                              value={creditDisplayValue(item, state)}
-                              onChange={(e) => updateCreditField(item, e.target.value)}
-                              placeholder={isFixed ? undefined : '金額'}
-                              className="w-full px-1 py-2 text-sm text-right border border-gray-300 rounded-md"
-                            />
+                            {isFixed ? (
+                              <input
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.cardQuantity)}
+                                onChange={(e) => updateLineItem(item._id, 'cardQuantity', e.target.value)}
+                                placeholder="0"
+                                className={numberInputClass}
+                              />
+                            ) : (
+                              <input
+                                type="number" inputMode="numeric" min="0"
+                                value={displayStr(state.cardAmount)}
+                                onChange={(e) => updateLineItem(item._id, 'cardAmount', e.target.value)}
+                                placeholder="金額"
+                                className={numberInputClass}
+                              />
+                            )}
+                            {qrAuto && qrAuto.amount > 0 && (
+                              <p className="text-[10px] text-emerald-600 mt-0.5 whitespace-nowrap">
+                                +QR {qrAuto.quantity ? `${qrAuto.quantity}個 ` : ''}¥{qrAuto.amount.toLocaleString()}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </li>
@@ -454,10 +473,11 @@ export default function SalesPage() {
                   <input
                     type="number"
                     inputMode="numeric"
-                    value={row.amount}
+                    min="0"
+                    value={displayStr(row.amount)}
                     onChange={(e) => updateCustomItem(row.id, 'amount', e.target.value)}
                     placeholder="金額"
-                    className="w-20 px-2 py-2 text-sm text-right border border-gray-300 rounded-md"
+                    className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
                   />
                   <select
                     value={row.paymentMethod}
@@ -492,12 +512,24 @@ export default function SalesPage() {
             <h2 className="font-medium text-gray-900">調整</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">調整</label>
-                <input type="number" inputMode="numeric" value={adjustment} onChange={(e) => setAdjustment(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
+                <label className="block text-sm text-gray-600 mb-1">調整（マイナス可）</label>
+                <input
+                  type="number" inputMode="numeric"
+                  value={displayStr(adjustment)}
+                  onChange={(e) => setAdjustment(e.target.value)}
+                  placeholder="0"
+                  className={numberInputClass}
+                />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
-                <input type="number" inputMode="numeric" value={wordOfMouthDiscount} onChange={(e) => setWordOfMouthDiscount(e.target.value)} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md" />
+                <input
+                  type="number" inputMode="numeric" min="0"
+                  value={displayStr(wordOfMouthDiscount)}
+                  onChange={(e) => setWordOfMouthDiscount(sanitizeNonNegative(e.target.value))}
+                  placeholder="0"
+                  className={numberInputClass}
+                />
               </div>
             </div>
           </div>
