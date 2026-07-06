@@ -164,6 +164,66 @@ export default function AdminDashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* ページ編集 */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">ページ編集</h3>
+                <div className="text-2xl">📄</div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                各ページの文章・画像・公開状態の編集
+              </p>
+              <div className="space-y-2">
+                <Link
+                  href="/admin/pages"
+                  className="block w-full px-4 py-2 text-center bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors text-sm font-medium"
+                >
+                  ページを編集
+                </Link>
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="block w-full px-4 py-2 text-center border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm"
+                >
+                  サイトで確認
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* お問い合わせ管理 */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">お問い合わせ管理</h3>
+                <div className="text-2xl">📧</div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                お客様からのお問い合わせの確認・返信管理
+              </p>
+              <div className="space-y-2">
+                <Link
+                  href="/admin/contacts"
+                  className="block w-full px-4 py-2 text-center bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors text-sm font-medium"
+                >
+                  お問い合わせ一覧
+                </Link>
+                <Link
+                  href="/contact"
+                  target="_blank"
+                  className="block w-full px-4 py-2 text-center border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm"
+                >
+                  フォームを確認
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
     </div>
   );
