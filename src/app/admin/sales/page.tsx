@@ -504,11 +504,6 @@ function EntryTab({
   if (qrFlow) {
     return (
       <div className="bg-white shadow rounded-lg p-6 text-center space-y-4">
-        {(qrFlow.discountAmount || 0) > 0 && (
-          <p className="text-sm text-gray-500">
-            小計 ¥{(qrFlow.subtotal || 0).toLocaleString()} − 割引 ¥{(qrFlow.discountAmount || 0).toLocaleString()}
-          </p>
-        )}
         <p className="text-3xl font-bold text-gray-900">¥{qrFlow.amount.toLocaleString()}</p>
         <ul className="text-left text-sm text-gray-600 divide-y border rounded-md">
           {qrFlow.lineItems.map((li, idx) => (
@@ -518,6 +513,12 @@ function EntryTab({
             </li>
           ))}
         </ul>
+        {(qrFlow.discountAmount || 0) > 0 && (
+          <div className="text-right space-y-0.5">
+            <p className="text-red-600 font-medium">割引: ¥{(qrFlow.discountAmount || 0).toLocaleString()}</p>
+            <p className="text-red-600 font-bold">合計: ¥{qrFlow.amount.toLocaleString()}</p>
+          </div>
+        )}
 
         {qrFlow.status === 'pending' && (
           <>
@@ -1188,14 +1189,14 @@ function SummaryTab({
                         )}
                       </div>
                       <p className="text-sm text-gray-700 mt-1">{itemsSummary(tx.lineItems)}</p>
+                      {(tx.discountAmount || 0) > 0 && (
+                        <p className="text-xs text-red-600 font-medium mt-0.5">
+                          割引: −¥{(tx.discountAmount || 0).toLocaleString()}（小計 ¥{(tx.subtotal || 0).toLocaleString()}）
+                        </p>
+                      )}
                       {tx.notes && <p className="text-xs text-gray-400 italic mt-0.5">{tx.notes}</p>}
                     </div>
                     <div className="text-right shrink-0">
-                      {(tx.discountAmount || 0) > 0 && (
-                        <p className="text-xs text-gray-400">
-                          小計 ¥{(tx.subtotal || 0).toLocaleString()} − 割引 ¥{(tx.discountAmount || 0).toLocaleString()}
-                        </p>
-                      )}
                       <p className="font-bold text-gray-900">¥{(tx.total || 0).toLocaleString()}</p>
                       <div className="flex gap-2 mt-1 justify-end">
                         <button
@@ -1244,13 +1245,13 @@ function SummaryTab({
                       )}
                     </div>
                     <p className="text-sm text-gray-700 mt-1">{itemsSummary(charge.lineItems)}</p>
-                  </div>
-                  <div className="text-right shrink-0">
                     {(charge.discountAmount || 0) > 0 && (
-                      <p className="text-xs text-gray-400">
-                        小計 ¥{(charge.subtotal || 0).toLocaleString()} − 割引 ¥{(charge.discountAmount || 0).toLocaleString()}
+                      <p className="text-xs text-red-600 font-medium mt-0.5">
+                        割引: −¥{(charge.discountAmount || 0).toLocaleString()}（小計 ¥{(charge.subtotal || 0).toLocaleString()}）
                       </p>
                     )}
+                  </div>
+                  <div className="text-right shrink-0">
                     <p className="font-bold text-gray-900">¥{(charge.amount || 0).toLocaleString()}</p>
                     <div className="flex gap-2 mt-1 justify-end">
                       {charge.status === 'paid' && (
