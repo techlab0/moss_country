@@ -119,14 +119,27 @@ CREATE POLICY "監査ログ選択ポリシー" ON audit_logs
 
 ## 📊 監視・運用
 
-### 統計ビュー
+### 統計クエリ
+
+以前は `admin_users_stats` / `audit_logs_stats` という集計ビューを用意していたが、
+ビューは既定でRLSを素通りする（Supabaseリンターの security_definer_view エラー）ため廃止した。
+統計が必要な場合はSQL Editorで直接クエリする:
 
 ```sql
 -- ユーザー統計
-SELECT * FROM admin_users_stats;
+SELECT
+  COUNT(*) AS total_users,
+  COUNT(*) FILTER (WHERE role = 'admin') AS admin_users,
+  COUNT(*) FILTER (WHERE two_factor_enabled) AS users_with_2fa,
+  COUNT(*) FILTER (WHERE last_login > NOW() - INTERVAL '30 days') AS active_users_30d
+FROM admin_users;
 
 -- 監査ログ統計
-SELECT * FROM audit_logs_stats;
+SELECT
+  COUNT(*) AS total_logs,
+  COUNT(*) FILTER (WHERE severity IN ('critical', 'high')) AS important_events,
+  COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') AS events_24h
+FROM audit_logs;
 ```
 
 ### パフォーマンス最適化

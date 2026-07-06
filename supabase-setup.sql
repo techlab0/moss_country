@@ -100,21 +100,7 @@ COMMENT ON COLUMN audit_logs.details IS '詳細情報（JSON）';
 COMMENT ON COLUMN audit_logs.resource_id IS '対象リソースID';
 COMMENT ON COLUMN audit_logs.severity IS '重要度レベル';
 
--- 8. データベース設定確認用ビュー
-CREATE OR REPLACE VIEW admin_users_stats AS
-SELECT 
-  COUNT(*) as total_users,
-  COUNT(CASE WHEN role = 'admin' THEN 1 END) as admin_users,
-  COUNT(CASE WHEN role = 'editor' THEN 1 END) as editor_users,
-  COUNT(CASE WHEN two_factor_enabled THEN 1 END) as users_with_2fa,
-  COUNT(CASE WHEN last_login > NOW() - INTERVAL '30 days' THEN 1 END) as active_users_30d
-FROM admin_users;
-
-CREATE OR REPLACE VIEW audit_logs_stats AS
-SELECT 
-  COUNT(*) as total_logs,
-  COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_events,
-  COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_severity_events,
-  COUNT(CASE WHEN created_at > NOW() - INTERVAL '24 hours' THEN 1 END) as events_24h,
-  COUNT(CASE WHEN created_at > NOW() - INTERVAL '7 days' THEN 1 END) as events_7d
-FROM audit_logs;
+-- 注意: かつてここに動作確認用の集計ビュー（admin_users_stats / audit_logs_stats）を
+-- 作成していたが、アプリからは未使用のうえ、ビューは既定でRLSを素通りする
+-- （Supabaseリンターの security_definer_view エラーになる）ため削除した。
+-- 集計が必要な場合はSQL Editorで直接クエリするか、security_invoker = on を付けて作成すること。
