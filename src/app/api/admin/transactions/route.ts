@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const date = typeof body.date === 'string' && DATE_PATTERN.test(body.date) ? body.date : todayJst();
     const isHistorical = body.isHistorical === true;
     const { discountType, discountValue } = parseDiscountInput(body);
+    const notes = typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim() : undefined;
 
     const { lineItems, total: subtotal } = await resolveStoreLineItems(lineItemsInput);
 
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       discountValue: discountType ? discountValue : undefined,
       discountAmount,
       total,
+      notes,
       source: isHistorical ? 'historical' : undefined,
     });
 
@@ -83,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     const transactions = await writeClient.fetch(
       `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
-        _id, createdAt, paymentMethod, visitorCount, total, source,
+        _id, createdAt, paymentMethod, visitorCount, total, source, notes,
         subtotal, discountType, discountValue, discountAmount,
         lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,

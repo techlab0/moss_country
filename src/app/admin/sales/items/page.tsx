@@ -207,11 +207,30 @@ export default function SalesItemsPage() {
           <ul className="divide-y">
             {(grouped[category] || []).map(item => (
               <li key={item._id} className="px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
-                <div className={item.isActive ? '' : 'opacity-40'}>
-                  <p className="font-medium text-gray-900">{item.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {item.pricingType === 'fixed' ? `単価 ¥${(item.unitPrice || 0).toLocaleString()}` : '金額直接入力'}
-                  </p>
+                <div className={`flex items-center gap-2 flex-wrap ${item.isActive ? '' : 'opacity-40'}`}>
+                  <input
+                    type="text"
+                    value={item.name}
+                    onChange={(e) => setItems(items.map(i => i._id === item._id ? { ...i, name: e.target.value } : i))}
+                    onBlur={(e) => handleUpdate(item._id, { name: e.target.value.trim() || item.name })}
+                    className="font-medium text-gray-900 px-2 py-1 border border-transparent hover:border-gray-300 focus:border-gray-300 rounded-md text-sm"
+                  />
+                  {item.pricingType === 'fixed' ? (
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      単価 ¥
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        value={item.unitPrice ?? 0}
+                        onChange={(e) => setItems(items.map(i => i._id === item._id ? { ...i, unitPrice: Number(e.target.value) } : i))}
+                        onBlur={(e) => handleUpdate(item._id, { unitPrice: Math.max(0, Number(e.target.value) || 0) })}
+                        className="w-20 px-1 py-1 text-right border border-gray-300 rounded-md"
+                      />
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-500">金額直接入力</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <button

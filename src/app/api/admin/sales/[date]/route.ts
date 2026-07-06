@@ -28,6 +28,7 @@ interface TransactionDoc {
   source?: string;
   subtotal?: number;
   discountAmount?: number;
+  notes?: string;
 }
 
 interface ChargeDoc {
@@ -118,7 +119,7 @@ export async function GET(
       ),
       writeClient.fetch(
         `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
-          _id, createdAt, paymentMethod, visitorCount, total, source,
+          _id, createdAt, paymentMethod, visitorCount, total, source, notes,
           subtotal, discountAmount,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,

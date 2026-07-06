@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     const discountType = DISCOUNT_TYPES.includes(body.discountType) ? (body.discountType as DiscountType) : undefined;
     const discountValue = Number(body.discountValue) || 0;
+    const notes = typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim() : undefined;
 
     const groupsInput: Partial<Record<PaymentMethod, StoreLineItemInput[]>> = body.groups || {};
 
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
         discountValue: discountType ? discountValue : undefined,
         discountAmount,
         total: subtotal - discountAmount,
+        notes,
         source: 'historical',
       });
       transactions.push(transaction);

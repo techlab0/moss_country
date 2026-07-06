@@ -45,6 +45,7 @@ interface TransactionView {
   discountType?: DiscountType;
   discountValue?: number;
   discountAmount?: number;
+  notes?: string;
 }
 
 interface HistoricalItemState {
@@ -140,6 +141,7 @@ interface EditState {
   paidAmount?: number;
   discountType: DiscountType | '';
   discountValue: string;
+  notes: string;
 }
 
 // ========== 定数・ユーティリティ ==========
@@ -303,6 +305,7 @@ function EntryTab({
   const [paymentMethod, setPaymentMethod] = useState<EntryMethod>('cash');
   const [discountType, setDiscountType] = useState<DiscountType | ''>('');
   const [discountValue, setDiscountValue] = useState('0');
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [qrFlow, setQrFlow] = useState<QrFlowState | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -386,6 +389,7 @@ function EntryTab({
     setPaymentMethod('cash');
     setDiscountType('');
     setDiscountValue('0');
+    setNotes('');
     setQrFlow(null);
     if (pollRef.current) clearInterval(pollRef.current);
   };
@@ -410,7 +414,7 @@ function EntryTab({
         const response = await fetch('/api/admin/in-store-charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lineItems, visitorCount: visitors, discountType: discountType || undefined, discountValue: toNumber(discountValue) }),
+          body: JSON.stringify({ lineItems, visitorCount: visitors, discountType: discountType || undefined, discountValue: toNumber(discountValue), description: notes.trim() || undefined }),
         });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
@@ -436,6 +440,7 @@ function EntryTab({
             lineItems,
             discountType: discountType || undefined,
             discountValue: toNumber(discountValue),
+            notes: notes.trim() || undefined,
           }),
         });
         if (!response.ok) {
@@ -717,6 +722,15 @@ function EntryTab({
                 )}
               </div>
             )}
+            {total > 0 && (
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="メモ（任意）例: 常連さん割引"
+                className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            )}
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">{itemCount > 0 ? `${itemCount}点` : '商品未選択'}</span>
               <div className="text-right">
@@ -846,6 +860,7 @@ function SummaryTab({
       lines: (tx.lineItems || []).map(li => toEditLine(li, salesItems)),
       discountType: tx.discountType || '',
       discountValue: String(tx.discountValue ?? 0),
+      notes: tx.notes || '',
     });
   };
 
@@ -859,6 +874,7 @@ function SummaryTab({
       paidAmount: charge.amount,
       discountType: '',
       discountValue: '0',
+      notes: '',
     });
   };
 
@@ -891,6 +907,7 @@ function SummaryTab({
             visitorCount: toNumber(edit.visitorCount),
             discountType: edit.discountType || undefined,
             discountValue: toNumber(edit.discountValue),
+            notes: edit.notes.trim() || undefined,
           };
 
       const response = await fetch(url, {
@@ -1122,6 +1139,12 @@ function SummaryTab({
               // 登録した日付に切り替えて、その場で反映結果を確認できるようにする
               setDate(registeredDate);
             }}
+            onEntryAdded={(registeredDate) => {
+              onMessage(`1件登録しました（${registeredDate}）`);
+              // パネルは閉じず、日付だけ揃えてその場で履歴に反映する
+              if (registeredDate !== date) setDate(registeredDate);
+              else loadDay(date);
+            }}
             onCancel={() => setShowHistoricalPanel(false)}
           />
         )}
@@ -1154,6 +1177,7 @@ function SummaryTab({
                         )}
                       </div>
                       <p className="text-sm text-gray-700 mt-1">{itemsSummary(tx.lineItems)}</p>
+                      {tx.notes && <p className="text-xs text-gray-400 italic mt-0.5">{tx.notes}</p>}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-900">¥{(tx.total || 0).toLocaleString()}</p>
@@ -1243,6 +1267,309 @@ function SummaryTab({
           })}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function HistoricalSingleEntry({
+  salesItems,
+  date,
+  onAdded,
+}: {
+  salesItems: SalesItem[];
+  date: string;
+  onAdded: (registeredDate: string) => void;
+}) {
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [discountType, setDiscountType] = useState<DiscountType | ''>('');
+  const [discountValue, setDiscountValue] = useState('0');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const qtyStr = useCallback((item: SalesItem) => {
+    return quantities[item._id] ?? (item.pricingType === 'fixed' ? '0' : '1');
+  }, [quantities]);
+
+  const itemAmount = useCallback((item: SalesItem) => {
+    if (item.pricingType === 'fixed') {
+      return toNumber(qtyStr(item)) * (item.unitPrice || 0);
+    }
+    return toNumber(amounts[item._id] || '0') * toNumber(qtyStr(item));
+  }, [qtyStr, amounts]);
+
+  const subtotal = useMemo(() => {
+    const fromCatalog = salesItems.reduce((sum, item) => sum + itemAmount(item), 0);
+    const fromCustom = customItems.reduce((sum, row) => sum + toNumber(row.amount) * toNumber(row.quantity), 0);
+    return fromCatalog + fromCustom;
+  }, [salesItems, itemAmount, customItems]);
+
+  const discountAmount = useMemo(
+    () => previewDiscountAmount(subtotal, discountType, discountValue),
+    [subtotal, discountType, discountValue]
+  );
+  const grandTotal = subtotal - discountAmount;
+
+  const setQuantity = (id: string, value: string) => {
+    setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
+  };
+  const stepQuantity = (item: SalesItem, delta: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [item._id]: String(Math.max(0, toNumber(prev[item._id] ?? (item.pricingType === 'fixed' ? '0' : '1')) + delta)),
+    }));
+  };
+  const setAmount = (id: string, value: string) => {
+    setAmounts(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
+  };
+
+  const resetItemSelections = () => {
+    setQuantities({});
+    setAmounts({});
+    setCustomItems([]);
+    setDiscountType('');
+    setDiscountValue('0');
+    setNotes('');
+  };
+
+  const handleSubmit = async () => {
+    const catalogLines = salesItems
+      .map(item => ({
+        salesItemId: item._id,
+        quantity: toNumber(qtyStr(item)),
+        amount: item.pricingType === 'variable' ? toNumber(amounts[item._id] || '0') : undefined,
+      }))
+      .filter(li => (li.quantity || 0) > 0 && (li.amount === undefined || li.amount > 0));
+    const customLines = customItems
+      .filter(row => row.name.trim() && toNumber(row.amount) > 0 && toNumber(row.quantity) > 0)
+      .map(row => ({ customName: row.name.trim(), amount: toNumber(row.amount), quantity: toNumber(row.quantity) }));
+    const lineItems = [...catalogLines, ...customLines];
+
+    if (lineItems.length === 0) {
+      alert('商品を1つ以上入力してください');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      alert('日付を指定してください');
+      return;
+    }
+    if (grandTotal <= 0) {
+      alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/admin/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          paymentMethod,
+          visitorCount: 0,
+          lineItems,
+          discountType: discountType || undefined,
+          discountValue: toNumber(discountValue),
+          notes: notes.trim() || undefined,
+          isHistorical: true,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '登録に失敗しました');
+      }
+      resetItemSelections();
+      onAdded(date);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '登録に失敗しました');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500">
+        1件の会計として、その日の紙の記録を1つずつ登録できます。登録するたびにこのフォームがリセットされるので、続けて何件でも入力できます。
+      </p>
+
+      {categoryOrder.map(category => {
+        const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
+        if (itemsInCategory.length === 0) return null;
+        const categoryTotal = itemsInCategory.reduce((sum, item) => sum + itemAmount(item), 0);
+        return (
+          <details key={category} className="bg-white border rounded-md overflow-hidden" open>
+            <summary className="px-3 py-2 bg-gray-50 font-medium text-sm cursor-pointer flex justify-between items-center">
+              <span>{categoryLabels[category]}</span>
+              {categoryTotal > 0 && <span className="text-moss-green font-bold">¥{categoryTotal.toLocaleString()}</span>}
+            </summary>
+            <ul className="divide-y">
+              {itemsInCategory.map(item => (
+                <li key={item._id} className="px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                    {item.pricingType === 'fixed' && (
+                      <p className="text-xs text-gray-500">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {item.pricingType === 'variable' && (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        value={displayStr(amounts[item._id] || '0')}
+                        onChange={(e) => setAmount(item._id, e.target.value)}
+                        placeholder="単価"
+                        className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md mr-1"
+                      />
+                    )}
+                    <button onClick={() => stepQuantity(item, -1)} className="w-9 h-9 text-lg border border-gray-300 rounded-md hover:bg-gray-50">−</button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      value={displayStr(qtyStr(item))}
+                      onChange={(e) => setQuantity(item._id, e.target.value)}
+                      placeholder="0"
+                      className="w-12 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+                    />
+                    <button onClick={() => stepQuantity(item, 1)} className="w-9 h-9 text-lg border border-gray-300 rounded-md hover:bg-gray-50">＋</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
+
+      {salesItems.length === 0 && (
+        <p className="text-sm text-gray-500">売上項目が登録されていません。</p>
+      )}
+
+      {/* カタログ外の商品 */}
+      <div className="bg-white border rounded-md p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-900">その他（カタログにない商品）</h4>
+          <button
+            onClick={() => setCustomItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', amount: '0', quantity: '1' }])}
+            className="text-xs px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90"
+          >
+            + 追加
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {customItems.map(row => (
+            <li key={row.id} className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                value={row.name}
+                onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, name: e.target.value } : r))}
+                placeholder="商品名"
+                className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(row.amount)}
+                onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, amount: sanitizeNonNegative(e.target.value) } : r))}
+                placeholder="単価"
+                className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+              <span className="text-gray-400 text-xs">×</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(row.quantity)}
+                onChange={(e) => setCustomItems(prev => prev.map(r => r.id === row.id ? { ...r, quantity: sanitizeNonNegative(e.target.value) } : r))}
+                placeholder="個数"
+                className="w-14 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+              <button onClick={() => setCustomItems(prev => prev.filter(r => r.id !== row.id))} className="text-red-500 text-sm px-2">✕</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="bg-white border rounded-md p-3 space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          {(['cash', 'payPay', 'card'] as PaymentMethod[]).map(method => (
+            <button
+              key={method}
+              onClick={() => setPaymentMethod(method)}
+              className={`py-2 text-xs font-medium rounded-md border ${
+                paymentMethod === method
+                  ? 'bg-moss-green text-white border-moss-green'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {methodLabels[method]}
+            </button>
+          ))}
+        </div>
+        {subtotal > 0 && (
+          <div className="flex items-center gap-2">
+            <select
+              value={discountType}
+              onChange={(e) => setDiscountType(e.target.value as DiscountType | '')}
+              className="px-2 py-2 text-sm border border-gray-300 rounded-md"
+            >
+              <option value="">割引なし</option>
+              <option value="amount">割引（円）</option>
+              <option value="percent">割引（%）</option>
+            </select>
+            {discountType && (
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(discountValue)}
+                onChange={(e) => setDiscountValue(sanitizeNonNegative(e.target.value))}
+                placeholder={discountType === 'amount' ? '円' : '%'}
+                className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+            )}
+          </div>
+        )}
+        {subtotal > 0 && (
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="メモ（任意）例: 常連さん割引"
+            className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+          />
+        )}
+      </div>
+
+      <div className="border-t pt-3 space-y-1">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>小計</span>
+          <span>¥{subtotal.toLocaleString()}</span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>割引</span>
+            <span>−¥{discountAmount.toLocaleString()}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">合計</span>
+          <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+      >
+        {submitting ? '登録中...' : 'この1件を登録して続ける'}
+      </button>
     </div>
   );
 }
@@ -1379,6 +1706,16 @@ function EditPanel({
               />
             )}
           </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">メモ</label>
+            <input
+              type="text"
+              value={edit.notes}
+              onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
+              placeholder="メモ（任意）例: 常連さん割引"
+              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+            />
+          </div>
         </div>
       )}
 
@@ -1490,18 +1827,73 @@ function HistoricalEntryPanel({
   salesItems,
   date,
   onDone,
+  onEntryAdded,
   onCancel,
 }: {
   salesItems: SalesItem[];
   date: string;
   onDone: (registeredDate: string) => void;
+  onEntryAdded: (registeredDate: string) => void;
   onCancel: () => void;
 }) {
   const [entryDate, setEntryDate] = useState(date);
+  const [mode, setMode] = useState<'bulk' | 'single'>('bulk');
+
+  return (
+    <div className="border-2 border-moss-green rounded-lg p-3 space-y-3 bg-emerald-50/30">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-gray-900 text-sm">過去の実績を入力</h3>
+        <button onClick={onCancel} className="text-xs text-gray-500 hover:underline">閉じる</button>
+      </div>
+
+      <div className="bg-white border rounded-md p-3">
+        <label className="block text-xs text-gray-500 mb-1">登録する日付</label>
+        <input
+          type="date"
+          value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value)}
+          className="w-full px-3 py-2 text-base border border-gray-300 rounded-md"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setMode('bulk')}
+          className={`py-2 text-sm font-medium rounded-md border ${mode === 'bulk' ? 'bg-moss-green text-white border-moss-green' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+        >
+          まとめて入力
+        </button>
+        <button
+          onClick={() => setMode('single')}
+          className={`py-2 text-sm font-medium rounded-md border ${mode === 'single' ? 'bg-moss-green text-white border-moss-green' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+        >
+          一件ずつ入力
+        </button>
+      </div>
+
+      {mode === 'bulk' ? (
+        <HistoricalBulkEntry salesItems={salesItems} date={entryDate} onDone={onDone} />
+      ) : (
+        <HistoricalSingleEntry salesItems={salesItems} date={entryDate} onAdded={onEntryAdded} />
+      )}
+    </div>
+  );
+}
+
+function HistoricalBulkEntry({
+  salesItems,
+  date,
+  onDone,
+}: {
+  salesItems: SalesItem[];
+  date: string;
+  onDone: (registeredDate: string) => void;
+}) {
   const [itemState, setItemState] = useState<Record<string, HistoricalItemState>>({});
   const [customRows, setCustomRows] = useState<HistoricalCustomRow[]>([]);
   const [discountType, setDiscountType] = useState<DiscountType | ''>('');
   const [discountValue, setDiscountValue] = useState('0');
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const getState = (id: string): HistoricalItemState => itemState[id] || emptyHistoricalItemState;
@@ -1586,7 +1978,7 @@ function HistoricalEntryPanel({
       alert('少なくとも1つ、商品と数量を入力してください');
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       alert('日付を指定してください');
       return;
     }
@@ -1599,7 +1991,7 @@ function HistoricalEntryPanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date: entryDate,
+          date,
           groups: {
             cash: groups.cash,
             payPay: groups.payPay,
@@ -1607,13 +1999,14 @@ function HistoricalEntryPanel({
           },
           discountType: discountType || undefined,
           discountValue: toNumber(discountValue),
+          notes: notes.trim() || undefined,
         }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || '登録に失敗しました');
       }
-      onDone(entryDate);
+      onDone(date);
     } catch (err) {
       alert(err instanceof Error ? err.message : '登録に失敗しました');
     } finally {
@@ -1622,24 +2015,10 @@ function HistoricalEntryPanel({
   };
 
   return (
-    <div className="border-2 border-moss-green rounded-lg p-3 space-y-3 bg-emerald-50/30">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium text-gray-900 text-sm">過去の実績を入力</h3>
-        <button onClick={onCancel} className="text-xs text-gray-500 hover:underline">閉じる</button>
-      </div>
+    <div className="space-y-3">
       <p className="text-xs text-gray-500">
         紙の集計表の内容を、商品ごとに現金・PayPay・クレジットの内訳で入力してください。来店者数・購入組数は下の「来店・調整」欄に直接入力できます。
       </p>
-
-      <div className="bg-white border rounded-md p-3">
-        <label className="block text-xs text-gray-500 mb-1">登録する日付</label>
-        <input
-          type="date"
-          value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value)}
-          className="w-full px-3 py-2 text-base border border-gray-300 rounded-md"
-        />
-      </div>
 
       {categoryOrder.map(category => {
         const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
@@ -1775,6 +2154,16 @@ function HistoricalEntryPanel({
             />
           )}
         </div>
+      )}
+
+      {subtotal > 0 && (
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="メモ（任意）例: 常連さん割引"
+          className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+        />
       )}
 
       <div className="border-t pt-3 space-y-1">

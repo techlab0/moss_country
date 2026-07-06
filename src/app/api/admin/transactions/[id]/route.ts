@@ -88,6 +88,10 @@ export async function PATCH(
       updates.visitorCount = newVisitorCount;
     }
 
+    if (typeof body.notes === 'string') {
+      updates.notes = body.notes.trim() || undefined;
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: '変更内容がありません' }, { status: 400 });
     }
