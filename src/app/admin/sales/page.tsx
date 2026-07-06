@@ -316,6 +316,7 @@ function EntryTab({
   const [discountValue, setDiscountValue] = useState('0');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [qrFlow, setQrFlow] = useState<QrFlowState | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -325,11 +326,12 @@ function EntryTab({
     };
   }, []);
 
-  // フォーム⇄QR画面の切り替え時、スクロール位置が下のままだとQRコードが見えないため上部に戻す
-  const isShowingQrFlow = !!qrFlow;
+  // フォーム⇄確認画面⇄QR画面の切り替え時、スクロール位置が下のままだと
+  // 新しく表示された内容が画面外になるため上部に戻す
+  const isShowingOverlay = !!qrFlow || confirming;
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [isShowingQrFlow]);
+  }, [isShowingOverlay]);
 
   // 金額直接入力(variable)の商品は数量のデフォルトを1にする（単価だけ入れればそのまま登録できるように）
   const qtyStr = useCallback((item: SalesItem) => {
@@ -365,6 +367,22 @@ function EntryTab({
     [total, discountType, discountValue]
   );
   const finalTotal = total - discountAmount;
+
+  // レシート風の確認画面に表示する明細行（商品名・数量・行合計）
+  const confirmRows = useMemo(() => {
+    const rows: Array<{ name: string; quantity: number; amount: number }> = [];
+    for (const item of salesItems) {
+      const amount = itemAmount(item);
+      if (amount <= 0) continue;
+      rows.push({ name: item.name, quantity: toNumber(qtyStr(item)), amount });
+    }
+    for (const row of customItems) {
+      const amount = toNumber(row.amount) * toNumber(row.quantity);
+      if (!row.name.trim() || amount <= 0) continue;
+      rows.push({ name: row.name.trim(), quantity: toNumber(row.quantity), amount });
+    }
+    return rows;
+  }, [salesItems, itemAmount, qtyStr, customItems]);
 
   const setQuantity = (id: string, value: string) => {
     setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
@@ -405,6 +423,7 @@ function EntryTab({
     setDiscountType('');
     setDiscountValue('0');
     setNotes('');
+    setConfirming(false);
     setQrFlow(null);
     if (pollRef.current) clearInterval(pollRef.current);
   };
@@ -510,6 +529,78 @@ function EntryTab({
     onRegistered(`QR決済が完了しました（¥${qrFlow?.amount.toLocaleString()}）`);
     resetForm();
   };
+
+  // 現金・PayPay・手動カードの確認中はフォームの代わりにレシート風の確認画面を表示。
+  // 将来のレシート印刷・メール送信を見据え、紙のレシートに近い体裁にしている。
+  if (confirming) {
+    // 表示用の税内訳（確定値はサーバーが計算する。src/lib/tax.ts と同じ計算式）
+    const taxExcluded = Math.round(finalTotal / 1.1);
+    return (
+      <div className="bg-white shadow rounded-lg p-6 space-y-4">
+        <div className="text-center border-b pb-3">
+          <h2 className="font-bold text-gray-900 tracking-wider">MOSS COUNTRY</h2>
+          <p className="text-xs text-gray-500 mt-1">お会計内容のご確認</p>
+        </div>
+
+        <ul className="divide-y text-sm text-gray-700">
+          {confirmRows.map((row, idx) => (
+            <li key={idx} className="py-2 flex justify-between gap-2">
+              <span className="min-w-0">{row.name}{row.quantity > 1 ? ` × ${row.quantity}` : ''}</span>
+              <span className="shrink-0">¥{row.amount.toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="border-t pt-3 space-y-1 text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>小計</span>
+            <span>¥{total.toLocaleString()}</span>
+          </div>
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-red-600 font-medium">
+              <span>割引</span>
+              <span>−¥{discountAmount.toLocaleString()}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-1">
+            <span className="font-medium text-gray-900">合計</span>
+            <span className="text-3xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>（内訳）税抜金額</span>
+            <span>¥{taxExcluded.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>消費税（10%）</span>
+            <span>¥{(finalTotal - taxExcluded).toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center border-t pt-3 text-sm">
+          <span className="text-gray-600">お支払い方法</span>
+          <span className="font-bold text-gray-900">{methodLabels[paymentMethod]}</span>
+        </div>
+        {notes.trim() && (
+          <p className="text-xs text-gray-400 italic">{notes}</p>
+        )}
+
+        <button
+          onClick={handleRegister}
+          disabled={submitting}
+          className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+        >
+          {submitting ? '登録中...' : '決済完了・登録する'}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          disabled={submitting}
+          className="w-full py-3 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+        >
+          戻って修正する
+        </button>
+      </div>
+    );
+  }
 
   // QR決済フロー中はフォームの代わりにQR画面を表示
   if (qrFlow) {
@@ -781,14 +872,26 @@ function EntryTab({
               ))}
             </div>
             <button
-              onClick={handleRegister}
+              onClick={() => {
+                // 商品ありの現金・PayPay・手動カードはレシート風の確認画面を挟む
+                // （QRは決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
+                if (total > 0 && paymentMethod !== 'qr') {
+                  if (finalTotal <= 0) {
+                    alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
+                    return;
+                  }
+                  setConfirming(true);
+                } else {
+                  handleRegister();
+                }
+              }}
               disabled={submitting || (finalTotal <= 0 && toNumber(visitorCount) <= 0)}
               className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
             >
               {submitting
                 ? '登録中...'
                 : total > 0
-                  ? (paymentMethod === 'qr' ? 'QRコードを発行' : '登録')
+                  ? (paymentMethod === 'qr' ? 'QRコードを発行' : `${methodLabels[paymentMethod]}で確認`)
                   : '来店のみ登録'}
             </button>
           </div>
