@@ -139,6 +139,13 @@ body.admin-layout [class*="modal"] {
 body.admin-layout label {
   color: var(--color-form-text);
 }
+/* iOSのSafariはフォーム部品のフォントサイズが16px未満だとフォーカス時に自動でズームしてしまう。
+   管理画面はほとんどの入力欄がtext-sm(14px)以下のため、フォーカス中だけ16px以上に引き上げて防ぐ。 */
+body.admin-layout input:focus,
+body.admin-layout select:focus,
+body.admin-layout textarea:focus {
+  font-size: 16px;
+}
 
 /* カスタムスタイル */
 @layer components {

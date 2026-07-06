@@ -66,6 +66,8 @@ interface HistoricalCustomRow {
 interface ChargeView {
   _id: string;
   amount?: number;
+  subtotal?: number;
+  discountAmount?: number;
   description?: string;
   status?: string;
   createdAt?: string;
@@ -118,6 +120,8 @@ interface DayData {
 interface QrFlowState {
   chargeId: string;
   amount: number;
+  subtotal?: number;
+  discountAmount?: number;
   qrCodeDataUrl: string;
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   lineItems: LineItemView[];
@@ -424,6 +428,8 @@ function EntryTab({
         setQrFlow({
           chargeId: data.charge._id,
           amount: data.charge.amount,
+          subtotal: data.charge.subtotal,
+          discountAmount: data.charge.discountAmount,
           qrCodeDataUrl: data.qrCodeDataUrl,
           status: 'pending',
           lineItems: data.charge.lineItems || [],
@@ -498,6 +504,11 @@ function EntryTab({
   if (qrFlow) {
     return (
       <div className="bg-white shadow rounded-lg p-6 text-center space-y-4">
+        {(qrFlow.discountAmount || 0) > 0 && (
+          <p className="text-sm text-gray-500">
+            小計 ¥{(qrFlow.subtotal || 0).toLocaleString()} − 割引 ¥{(qrFlow.discountAmount || 0).toLocaleString()}
+          </p>
+        )}
         <p className="text-3xl font-bold text-gray-900">¥{qrFlow.amount.toLocaleString()}</p>
         <ul className="text-left text-sm text-gray-600 divide-y border rounded-md">
           {qrFlow.lineItems.map((li, idx) => (
@@ -1180,6 +1191,11 @@ function SummaryTab({
                       {tx.notes && <p className="text-xs text-gray-400 italic mt-0.5">{tx.notes}</p>}
                     </div>
                     <div className="text-right shrink-0">
+                      {(tx.discountAmount || 0) > 0 && (
+                        <p className="text-xs text-gray-400">
+                          小計 ¥{(tx.subtotal || 0).toLocaleString()} − 割引 ¥{(tx.discountAmount || 0).toLocaleString()}
+                        </p>
+                      )}
                       <p className="font-bold text-gray-900">¥{(tx.total || 0).toLocaleString()}</p>
                       <div className="flex gap-2 mt-1 justify-end">
                         <button
@@ -1230,6 +1246,11 @@ function SummaryTab({
                     <p className="text-sm text-gray-700 mt-1">{itemsSummary(charge.lineItems)}</p>
                   </div>
                   <div className="text-right shrink-0">
+                    {(charge.discountAmount || 0) > 0 && (
+                      <p className="text-xs text-gray-400">
+                        小計 ¥{(charge.subtotal || 0).toLocaleString()} − 割引 ¥{(charge.discountAmount || 0).toLocaleString()}
+                      </p>
+                    )}
                     <p className="font-bold text-gray-900">¥{(charge.amount || 0).toLocaleString()}</p>
                     <div className="flex gap-2 mt-1 justify-end">
                       {charge.status === 'paid' && (
