@@ -54,7 +54,16 @@ export const storeTransaction = defineType({
         },
       ],
     }),
-    defineField({ name: 'total', title: '合計金額', type: 'number' }),
+    defineField({ name: 'subtotal', title: '小計（割引前）', type: 'number' }),
+    defineField({
+      name: 'discountType',
+      title: '割引の種類',
+      type: 'string',
+      options: { list: [{ title: '金額', value: 'amount' }, { title: 'パーセント', value: 'percent' }] },
+    }),
+    defineField({ name: 'discountValue', title: '割引の入力値', type: 'number' }),
+    defineField({ name: 'discountAmount', title: '割引額（実際に引かれた金額）', type: 'number' }),
+    defineField({ name: 'total', title: '合計金額（割引後・実際に受け取った金額）', type: 'number' }),
     defineField({
       name: 'source',
       title: '登録元',

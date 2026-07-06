@@ -137,3 +137,58 @@ export function jstDateOf(isoDateTime: string): string {
   const jst = new Date(new Date(isoDateTime).getTime() + 9 * 60 * 60 * 1000);
   return jst.toISOString().slice(0, 10);
 }
+
+export type DiscountType = 'amount' | 'percent';
+
+/**
+ * 会計時の割引を適用する。金額指定は小計を上限にクランプ、パーセント指定は四捨五入。
+ * クライアントの申告値は信用せず、サーバー側で必ず再計算すること。
+ */
+export function applyDiscount(
+  subtotal: number,
+  discountType?: DiscountType,
+  discountValue?: number
+): { discountAmount: number; total: number } {
+  const value = Math.max(0, discountValue || 0);
+  let discountAmount = 0;
+  if (discountType === 'amount') {
+    discountAmount = Math.min(value, subtotal);
+  } else if (discountType === 'percent') {
+    discountAmount = Math.round(subtotal * Math.min(value, 100) / 100);
+  }
+  discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+  return { discountAmount, total: subtotal - discountAmount };
+}
+
+/**
+ * 過去実績の一括入力のように、1回の割引を複数の支払い方法グループ（小計ごと）に按分する。
+ * 各グループの小計比率で割引額を配分し、端数は最大剰余法で調整して合計が必ず一致するようにする。
+ */
+export function distributeDiscount(
+  subtotals: number[],
+  discountType?: DiscountType,
+  discountValue?: number
+): number[] {
+  const grandSubtotal = subtotals.reduce((sum, s) => sum + s, 0);
+  if (grandSubtotal <= 0) return subtotals.map(() => 0);
+
+  const { discountAmount: totalDiscount } = applyDiscount(grandSubtotal, discountType, discountValue);
+  if (totalDiscount <= 0) return subtotals.map(() => 0);
+
+  // 比率按分（小数点以下切り捨て）した上で、端数を小計が大きい順に1円ずつ配分する
+  const raw = subtotals.map(s => (s / grandSubtotal) * totalDiscount);
+  const floored = raw.map(Math.floor);
+  let remainder = totalDiscount - floored.reduce((sum, v) => sum + v, 0);
+
+  const order = subtotals
+    .map((s, i) => ({ i, frac: raw[i] - floored[i] }))
+    .sort((a, b) => b.frac - a.frac);
+
+  const result = [...floored];
+  for (const { i } of order) {
+    if (remainder <= 0) break;
+    result[i] += 1;
+    remainder -= 1;
+  }
+  return result;
+}

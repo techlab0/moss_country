@@ -4,7 +4,9 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 import { todayJst } from '@/lib/salesAggregation';
-import { resolveStoreLineItems, adjustDailyCounters, StoreLineItemInput } from '@/lib/storeSales';
+import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
+
+const DISCOUNT_TYPES = ['amount', 'percent'] as const;
 
 // 店頭でカード決済端末を使わずに決済を受け付けるためのQRコード決済リンクを発行する。
 // お客様が自分のスマホで読み取り、Squareのホスト型決済ページで支払う（カード情報は当システムを経由しない）。
@@ -25,16 +27,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '商品を1つ以上選択してください' }, { status: 400 });
     }
 
-    const { lineItems, total: amount } = await resolveStoreLineItems(lineItemsInput);
+    const discountType = DISCOUNT_TYPES.includes(body.discountType) ? (body.discountType as DiscountType) : undefined;
+    const discountValue = Number(body.discountValue) || 0;
 
-    if (amount <= 0) {
+    const { lineItems, total: subtotal } = await resolveStoreLineItems(lineItemsInput);
+
+    if (subtotal <= 0) {
       return NextResponse.json({ error: '合計金額が0円です。数量または金額を入力してください' }, { status: 400 });
+    }
+
+    // お客様には割引後の金額を請求する必要があるため、Squareへのリクエスト前に割引を確定させる
+    const { discountAmount, total: amount } = applyDiscount(subtotal, discountType, discountValue);
+    if (amount <= 0) {
+      return NextResponse.json({ error: '割引後の合計金額が0円です' }, { status: 400 });
     }
 
     // 先にドキュメントを作成してIDを確定させ、決済完了後のレシートURLに使う
     const charge = await writeClient.create({
       _type: 'inStoreCharge',
       amount,
+      subtotal,
+      discountType,
+      discountValue: discountType ? discountValue : undefined,
+      discountAmount,
       description,
       visitorCount,
       lineItems,
@@ -99,7 +114,8 @@ export async function GET(request: NextRequest) {
 
     const charges = await writeClient.fetch(`
       *[_type == "inStoreCharge"] | order(createdAt desc) [0...30] {
-        _id, amount, description, status, createdAt, paidAt, visitorCount,
+        _id, amount, subtotal, discountType, discountValue, discountAmount,
+        description, status, createdAt, paidAt, visitorCount,
         lineItems[]{ name, quantity, amount }
       }
     `);

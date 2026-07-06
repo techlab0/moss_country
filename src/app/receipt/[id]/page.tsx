@@ -11,6 +11,10 @@ interface ReceiptLineItem {
 
 interface Receipt {
   amount: number;
+  subtotal?: number;
+  discountAmount?: number;
+  taxExcludedAmount?: number;
+  taxAmount?: number;
   description?: string;
   status: 'pending' | 'paid' | 'cancelled';
   createdAt?: string;
@@ -126,9 +130,35 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
             </ul>
           )}
 
-          <div className="flex justify-between items-center border-t border-stone-800 pt-4">
-            <span className="text-stone-300 font-medium">合計</span>
-            <span className="text-2xl font-bold text-white">¥{receipt.amount.toLocaleString()}</span>
+          <div className="border-t border-stone-800 pt-4 space-y-1">
+            {typeof receipt.subtotal === 'number' && (receipt.discountAmount || 0) > 0 && (
+              <>
+                <div className="flex justify-between text-sm text-stone-400">
+                  <span>小計</span>
+                  <span>¥{receipt.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm text-emerald-400">
+                  <span>割引</span>
+                  <span>−¥{(receipt.discountAmount || 0).toLocaleString()}</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-stone-300 font-medium">合計</span>
+              <span className="text-2xl font-bold text-white">¥{receipt.amount.toLocaleString()}</span>
+            </div>
+            {typeof receipt.taxExcludedAmount === 'number' && (
+              <>
+                <div className="flex justify-between text-xs text-stone-500 pt-1">
+                  <span>（内訳）税抜金額</span>
+                  <span>¥{receipt.taxExcludedAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-stone-500">
+                  <span>消費税（10%）</span>
+                  <span>¥{(receipt.taxAmount || 0).toLocaleString()}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {receipt.paidAt && (

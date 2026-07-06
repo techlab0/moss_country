@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
+import { taxBreakdown } from '@/lib/tax';
 
 // 決済完了後、お客様のスマホに表示するレシート用の公開エンドポイント（認証不要）。
 // 店頭QR決済(inStoreCharge)の金額・明細・ステータスのみを返し、管理用の情報は含めない。
@@ -11,7 +12,7 @@ export async function GET(
     const { id } = await params;
     const charge = await writeClient.fetch(
       `*[_id == $id && _type == "inStoreCharge"][0]{
-        amount, description, status, createdAt, paidAt,
+        amount, subtotal, discountAmount, description, status, createdAt, paidAt,
         lineItems[]{ name, quantity, amount }
       }`,
       { id }
@@ -21,7 +22,15 @@ export async function GET(
       return NextResponse.json({ error: 'レシートが見つかりません' }, { status: 404 });
     }
 
-    return NextResponse.json({ charge });
+    const tax = taxBreakdown(charge.amount || 0);
+
+    return NextResponse.json({
+      charge: {
+        ...charge,
+        taxExcludedAmount: tax.excludedAmount,
+        taxAmount: tax.taxAmount,
+      },
+    });
   } catch (error) {
     console.error('レシート取得エラー:', error);
     return NextResponse.json(

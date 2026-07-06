@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
-import { resolveStoreLineItems, adjustDailyCounters, StoreLineItemInput } from '@/lib/storeSales';
+import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
+const DISCOUNT_TYPES = ['amount', 'percent'] as const;
 
 interface ExistingTransaction {
   _id: string;
   date: string;
   visitorCount?: number;
   itemCount: number;
+  subtotal?: number;
+  discountType?: DiscountType;
+  discountValue?: number;
 }
 
 async function fetchExisting(id: string): Promise<ExistingTransaction | null> {
   return writeClient.fetch(
-    `*[_type == "storeTransaction" && _id == $id][0]{ _id, date, visitorCount, "itemCount": count(lineItems) }`,
+    `*[_type == "storeTransaction" && _id == $id][0]{
+      _id, date, visitorCount, "itemCount": count(lineItems),
+      subtotal, discountType, discountValue
+    }`,
     { id }
   );
 }
@@ -41,11 +48,31 @@ export async function PATCH(
     let visitorDelta = 0;
     let groupDelta = 0;
 
-    if (Array.isArray(body.lineItems)) {
-      const { lineItems, total } = await resolveStoreLineItems(body.lineItems as StoreLineItemInput[]);
-      updates.lineItems = lineItems;
+    // 明細か割引のどちらかが変わっていれば、両方を踏まえて合計を再計算する
+    const lineItemsChanged = Array.isArray(body.lineItems);
+    const discountChanged = body.discountType !== undefined || body.discountValue !== undefined;
+    if (lineItemsChanged || discountChanged) {
+      let subtotal: number;
+      if (lineItemsChanged) {
+        const { lineItems, total } = await resolveStoreLineItems(body.lineItems as StoreLineItemInput[]);
+        updates.lineItems = lineItems;
+        subtotal = total;
+        groupDelta = (lineItems.length > 0 ? 1 : 0) - ((existing.itemCount || 0) > 0 ? 1 : 0);
+      } else {
+        subtotal = existing.subtotal || 0;
+      }
+
+      const discountType = discountChanged
+        ? (DISCOUNT_TYPES.includes(body.discountType) ? (body.discountType as DiscountType) : undefined)
+        : existing.discountType;
+      const discountValue = discountChanged ? (Number(body.discountValue) || 0) : (existing.discountValue || 0);
+
+      const { discountAmount, total } = applyDiscount(subtotal, discountType, discountValue);
+      updates.subtotal = subtotal;
+      updates.discountType = discountType;
+      updates.discountValue = discountType ? discountValue : undefined;
+      updates.discountAmount = discountAmount;
       updates.total = total;
-      groupDelta = (lineItems.length > 0 ? 1 : 0) - ((existing.itemCount || 0) > 0 ? 1 : 0);
     }
 
     if (body.paymentMethod !== undefined) {

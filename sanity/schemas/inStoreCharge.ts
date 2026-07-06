@@ -7,10 +7,19 @@ export const inStoreCharge = defineType({
   fields: [
     defineField({
       name: 'amount',
-      title: '金額',
+      title: '金額（割引後・実際にSquareへ請求する金額）',
       type: 'number',
       validation: Rule => Rule.required().positive(),
     }),
+    defineField({ name: 'subtotal', title: '小計（割引前）', type: 'number' }),
+    defineField({
+      name: 'discountType',
+      title: '割引の種類',
+      type: 'string',
+      options: { list: [{ title: '金額', value: 'amount' }, { title: 'パーセント', value: 'percent' }] },
+    }),
+    defineField({ name: 'discountValue', title: '割引の入力値', type: 'number' }),
+    defineField({ name: 'discountAmount', title: '割引額（実際に引かれた金額）', type: 'number' }),
     defineField({
       name: 'description',
       title: '備考',

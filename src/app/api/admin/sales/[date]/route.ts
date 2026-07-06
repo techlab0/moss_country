@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
+import { taxBreakdown } from '@/lib/tax';
 
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
 // dailySales ドキュメントはカウンタ（来店者数・購入組数）・調整・備考のみを保持する。
@@ -25,6 +26,8 @@ interface TransactionDoc {
   total?: number;
   lineItems?: AggLineItem[];
   source?: string;
+  subtotal?: number;
+  discountAmount?: number;
 }
 
 interface ChargeDoc {
@@ -36,6 +39,8 @@ interface ChargeDoc {
   paidAt?: string;
   visitorCount?: number;
   lineItems?: AggLineItem[];
+  subtotal?: number;
+  discountAmount?: number;
 }
 
 interface MethodCell {
@@ -114,6 +119,7 @@ export async function GET(
       writeClient.fetch(
         `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
           _id, createdAt, paymentMethod, visitorCount, total, source,
+          subtotal, discountAmount,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { date }
@@ -121,7 +127,7 @@ export async function GET(
       // 履歴表示用: その日に発行された決済を全ステータスで返す
       writeClient.fetch(
         `*[_type == "inStoreCharge" && createdAt >= $start && createdAt < $end] | order(createdAt desc) {
-          _id, amount, description, status, createdAt, paidAt, visitorCount,
+          _id, amount, subtotal, discountAmount, description, status, createdAt, paidAt, visitorCount,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { start, end }
@@ -136,23 +142,26 @@ export async function GET(
     // 集計対象のQR決済は「その日に支払われたもの」（発行日ではなく支払い日で金額を帰属させる）
     const paidChargesForAggregate: ChargeDoc[] = await writeClient.fetch(
       `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end] {
-        amount, lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
+        amount, discountAmount, lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,
       { start, end }
     );
 
     const rows = new Map<string, ItemRow>();
     const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
+    let discountTotal = 0;
 
     for (const tx of transactions) {
       const method: PaymentMethod = tx.paymentMethod || 'cash';
       methodTotals[method] += tx.total || 0;
+      discountTotal += tx.discountAmount || 0;
       for (const li of tx.lineItems || []) {
         addToRow(rows, li, method);
       }
     }
     for (const charge of paidChargesForAggregate) {
       methodTotals.qr += charge.amount || 0;
+      discountTotal += charge.discountAmount || 0;
       for (const li of charge.lineItems || []) {
         addToRow(rows, li, 'qr');
       }
@@ -166,6 +175,7 @@ export async function GET(
     const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
     const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
     const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal;
+    const tax = taxBreakdown(grandTotal);
 
     return NextResponse.json({
       dailySales: dailySales || null,
@@ -177,7 +187,10 @@ export async function GET(
         itemsTotal,
         storeTotal,
         ecTotal,
+        discountTotal,
         grandTotal,
+        taxExcludedTotal: tax.excludedAmount,
+        taxAmountTotal: tax.taxAmount,
       },
     });
   } catch (error) {

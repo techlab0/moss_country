@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { DATE_PATTERN, todayJst } from '@/lib/salesAggregation';
-import { resolveStoreLineItems, adjustDailyCounters, StoreLineItemInput } from '@/lib/storeSales';
+import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
+const DISCOUNT_TYPES = ['amount', 'percent'] as const;
+
+function parseDiscountInput(body: { discountType?: unknown; discountValue?: unknown }): { discountType?: DiscountType; discountValue: number } {
+  const discountType = DISCOUNT_TYPES.includes(body.discountType as DiscountType) ? (body.discountType as DiscountType) : undefined;
+  const discountValue = Number(body.discountValue) || 0;
+  return { discountType, discountValue };
+}
 
 // 店頭取引（1会計 = 1レコード）の登録。
 // 現金・PayPay・手動カード用。QRコード決済は /api/admin/in-store-charge が担当する。
@@ -21,13 +28,16 @@ export async function POST(request: NextRequest) {
     const lineItemsInput: StoreLineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const date = typeof body.date === 'string' && DATE_PATTERN.test(body.date) ? body.date : todayJst();
     const isHistorical = body.isHistorical === true;
+    const { discountType, discountValue } = parseDiscountInput(body);
 
-    const { lineItems, total } = await resolveStoreLineItems(lineItemsInput);
+    const { lineItems, total: subtotal } = await resolveStoreLineItems(lineItemsInput);
 
     // 商品なしでも人数があれば「来店のみ」として登録できる。両方空は登録する意味がないためエラー
     if (lineItems.length === 0 && visitorCount <= 0) {
       return NextResponse.json({ error: '商品または来店人数を入力してください' }, { status: 400 });
     }
+
+    const { discountAmount, total } = applyDiscount(subtotal, discountType, discountValue);
 
     const transaction = await writeClient.create({
       _type: 'storeTransaction',
@@ -36,6 +46,10 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       visitorCount,
       lineItems,
+      subtotal,
+      discountType,
+      discountValue: discountType ? discountValue : undefined,
+      discountAmount,
       total,
       source: isHistorical ? 'historical' : undefined,
     });
@@ -70,6 +84,7 @@ export async function GET(request: NextRequest) {
     const transactions = await writeClient.fetch(
       `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
         _id, createdAt, paymentMethod, visitorCount, total, source,
+        subtotal, discountType, discountValue, discountAmount,
         lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,
       { date }

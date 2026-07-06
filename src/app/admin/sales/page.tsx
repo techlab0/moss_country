@@ -24,6 +24,7 @@ interface CustomItemRow {
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
 type EntryMethod = PaymentMethod | 'qr';
+type DiscountType = 'amount' | 'percent';
 
 interface LineItemView {
   name: string;
@@ -40,6 +41,10 @@ interface TransactionView {
   total?: number;
   lineItems?: LineItemView[];
   source?: string;
+  subtotal?: number;
+  discountType?: DiscountType;
+  discountValue?: number;
+  discountAmount?: number;
 }
 
 interface HistoricalItemState {
@@ -90,7 +95,10 @@ interface Aggregate {
   itemsTotal: number;
   storeTotal: number;
   ecTotal: number;
+  discountTotal: number;
   grandTotal: number;
+  taxExcludedTotal: number;
+  taxAmountTotal: number;
 }
 
 interface DayData {
@@ -130,6 +138,8 @@ interface EditState {
   visitorCount: string;
   lines: EditLine[];
   paidAmount?: number;
+  discountType: DiscountType | '';
+  discountValue: string;
 }
 
 // ========== 定数・ユーティリティ ==========
@@ -182,6 +192,14 @@ function sanitizeNonNegative(value: string): string {
 
 function sortByNameJa(items: SalesItem[]): SalesItem[] {
   return [...items].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+}
+
+// 画面表示用のプレビュー計算（金額の最終確定は必ずサーバー側で行う）
+function previewDiscountAmount(subtotal: number, discountType: DiscountType | '', discountValue: string): number {
+  if (!discountType || subtotal <= 0) return 0;
+  const value = Math.max(0, toNumber(discountValue));
+  const raw = discountType === 'amount' ? value : Math.round(subtotal * Math.min(value, 100) / 100);
+  return Math.max(0, Math.min(raw, subtotal));
 }
 
 function formatTime(iso?: string): string {
@@ -283,6 +301,8 @@ function EntryTab({
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<EntryMethod>('cash');
+  const [discountType, setDiscountType] = useState<DiscountType | ''>('');
+  const [discountValue, setDiscountValue] = useState('0');
   const [submitting, setSubmitting] = useState(false);
   const [qrFlow, setQrFlow] = useState<QrFlowState | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -322,6 +342,12 @@ function EntryTab({
     return fromCatalog + fromCustom;
   }, [salesItems, qtyStr, amounts, customItems]);
 
+  const discountAmount = useMemo(
+    () => previewDiscountAmount(total, discountType, discountValue),
+    [total, discountType, discountValue]
+  );
+  const finalTotal = total - discountAmount;
+
   const setQuantity = (id: string, value: string) => {
     setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
   };
@@ -358,6 +384,8 @@ function EntryTab({
     setAmounts({});
     setCustomItems([]);
     setPaymentMethod('cash');
+    setDiscountType('');
+    setDiscountValue('0');
     setQrFlow(null);
     if (pollRef.current) clearInterval(pollRef.current);
   };
@@ -370,8 +398,8 @@ function EntryTab({
       alert('商品または来店人数を入力してください');
       return;
     }
-    if (lineItems.length > 0 && total <= 0) {
-      alert('合計金額が0円です。数量または金額を確認してください');
+    if (lineItems.length > 0 && finalTotal <= 0) {
+      alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
       return;
     }
 
@@ -382,7 +410,7 @@ function EntryTab({
         const response = await fetch('/api/admin/in-store-charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lineItems, visitorCount: visitors }),
+          body: JSON.stringify({ lineItems, visitorCount: visitors, discountType: discountType || undefined, discountValue: toNumber(discountValue) }),
         });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
@@ -402,7 +430,13 @@ function EntryTab({
         const response = await fetch('/api/admin/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentMethod: method, visitorCount: visitors, lineItems }),
+          body: JSON.stringify({
+            paymentMethod: method,
+            visitorCount: visitors,
+            lineItems,
+            discountType: discountType || undefined,
+            discountValue: toNumber(discountValue),
+          }),
         });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
@@ -410,7 +444,7 @@ function EntryTab({
         }
         onRegistered(
           lineItems.length > 0
-            ? `登録しました（${methodLabels[method]} ¥${total.toLocaleString()}）`
+            ? `登録しました（${methodLabels[method]} ¥${finalTotal.toLocaleString()}）`
             : `来店のみ登録しました（${visitors}名）`
         );
         resetForm();
@@ -657,11 +691,42 @@ function EntryTab({
             </ul>
           </div>
 
-          {/* 会計バー（支払い方法＋登録） */}
+          {/* 会計バー（割引＋支払い方法＋登録） */}
           <div className="sticky bottom-0 bg-white border border-gray-200 shadow-lg rounded-lg p-4 space-y-3">
+            {total > 0 && (
+              <div className="flex items-center gap-2">
+                <select
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value as DiscountType | '')}
+                  className="px-2 py-2 text-sm border border-gray-300 rounded-md"
+                >
+                  <option value="">割引なし</option>
+                  <option value="amount">割引（円）</option>
+                  <option value="percent">割引（%）</option>
+                </select>
+                {discountType && (
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={displayStr(discountValue)}
+                    onChange={(e) => setDiscountValue(sanitizeNonNegative(e.target.value))}
+                    placeholder={discountType === 'amount' ? '円' : '%'}
+                    className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                  />
+                )}
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">{itemCount > 0 ? `${itemCount}点` : '商品未選択'}</span>
-              <span className="text-2xl font-bold text-gray-900">¥{total.toLocaleString()}</span>
+              <div className="text-right">
+                {discountAmount > 0 && (
+                  <p className="text-xs text-gray-500">
+                    小計 ¥{total.toLocaleString()} − 割引 ¥{discountAmount.toLocaleString()}
+                  </p>
+                )}
+                <span className="text-2xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
+              </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {(['cash', 'payPay', 'qr', 'card'] as EntryMethod[]).map(method => (
@@ -680,7 +745,7 @@ function EntryTab({
             </div>
             <button
               onClick={handleRegister}
-              disabled={submitting || (total <= 0 && toNumber(visitorCount) <= 0)}
+              disabled={submitting || (finalTotal <= 0 && toNumber(visitorCount) <= 0)}
               className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
             >
               {submitting
@@ -779,6 +844,8 @@ function SummaryTab({
       paymentMethod: tx.paymentMethod || 'cash',
       visitorCount: String(tx.visitorCount ?? 0),
       lines: (tx.lineItems || []).map(li => toEditLine(li, salesItems)),
+      discountType: tx.discountType || '',
+      discountValue: String(tx.discountValue ?? 0),
     });
   };
 
@@ -790,6 +857,8 @@ function SummaryTab({
       visitorCount: String(charge.visitorCount ?? 0),
       lines: (charge.lineItems || []).map(li => toEditLine(li, salesItems)),
       paidAmount: charge.amount,
+      discountType: '',
+      discountValue: '0',
     });
   };
 
@@ -816,7 +885,13 @@ function SummaryTab({
         : `/api/admin/transactions/${edit.id}`;
       const body = edit.isCharge
         ? { lineItems }
-        : { lineItems, paymentMethod: edit.paymentMethod, visitorCount: toNumber(edit.visitorCount) };
+        : {
+            lineItems,
+            paymentMethod: edit.paymentMethod,
+            visitorCount: toNumber(edit.visitorCount),
+            discountType: edit.discountType || undefined,
+            discountValue: toNumber(edit.discountValue),
+          };
 
       const response = await fetch(url, {
         method: 'PATCH',
@@ -927,9 +1002,23 @@ function SummaryTab({
           <span className="text-gray-600">EC（オンライン）売上</span>
           <span>¥{(agg?.ecTotal || 0).toLocaleString()}</span>
         </div>
+        {(agg?.discountTotal || 0) > 0 && (
+          <div className="flex justify-between text-sm text-orange-600">
+            <span>割引合計</span>
+            <span>−¥{(agg?.discountTotal || 0).toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between font-bold text-lg border-t pt-2">
           <span>その日の総売上</span>
           <span>¥{grandTotal.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>（内訳）税抜金額</span>
+          <span>¥{(agg?.taxExcludedTotal || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>消費税（10%）</span>
+          <span>¥{(agg?.taxAmountTotal || 0).toLocaleString()}</span>
         </div>
       </div>
 
@@ -1027,10 +1116,11 @@ function SummaryTab({
           <HistoricalEntryPanel
             salesItems={salesItems}
             date={date}
-            onDone={async () => {
+            onDone={(registeredDate) => {
               setShowHistoricalPanel(false);
-              onMessage('過去の実績を登録しました');
-              await loadDay(date);
+              onMessage(`過去の実績を登録しました（${registeredDate}）`);
+              // 登録した日付に切り替えて、その場で反映結果を確認できるようにする
+              setDate(registeredDate);
             }}
             onCancel={() => setShowHistoricalPanel(false)}
           />
@@ -1229,10 +1319,12 @@ function EditPanel({
     });
   };
 
-  const editTotal = edit.lines.reduce((sum, line) => {
+  const editSubtotal = edit.lines.reduce((sum, line) => {
     if (line.pricingType === 'fixed') return sum + toNumber(line.quantity) * (line.unitPrice || 0);
     return sum + toNumber(line.amount) * toNumber(line.quantity);
   }, 0);
+  const editDiscountAmount = edit.isCharge ? 0 : previewDiscountAmount(editSubtotal, edit.discountType, edit.discountValue);
+  const editTotal = editSubtotal - editDiscountAmount;
 
   const mismatch = edit.isCharge && edit.paidAmount !== undefined && editTotal !== edit.paidAmount;
 
@@ -1263,6 +1355,29 @@ function EditPanel({
               placeholder="0"
               className={numberInputClass}
             />
+          </div>
+          <div className="col-span-2 flex items-center gap-2">
+            <label className="text-xs text-gray-500 shrink-0">割引</label>
+            <select
+              value={edit.discountType}
+              onChange={(e) => setEdit({ ...edit, discountType: e.target.value as DiscountType | '' })}
+              className="px-2 py-2 text-sm border border-gray-300 rounded-md"
+            >
+              <option value="">なし</option>
+              <option value="amount">円</option>
+              <option value="percent">%</option>
+            </select>
+            {edit.discountType && (
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(edit.discountValue)}
+                onChange={(e) => setEdit({ ...edit, discountValue: sanitizeNonNegative(e.target.value) })}
+                placeholder={edit.discountType === 'amount' ? '円' : '%'}
+                className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+            )}
           </div>
         </div>
       )}
@@ -1325,6 +1440,16 @@ function EditPanel({
 
       <div className="flex justify-between items-center text-sm">
         <span className="text-gray-600">明細合計</span>
+        <span>¥{editSubtotal.toLocaleString()}</span>
+      </div>
+      {editDiscountAmount > 0 && (
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">割引</span>
+          <span>−¥{editDiscountAmount.toLocaleString()}</span>
+        </div>
+      )}
+      <div className="flex justify-between items-center text-sm font-medium border-t pt-2">
+        <span className="text-gray-700">合計</span>
         <span className="font-bold">¥{editTotal.toLocaleString()}</span>
       </div>
       {mismatch && (
@@ -1369,11 +1494,14 @@ function HistoricalEntryPanel({
 }: {
   salesItems: SalesItem[];
   date: string;
-  onDone: () => void;
+  onDone: (registeredDate: string) => void;
   onCancel: () => void;
 }) {
+  const [entryDate, setEntryDate] = useState(date);
   const [itemState, setItemState] = useState<Record<string, HistoricalItemState>>({});
   const [customRows, setCustomRows] = useState<HistoricalCustomRow[]>([]);
+  const [discountType, setDiscountType] = useState<DiscountType | ''>('');
+  const [discountValue, setDiscountValue] = useState('0');
   const [submitting, setSubmitting] = useState(false);
 
   const getState = (id: string): HistoricalItemState => itemState[id] || emptyHistoricalItemState;
@@ -1413,10 +1541,16 @@ function HistoricalEntryPanel({
     return customRows.reduce((sum, row) => sum + toNumber(row.unitPrice) * toNumber(row.quantity), 0);
   }, [customRows]);
 
-  const grandTotal = useMemo(() => {
+  const subtotal = useMemo(() => {
     const catalogTotal = categoryOrder.reduce((sum, cat) => sum + categoryTotal(cat), 0);
     return catalogTotal + customRowsTotal;
   }, [categoryTotal, customRowsTotal]);
+
+  const discountAmount = useMemo(
+    () => previewDiscountAmount(subtotal, discountType, discountValue),
+    [subtotal, discountType, discountValue]
+  );
+  const grandTotal = subtotal - discountAmount;
 
   const addCustomRow = () => {
     setCustomRows(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', unitPrice: '0', quantity: '1', paymentMethod: 'cash' }]);
@@ -1452,27 +1586,34 @@ function HistoricalEntryPanel({
       alert('少なくとも1つ、商品と数量を入力してください');
       return;
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
+      alert('日付を指定してください');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      for (const method of methodsWithItems) {
-        const response = await fetch('/api/admin/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date,
-            paymentMethod: method,
-            lineItems: groups[method],
-            visitorCount: 0,
-            isHistorical: true,
-          }),
-        });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || '登録に失敗しました');
-        }
+      // 割引の按分（複数の支払い方法グループへの分割）はサーバー側で再計算するため、
+      // ここでは各グループの明細と割引の入力値だけを渡す
+      const response = await fetch('/api/admin/transactions/historical-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: entryDate,
+          groups: {
+            cash: groups.cash,
+            payPay: groups.payPay,
+            card: groups.card,
+          },
+          discountType: discountType || undefined,
+          discountValue: toNumber(discountValue),
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '登録に失敗しました');
       }
-      onDone();
+      onDone(entryDate);
     } catch (err) {
       alert(err instanceof Error ? err.message : '登録に失敗しました');
     } finally {
@@ -1483,12 +1624,22 @@ function HistoricalEntryPanel({
   return (
     <div className="border-2 border-moss-green rounded-lg p-3 space-y-3 bg-emerald-50/30">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-gray-900 text-sm">過去の実績を入力（{date}）</h3>
+        <h3 className="font-medium text-gray-900 text-sm">過去の実績を入力</h3>
         <button onClick={onCancel} className="text-xs text-gray-500 hover:underline">閉じる</button>
       </div>
       <p className="text-xs text-gray-500">
         紙の集計表の内容を、商品ごとに現金・PayPay・クレジットの内訳で入力してください。来店者数・購入組数は下の「来店・調整」欄に直接入力できます。
       </p>
+
+      <div className="bg-white border rounded-md p-3">
+        <label className="block text-xs text-gray-500 mb-1">登録する日付</label>
+        <input
+          type="date"
+          value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value)}
+          className="w-full px-3 py-2 text-base border border-gray-300 rounded-md"
+        />
+      </div>
 
       {categoryOrder.map(category => {
         const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
@@ -1600,9 +1751,47 @@ function HistoricalEntryPanel({
         </ul>
       </div>
 
-      <div className="flex justify-between items-center border-t pt-3">
-        <span className="text-sm text-gray-600">合計</span>
-        <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
+      {subtotal > 0 && (
+        <div className="bg-white border rounded-md p-3 flex items-center gap-2">
+          <label className="text-xs text-gray-500 shrink-0">割引</label>
+          <select
+            value={discountType}
+            onChange={(e) => setDiscountType(e.target.value as DiscountType | '')}
+            className="px-2 py-2 text-sm border border-gray-300 rounded-md"
+          >
+            <option value="">なし</option>
+            <option value="amount">円</option>
+            <option value="percent">%</option>
+          </select>
+          {discountType && (
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={displayStr(discountValue)}
+              onChange={(e) => setDiscountValue(sanitizeNonNegative(e.target.value))}
+              placeholder={discountType === 'amount' ? '円' : '%'}
+              className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+            />
+          )}
+        </div>
+      )}
+
+      <div className="border-t pt-3 space-y-1">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>小計</span>
+          <span>¥{subtotal.toLocaleString()}</span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>割引</span>
+            <span>−¥{discountAmount.toLocaleString()}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">合計</span>
+          <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
+        </div>
       </div>
 
       <button
