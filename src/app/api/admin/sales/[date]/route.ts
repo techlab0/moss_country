@@ -24,6 +24,7 @@ interface TransactionDoc {
   visitorCount?: number;
   total?: number;
   lineItems?: AggLineItem[];
+  source?: string;
 }
 
 interface ChargeDoc {
@@ -112,7 +113,7 @@ export async function GET(
       ),
       writeClient.fetch(
         `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
-          _id, createdAt, paymentMethod, visitorCount, total,
+          _id, createdAt, paymentMethod, visitorCount, total, source,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { date }

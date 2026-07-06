@@ -39,6 +39,22 @@ interface TransactionView {
   visitorCount?: number;
   total?: number;
   lineItems?: LineItemView[];
+  source?: string;
+}
+
+interface HistoricalItemState {
+  cashQty: string;
+  payPayQty: string;
+  cardQty: string;
+  unitPrice: string; // 金額直接入力(variable)の商品のみ使用
+}
+
+interface HistoricalCustomRow {
+  id: string;
+  name: string;
+  unitPrice: string;
+  quantity: string;
+  paymentMethod: PaymentMethod;
 }
 
 interface ChargeView {
@@ -700,6 +716,7 @@ function SummaryTab({
   const [notes, setNotes] = useState('');
   const [edit, setEdit] = useState<EditState | null>(null);
   const [busyId, setBusyId] = useState('');
+  const [showHistoricalPanel, setShowHistoricalPanel] = useState(false);
 
   const loadDay = useCallback(async (targetDate: string) => {
     setLoading(true);
@@ -986,20 +1003,43 @@ function SummaryTab({
 
       {/* 取引履歴 */}
       <div className="bg-white shadow rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-medium text-gray-900">取引履歴</h2>
-          <a
-            href="https://squareup.com/dashboard/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-moss-green hover:underline"
-          >
-            Squareダッシュボード ↗
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowHistoricalPanel(v => !v)}
+              className="text-xs px-3 py-1.5 border border-moss-green text-moss-green rounded-md hover:bg-moss-green/10"
+            >
+              {showHistoricalPanel ? '過去実績の入力を閉じる' : '過去の実績を入力'}
+            </button>
+            <a
+              href="https://squareup.com/dashboard/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-moss-green hover:underline"
+            >
+              Squareダッシュボード ↗
+            </a>
+          </div>
         </div>
 
-        {historyEntries.length === 0 && (
-          <p className="text-sm text-gray-500">この日の取引はまだありません。</p>
+        {showHistoricalPanel && (
+          <HistoricalEntryPanel
+            salesItems={salesItems}
+            date={date}
+            onDone={async () => {
+              setShowHistoricalPanel(false);
+              onMessage('過去の実績を登録しました');
+              await loadDay(date);
+            }}
+            onCancel={() => setShowHistoricalPanel(false)}
+          />
+        )}
+
+        {historyEntries.length === 0 && !showHistoricalPanel && (
+          <p className="text-sm text-gray-500">
+            この日の取引はまだありません。紙の記録が残っている日付なら「過去の実績を入力」から登録できます。
+          </p>
         )}
 
         <ul className="divide-y">
@@ -1016,6 +1056,9 @@ function SummaryTab({
                         <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
                           {methodLabels[tx.paymentMethod || 'cash']}
                         </span>
+                        {tx.source === 'historical' && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">手書き記録</span>
+                        )}
                         {(tx.visitorCount || 0) > 0 && (
                           <span className="text-xs text-gray-500">{tx.visitorCount}名</span>
                         )}
@@ -1305,6 +1348,270 @@ function EditPanel({
           キャンセル
         </button>
       </div>
+    </div>
+  );
+}
+
+// ========== 過去の実績の一括入力（紙の記録の取り込み用） ==========
+
+const emptyHistoricalItemState: HistoricalItemState = {
+  cashQty: '0',
+  payPayQty: '0',
+  cardQty: '0',
+  unitPrice: '0',
+};
+
+function HistoricalEntryPanel({
+  salesItems,
+  date,
+  onDone,
+  onCancel,
+}: {
+  salesItems: SalesItem[];
+  date: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [itemState, setItemState] = useState<Record<string, HistoricalItemState>>({});
+  const [customRows, setCustomRows] = useState<HistoricalCustomRow[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const getState = (id: string): HistoricalItemState => itemState[id] || emptyHistoricalItemState;
+
+  const updateItemState = (id: string, patch: Partial<HistoricalItemState>) => {
+    setItemState(prev => ({ ...prev, [id]: { ...getState(id), ...patch } }));
+  };
+
+  const methodQtyValue = (state: HistoricalItemState, method: PaymentMethod): string => {
+    if (method === 'cash') return state.cashQty;
+    if (method === 'payPay') return state.payPayQty;
+    return state.cardQty;
+  };
+
+  const setMethodQty = (item: SalesItem, method: PaymentMethod, value: string) => {
+    const clean = sanitizeNonNegative(value);
+    if (method === 'cash') updateItemState(item._id, { cashQty: clean });
+    else if (method === 'payPay') updateItemState(item._id, { payPayQty: clean });
+    else updateItemState(item._id, { cardQty: clean });
+  };
+
+  const methodAmount = (item: SalesItem, method: PaymentMethod): number => {
+    const state = getState(item._id);
+    const qty = toNumber(methodQtyValue(state, method));
+    if (item.pricingType === 'fixed') return qty * (item.unitPrice || 0);
+    return qty * toNumber(state.unitPrice);
+  };
+
+  const categoryTotal = useCallback((category: string) => {
+    return salesItems
+      .filter(item => item.category === category)
+      .reduce((sum, item) => sum + methodAmount(item, 'cash') + methodAmount(item, 'payPay') + methodAmount(item, 'card'), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salesItems, itemState]);
+
+  const customRowsTotal = useMemo(() => {
+    return customRows.reduce((sum, row) => sum + toNumber(row.unitPrice) * toNumber(row.quantity), 0);
+  }, [customRows]);
+
+  const grandTotal = useMemo(() => {
+    const catalogTotal = categoryOrder.reduce((sum, cat) => sum + categoryTotal(cat), 0);
+    return catalogTotal + customRowsTotal;
+  }, [categoryTotal, customRowsTotal]);
+
+  const addCustomRow = () => {
+    setCustomRows(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', unitPrice: '0', quantity: '1', paymentMethod: 'cash' }]);
+  };
+
+  const handleSubmit = async () => {
+    const groups: Record<PaymentMethod, Array<{ salesItemId?: string; customName?: string; quantity: number; amount?: number }>> = {
+      cash: [],
+      payPay: [],
+      card: [],
+    };
+
+    for (const item of salesItems) {
+      const state = getState(item._id);
+      (['cash', 'payPay', 'card'] as PaymentMethod[]).forEach(method => {
+        const qty = toNumber(methodQtyValue(state, method));
+        if (qty <= 0) return;
+        groups[method].push({
+          salesItemId: item._id,
+          quantity: qty,
+          amount: item.pricingType === 'variable' ? toNumber(state.unitPrice) : undefined,
+        });
+      });
+    }
+    for (const row of customRows) {
+      const qty = toNumber(row.quantity);
+      if (!row.name.trim() || qty <= 0 || toNumber(row.unitPrice) <= 0) continue;
+      groups[row.paymentMethod].push({ customName: row.name.trim(), quantity: qty, amount: toNumber(row.unitPrice) });
+    }
+
+    const methodsWithItems = (['cash', 'payPay', 'card'] as PaymentMethod[]).filter(m => groups[m].length > 0);
+    if (methodsWithItems.length === 0) {
+      alert('少なくとも1つ、商品と数量を入力してください');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      for (const method of methodsWithItems) {
+        const response = await fetch('/api/admin/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date,
+            paymentMethod: method,
+            lineItems: groups[method],
+            visitorCount: 0,
+            isHistorical: true,
+          }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || '登録に失敗しました');
+        }
+      }
+      onDone();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '登録に失敗しました');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="border-2 border-moss-green rounded-lg p-3 space-y-3 bg-emerald-50/30">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-gray-900 text-sm">過去の実績を入力（{date}）</h3>
+        <button onClick={onCancel} className="text-xs text-gray-500 hover:underline">閉じる</button>
+      </div>
+      <p className="text-xs text-gray-500">
+        紙の集計表の内容を、商品ごとに現金・PayPay・クレジットの内訳で入力してください。来店者数・購入組数は下の「来店・調整」欄に直接入力できます。
+      </p>
+
+      {categoryOrder.map(category => {
+        const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
+        if (itemsInCategory.length === 0) return null;
+        return (
+          <details key={category} className="bg-white border rounded-md overflow-hidden" open>
+            <summary className="px-3 py-2 bg-gray-50 font-medium text-sm cursor-pointer flex justify-between items-center">
+              <span>{categoryLabels[category]}</span>
+              <span className="text-moss-green font-bold">¥{categoryTotal(category).toLocaleString()}</span>
+            </summary>
+            <ul className="divide-y">
+              {itemsInCategory.map(item => {
+                const state = getState(item._id);
+                const isFixed = item.pricingType === 'fixed';
+                return (
+                  <li key={item._id} className="px-3 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                      {isFixed && <p className="text-xs text-gray-500">単価 ¥{(item.unitPrice || 0).toLocaleString()}</p>}
+                    </div>
+                    {!isFixed && (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        value={displayStr(state.unitPrice)}
+                        onChange={(e) => updateItemState(item._id, { unitPrice: sanitizeNonNegative(e.target.value) })}
+                        placeholder="単価"
+                        className="w-24 mb-1 px-2 py-1.5 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                      />
+                    )}
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['cash', 'payPay', 'card'] as PaymentMethod[]).map(method => (
+                        <div key={method}>
+                          <label className="block text-[10px] text-gray-500 mb-0.5">{methodLabels[method]}</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            value={displayStr(methodQtyValue(state, method))}
+                            onChange={(e) => setMethodQty(item, method, e.target.value)}
+                            placeholder="0"
+                            className="w-full px-1 py-1.5 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        );
+      })}
+
+      {salesItems.length === 0 && (
+        <p className="text-sm text-gray-500">売上項目が登録されていません。</p>
+      )}
+
+      {/* カタログ外の商品 */}
+      <div className="bg-white border rounded-md p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-900">その他（カタログにない商品）</h4>
+          <button onClick={addCustomRow} className="text-xs px-3 py-1.5 bg-moss-green text-white rounded-md hover:bg-moss-green/90">
+            + 追加
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {customRows.map(row => (
+            <li key={row.id} className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                value={row.name}
+                onChange={(e) => setCustomRows(prev => prev.map(r => r.id === row.id ? { ...r, name: e.target.value } : r))}
+                placeholder="商品名"
+                className="flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(row.unitPrice)}
+                onChange={(e) => setCustomRows(prev => prev.map(r => r.id === row.id ? { ...r, unitPrice: sanitizeNonNegative(e.target.value) } : r))}
+                placeholder="単価"
+                className="w-20 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+              <span className="text-gray-400 text-xs">×</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={displayStr(row.quantity)}
+                onChange={(e) => setCustomRows(prev => prev.map(r => r.id === row.id ? { ...r, quantity: sanitizeNonNegative(e.target.value) } : r))}
+                placeholder="個数"
+                className="w-14 px-1 py-2 text-sm text-center text-blue-700 font-bold border border-gray-300 rounded-md"
+              />
+              <select
+                value={row.paymentMethod}
+                onChange={(e) => setCustomRows(prev => prev.map(r => r.id === row.id ? { ...r, paymentMethod: e.target.value as PaymentMethod } : r))}
+                className="px-1 py-2 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="cash">現金</option>
+                <option value="payPay">PayPay</option>
+                <option value="card">クレジット</option>
+              </select>
+              <button onClick={() => setCustomRows(prev => prev.filter(r => r.id !== row.id))} className="text-red-500 text-sm px-2">✕</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex justify-between items-center border-t pt-3">
+        <span className="text-sm text-gray-600">合計</span>
+        <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+      >
+        {submitting ? '登録中...' : 'この内容で過去実績を登録'}
+      </button>
     </div>
   );
 }

@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     const visitorCount = Math.max(0, Number(body.visitorCount) || 0);
     const lineItemsInput: StoreLineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const date = typeof body.date === 'string' && DATE_PATTERN.test(body.date) ? body.date : todayJst();
+    const isHistorical = body.isHistorical === true;
 
     const { lineItems, total } = await resolveStoreLineItems(lineItemsInput);
 
@@ -36,9 +37,14 @@ export async function POST(request: NextRequest) {
       visitorCount,
       lineItems,
       total,
+      source: isHistorical ? 'historical' : undefined,
     });
 
-    await adjustDailyCounters(date, visitorCount, lineItems.length > 0 ? 1 : 0);
+    // 過去の手書き記録の一括入力では、来店者数・購入組数は集計タブの手動欄で別途管理するため、
+    // 取引作成のたびに加算すると二重加算になってしまう。そのためカウンタ加算はスキップする。
+    if (!isHistorical) {
+      await adjustDailyCounters(date, visitorCount, lineItems.length > 0 ? 1 : 0);
+    }
 
     return NextResponse.json({ transaction });
   } catch (error) {
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     const transactions = await writeClient.fetch(
       `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
-        _id, createdAt, paymentMethod, visitorCount, total,
+        _id, createdAt, paymentMethod, visitorCount, total, source,
         lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,
       { date }

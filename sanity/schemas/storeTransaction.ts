@@ -55,11 +55,20 @@ export const storeTransaction = defineType({
       ],
     }),
     defineField({ name: 'total', title: '合計金額', type: 'number' }),
+    defineField({
+      name: 'source',
+      title: '登録元',
+      type: 'string',
+      description: '過去の手書き記録をまとめて登録した場合は historical。通常のライブ登録では未設定',
+      options: {
+        list: [{ title: '過去の手書き記録の一括入力', value: 'historical' }],
+      },
+    }),
   ],
   preview: {
-    select: { total: 'total', method: 'paymentMethod', date: 'date' },
-    prepare({ total, method, date }) {
-      return { title: `¥${total ?? 0}`, subtitle: `${date ?? ''} ${method ?? ''}` }
+    select: { total: 'total', method: 'paymentMethod', date: 'date', source: 'source' },
+    prepare({ total, method, date, source }) {
+      return { title: `¥${total ?? 0}`, subtitle: `${date ?? ''} ${method ?? ''}${source === 'historical' ? ' (過去記録)' : ''}` }
     },
   },
 })
