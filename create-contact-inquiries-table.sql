@@ -27,18 +27,19 @@ ALTER TABLE contact_inquiries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role can access all contact inquiries" ON contact_inquiries
     FOR ALL USING (auth.role() = 'service_role');
 
--- 匿名ユーザーによる挿入のみ許可（お問い合わせフォーム用）
-CREATE POLICY "Allow anonymous users to insert contact inquiries" ON contact_inquiries
-    FOR INSERT WITH CHECK (true);
+-- 注意: 以前は匿名ユーザーのINSERTを許可するポリシー（WITH CHECK (true)）があったが、
+-- お問い合わせフォームの保存はAPI側でservice roleキー（RLSをバイパスする）を使うため不要で、
+-- anonキーで誰でも直接行を挿入できる穴になっていたので削除した。
 
 -- 更新時間の自動更新トリガー
+-- SET search_path で search_path 乗っ取り（Supabaseリンター: function_search_path_mutable）を防ぐ
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' SET search_path = '';
 
 CREATE TRIGGER update_contact_inquiries_updated_at 
     BEFORE UPDATE ON contact_inquiries 

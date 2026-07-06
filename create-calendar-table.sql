@@ -16,12 +16,12 @@ CREATE INDEX IF NOT EXISTS idx_calendar_events_type ON calendar_events(type);
 -- RLS (Row Level Security) を有効化
 ALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;
 
--- ポリシーを作成（すべてのユーザーが読み取り可能、サービスロールが管理可能）
+-- ポリシーを作成（すべてのユーザーが読み取り可能）
+-- 書き込みは管理API（service roleキー、RLSをバイパスする）経由のみなので、
+-- 書き込み用のポリシーは作らない。以前あった FOR ALL USING (true) のポリシーは
+-- anonキーでも全操作できてしまう穴だったため削除した。
 CREATE POLICY "Calendar events are viewable by everyone" ON calendar_events
     FOR SELECT USING (true);
-
-CREATE POLICY "Calendar events are manageable by service role" ON calendar_events
-    FOR ALL USING (true);
 
 -- 初期データを挿入（サンプルデータ）
 INSERT INTO calendar_events (date, type, title, location) VALUES

@@ -39,13 +39,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_severity ON audit_logs(severity);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 
 -- 4. 更新時刻の自動更新（admin_usersテーブル用）
+-- SET search_path で search_path 乗っ取り（Supabaseリンター: function_search_path_mutable）を防ぐ
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' SET search_path = '';
 
 CREATE OR REPLACE TRIGGER update_admin_users_updated_at
     BEFORE UPDATE ON admin_users
