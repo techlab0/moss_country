@@ -15,6 +15,7 @@ import { inStoreCharge } from './inStoreCharge'
 import { storeTransaction } from './storeTransaction'
 import { siteSettings } from './siteSettings'
 import { pageContent } from './pageContent'
+import { paymentSettings } from './paymentSettings'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -34,4 +35,5 @@ export const schemaTypes = [
   storeTransaction,
   siteSettings,
   pageContent,
+  paymentSettings,
 ]

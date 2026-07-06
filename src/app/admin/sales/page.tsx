@@ -318,12 +318,27 @@ function EntryTab({
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [qrFlow, setQrFlow] = useState<QrFlowState | null>(null);
+  const [payPayQrUrl, setPayPayQrUrl] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
+  }, []);
+
+  // PayPay店舗用QRコード（設定されていれば確認画面に表示する）
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch('/api/admin/payment-settings');
+        if (!response.ok) return;
+        const data = await response.json();
+        setPayPayQrUrl(data.settings?.payPayQrUrl || null);
+      } catch {
+        // 未設定・取得失敗時はQRなしで動作する
+      }
+    })();
   }, []);
 
   // フォーム⇄確認画面⇄QR画面の切り替え時、スクロール位置が下のままだと
@@ -582,6 +597,21 @@ function EntryTab({
         </div>
         {notes.trim() && (
           <p className="text-xs text-gray-400 italic">{notes}</p>
+        )}
+
+        {paymentMethod === 'payPay' && payPayQrUrl && (
+          <div className="text-center border-t pt-3 space-y-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={payPayQrUrl} alt="PayPay 店舗用QRコード" className="mx-auto w-56 h-56 object-contain" />
+            <p className="text-sm text-gray-500">
+              お客様にPayPayでこのQRコードを読み取ってもらい、合計金額 ¥{finalTotal.toLocaleString()} を入力してもらってください
+            </p>
+          </div>
+        )}
+        {paymentMethod === 'payPay' && !payPayQrUrl && (
+          <p className="text-xs text-gray-400 text-center">
+            PayPayの店舗用QRコード画像を<Link href="/admin/sales/items" className="underline">項目カタログ</Link>で設定すると、ここに表示されます
+          </p>
         )}
 
         <button

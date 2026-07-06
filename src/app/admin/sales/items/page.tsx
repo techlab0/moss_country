@@ -36,10 +36,66 @@ export default function SalesItemsPage() {
   const [form, setForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [payPayQrUrl, setPayPayQrUrl] = useState<string | null>(null);
+  const [uploadingQr, setUploadingQr] = useState(false);
 
   useEffect(() => {
     fetchItems();
+    fetchPaymentSettings();
   }, []);
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/payment-settings');
+      if (!response.ok) return;
+      const data = await response.json();
+      setPayPayQrUrl(data.settings?.payPayQrUrl || null);
+    } catch {
+      // 未設定なら何も表示しないだけ
+    }
+  };
+
+  const handleQrUpload = async (file: File) => {
+    setUploadingQr(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadResponse = await fetch('/api/admin/images/upload', { method: 'POST', body: formData });
+      if (!uploadResponse.ok) {
+        const data = await uploadResponse.json().catch(() => ({}));
+        throw new Error(data.error || 'アップロードに失敗しました');
+      }
+      const uploadData = await uploadResponse.json();
+
+      const saveResponse = await fetch('/api/admin/payment-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payPayQrAssetId: uploadData.asset._id }),
+      });
+      if (!saveResponse.ok) throw new Error('設定の保存に失敗しました');
+      const saveData = await saveResponse.json();
+      setPayPayQrUrl(saveData.settings?.payPayQrUrl || null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'アップロードに失敗しました');
+    } finally {
+      setUploadingQr(false);
+    }
+  };
+
+  const handleQrRemove = async () => {
+    if (!window.confirm('PayPayのQRコード画像を削除しますか？')) return;
+    try {
+      const response = await fetch('/api/admin/payment-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payPayQrAssetId: null }),
+      });
+      if (!response.ok) throw new Error('削除に失敗しました');
+      setPayPayQrUrl(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '削除に失敗しました');
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -150,6 +206,39 @@ export default function SalesItemsPage() {
           </button>
         </div>
       )}
+
+      {/* PayPay 店舗用QRコード設定 */}
+      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+        <h2 className="font-medium text-gray-900">PayPay 店舗用QRコード</h2>
+        <p className="text-sm text-gray-500">
+          PayPay for Businessの店舗掲示用QRコード画像を設定すると、売上入力でPayPayを選んだ際の確認画面に表示されます。
+        </p>
+        {payPayQrUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={payPayQrUrl} alt="PayPay 店舗用QRコード" className="w-40 h-40 object-contain border rounded-md" />
+        )}
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className={`px-4 py-2 text-sm rounded-md cursor-pointer ${uploadingQr ? 'bg-gray-300 text-gray-500' : 'bg-moss-green text-white hover:bg-moss-green/90'}`}>
+            {uploadingQr ? 'アップロード中...' : payPayQrUrl ? '画像を変更' : '画像をアップロード'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={uploadingQr}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleQrUpload(file);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          {payPayQrUrl && (
+            <button onClick={handleQrRemove} className="text-sm text-red-600 hover:text-red-800">
+              削除
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* 新規追加フォーム */}
       <div className="bg-white shadow rounded-lg p-4 space-y-3">

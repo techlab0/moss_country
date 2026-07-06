@@ -184,8 +184,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
       )}
 
-      {/* メインコンテンツエリア（横はみ出しは非表示） */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-screen overflow-x-hidden">
+      {/* メインコンテンツエリア（横はみ出しは非表示）
+          overflow-x-hidden はスクロールコンテナ化して子孫の position: sticky を壊すため、
+          クリップのみ行う overflow-x-clip を使う（売上入力の会計バーが下部に固定されなくなる） */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-screen overflow-x-clip">
         {/* ヘッダー */}
         <header className="relative z-10 bg-white shadow-sm border-b">
           <div className="px-4 lg:px-6 py-3 lg:py-4">
@@ -228,8 +230,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* メインコンテンツ（はみ出し部分は非表示） */}
-        <main className="flex-1 px-4 lg:px-6 py-6 lg:py-8 bg-gray-50 overflow-x-hidden min-w-0">
+        {/* メインコンテンツ（はみ出し部分は非表示。sticky を壊さないよう clip を使う） */}
+        <main className="flex-1 px-4 lg:px-6 py-6 lg:py-8 bg-gray-50 overflow-x-clip min-w-0">
           {children}
         </main>
       </div>
