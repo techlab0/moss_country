@@ -233,6 +233,11 @@ export default function SalesPage() {
     messageTimer.current = setTimeout(() => setMessage(''), 4000);
   }, []);
 
+  // タブが切り替わったら、フッターなどが見えたままになっていないよう画面上部に戻す
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
+
   useEffect(() => {
     (async () => {
       setLoadingItems(true);
@@ -319,6 +324,12 @@ function EntryTab({
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
+
+  // フォーム⇄QR画面の切り替え時、スクロール位置が下のままだとQRコードが見えないため上部に戻す
+  const isShowingQrFlow = !!qrFlow;
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [isShowingQrFlow]);
 
   // 金額直接入力(variable)の商品は数量のデフォルトを1にする（単価だけ入れればそのまま登録できるように）
   const qtyStr = useCallback((item: SalesItem) => {
