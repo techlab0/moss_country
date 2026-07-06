@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
+    // 最終ログイン: ユーザーデータはSupabase未使用時にサーバーレス関数のメモリ管理となり
+    // インスタンス間で共有されないため、記録済みの値がなければセッショントークンの
+    // 発行時刻（iat = 今回ログインした瞬間）を使う
+    const tokenIssuedAt = typeof payload.iat === 'number' ? new Date(payload.iat * 1000) : undefined;
+    const lastLogin = currentUser.lastLogin ?? tokenIssuedAt;
+
     // パスワードハッシュを除外して返す
     const safeUser = {
       id: currentUser.id,
@@ -27,7 +33,7 @@ export async function GET(request: NextRequest) {
       role: currentUser.role,
       twoFactorEnabled: currentUser.twoFactorEnabled,
       twoFactorMethod: currentUser.twoFactorMethod,
-      lastLogin: currentUser.lastLogin?.toISOString(),
+      lastLogin: lastLogin?.toISOString(),
       createdAt: currentUser.createdAt.toISOString(),
     };
 
