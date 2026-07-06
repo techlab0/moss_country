@@ -38,6 +38,8 @@ export default function ContactPage() {
     subject: '',
     message: '',
     agreement: false,
+    // スパムボット対策のハニーポット。画面上は見えないフィールドで、値が入っていたらボットとみなす
+    website: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,7 +118,25 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage('');
-    
+
+    // ハニーポットに値が入っていたらボットとみなし、送信もメール通知もせず成功を装う
+    // （拒否されたことを悟らせないため、見た目は通常の成功と同じにする）
+    if (formData.website.trim() !== '') {
+      setSubmitMessage('お問い合わせありがとうございます。24時間以内にご返信させていただきます。');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        inquiryType: '',
+        subject: '',
+        message: '',
+        agreement: false,
+        website: '',
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // まずSupabaseデータベースに保存
       const response = await fetch('/api/contact', {
@@ -161,6 +181,7 @@ export default function ContactPage() {
           subject: '',
           message: '',
           agreement: false,
+          website: '',
         });
       } else {
         setSubmitMessage(result.message || '送信中にエラーが発生しました。お手数ですが、お電話でお問い合わせください。');
@@ -289,6 +310,20 @@ export default function ContactPage() {
             <Card>
               <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* スパムボット対策のハニーポット。人間には見えず、CSSを解釈しないボットだけが入力する。
+                      display:none だと無視するボットもいるため、画面外に飛ばす方式にしている */}
+                  <div className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                    <label htmlFor="website">Website</label>
+                    <input
+                      type="text"
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Name */}
                     <div>

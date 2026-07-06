@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // Validation schema for contact form
 const contactSchema = z.object({
@@ -16,7 +16,22 @@ const contactSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
+    // ハニーポット（フォーム上は不可視の website フィールド）に値が入っていたらボットとみなす。
+    // 拒否を悟らせないため、何も保存せずに通常と同じ成功レスポンスを返す
+    if (typeof body.website === 'string' && body.website.trim() !== '') {
+      console.warn('ハニーポット検知: お問い合わせをスパムとして破棄しました');
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'お問い合わせありがとうございます。24時間以内にご返信させていただきます。',
+          contactId: null,
+          dbSaved: false,
+        },
+        { status: 200 }
+      );
+    }
+
     // Validate form data
     const validatedData = contactSchema.parse(body);
     
