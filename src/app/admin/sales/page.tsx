@@ -260,9 +260,14 @@ export default function SalesPage() {
     <div className="space-y-4 max-w-2xl pb-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-gray-900">売上管理</h1>
-        <Link href="/admin/sales/items" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
-          項目カタログ
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/sales/monthly" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+            月次レポート
+          </Link>
+          <Link href="/admin/sales/items" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+            項目カタログ
+          </Link>
+        </div>
       </div>
 
       {/* タブ切り替え */}
