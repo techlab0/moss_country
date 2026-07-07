@@ -38,6 +38,7 @@ export async function GET(
         lowStockThreshold,
         featured,
         weight,
+        fragile,
         inStock,
         _createdAt,
         _updatedAt

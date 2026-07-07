@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         materials,
         careInstructions,
         weight,
+        fragile,
         sortOrder,
         _createdAt,
         _updatedAt
