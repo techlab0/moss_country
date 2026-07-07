@@ -16,6 +16,7 @@ import { storeTransaction } from './storeTransaction'
 import { siteSettings } from './siteSettings'
 import { pageContent } from './pageContent'
 import { paymentSettings } from './paymentSettings'
+import { shippingSettings } from './shippingSettings'
 
 export const schemaTypes = [
   simpleWorkshop,
@@ -36,4 +37,5 @@ export const schemaTypes = [
   siteSettings,
   pageContent,
   paymentSettings,
+  shippingSettings,
 ]

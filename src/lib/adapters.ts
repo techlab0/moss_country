@@ -44,10 +44,12 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
     }) || [],
     inStock: sanityProduct.inStock ?? true,
     stockQuantity: 10, // デフォルト在庫数
-    size: 'M', // デフォルトサイズ
+    // 送料計算に使う梱包寸法(cm)・重量(g)・割れ物フラグ。カート追加時にこの経路を通るため必ず引き継ぐ
+    dimensions: sanityProduct.dimensions,
+    weight: typeof sanityProduct.weight === 'number' ? sanityProduct.weight : undefined,
+    fragile: sanityProduct.fragile,
     materials: sanityProduct.materials || [],
     careInstructions: sanityProduct.careInstructions || '',
-    weight: 0.5, // デフォルト重量
     variants: [],
     shippingInfo: '通常配送対応'
   };

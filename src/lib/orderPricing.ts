@@ -1,16 +1,13 @@
-// 価格改ざん対策の再計算はCDNキャッシュの古い価格を見てはいけないため、常に最新を返す writeClient を使う
+// 決済金額をクライアントの申告値のまま信用しない。
+// 商品価格・寸法・重量はすべて Sanity の正規データから取得し、送料・消費税・合計を
+// サーバー側で確定する（送料表・ルールは管理画面で編集された送料設定を正とする）。
+// これにより価格・送料の改ざんを完全に防ぐ。
+//
+// CDNキャッシュの古い価格を見てはいけないため、常に最新を返す writeClient を使う。
 import { writeClient as client } from '@/lib/sanity';
+import { getShippingSettings, resolveShippingFee, type ShippingItem } from '@/lib/shipping';
+import { taxBreakdown } from '@/lib/tax';
 import type { Cart } from '@/types/ecommerce';
-
-/**
- * 決済金額をクライアントの申告値のまま信用しない。
- * Sanityの正規価格から小計を再計算し、送料・税・合計はクライアント値に対して
- * 妥当性チェックのみ行った上で最終的な請求額を確定する。
- */
-
-const AMOUNT_TOLERANCE = 2; // 端数計算のずれを許容する誤差（円）
-const MAX_SHIPPING_COST = 5000; // 送料の妥当性チェック上限（円）
-const MAX_TAX_RATE = 0.15; // 消費税額の妥当性チェック上限（税率換算）
 
 export interface RecalculatedTotals {
   subtotal: number;
@@ -19,53 +16,82 @@ export interface RecalculatedTotals {
   total: number;
 }
 
+export interface RecalculateOptions {
+  // 配送先都道府県。指定時のみ送料を計算する（店頭決済など配送を伴わない場合は省略）
+  prefecture?: string;
+  // 速達（express）かどうか
+  express?: boolean;
+}
+
 export class InvalidCartError extends Error {}
 
-export async function recalculateCartTotals(cart: Cart): Promise<RecalculatedTotals> {
+interface CanonicalProduct {
+  _id: string;
+  price: number;
+  dimensions?: { width?: number | null; height?: number | null; depth?: number | null } | null;
+  weight?: number | null;
+  fragile?: boolean | null;
+}
+
+export async function recalculateCartTotals(
+  cart: Cart,
+  options: RecalculateOptions = {}
+): Promise<RecalculatedTotals> {
   if (!cart.items || cart.items.length === 0) {
     throw new InvalidCartError('カートが空です');
   }
 
-  const productIds = Array.from(new Set(cart.items.map(item => item.product?._id).filter(Boolean)));
+  const productIds = Array.from(new Set(cart.items.map((item) => item.product?._id).filter(Boolean)));
 
-  const products: Array<{ _id: string; price: number }> = await client.fetch(
-    `*[_type == "product" && _id in $ids]{ _id, price }`,
+  // 価格・寸法(size)・重量をまとめて正規データとして取得
+  const products: CanonicalProduct[] = await client.fetch(
+    `*[_type == "product" && _id in $ids]{ _id, price, "dimensions": size, weight, fragile }`,
     { ids: productIds }
   );
 
-  const priceById = new Map(products.map(p => [p._id, Number(p.price)]));
+  const productById = new Map(products.map((p) => [p._id, p]));
 
   let subtotal = 0;
+  const shippingItems: ShippingItem[] = [];
+
   for (const item of cart.items) {
-    const canonicalPrice = priceById.get(item.product?._id);
-    if (canonicalPrice === undefined || !Number.isFinite(canonicalPrice)) {
+    const canonical = productById.get(item.product?._id);
+    if (!canonical || !Number.isFinite(Number(canonical.price))) {
       throw new InvalidCartError(`商品が見つかりません: ${item.product?._id}`);
     }
     if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
       throw new InvalidCartError('数量が不正です');
     }
-    subtotal += canonicalPrice * item.quantity;
+    subtotal += Number(canonical.price) * item.quantity;
+    // 送料計算に使う寸法・重量・割れ物フラグもクライアント値ではなく正規データを使う（送料改ざん防止）
+    shippingItems.push({
+      dimensions: canonical.dimensions,
+      weight: canonical.weight,
+      fragile: canonical.fragile,
+      quantity: item.quantity,
+    });
   }
 
-  // 送料はクライアント計算値をそのまま採用しつつ、明らかな改ざん・不正値のみ弾く
-  const shippingCost = Number(cart.shippingCost);
-  if (!Number.isFinite(shippingCost) || shippingCost < 0 || shippingCost > MAX_SHIPPING_COST) {
-    throw new InvalidCartError('送料が不正です');
+  // 送料は配送先が指定されている場合のみ、送料設定に基づいてサーバーで確定する
+  let shippingCost = 0;
+  if (options.prefecture) {
+    const settings = await getShippingSettings();
+    const result = resolveShippingFee(
+      shippingItems,
+      options.prefecture,
+      subtotal,
+      { express: options.express },
+      settings
+    );
+    if (!result.ok) {
+      throw new InvalidCartError(result.error || '送料を計算できませんでした');
+    }
+    shippingCost = result.fee;
   }
 
-  // 消費税もクライアント計算値を採用しつつ、上限で妥当性チェック
-  const tax = Number(cart.tax);
-  if (!Number.isFinite(tax) || tax < 0 || tax > (subtotal + shippingCost) * MAX_TAX_RATE) {
-    throw new InvalidCartError('消費税額が不正です');
-  }
-
-  const total = subtotal + shippingCost + tax;
-
-  // クライアントの合計申告値と再計算結果を突き合わせ、ずれがあれば改ざん・計算バグとして拒否する
-  const clientTotal = Number(cart.total);
-  if (!Number.isFinite(clientTotal) || Math.abs(clientTotal - total) > AMOUNT_TOLERANCE) {
-    throw new InvalidCartError('合計金額が一致しません。カートの内容をご確認のうえ、やり直してください。');
-  }
+  // 商品価格・送料はいずれも税込。合計に上乗せせず、含まれる消費税を内税として逆算する。
+  const total = subtotal + shippingCost;
+  const tax = taxBreakdown(total).taxAmount;
 
   return { subtotal, shippingCost, tax, total };
 }
