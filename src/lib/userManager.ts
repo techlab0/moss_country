@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
+import { randomInt } from 'crypto';
 
 export interface AdminUser {
   id: string;
@@ -7,9 +7,14 @@ export interface AdminUser {
   passwordHash: string;
   role: 'admin' | 'editor';
   twoFactorEnabled: boolean;
-  twoFactorMethod?: 'totp' | 'webauthn' | null;
+  twoFactorMethod?: 'totp' | 'webauthn' | 'sms' | 'device' | null;
   totpSecret?: string;
   webauthnCredentials?: any[];
+  // SMS 2FA用の電話番号
+  phoneNumber?: string;
+  // 端末認証（device）用のワンタイムコードと失効時刻
+  deviceCode?: string;
+  deviceCodeExpiry?: Date;
   lastLogin?: Date;
   createdAt: Date;
 }
@@ -48,10 +53,16 @@ export interface UserSession {
 let usersCache: AdminUser[] | null = null;
 
 // デフォルトユーザーを作成
+// 認証情報のフォールバック値をソースコードに書くと、環境変数の設定漏れ時に
+// 誰でも既知の値でログインできてしまうため、未設定なら認証自体を失敗させる。
 function createDefaultUser(): AdminUser {
-  const adminEmail = process.env.ADMIN_EMAIL || 'moss.country.kokenokuni@gmail.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeThis2024!SecurePassword';
-  
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error('ADMIN_EMAIL と ADMIN_PASSWORD が設定されていません。管理者ログインを利用するには必ず設定してください。');
+  }
+
   return {
     id: 'admin-1',
     email: adminEmail,
@@ -389,7 +400,8 @@ export function changePassword(userId: string, newPassword: string): boolean {
 
 // 端末コードを生成
 export function generateDeviceCode(userId: string): string {
-  const code = Math.random().toString().substr(2, 6); // 6桁の数字
+  // 認証コードのためMath.random()は不可（予測可能）。CSPRNGで6桁を生成する
+  const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
   const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5分後に失効
   
   updateUserSync(userId, {
