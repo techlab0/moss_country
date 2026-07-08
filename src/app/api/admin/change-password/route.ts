@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/auth';
-import { comparePassword, hashPassword } from '@/lib/userManager';
-import { getAdminUsers, updateAdminUser } from '@/lib/userManager';
+import { comparePassword, hashPassword, findUserById, updateUser } from '@/lib/userManager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,10 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 現在のユーザー情報を取得
-    const users = await getAdminUsers();
-    const currentUser = users.find(u => u.id === userId);
-    
+    // 現在のユーザー情報を取得（USE_SUPABASE=true ならSupabase、そうでなければメモリから）
+    const currentUser = await findUserById(userId);
+
     if (!currentUser) {
       return NextResponse.json(
         { error: 'ユーザーが見つかりません' },
@@ -73,10 +71,14 @@ export async function POST(request: NextRequest) {
     // 新しいパスワードをハッシュ化
     const newPasswordHash = await hashPassword(newPassword);
 
-    // パスワードを更新
-    await updateAdminUser(userId, {
-      passwordHash: newPasswordHash,
-    });
+    // パスワードを更新（USE_SUPABASE=true なら Supabase の admin_users.password_hash を更新）
+    const updated = await updateUser(userId, { passwordHash: newPasswordHash });
+    if (!updated) {
+      return NextResponse.json(
+        { error: 'パスワードの更新に失敗しました' },
+        { status: 500 }
+      );
+    }
 
     console.log(`Password changed for user: ${currentUser.email}`);
 

@@ -138,6 +138,13 @@ export const product = defineType({
       description: '配送料計算に使用されます'
     }),
     defineField({
+      name: 'fragile',
+      title: '割れ物（取扱注意）',
+      type: 'boolean',
+      initialValue: false,
+      description: '有効にすると、送料に割れ物加算が適用されます'
+    }),
+    defineField({
       name: 'featured',
       title: 'おすすめ商品',
       type: 'boolean',

@@ -159,7 +159,9 @@ const productBySlugProjection = `{
   careInstructions,
   featured,
   inStock,
-  "dimensions": size
+  "dimensions": size,
+  weight,
+  fragile
 }`;
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -208,6 +210,7 @@ export async function getProductsWithInventory(): Promise<Product[]> {
         featured,
         sortOrder,
         weight,
+        fragile,
         stockQuantity,
         reserved,
         lowStockThreshold

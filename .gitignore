@@ -42,3 +42,7 @@ public/images/background/background_mov01.mov
 public/images/background/background_mov02.mov
 *.mov
 public/images/background/*.mov
+
+# Server logs (may contain customer emails / payment metadata)
+server.log
+*.log

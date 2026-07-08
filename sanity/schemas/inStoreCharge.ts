@@ -53,8 +53,31 @@ export const inStoreCharge = defineType({
       type: 'number',
     }),
     defineField({
+      name: 'method',
+      title: '決済方式',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'QR決済（お客様のスマホ）', value: 'qr' },
+          { title: 'POSアプリ起動（店側iPhoneでタッチ決済等）', value: 'pos' },
+        ],
+      },
+      initialValue: 'qr',
+    }),
+    defineField({
       name: 'squareOrderId',
       title: 'Square注文ID',
+      type: 'string',
+    }),
+    defineField({
+      name: 'posTransactionId',
+      title: 'POS API 取引ID（transaction_id）',
+      type: 'string',
+      description: 'POSアプリ起動決済で返るサーバー側取引ID。Orders/Payments API照合に使用',
+    }),
+    defineField({
+      name: 'posClientTransactionId',
+      title: 'POS API 端末取引ID（client_transaction_id）',
       type: 'string',
     }),
     defineField({

@@ -16,7 +16,14 @@ export interface Product {
   }>;
   price: number;
   compareAtPrice?: number;
-  size: string;
+  // Sanityクエリ（"dimensions": size）が返す梱包寸法(cm)。送料計算に使用。
+  dimensions?: {
+    width?: number | null;
+    height?: number | null;
+    depth?: number | null;
+  };
+  // 割れ物フラグ。送料の割れ物加算に使用。
+  fragile?: boolean;
   materials: string[];
   category: {
     _ref: string;
@@ -229,33 +236,16 @@ export interface ShippingCalculationResult {
   shippingDetails?: ShippingDetails;
 }
 
+// 送料計算の内訳（src/lib/shipping.ts の ShippingResult を表示用に写した形）
 export interface ShippingDetails {
-  yupackSize?: number;
-  dimensions?: {
-    width: number;
-    height: number;
-    depth: number;
-  };
-  totalWeight?: number;
-  packagingWeight?: number;
-  hasFragile?: boolean;
-  specialInstructions?: string[];
-  maxSize?: number;
-  baseCost?: number;
-  totalCost: number;
-  breakdown?: {
-    base: number;
-    packaging: number;
-    speed: number;
-    discount?: number;
-  };
-  debug?: {
-    totalDimension: number;
-    sizeLimit: {
-      maxDimension: number;
-      maxWeight: number;
-    };
-  };
+  carrierLabel?: string; // 配送業者の表示名（例: ゆうパック）
+  size?: number | null; // サイズ区分（例: 80）
+  dimensionSum?: number; // 梱包後の3辺合計(cm)
+  totalWeight?: number; // 梱包材込みの総重量(g)
+  baseFee?: number; // 料金表上の基本送料
+  surcharge?: number; // 速達・割れ物などの加算合計
+  discount?: number; // 割引額
+  totalCost: number; // 割引前の送料合計（基本＋加算）
   error?: string;
 }
 

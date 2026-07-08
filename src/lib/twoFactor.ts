@@ -6,7 +6,7 @@ export interface TwoFactorSetup {
 
 // 2FA設定を生成
 export async function generateTwoFactorSetup(): Promise<TwoFactorSetup> {
-  // 動的インポートでビルド時のエラーを回避
+  // 動的インポートでビルド時のエラーを回避。speakeasyは型定義を同梱しないため any 扱いにする
   const speakeasy = await import('speakeasy');
   const QRCode = await import('qrcode');
 
@@ -19,8 +19,10 @@ export async function generateTwoFactorSetup(): Promise<TwoFactorSetup> {
   const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
 
   // バックアップコードを生成（8桁の数字×10個）
+  // 認証コードのためMath.random()は不可（予測可能）。CSPRNGで生成する
+  const { randomInt } = await import('crypto');
   const backupCodes = Array.from({ length: 10 }, () => {
-    return Math.random().toString().substr(2, 8);
+    return randomInt(0, 100_000_000).toString().padStart(8, '0');
   });
 
   return {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -9,279 +9,24 @@ import { SquareCheckout } from '@/components/ui/SquareCheckout';
 import { useCart } from '@/contexts/CartContext';
 import { getEcommerceImageUrl, getProductSlug } from '@/lib/adapters';
 import type { Cart, CheckoutFormData, ShippingCalculationResult } from '@/types/ecommerce';
+import {
+  resolveShippingFee,
+  DEFAULT_SHIPPING_SETTINGS,
+  type ShippingSettings,
+  type ShippingItem,
+} from '@/lib/shipping';
+import { taxBreakdown } from '@/lib/tax';
 
-// 配送料金表（札幌から全国、実際のゆうパック料金を参考）
-const SHIPPING_RATES = {
-  yupack: {
-    // ゆうパック料金表（札幌から）
-    60: {
-      '北海道': 810, '青森県': 1050, '岩手県': 1050, '宮城県': 1050, '秋田県': 1050,
-      '山形県': 1050, '福島県': 1050, '茨城県': 1180, '栃木県': 1180, '群馬県': 1180,
-      '埼玉県': 1180, '千葉県': 1180, '東京都': 1180, '神奈川県': 1180, '新潟県': 1180,
-      '富山県': 1300, '石川県': 1300, '福井県': 1300, '山梨県': 1300, '長野県': 1300,
-      '岐阜県': 1300, '静岡県': 1300, '愛知県': 1300, '三重県': 1300, '滋賀県': 1420,
-      '京都府': 1420, '大阪府': 1420, '兵庫県': 1420, '奈良県': 1420, '和歌山県': 1420,
-      '鳥取県': 1540, '島根県': 1540, '岡山県': 1540, '広島県': 1540, '山口県': 1540,
-      '徳島県': 1540, '香川県': 1540, '愛媛県': 1540, '高知県': 1540, '福岡県': 1660,
-      '佐賀県': 1660, '長崎県': 1660, '熊本県': 1660, '大分県': 1660, '宮崎県': 1660,
-      '鹿児島県': 1660, '沖縄県': 1350
-    },
-    80: {
-      '北海道': 1030, '青森県': 1280, '岩手県': 1280, '宮城県': 1280, '秋田県': 1280,
-      '山形県': 1280, '福島県': 1280, '茨城県': 1440, '栃木県': 1440, '群馬県': 1440,
-      '埼玉県': 1440, '千葉県': 1440, '東京都': 1440, '神奈川県': 1440, '新潟県': 1440,
-      '富山県': 1590, '石川県': 1590, '福井県': 1590, '山梨県': 1590, '長野県': 1590,
-      '岐阜県': 1590, '静岡県': 1590, '愛知県': 1590, '三重県': 1590, '滋賀県': 1750,
-      '京都府': 1750, '大阪府': 1750, '兵庫県': 1750, '奈良県': 1750, '和歌山県': 1750,
-      '鳥取県': 1900, '島根県': 1900, '岡山県': 1900, '広島県': 1900, '山口県': 1900,
-      '徳島県': 1900, '香川県': 1900, '愛媛県': 1900, '高知県': 1900, '福岡県': 2060,
-      '佐賀県': 2060, '長崎県': 2060, '熊本県': 2060, '大分県': 2060, '宮崎県': 2060,
-      '鹿児島県': 2060, '沖縄県': 1630
-    },
-    100: {
-      '北海道': 1280, '青森県': 1530, '岩手県': 1530, '宮城県': 1530, '秋田県': 1530,
-      '山形県': 1530, '福島県': 1530, '茨城県': 1710, '栃木県': 1710, '群馬県': 1710,
-      '埼玉県': 1710, '千葉県': 1710, '東京都': 1710, '神奈川県': 1710, '新潟県': 1710,
-      '富山県': 1880, '石川県': 1880, '福井県': 1880, '山梨県': 1880, '長野県': 1880,
-      '岐阜県': 1880, '静岡県': 1880, '愛知県': 1880, '三重県': 1880, '滋賀県': 2070,
-      '京都府': 2070, '大阪府': 2070, '兵庫県': 2070, '奈良県': 2070, '和歌山県': 2070,
-      '鳥取県': 2270, '島根県': 2270, '岡山県': 2270, '広島県': 2270, '山口県': 2270,
-      '徳島県': 2270, '香川県': 2270, '愛媛県': 2270, '高知県': 2270, '福岡県': 2460,
-      '佐賀県': 2460, '長崎県': 2460, '熊本県': 2460, '大分県': 2460, '宮崎県': 2460,
-      '鹿児島県': 2460, '沖縄県': 1950
-    },
-    120: {
-      '北海道': 1530, '青森県': 1780, '岩手県': 1780, '宮城県': 1780, '秋田県': 1780,
-      '山形県': 1780, '福島県': 1780, '茨城県': 1950, '栃木県': 1950, '群馬県': 1950,
-      '埼玉県': 1950, '千葉県': 1950, '東京都': 1950, '神奈川県': 1950, '新潟県': 1950,
-      '富山県': 2140, '石川県': 2140, '福井県': 2140, '山梨県': 2140, '長野県': 2140,
-      '岐阜県': 2140, '静岡県': 2140, '愛知県': 2140, '三重県': 2140, '滋賀県': 2320,
-      '京都府': 2320, '大阪府': 2320, '兵庫県': 2320, '奈良県': 2320, '和歌山県': 2320,
-      '鳥取県': 2530, '島根県': 2530, '岡山県': 2530, '広島県': 2530, '山口県': 2530,
-      '徳島県': 2530, '香川県': 2530, '愛媛県': 2530, '高知県': 2530, '福岡県': 2740,
-      '佐賀県': 2740, '長崎県': 2740, '熊本県': 2740, '大分県': 2740, '宮崎県': 2740,
-      '鹿児島県': 2740, '沖縄県': 2260
-    },
-    140: {
-      '北海道': 1780, '青森県': 2020, '岩手県': 2020, '宮城県': 2020, '秋田県': 2020,
-      '山形県': 2020, '福島県': 2020, '茨城県': 2200, '栃木県': 2200, '群馬県': 2200,
-      '埼玉県': 2200, '千葉県': 2200, '東京都': 2200, '神奈川県': 2200, '新潟県': 2200,
-      '富山県': 2390, '石川県': 2390, '福井県': 2390, '山梨県': 2390, '長野県': 2390,
-      '岐阜県': 2390, '静岡県': 2390, '愛知県': 2390, '三重県': 2390, '滋賀県': 2580,
-      '京都府': 2580, '大阪府': 2580, '兵庫県': 2580, '奈良県': 2580, '和歌山県': 2580,
-      '鳥取県': 2780, '島根県': 2780, '岡山県': 2780, '広島県': 2780, '山口県': 2780,
-      '徳島県': 2780, '香川県': 2780, '愛媛県': 2780, '高知県': 2780, '福岡県': 2970,
-      '佐賀県': 2970, '長崎県': 2970, '熊本県': 2970, '大分県': 2970, '宮崎県': 2970,
-      '鹿児島県': 2970, '沖縄県': 2580
-    },
-    160: {
-      '北海道': 2020, '青森県': 2270, '岩手県': 2270, '宮城県': 2270, '秋田県': 2270,
-      '山形県': 2270, '福島県': 2270, '茨城県': 2450, '栃木県': 2450, '群馬県': 2450,
-      '埼玉県': 2450, '千葉県': 2450, '東京都': 2450, '神奈川県': 2450, '新潟県': 2450,
-      '富山県': 2640, '石川県': 2640, '福井県': 2640, '山梨県': 2640, '長野県': 2640,
-      '岐阜県': 2640, '静岡県': 2640, '愛知県': 2640, '三重県': 2640, '滋賀県': 2840,
-      '京都府': 2840, '大阪府': 2840, '兵庫県': 2840, '奈良県': 2840, '和歌山県': 2840,
-      '鳥取県': 3020, '島根県': 3020, '岡山県': 3020, '広島県': 3020, '山口県': 3020,
-      '徳島県': 3020, '香川県': 3020, '愛媛県': 3020, '高知県': 3020, '福岡県': 3220,
-      '佐賀県': 3220, '長崎県': 3220, '熊本県': 3220, '大分県': 3220, '宮崎県': 3220,
-      '鹿児島県': 3220, '沖縄県': 2840
-    },
-    170: {
-      '北海道': 2270, '青森県': 2520, '岩手県': 2520, '宮城県': 2520, '秋田県': 2520,
-      '山形県': 2520, '福島県': 2520, '茨城県': 2700, '栃木県': 2700, '群馬県': 2700,
-      '埼玉県': 2700, '千葉県': 2700, '東京都': 2700, '神奈川県': 2700, '新潟県': 2700,
-      '富山県': 2890, '石川県': 2890, '福井県': 2890, '山梨県': 2890, '長野県': 2890,
-      '岐阜県': 2890, '静岡県': 2890, '愛知県': 2890, '三重県': 2890, '滋賀県': 3090,
-      '京都府': 3090, '大阪府': 3090, '兵庫県': 3090, '奈良県': 3090, '和歌山県': 3090,
-      '鳥取県': 3290, '島根県': 3290, '岡山県': 3290, '広島県': 3290, '山口県': 3290,
-      '徳島県': 3290, '香川県': 3290, '愛媛県': 3290, '高知県': 3290, '福岡県': 3470,
-      '佐賀県': 3470, '長崎県': 3470, '熊本県': 3470, '大分県': 3470, '宮崎県': 3470,
-      '鹿児島県': 3470, '沖縄県': 3090
-    }
-  }
-};
-
-// ゆうパックサイズ制限（実際の仕様）
-const YUPACK_SIZE_LIMITS = {
-  60: { maxDimension: 60, maxWeight: 2000 },  // 60cm以内、2kg以内
-  80: { maxDimension: 80, maxWeight: 5000 },  // 80cm以内、5kg以内
-  100: { maxDimension: 100, maxWeight: 10000 }, // 100cm以内、10kg以内
-  120: { maxDimension: 120, maxWeight: 15000 }, // 120cm以内、15kg以内
-  140: { maxDimension: 140, maxWeight: 20000 }, // 140cm以内、20kg以内
-  160: { maxDimension: 160, maxWeight: 25000 }, // 160cm以内、25kg以内
-  170: { maxDimension: 170, maxWeight: 25000 }  // 170cm以内、25kg以内
-};
-
-// 商品寸法から実際の配送サイズを計算
-const calculateActualShippingSize = (cartItems: Array<{ product: { shipping?: { weight?: number; dimensions?: { width: number; height: number; depth: number } }; fragile?: boolean; specialInstructions?: string[] }; quantity: number }>) => {
-  let totalWeight = 0;
-  let maxWidth = 0, maxHeight = 0, maxDepth = 0;
-  let hasFragile = false;
-  const specialInstructions: string[] = [];
-
-  // 商品情報を集計
-  cartItems.forEach(item => {
-    const product = item.product;
-    const quantity = item.quantity;
-    
-    if (product.shipping) {
-      // 重量を合計
-      if (product.shipping.weight) {
-        totalWeight += product.shipping.weight * quantity;
-      }
-      
-      // 割れ物チェック
-      if (product.shipping.fragile) {
-        hasFragile = true;
-      }
-      
-      // 特別指示を収集
-      if (product.shipping.special && !specialInstructions.includes(product.shipping.special)) {
-        specialInstructions.push(product.shipping.special);
-      }
-    }
-    
-    // 商品寸法（複数個の場合は配置を考慮）
-    if (product.dimensions) {
-      const itemWidth = product.dimensions.width || 0;
-      const itemHeight = product.dimensions.height || 0;
-      const itemDepth = product.dimensions.depth || 0;
-      
-      if (quantity === 1) {
-        // 1個の場合はそのまま
-        maxWidth = Math.max(maxWidth, itemWidth);
-        maxHeight = Math.max(maxHeight, itemHeight);
-        maxDepth = Math.max(maxDepth, itemDepth);
-      } else {
-        // 複数個の場合は効率的な配置を想定
-        // 横に並べた場合と縦に積んだ場合を比較
-        const horizontalWidth = itemWidth * quantity;
-        const stackedHeight = itemHeight * quantity;
-        
-        if (horizontalWidth <= 170) {
-          // 横並びが可能
-          maxWidth = Math.max(maxWidth, horizontalWidth);
-          maxHeight = Math.max(maxHeight, itemHeight);
-          maxDepth = Math.max(maxDepth, itemDepth);
-        } else {
-          // 縦積みまたは組み合わせ
-          maxWidth = Math.max(maxWidth, itemWidth);
-          maxHeight = Math.max(maxHeight, stackedHeight);
-          maxDepth = Math.max(maxDepth, itemDepth);
-        }
-      }
-    }
-  });
-
-  // 梱包材を考慮（各辺に5cm追加）
-  const packagingBuffer = 5;
-  const finalWidth = maxWidth + packagingBuffer;
-  const finalHeight = maxHeight + packagingBuffer;
-  const finalDepth = maxDepth + packagingBuffer;
-  
-  // 3辺の合計でサイズを決定
-  const totalDimension = finalWidth + finalHeight + finalDepth;
-  
-  // 梱包材重量を追加（段ボール等で約200-500g）
-  const packagingWeight = Math.max(200, Math.floor(totalWeight * 0.1)); // 商品重量の10%、最低200g
-  const finalWeight = totalWeight + packagingWeight;
-
-  return {
-    dimensions: { width: finalWidth, height: finalHeight, depth: finalDepth },
-    totalDimension,
-    totalWeight: finalWeight,
-    hasFragile,
-    specialInstructions,
-    packagingWeight
-  };
-};
-
-// 適切なゆうパックサイズを決定
-const determineYupackSize = (shippingInfo: { totalDimension: number; totalWeight: number }) => {
-  const { totalDimension, totalWeight } = shippingInfo;
-  
-  // サイズと重量の両方をチェック
-  for (const [sizeStr, limits] of Object.entries(YUPACK_SIZE_LIMITS)) {
-    const size = parseInt(sizeStr);
-    if (totalDimension <= limits.maxDimension && totalWeight <= limits.maxWeight) {
-      return size;
-    }
-  }
-  
-  // どのサイズにも収まらない場合はエラー
-  throw new Error(`配送不可: サイズ${totalDimension}cm、重量${(totalWeight/1000).toFixed(1)}kg`);
-};
-
-// カートの商品から配送サイズと料金を計算（正確な仕様）
-const calculateShippingByProducts = (cartItems: Array<{ product: object; quantity: number }>, prefecture: string, shippingMethodId: string) => {
-  if (!cartItems.length) return 0;
-
-  try {
-    // 実際の配送サイズを計算
-    const shippingInfo = calculateActualShippingSize(cartItems);
-    const yupackSize = determineYupackSize(shippingInfo);
-    
-    // 基本送料を取得
-    const sizeKey = yupackSize as keyof typeof SHIPPING_RATES.yupack;
-    const prefectureRates = SHIPPING_RATES.yupack[sizeKey];
-    
-    if (!prefectureRates) {
-      throw new Error(`${yupackSize}サイズの料金表が見つかりません`);
-    }
-    
-    const baseCost = prefectureRates[prefecture as keyof typeof prefectureRates];
-    if (!baseCost) {
-      throw new Error(`${prefecture}の送料が見つかりません`);
-    }
-
-    // 速達料金（正確な料金）
-    const speedSurcharge = shippingMethodId === 'express' ? 330 : 0;
-
-    // 梱包料金（割れ物の場合）
-    const packagingSurcharge = shippingInfo.hasFragile ? 200 : 0;
-
-    const totalCost = baseCost + speedSurcharge + packagingSurcharge;
-
-    return {
-      baseCost,
-      totalCost,
-      yupackSize,
-      dimensions: shippingInfo.dimensions,
-      totalWeight: shippingInfo.totalWeight,
-      packagingWeight: shippingInfo.packagingWeight,
-      hasFragile: shippingInfo.hasFragile,
-      specialInstructions: shippingInfo.specialInstructions,
-      breakdown: {
-        base: baseCost,
-        speed: speedSurcharge,
-        packaging: packagingSurcharge
-      },
-      // デバッグ情報
-      debug: {
-        totalDimension: shippingInfo.totalDimension,
-        sizeLimit: YUPACK_SIZE_LIMITS[yupackSize as keyof typeof YUPACK_SIZE_LIMITS]
-      }
-    };
-  } catch (error) {
-    console.error('配送料計算エラー:', error);
-    return {
-      error: error instanceof Error ? error.message : '配送料計算に失敗しました',
-      totalCost: 0
-    };
-  }
-};
-
-// 最終的な送料計算（割引適用）
-const calculateFinalShipping = (subtotal: number, baseShippingCost: number) => {
-  const shippingDiscount = subtotal >= 10000 ? 500 : 0;
-  const finalShippingCost = Math.max(0, baseShippingCost - shippingDiscount);
-  
-  return {
-    baseShippingCost,
-    finalShippingCost,
-    shippingDiscount
-  };
-};
+// カート内商品を送料計算用の最小形へ変換する。寸法・重量は sanityToEcommerceProduct 経由で
+// 商品に引き継がれており、未入力の場合は shipping.ts 側でフォールバックされる。
+function cartToShippingItems(items: Cart['items']): ShippingItem[] {
+  return items.map((item) => ({
+    dimensions: item.product.dimensions,
+    weight: item.product.weight,
+    fragile: item.product.fragile,
+    quantity: item.quantity,
+  }));
+}
 
 export default function CheckoutPage() {
   const { cart, clearCart, getShippingMethods, setShippingMethod } = useCart();
@@ -295,6 +40,8 @@ export default function CheckoutPage() {
     tax: 0,
     total: cart.subtotal
   });
+  // 管理画面で編集された送料設定。取得できるまではコード内デフォルトで計算する
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
   const [formData, setFormData] = useState<CheckoutFormData>({
     customer: {
       email: '',
@@ -341,6 +88,42 @@ export default function CheckoutPage() {
     { id: 'cash_on_delivery', name: '代金引換', description: '手数料 ¥300' }
   ];
 
+  // 送料設定をサーバーから取得（管理画面での編集を反映）。失敗時はデフォルト設定のまま。
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/shipping/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data?.settings) setShippingSettings(data.settings as ShippingSettings);
+      })
+      .catch(() => {
+        /* 取得失敗時はデフォルト設定で継続 */
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 指定した配送方法での送料・税・合計をまとめて計算する。表示にもサーバー確定にも同じ resolveShippingFee を使う。
+  const computeCheckoutTotals = (methodId: string) => {
+    if (!formData.shippingAddress.state || cart.items.length === 0) {
+      return null;
+    }
+    const items = cartToShippingItems(cart.items);
+    const result = resolveShippingFee(
+      items,
+      formData.shippingAddress.state,
+      cart.subtotal,
+      { express: methodId === 'express' },
+      shippingSettings
+    );
+    const finalShippingCost = result.ok ? result.fee : 0;
+    // 商品価格・送料はいずれも税込。合計に上乗せせず、含まれる消費税を内税として逆算表示する。
+    const total = cart.subtotal + finalShippingCost;
+    const tax = taxBreakdown(total).taxAmount;
+    return { result, finalShippingCost, tax, total };
+  };
+
   // お客様情報の姓名を配送先住所に自動入力
   React.useEffect(() => {
     if (formData.customer.firstName && formData.customer.lastName) {
@@ -355,25 +138,29 @@ export default function CheckoutPage() {
     }
   }, [formData.customer.firstName, formData.customer.lastName]);
 
-  // 送料・税込合計の再計算（商品の配送情報を考慮）
-  React.useEffect(() => {
-    if (formData.shippingAddress.state && formData.shippingMethod && cart.items.length > 0) {
-      const shippingData = calculateShippingByProducts(cart.items, formData.shippingAddress.state, formData.shippingMethod);
-      
-      if (typeof shippingData === 'object') {
-        const { finalShippingCost, shippingDiscount } = calculateFinalShipping(cart.subtotal, shippingData.totalCost);
-        const tax = Math.floor((cart.subtotal + finalShippingCost) * 0.1);
-        const total = cart.subtotal + finalShippingCost + tax;
-        
-        setShippingCalculation({
-          baseShippingCost: shippingData.totalCost,
-          finalShippingCost,
-          shippingDiscount,
-          tax,
-          total,
-          shippingDetails: shippingData // 詳細情報を保存
-        });
-      }
+  // 送料・税込合計の再計算（商品の寸法・重量と送料設定を考慮）
+  useEffect(() => {
+    const computed = computeCheckoutTotals(formData.shippingMethod);
+    if (computed) {
+      const { result, finalShippingCost, tax, total } = computed;
+      setShippingCalculation({
+        baseShippingCost: result.baseFee + result.surcharge, // 割引前の送料
+        finalShippingCost,
+        shippingDiscount: result.discount,
+        tax,
+        total,
+        shippingDetails: {
+          carrierLabel: shippingSettings.carriers[shippingSettings.carrier]?.label,
+          size: result.size,
+          dimensionSum: result.dimensionSum,
+          totalWeight: result.totalWeight,
+          baseFee: result.baseFee,
+          surcharge: result.surcharge,
+          discount: result.discount,
+          totalCost: result.baseFee + result.surcharge,
+          error: result.ok ? undefined : result.error,
+        },
+      });
     } else {
       // 住所未入力時はリセット
       setShippingCalculation({
@@ -384,7 +171,8 @@ export default function CheckoutPage() {
         total: cart.subtotal
       });
     }
-  }, [formData.shippingAddress.state, formData.shippingMethod, cart.items, cart.subtotal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.shippingAddress.state, formData.shippingMethod, cart.items, cart.subtotal, shippingSettings]);
 
   // カートが空の場合のリダイレクト
   if (cart.items.length === 0 && !orderComplete) {
@@ -795,21 +583,20 @@ export default function CheckoutPage() {
                             <span className="text-white font-medium">{method.name}</span>
                             <span className="text-emerald-400 font-medium">
                               {formData.shippingAddress.state && cart.items.length > 0 ? (() => {
-                                const shippingData = calculateShippingByProducts(cart.items, formData.shippingAddress.state, method.id);
-                                if (typeof shippingData === 'object') {
-                                  const { finalShippingCost } = calculateFinalShipping(cart.subtotal, shippingData.totalCost);
-                                  return finalShippingCost === 0 ? '無料' : `¥${finalShippingCost.toLocaleString()}`;
+                                const computed = computeCheckoutTotals(method.id);
+                                if (computed && computed.result.ok) {
+                                  return computed.finalShippingCost === 0 ? '無料' : `¥${computed.finalShippingCost.toLocaleString()}`;
                                 }
-                                return '計算中...';
+                                return computed ? '配送不可' : '計算中...';
                               })() : '住所入力後に計算'}
                             </span>
                           </div>
                           <p className="text-stone-400 text-sm">
                             {method.description}
                             {formData.shippingAddress.state && cart.items.length > 0 && (() => {
-                              const shippingData = calculateShippingByProducts(cart.items, formData.shippingAddress.state, method.id);
-                              if (typeof shippingData === 'object') {
-                                return ` (サイズ${shippingData.yupackSize})`;
+                              const computed = computeCheckoutTotals(method.id);
+                              if (computed && computed.result.ok) {
+                                return ` (サイズ${computed.result.size})`;
                               }
                               return '';
                             })()}
@@ -941,45 +728,23 @@ export default function CheckoutPage() {
                           <div className="text-xs text-stone-400 p-3 bg-stone-800/30 rounded-lg mb-3">
                             <div className="flex justify-between items-center mb-1">
                               <span>配送方式</span>
-                              <span>ゆうパック{shippingCalculation.shippingDetails.yupackSize}サイズ</span>
+                              <span>
+                                {shippingCalculation.shippingDetails.carrierLabel || '配送'}
+                                {shippingCalculation.shippingDetails.size ? ` ${shippingCalculation.shippingDetails.size}サイズ` : ''}
+                              </span>
                             </div>
                             <div className="flex justify-between items-center mb-1">
-                              <span>梱包サイズ</span>
-                              <span>
-                                {Math.ceil(shippingCalculation.shippingDetails.dimensions?.width || 0)}×
-                                {Math.ceil(shippingCalculation.shippingDetails.dimensions?.height || 0)}×
-                                {Math.ceil(shippingCalculation.shippingDetails.dimensions?.depth || 0)}cm
-                              </span>
+                              <span>梱包サイズ（3辺合計）</span>
+                              <span>約{shippingCalculation.shippingDetails.dimensionSum || 0}cm</span>
                             </div>
                             <div className="flex justify-between items-center mb-1">
                               <span>総重量（梱包込）</span>
                               <span>{((shippingCalculation.shippingDetails.totalWeight || 0) / 1000).toFixed(1)}kg</span>
                             </div>
-                            {(shippingCalculation.shippingDetails.breakdown?.packaging || 0) > 0 && (
-                              <div className="flex justify-between items-center mb-1">
-                                <span>⚠️ 梱包料金</span>
-                                <span>+¥{shippingCalculation.shippingDetails.breakdown?.packaging}</span>
-                              </div>
-                            )}
-                            {(shippingCalculation.shippingDetails.breakdown?.speed || 0) > 0 && (
+                            {(shippingCalculation.shippingDetails.surcharge || 0) > 0 && (
                               <div className="flex justify-between items-center">
-                                <span>速達料金</span>
-                                <span>+¥{shippingCalculation.shippingDetails.breakdown?.speed}</span>
-                              </div>
-                            )}
-                            {process.env.NODE_ENV === 'development' && shippingCalculation.shippingDetails.debug && (
-                              <div className="mt-2 pt-2 border-t border-stone-700">
-                                <div className="flex justify-between items-center text-blue-400">
-                                  <span>3辺合計</span>
-                                  <span>{shippingCalculation.shippingDetails.debug.totalDimension}cm</span>
-                                </div>
-                                <div className="flex justify-between items-center text-blue-400">
-                                  <span>サイズ制限</span>
-                                  <span>
-                                    {shippingCalculation.shippingDetails.debug.sizeLimit.maxDimension}cm / 
-                                    {(shippingCalculation.shippingDetails.debug.sizeLimit.maxWeight / 1000)}kg
-                                  </span>
-                                </div>
+                                <span>加算（速達・割れ物など）</span>
+                                <span>+¥{(shippingCalculation.shippingDetails.surcharge || 0).toLocaleString()}</span>
                               </div>
                             )}
                           </div>
@@ -1012,8 +777,8 @@ export default function CheckoutPage() {
                             <span>-¥{shippingCalculation.shippingDiscount.toLocaleString()}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-stone-300">
-                          <span>消費税</span>
+                        <div className="flex justify-between text-stone-400 text-sm">
+                          <span>（内消費税）</span>
                           <span>¥{shippingCalculation.tax.toLocaleString()}</span>
                         </div>
                       </>

@@ -23,7 +23,7 @@ interface CustomItemRow {
 }
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
-type EntryMethod = PaymentMethod | 'qr';
+type EntryMethod = PaymentMethod | 'qr' | 'pos';
 type DiscountType = 'amount' | 'percent';
 
 interface LineItemView {
@@ -122,7 +122,8 @@ interface QrFlowState {
   amount: number;
   subtotal?: number;
   discountAmount?: number;
-  qrCodeDataUrl: string;
+  qrCodeDataUrl?: string; // QR決済時のみ
+  posLaunchUrl?: string; // POSアプリ起動決済時のみ（square-commerce-v1://）
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   lineItems: LineItemView[];
 }
@@ -166,7 +167,26 @@ const methodLabels: Record<EntryMethod, string> = {
   payPay: 'PayPay',
   qr: 'クレジット(QR)',
   card: 'クレジット(手動)',
+  pos: 'タッチ決済',
 };
+
+// Square POS API のディープリンクを組み立てる（iOS: square-commerce-v1://）。
+// 決済後は options.auto_return で自動的に callback_url へ戻り、state に載せた会計IDが返る。
+function buildPosDeepLink({ amount, chargeId, notes }: { amount: number; chargeId: string; notes?: string }): string {
+  const data = {
+    amount_money: { amount, currency_code: 'JPY' }, // 円は最小単位そのまま
+    callback_url: `${window.location.origin}/api/pos/callback`,
+    client_id: process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID,
+    version: '1.3',
+    notes: notes || undefined,
+    state: chargeId, // 会計ID。コールバックでそのまま返る
+    options: {
+      supported_tender_types: ['CREDIT_CARD'], // カード（iPhoneのタッチ決済含む）
+      auto_return: true,
+    },
+  };
+  return 'square-commerce-v1://payment/create?data=' + encodeURIComponent(JSON.stringify(data));
+}
 
 const chargeStatusLabels: Record<string, { label: string; className: string }> = {
   pending: { label: '支払い待ち', className: 'bg-yellow-100 text-yellow-800' },
@@ -485,8 +505,35 @@ function EntryTab({
           lineItems: data.charge.lineItems || [],
         });
         startPolling(data.charge._id);
+      } else if (paymentMethod === 'pos' && lineItems.length > 0) {
+        // POSアプリ起動決済: 決済リンクは発行せず、会計IDを state に載せて
+        // Square POSアプリ（iPhoneのタッチ決済等）を起動する。決済後は callback が確定する。
+        const response = await fetch('/api/admin/in-store-charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'pos', lineItems, visitorCount: visitors, discountType: discountType || undefined, discountValue: toNumber(discountValue), description: notes.trim() || undefined }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || '会計の作成に失敗しました');
+        }
+        const data = await response.json();
+        const launchUrl = buildPosDeepLink({ amount: data.amount, chargeId: data.charge._id, notes: data.notes });
+        setQrFlow({
+          chargeId: data.charge._id,
+          amount: data.charge.amount,
+          subtotal: data.charge.subtotal,
+          discountAmount: data.charge.discountAmount,
+          status: 'pending',
+          lineItems: data.charge.lineItems || [],
+          posLaunchUrl: launchUrl,
+        });
+        startPolling(data.charge._id);
+        // 端末のSquare POSアプリを起動（戻り先はこの画面。ポーリングで完了を検知）
+        window.location.href = launchUrl;
       } else {
-        const method: PaymentMethod = paymentMethod === 'qr' ? 'cash' : paymentMethod;
+        // qr/pos はそれぞれ専用分岐で処理済み。ここに来るのは現金・PayPay・手動カードのみ。
+        const method: PaymentMethod = paymentMethod === 'qr' || paymentMethod === 'pos' ? 'cash' : paymentMethod;
         const response = await fetch('/api/admin/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -546,7 +593,7 @@ function EntryTab({
   };
 
   const handleQrDone = () => {
-    onRegistered(`QR決済が完了しました（¥${qrFlow?.amount.toLocaleString()}）`);
+    onRegistered(`決済が完了しました（¥${qrFlow?.amount.toLocaleString()}）`);
     resetForm();
   };
 
@@ -659,9 +706,23 @@ function EntryTab({
 
         {qrFlow.status === 'pending' && (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
-            <p className="text-sm text-gray-500">お客様のスマホでQRコードを読み取ってお支払いください</p>
+            {qrFlow.posLaunchUrl ? (
+              <>
+                <a
+                  href={qrFlow.posLaunchUrl}
+                  className="block w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90 text-center"
+                >
+                  Square POSアプリを起動して決済
+                </a>
+                <p className="text-sm text-gray-500">アプリで決済後、この画面に自動で戻ります。戻らない場合は上のボタンをもう一度押してください。</p>
+              </>
+            ) : (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
+                <p className="text-sm text-gray-500">お客様のスマホでQRコードを読み取ってお支払いください</p>
+              </>
+            )}
             <p className="text-sm text-moss-green animate-pulse">支払い待ち...</p>
             <button onClick={handleQrAbort} className="w-full py-3 border border-gray-300 rounded-md hover:bg-gray-50">
               取り消す
@@ -891,8 +952,8 @@ function EntryTab({
                 <span className="text-2xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {(['cash', 'payPay', 'qr', 'card'] as EntryMethod[]).map(method => (
+            <div className="grid grid-cols-5 gap-2">
+              {(['cash', 'payPay', 'qr', 'card', 'pos'] as EntryMethod[]).map(method => (
                 <button
                   key={method}
                   onClick={() => setPaymentMethod(method)}
@@ -909,8 +970,8 @@ function EntryTab({
             <button
               onClick={() => {
                 // 商品ありの現金・PayPay・手動カードはレシート風の確認画面を挟む
-                // （QRは決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
-                if (total > 0 && paymentMethod !== 'qr') {
+                // （QR・POSアプリ起動は決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
+                if (total > 0 && paymentMethod !== 'qr' && paymentMethod !== 'pos') {
                   if (finalTotal <= 0) {
                     alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
                     return;
@@ -926,7 +987,11 @@ function EntryTab({
               {submitting
                 ? '登録中...'
                 : total > 0
-                  ? (paymentMethod === 'qr' ? 'QRコードを発行' : `${methodLabels[paymentMethod]}で確認`)
+                  ? (paymentMethod === 'qr'
+                      ? 'QRコードを発行'
+                      : paymentMethod === 'pos'
+                        ? 'Square POSアプリで決済'
+                        : `${methodLabels[paymentMethod]}で確認`)
                   : '来店のみ登録'}
             </button>
           </div>

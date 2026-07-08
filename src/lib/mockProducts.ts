@@ -28,11 +28,7 @@ export const mockProducts: Product[] = [
     materials: ['ガラス容器', '北海道産苔', '天然石', '活性炭'],
     careInstructions: '週に1-2回霧吹きで水分補給してください。直射日光は避け、明るい室内に置いてください。',
     sortOrder: 1,
-    shipping: {
-      carrier: 'yupack',
-      weight: 800,
-      fragile: true
-    }
+    weight: 800
   },
   {
     _id: 'mock-2',
@@ -56,11 +52,7 @@ export const mockProducts: Product[] = [
     materials: ['ガラス容器', '特選苔', 'ミニチュアフィギュア', '装飾石'],
     careInstructions: '2週間に1回程度、霧吹きで軽く湿らせてください。フィギュアは水に濡らさないよう注意。',
     sortOrder: 2,
-    shipping: {
-      carrier: 'yupack',
-      weight: 1200,
-      fragile: true
-    }
+    weight: 1200
   },
   {
     _id: 'mock-3',
@@ -84,11 +76,7 @@ export const mockProducts: Product[] = [
     materials: ['ガラス容器', '北海道産苔', '白砂'],
     careInstructions: '月に2-3回霧吹きで水分を与えてください。とても手入れが簡単です。',
     sortOrder: 3,
-    shipping: {
-      carrier: 'yupack',
-      weight: 600,
-      fragile: true
-    }
+    weight: 600
   },
   {
     _id: 'mock-4',
@@ -112,12 +100,7 @@ export const mockProducts: Product[] = [
     materials: ['大型ガラス容器', 'プレミアム苔', '天然石城モチーフ', '特殊装飾土'],
     careInstructions: '週に1回霧吹きでメンテナンス。湿度管理が重要です。',
     sortOrder: 4,
-    shipping: {
-      carrier: 'yupack',
-      weight: 2500,
-      fragile: true,
-      special: '天地無用・取扱注意'
-    }
+    weight: 2500
   },
   {
     _id: 'mock-5',
@@ -141,11 +124,7 @@ export const mockProducts: Product[] = [
     materials: ['ハート型ガラス容器', 'ピンク系苔', '小さな花', 'パール装飾'],
     careInstructions: '優しく霧吹きで水やり。直射日光を避けて飾ってください。',
     sortOrder: 5,
-    shipping: {
-      carrier: 'yupack',
-      weight: 700,
-      fragile: true
-    }
+    weight: 700
   },
   {
     _id: 'mock-6',
@@ -169,11 +148,6 @@ export const mockProducts: Product[] = [
     materials: ['特殊ガラス容器', '天然水晶', 'プレミアム苔', '洞窟風装飾石'],
     careInstructions: '週に1回霧吹きでメンテナンス。水晶部分は乾いた布で清拭してください。',
     sortOrder: 2.5,
-    shipping: {
-      carrier: 'yupack',
-      weight: 1800,
-      fragile: true,
-      special: '水晶取扱注意'
-    }
+    weight: 1800
   }
 ];

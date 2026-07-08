@@ -1,10 +1,7 @@
 import { findUserByEmail, findUserById, generateDeviceCode, verifyDeviceCode, updateUser } from './userManager';
 import { sendSMSCode, verifySMSCode, normalizePhoneNumber, isValidPhoneNumber } from './smsAuth';
 import { SignJWT, jwtVerify } from 'jose';
-
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
-);
+import { getAdminJwtSecretKey } from './auth';
 
 export interface AuthResult {
   success: boolean;
@@ -144,13 +141,13 @@ async function createUserToken(userId: string, email: string, role: string, twoF
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
-    .sign(SECRET_KEY);
+    .sign(getAdminJwtSecretKey());
 }
 
 // JWTトークンを検証
 async function verifyUserToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, getAdminJwtSecretKey());
     return payload as any;
   } catch (error) {
     return null;

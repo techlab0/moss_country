@@ -1,4 +1,18 @@
-import type { SquareCreatePaymentLinkRequest, SquarePaymentLink } from '@/types/ecommerce'
+import type { SquareCreatePaymentLinkRequest, SquarePaymentLink, SquarePayment, SquareOrder } from '@/types/ecommerce'
+
+// Square APIが返す決済リンク（snake_case）。当システム内では camelCase の SquarePaymentLink に変換して扱う
+interface SquareApiPaymentLink {
+  id: string
+  version: number
+  name: string
+  url: string
+  order_id: string
+}
+
+// Square APIのエラーレスポンス形状（!response.ok 時のみ参照）
+interface SquareErrorResponse {
+  errors?: Array<{ code?: string; detail?: string; category?: string }>
+}
 
 // Square API configuration
 const SQUARE_BASE_URL = process.env.SQUARE_ENVIRONMENT === 'production'
@@ -20,9 +34,9 @@ export const SQUARE_CONFIG = {
 /**
  * Make authenticated request to Square API
  */
-async function makeSquareRequest(endpoint: string, method: string = 'GET', body?: object): Promise<{ error?: string; locations?: object[]; [key: string]: unknown }> {
+async function makeSquareRequest<T = Record<string, unknown>>(endpoint: string, method: string = 'GET', body?: object): Promise<T> {
   const url = `${SQUARE_BASE_URL}/v2${endpoint}`
-  
+
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
     'Content-Type': 'application/json',
@@ -43,10 +57,11 @@ async function makeSquareRequest(endpoint: string, method: string = 'GET', body?
 
   if (!response.ok) {
     console.error('Square API Error:', data)
-    throw new Error(`Square API Error: ${data.errors?.[0]?.detail || 'Unknown error'}`)
+    const errData = data as SquareErrorResponse
+    throw new Error(`Square API Error: ${errData.errors?.[0]?.detail || 'Unknown error'}`)
   }
 
-  return data
+  return data as T
 }
 
 /**
@@ -54,7 +69,7 @@ async function makeSquareRequest(endpoint: string, method: string = 'GET', body?
  */
 export async function getLocations() {
   try {
-    const data = await makeSquareRequest('/locations')
+    const data = await makeSquareRequest<{ locations?: object[] }>('/locations')
     return data.locations || []
   } catch (error) {
     console.error('Error getting Square locations:', error)
@@ -100,8 +115,8 @@ export async function createPaymentLink(
       } : undefined,
     }
 
-    const data = await makeSquareRequest('/online-checkout/payment-links', 'POST', requestBody)
-    
+    const data = await makeSquareRequest<{ payment_link?: SquareApiPaymentLink }>('/online-checkout/payment-links', 'POST', requestBody)
+
     const paymentLink = data.payment_link
     if (!paymentLink) {
       throw new Error('Payment link not returned from Square API')
@@ -127,9 +142,9 @@ export async function createPaymentLink(
 /**
  * Retrieve payment information from Square
  */
-export async function getPayment(paymentId: string) {
+export async function getPayment(paymentId: string): Promise<SquarePayment | undefined> {
   try {
-    const data = await makeSquareRequest(`/payments/${paymentId}`)
+    const data = await makeSquareRequest<{ payment?: SquarePayment }>(`/payments/${paymentId}`)
     return data.payment
   } catch (error) {
     console.error('Error retrieving Square payment:', error)
@@ -144,9 +159,9 @@ export async function getPayment(paymentId: string) {
 /**
  * Retrieve order information from Square
  */
-export async function getOrder(orderId: string) {
+export async function getOrder(orderId: string): Promise<SquareOrder | undefined> {
   try {
-    const data = await makeSquareRequest(`/orders/${orderId}`)
+    const data = await makeSquareRequest<{ order?: SquareOrder }>(`/orders/${orderId}`)
     return data.order
   } catch (error) {
     console.error('Error retrieving Square order:', error)
@@ -159,11 +174,30 @@ export async function getOrder(orderId: string) {
 }
 
 /**
+ * POS API（Square POSアプリ起動）の決済結果から決済情報を取得する。
+ * POS APIが返す transaction_id を order_id として注文を引き、tenders[].payment_id から
+ * Payments API で決済実体を取得する（POS APIの取引IDは直接Payments APIで引けないため）。
+ * 見つからなければ null。
+ */
+export async function getPaymentByPosTransactionId(
+  transactionId: string
+): Promise<{ orderId: string; paymentId: string; payment: SquarePayment | undefined } | null> {
+  const data = await makeSquareRequest<{ order?: { id?: string; tenders?: Array<{ payment_id?: string }> } }>(
+    `/orders/${transactionId}`
+  )
+  const order = data.order
+  const paymentId = order?.tenders?.find((t) => t.payment_id)?.payment_id
+  if (!paymentId) return null
+  const payment = await getPayment(paymentId)
+  return { orderId: order?.id ?? transactionId, paymentId, payment }
+}
+
+/**
  * 支払い済み決済の全額返金（店頭QR決済のキャンセル用）。
  * 実際にお客様のカードへ返金されるため、呼び出し側で必ず確認を挟むこと。
  */
 export async function refundPayment(paymentId: string, amountJpy: number, idempotencyKey: string) {
-  const data = await makeSquareRequest('/refunds', 'POST', {
+  const data = await makeSquareRequest<{ refund?: { id?: string; status?: string } }>('/refunds', 'POST', {
     idempotency_key: idempotencyKey,
     payment_id: paymentId,
     amount_money: {
@@ -171,7 +205,7 @@ export async function refundPayment(paymentId: string, amountJpy: number, idempo
       currency: SQUARE_CONFIG.currency,
     },
   })
-  const refund = data.refund as { id?: string; status?: string } | undefined
+  const refund = data.refund
   if (!refund?.id) {
     throw new Error('Refund not returned from Square API')
   }

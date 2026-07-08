@@ -12,15 +12,26 @@ export function validateProductionConfig(): {
     'NEXT_PUBLIC_SANITY_DATASET',
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    // セッショントークンの署名鍵はどのモードでも必須
+    'ADMIN_JWT_SECRET',
   ];
+
+  // 管理者の認証情報の置き場所は USE_SUPABASE で変わる。
+  // - USE_SUPABASE=true: メール/パスワードは admin_users テーブルにあり、
+  //   ADMIN_EMAIL/ADMIN_PASSWORD 環境変数は使われない（未設定でOK）。
+  // - それ以外: フォールバック値を廃止したため、この2つが未設定だとログインできない。
+  if (process.env.USE_SUPABASE !== 'true') {
+    requiredVariables.push('ADMIN_EMAIL', 'ADMIN_PASSWORD');
+  }
 
   const optionalVariables = [
     'SANITY_API_TOKEN',
     'NEXT_PUBLIC_EMAILJS_SERVICE_ID',
-    'NEXT_PUBLIC_EMAILJS_TEMPLATE_ID', 
+    'NEXT_PUBLIC_EMAILJS_TEMPLATE_ID',
     'NEXT_PUBLIC_EMAILJS_PUBLIC_KEY',
     'NEXT_PUBLIC_SQUARE_APPLICATION_ID',
     'SQUARE_ACCESS_TOKEN',
+    'SQUARE_WEBHOOK_SIGNATURE_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
   ];
 
@@ -40,6 +51,15 @@ export function validateProductionConfig(): {
       warnings.push(`Optional: ${variable} is not set`);
     }
   });
+
+  // 過去にソースコードへ書かれていた既知の値が使われていないかチェック
+  // （公開リポジトリに載った値は漏えい済みとみなす必要がある）
+  if (process.env.ADMIN_PASSWORD === 'ChangeThis2024!SecurePassword') {
+    missingVariables.push('ADMIN_PASSWORD（既知のデフォルト値のままです。直ちに変更してください）');
+  }
+  if (process.env.ADMIN_JWT_SECRET?.startsWith('your-super-secret-jwt-key')) {
+    missingVariables.push('ADMIN_JWT_SECRET（サンプル値のままです。ランダムな32文字以上に変更してください）');
+  }
 
   // 本番環境特有のチェック
   if (process.env.NODE_ENV === 'production') {

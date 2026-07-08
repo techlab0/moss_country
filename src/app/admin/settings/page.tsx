@@ -7,6 +7,7 @@ import {
   maintenanceTargetPages,
   snsPlatformLabels,
 } from '@/lib/siteSettingsDefaults';
+import type { ShippingSettings, CarrierId } from '@/lib/shipping';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
@@ -14,7 +15,7 @@ type MaintenanceSettings = {
   message?: string;
 };
 
-type Tab = 'maintenance' | 'navigation';
+type Tab = 'maintenance' | 'navigation' | 'shipping';
 
 type NavListKey = 'headerLinks' | 'footerSitemapLinks' | 'footerLegalLinks';
 
@@ -26,6 +27,7 @@ export default function SettingsPage() {
     message: '',
   });
   const [siteSettings, setSiteSettings] = useState<SiteSettingsData | null>(null);
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -39,9 +41,10 @@ export default function SettingsPage() {
   const loadAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [maintRes, siteRes] = await Promise.all([
+      const [maintRes, siteRes, shipRes] = await Promise.all([
         fetch('/api/admin/maintenance/settings'),
         fetch('/api/admin/site-settings'),
+        fetch('/api/admin/shipping-settings'),
       ]);
       if (maintRes.ok) {
         const data = await maintRes.json();
@@ -50,6 +53,10 @@ export default function SettingsPage() {
       if (siteRes.ok) {
         const data = await siteRes.json();
         setSiteSettings(data.settings);
+      }
+      if (shipRes.ok) {
+        const data = await shipRes.json();
+        setShippingSettings(data.settings);
       }
     } catch (error) {
       console.error('設定の取得に失敗しました:', error);
@@ -104,6 +111,30 @@ export default function SettingsPage() {
       const data = await response.json();
       setSiteSettings(data.settings);
       showMessage('設定を保存しました（サイトに即時反映されます）', 'success');
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '設定の保存に失敗しました', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveShipping = async () => {
+    if (!shippingSettings) return;
+    setIsSaving(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/shipping-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: shippingSettings }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '設定の保存に失敗しました');
+      }
+      const data = await response.json();
+      setShippingSettings(data.settings);
+      showMessage('送料設定を保存しました（サイトに即時反映されます）', 'success');
     } catch (err) {
       showMessage(err instanceof Error ? err.message : '設定の保存に失敗しました', 'error');
     } finally {
@@ -184,6 +215,12 @@ export default function SettingsPage() {
           className={`flex-1 py-3 font-medium ${tab === 'navigation' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           ヘッダー・フッター
+        </button>
+        <button
+          onClick={() => setTab('shipping')}
+          className={`flex-1 py-3 font-medium ${tab === 'shipping' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          送料
         </button>
       </div>
 
@@ -426,6 +463,190 @@ export default function SettingsPage() {
           </button>
         </>
       )}
+
+      {tab === 'shipping' && shippingSettings && (
+        <ShippingSettingsEditor
+          settings={shippingSettings}
+          onChange={setShippingSettings}
+          onSave={handleSaveShipping}
+          isSaving={isSaving}
+        />
+      )}
+    </div>
+  );
+}
+
+function ShippingSettingsEditor({
+  settings,
+  onChange,
+  onSave,
+  isSaving,
+}: {
+  settings: ShippingSettings;
+  onChange: (next: ShippingSettings) => void;
+  onSave: () => void;
+  isSaving: boolean;
+}) {
+  const carrier = settings.carrier;
+  const table = settings.carriers[carrier];
+  const zones = settings.zones;
+  const sizes = [...table.sizeTiers].sort((a, b) => a.size - b.size);
+
+  const priceOf = (zoneId: string, size: number) =>
+    table.rates.find((r) => r.zoneId === zoneId && r.size === size)?.price ?? 0;
+
+  const setCarrier = (c: CarrierId) => onChange({ ...settings, carrier: c });
+
+  const setRate = (zoneId: string, size: number, price: number) => {
+    const rates = [...table.rates];
+    const idx = rates.findIndex((r) => r.zoneId === zoneId && r.size === size);
+    if (idx >= 0) rates[idx] = { ...rates[idx], price };
+    else rates.push({ zoneId, size, price });
+    onChange({ ...settings, carriers: { ...settings.carriers, [carrier]: { ...table, rates } } });
+  };
+
+  const setScalar = (key: keyof ShippingSettings, value: number) =>
+    onChange({ ...settings, [key]: value });
+
+  const scalarFields: { key: keyof ShippingSettings; label: string; suffix: string }[] = [
+    { key: 'freeShippingThreshold', label: '送料割引の対象となる小計', suffix: '円以上' },
+    { key: 'shippingDiscount', label: '送料割引額', suffix: '円' },
+    { key: 'expressSurcharge', label: '速達加算', suffix: '円' },
+    { key: 'fragileSurcharge', label: '割れ物加算', suffix: '円' },
+    { key: 'packagingBufferCm', label: '梱包時の各辺の余裕', suffix: 'cm' },
+    { key: 'packagingWeightG', label: '梱包材の重量', suffix: 'g' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* 送料無料モード */}
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">サイト全体を送料無料にする</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              有効にすると、商品価格に送料を含める運用（全商品送料込み）になり、下の料金表に関わらず送料は0円になります。
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+            <input
+              type="checkbox"
+              checked={settings.freeShippingMode}
+              onChange={(e) => onChange({ ...settings, freeShippingMode: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+          </label>
+        </div>
+      </div>
+
+      <div className={settings.freeShippingMode ? 'opacity-50 pointer-events-none space-y-6' : 'space-y-6'}>
+      {/* 業者選択 */}
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-1">利用する配送業者</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          お客様の送料計算に使う配送業者と料金表を選びます。料金は下の表で編集できます。
+        </p>
+        <div className="flex gap-3">
+          {(Object.keys(settings.carriers) as CarrierId[]).map((c) => (
+            <label
+              key={c}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer ${
+                carrier === c ? 'border-moss-green bg-moss-green/10' : 'border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="carrier"
+                checked={carrier === c}
+                onChange={() => setCarrier(c)}
+              />
+              <span className="text-sm text-gray-800">{settings.carriers[c].label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* 料金表（ゾーン × サイズ） */}
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-1">
+          料金表（{settings.carriers[carrier].label}）
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          行がサイズ区分、列が地域ゾーンです。金額（円・税込）を直接編集してください。
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm border-collapse">
+            <thead>
+              <tr>
+                <th className="sticky left-0 bg-gray-50 px-3 py-2 text-left font-medium text-gray-700 border">
+                  サイズ
+                </th>
+                {zones.map((z) => (
+                  <th key={z.id} className="px-2 py-2 font-medium text-gray-700 border whitespace-nowrap">
+                    {z.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sizes.map((tier) => (
+                <tr key={tier.size}>
+                  <td className="sticky left-0 bg-white px-3 py-2 font-medium text-gray-700 border whitespace-nowrap">
+                    {tier.size}
+                    <span className="block text-[10px] text-gray-400">
+                      〜{tier.maxDimensionSum}cm / 〜{(tier.maxWeight / 1000).toFixed(0)}kg
+                    </span>
+                  </td>
+                  {zones.map((z) => (
+                    <td key={z.id} className="px-1 py-1 border">
+                      <input
+                        type="number"
+                        min={0}
+                        value={priceOf(z.id, tier.size)}
+                        onChange={(e) => setRate(z.id, tier.size, Number(e.target.value))}
+                        className="w-20 px-2 py-1 text-right border border-gray-200 rounded"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 割引・加算・梱包設定 */}
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">割引・加算・梱包の設定</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {scalarFields.map((f) => (
+            <div key={f.key}>
+              <label className="block text-sm text-gray-600 mb-1">{f.label}</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={Number(settings[f.key])}
+                  onChange={(e) => setScalar(f.key, Number(e.target.value))}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm text-right"
+                />
+                <span className="text-sm text-gray-500">{f.suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      </div>
+
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+      >
+        {isSaving ? '保存中...' : '送料設定を保存'}
+      </button>
     </div>
   );
 }

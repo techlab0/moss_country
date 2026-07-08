@@ -29,6 +29,7 @@ interface ProductFormData {
     depth?: number;
   };
   weight?: number;
+  fragile?: boolean;
   stockQuantity: number;
   lowStockThreshold: number;
   featured: boolean;
@@ -50,6 +51,7 @@ const NewProductPage = () => {
     materials: [],
     careInstructions: '',
     dimensions: {},
+    fragile: false,
     stockQuantity: 0,
     lowStockThreshold: 5,
     featured: false,
@@ -335,6 +337,87 @@ const NewProductPage = () => {
                   おすすめ商品として表示
                 </label>
               </div>
+            </div>
+          </div>
+
+          {/* 配送情報（送料計算用） */}
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">配送情報（送料計算用）</h3>
+            <p className="text-xs text-gray-500">梱包サイズ（幅・高さ・奥行）と重量から送料を自動計算します。割れ物は送料に加算されます。未入力の商品は最小サイズ・既定重量で計算されます。</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">幅 (cm)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.dimensions.width ?? ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      dimensions: { ...prev.dimensions, width: e.target.value === '' ? undefined : Number(e.target.value) },
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 12"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">高さ (cm)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.dimensions.height ?? ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      dimensions: { ...prev.dimensions, height: e.target.value === '' ? undefined : Number(e.target.value) },
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 15"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">奥行 (cm)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.dimensions.depth ?? ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      dimensions: { ...prev.dimensions, depth: e.target.value === '' ? undefined : Number(e.target.value) },
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 12"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">重量 (g)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.weight ?? ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, weight: e.target.value === '' ? undefined : Number(e.target.value) }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 800"
+                />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="fragile"
+                checked={formData.fragile ?? false}
+                onChange={(e) => setFormData((prev) => ({ ...prev, fragile: e.target.checked }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="fragile" className="ml-2 block text-sm text-gray-900">
+                割れ物（取扱注意・送料に割れ物加算を適用）
+              </label>
             </div>
           </div>
 

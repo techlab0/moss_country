@@ -42,10 +42,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 価格改ざん対策: クライアント申告額を信用せず、Sanityの正規価格から再計算する
+    // 価格・送料改ざん対策: クライアント申告額を信用せず、Sanityの正規データと送料設定から再計算する
     let totals;
     try {
-      totals = await recalculateCartTotals(cart);
+      totals = await recalculateCartTotals(cart, {
+        prefecture: orderData.shippingAddress?.state,
+        express: orderData.shippingMethod === 'express',
+      });
     } catch (error) {
       if (error instanceof InvalidCartError) {
         return NextResponse.json({ error: error.message }, { status: 400 });

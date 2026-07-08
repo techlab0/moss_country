@@ -23,6 +23,7 @@ export interface Product {
       _ref: string
       _type: 'reference'
     }
+    alt?: string
     hotspot?: {
       x: number
       y: number
@@ -43,15 +44,13 @@ export interface Product {
     height?: number
     depth?: number
   }
+  // 商品重量（グラム単位）。Sanityスキーマの weight フィールド。送料計算に使用。
+  weight?: number
+  // 割れ物フラグ。送料の割れ物加算に使用。
+  fragile?: boolean
   materials?: string[]
   careInstructions?: string
   sortOrder?: number
-  shipping?: {
-    carrier: 'yupack' | 'yumail' | 'takkyubin' | 'letterpack' | 'sagawa'
-    weight: number // グラム単位
-    fragile?: boolean // 割れ物
-    special?: string // 特別な配送指示
-  }
 }
 
 export interface BlogPost {
