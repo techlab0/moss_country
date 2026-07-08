@@ -174,6 +174,25 @@ export async function getOrder(orderId: string): Promise<SquareOrder | undefined
 }
 
 /**
+ * POS API（Square POSアプリ起動）の決済結果から決済情報を取得する。
+ * POS APIが返す transaction_id を order_id として注文を引き、tenders[].payment_id から
+ * Payments API で決済実体を取得する（POS APIの取引IDは直接Payments APIで引けないため）。
+ * 見つからなければ null。
+ */
+export async function getPaymentByPosTransactionId(
+  transactionId: string
+): Promise<{ orderId: string; paymentId: string; payment: SquarePayment | undefined } | null> {
+  const data = await makeSquareRequest<{ order?: { id?: string; tenders?: Array<{ payment_id?: string }> } }>(
+    `/orders/${transactionId}`
+  )
+  const order = data.order
+  const paymentId = order?.tenders?.find((t) => t.payment_id)?.payment_id
+  if (!paymentId) return null
+  const payment = await getPayment(paymentId)
+  return { orderId: order?.id ?? transactionId, paymentId, payment }
+}
+
+/**
  * 支払い済み決済の全額返金（店頭QR決済のキャンセル用）。
  * 実際にお客様のカードへ返金されるため、呼び出し側で必ず確認を挟むこと。
  */

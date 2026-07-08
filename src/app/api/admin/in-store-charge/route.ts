@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    // mode: 'qr'（既定・お客様スマホでQR決済）/ 'pos'（店側iPhoneでSquare POSアプリ起動）
+    const mode: 'qr' | 'pos' = body.mode === 'pos' ? 'pos' : 'qr';
     const lineItemsInput: StoreLineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
     const visitorCount = Math.max(0, Number(body.visitorCount) || 0);
@@ -53,9 +55,24 @@ export async function POST(request: NextRequest) {
       description,
       visitorCount,
       lineItems,
+      method: mode,
       status: 'pending',
       createdAt: new Date().toISOString(),
     });
+
+    // POSアプリ起動モード: 決済リンク・QRは発行しない。
+    // クライアントが charge._id を state に載せて square-commerce-v1:// ディープリンクを開き、
+    // 決済後は /api/pos/callback がSquare APIで照合してこのドキュメントを更新する。
+    if (mode === 'pos') {
+      // 来店者数・購入組数は発行時点で加算する（未払いキャンセル時にcancel APIが組数を戻す）
+      await adjustDailyCounters(todayJst(), visitorCount, 1);
+      return NextResponse.json({
+        charge,
+        mode: 'pos',
+        amount,
+        notes: description,
+      });
+    }
 
     const receiptUrl = `${SQUARE_CONFIG.appBaseUrl}/receipt/${charge._id}`;
     const idempotencyKey = uuidv4();
