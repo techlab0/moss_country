@@ -12,12 +12,17 @@ export function validateProductionConfig(): {
     'NEXT_PUBLIC_SANITY_DATASET',
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    // 管理者認証: ソースコード内のフォールバック値を廃止したため、
-    // 未設定の場合は管理者ログイン・セッション検証そのものが失敗する
-    'ADMIN_EMAIL',
-    'ADMIN_PASSWORD',
+    // セッショントークンの署名鍵はどのモードでも必須
     'ADMIN_JWT_SECRET',
   ];
+
+  // 管理者の認証情報の置き場所は USE_SUPABASE で変わる。
+  // - USE_SUPABASE=true: メール/パスワードは admin_users テーブルにあり、
+  //   ADMIN_EMAIL/ADMIN_PASSWORD 環境変数は使われない（未設定でOK）。
+  // - それ以外: フォールバック値を廃止したため、この2つが未設定だとログインできない。
+  if (process.env.USE_SUPABASE !== 'true') {
+    requiredVariables.push('ADMIN_EMAIL', 'ADMIN_PASSWORD');
+  }
 
   const optionalVariables = [
     'SANITY_API_TOKEN',
