@@ -7,6 +7,7 @@ export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -152,7 +153,7 @@ export default function ChangePasswordPage() {
             </label>
             <input
               id="current-password"
-              type="password"
+              type={showPasswords ? "text" : "password"}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
@@ -170,7 +171,7 @@ export default function ChangePasswordPage() {
             </label>
             <input
               id="new-password"
-              type="password"
+              type={showPasswords ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
@@ -195,7 +196,7 @@ export default function ChangePasswordPage() {
             </label>
             <input
               id="confirm-password"
-              type="password"
+              type={showPasswords ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
@@ -203,6 +204,17 @@ export default function ChangePasswordPage() {
               required
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+            <input
+              type="checkbox"
+              checked={showPasswords}
+              onChange={(e) => setShowPasswords(e.target.checked)}
+              disabled={isLoading}
+              className="h-4 w-4 rounded border-gray-300 text-moss-green focus:ring-moss-green"
+            />
+            パスワードを表示する
+          </label>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
