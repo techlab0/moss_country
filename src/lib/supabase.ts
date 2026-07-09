@@ -86,7 +86,9 @@ export async function findUserByIdInDB(id: string): Promise<AdminUser | null> {
 }
 
 export async function updateUserInDB(id: string, updates: Partial<AdminUser>) {
-  const { data, error } = await supabase
+  // 管理ユーザーの更新はサーバー専用。anonクライアントだとRLSに阻まれて0行更新
+  // （PGRST116）になるため、他の admin_users 操作と同じ service role の supabaseAdmin を使う。
+  const { data, error } = await supabaseAdmin
     .from('admin_users')
     .update({
       ...updates,
