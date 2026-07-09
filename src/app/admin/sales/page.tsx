@@ -1214,7 +1214,7 @@ function SummaryTab({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
+          className="block w-full min-w-0 max-w-full box-border appearance-none px-3 py-3 text-lg border border-gray-300 rounded-md"
         />
       </div>
 
@@ -2088,7 +2088,7 @@ function HistoricalEntryPanel({
           type="date"
           value={entryDate}
           onChange={(e) => setEntryDate(e.target.value)}
-          className="w-full px-3 py-2 text-base border border-gray-300 rounded-md"
+          className="block w-full min-w-0 max-w-full box-border appearance-none px-3 py-2 text-base border border-gray-300 rounded-md"
         />
       </div>
 
