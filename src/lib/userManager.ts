@@ -181,8 +181,10 @@ function convertDBUserToAdminUser(dbUser: DBAdminUser): AdminUser {
     twoFactorMethod: dbUser.totp_secret ? 'totp' : (dbUser.webauthn_credentials?.length ? 'webauthn' : null),
     totpSecret: dbUser.totp_secret || undefined,
     webauthnCredentials: dbUser.webauthn_credentials || undefined,
-    lastLogin: dbUser.last_login || undefined,
-    createdAt: new Date(dbUser.created_at)
+    // Supabaseはタイムスタンプを文字列で返すため、Dateに変換する
+    // （文字列のまま渡すと .toISOString() を呼ぶ箇所で例外になる）
+    lastLogin: dbUser.last_login ? new Date(dbUser.last_login) : undefined,
+    createdAt: dbUser.created_at ? new Date(dbUser.created_at) : new Date()
   };
 }
 
