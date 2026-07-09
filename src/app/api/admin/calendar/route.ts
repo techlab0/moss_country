@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '@/lib/auth';
+import type { CalendarItem, CalendarData } from '@/types/calendar';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-interface CalendarEvent {
-  type: 'open' | 'event' | 'closed';
-  title: string;
-  location?: string;
-  notes?: string;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,16 +15,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    console.log('Calendar GET API called');
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('Service Role Key exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-    
     const { data: events, error } = await supabase
       .from('calendar_events')
       .select('*')
       .order('date', { ascending: true });
-
-    console.log('Supabase query result:', { data: events, error });
 
     if (error) {
       console.error('Calendar events fetch error:', error);
@@ -40,30 +28,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // データを { date: event } の形式に変換
-    const calendarData: { [key: string]: CalendarEvent } = {};
-    events?.forEach(event => {
-      calendarData[event.date] = {
+    // 1日に複数項目を持てるよう、date でグルーピングして配列にする
+    const calendarData: CalendarData = {};
+    events?.forEach((event) => {
+      const item: CalendarItem = {
+        id: event.id,
         type: event.type,
         title: event.title,
         location: event.location,
-        notes: event.notes
+        notes: event.notes,
       };
+      (calendarData[event.date] ||= []).push(item);
     });
 
-    console.log('Calendar data to return:', calendarData);
-    console.log('Number of events:', events?.length);
-    
     return NextResponse.json(calendarData);
   } catch (error) {
     console.error('Calendar GET error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'unknown' },
       { status: 500 }
     );
   }
 }
 
+// 項目の追加・更新。event.id があれば更新、無ければ新規追加（＝1日に複数項目を持てる）。
 export async function POST(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -71,78 +59,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { date, event }: { date: string; event: CalendarEvent } = await request.json();
+    const { date, event }: { date: string; event: CalendarItem } = await request.json();
 
-    if (!date || !event) {
+    if (!date || !event || !event.type) {
       return NextResponse.json(
-        { error: '日付とイベント情報が必要です' },
+        { error: '日付と項目情報が必要です' },
         { status: 400 }
       );
     }
 
-    // 既存のイベントがあるかチェック
-    const { data: existing, error: checkError } = await supabase
-      .from('calendar_events')
-      .select('id')
-      .eq('date', date)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Calendar check error:', checkError);
-      return NextResponse.json(
-        { error: 'データベースエラーが発生しました' },
-        { status: 500 }
-      );
-    }
+    const fields = {
+      type: event.type,
+      title: event.title,
+      location: event.location ?? null,
+      notes: event.notes ?? null,
+    };
 
     let result;
-    if (existing) {
-      // 既存のイベントを更新
-      const { data, error } = await supabase
+    if (event.id) {
+      // 既存項目を更新
+      result = await supabase
         .from('calendar_events')
-        .update({
-          type: event.type,
-          title: event.title,
-          location: event.location,
-          notes: event.notes,
-          updated_at: new Date().toISOString()
-        })
-        .eq('date', date)
+        .update({ ...fields, date, updated_at: new Date().toISOString() })
+        .eq('id', event.id)
         .select()
         .single();
-
-      result = { data, error };
     } else {
-      // 新しいイベントを作成
-      const { data, error } = await supabase
+      // 新規項目を追加
+      result = await supabase
         .from('calendar_events')
         .insert({
           date,
-          type: event.type,
-          title: event.title,
-          location: event.location,
-          notes: event.notes,
+          ...fields,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
-
-      result = { data, error };
     }
 
     if (result.error) {
       console.error('Calendar save error:', result.error);
       return NextResponse.json(
-        { error: 'カレンダーデータの保存に失敗しました' },
+        { error: 'カレンダーデータの保存に失敗しました', details: result.error },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'カレンダーが更新されました',
-      data: result.data 
+      data: result.data,
     });
   } catch (error) {
     console.error('Calendar POST error:', error);
@@ -153,6 +120,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// 項目削除。id 指定でその1件、date 指定（idなし）でその日の全項目を削除。
 export async function DELETE(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -160,19 +128,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { date }: { date: string } = await request.json();
+    const { id, date }: { id?: string; date?: string } = await request.json();
 
-    if (!date) {
+    if (!id && !date) {
       return NextResponse.json(
-        { error: '削除する日付が指定されていません' },
+        { error: '削除対象（idまたはdate）が指定されていません' },
         { status: 400 }
       );
     }
 
-    const { error } = await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('date', date);
+    const query = supabase.from('calendar_events').delete();
+    const { error } = id ? await query.eq('id', id) : await query.eq('date', date!);
 
     if (error) {
       console.error('Calendar delete error:', error);
@@ -182,9 +148,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'カレンダーイベントが削除されました' 
+    return NextResponse.json({
+      success: true,
+      message: 'カレンダー項目が削除されました',
     });
   } catch (error) {
     console.error('Calendar DELETE error:', error);

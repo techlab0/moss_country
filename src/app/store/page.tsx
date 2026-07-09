@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
+import type { CalendarItem, CalendarData } from '@/types/calendar';
 
 const storeInfo = {
   name: 'MOSS COUNTRY',
@@ -29,11 +30,19 @@ const storeInfo = {
   },
 };
 
-interface CalendarEvent {
-  type: 'open' | 'event' | 'closed';
-  title: string;
-  location?: string;
-  notes?: string;
+// その日の項目群からセルの配色を決める（緑ベース＋イベント印の方針）。
+function dayVisual(items: CalendarItem[] | undefined) {
+  const hasOpen = items?.some((i) => i.type === 'open');
+  const hasEvent = items?.some((i) => i.type === 'event');
+  const hasClosed = items?.some((i) => i.type === 'closed');
+  if (hasOpen) return { bg: 'bg-emerald-200', text: 'text-emerald-900', border: 'border-emerald-400', hasEvent: !!hasEvent };
+  if (hasEvent) return { bg: 'bg-amber-200', text: 'text-amber-900', border: 'border-amber-400', hasEvent: true };
+  if (hasClosed) return { bg: 'bg-red-200', text: 'text-red-900', border: 'border-red-400', hasEvent: false };
+  return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', hasEvent: false };
+}
+
+function itemTypeLabel(type: CalendarItem['type']) {
+  return type === 'open' ? '営業日' : type === 'event' ? 'イベント出店' : '休業日';
 }
 
 // カレンダー表示用のヘルパー関数
@@ -52,9 +61,9 @@ function formatDate(year: number, month: number, day: number) {
 // カレンダーコンポーネント
 function StoreCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarEvents, setCalendarEvents] = useState<{[key: string]: CalendarEvent}>({});
+  const [calendarEvents, setCalendarEvents] = useState<CalendarData>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [modalEvent, setModalEvent] = useState<{ dateLabel: string; dateStr: string; event: CalendarEvent } | null>(null);
+  const [modalEvent, setModalEvent] = useState<{ dateLabel: string; dateStr: string; items: CalendarItem[] } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   const currentYear = currentDate.getFullYear();
@@ -117,58 +126,38 @@ function StoreCalendar() {
     // 当月の日付
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = formatDate(currentYear, currentMonth, day);
-      const event = calendarEvents[dateStr];
+      const items = calendarEvents[dateStr];
       const today = new Date();
-      const isToday = today.getFullYear() === currentYear && 
-                     today.getMonth() + 1 === currentMonth && 
+      const isToday = today.getFullYear() === currentYear &&
+                     today.getMonth() + 1 === currentMonth &&
                      today.getDate() === day;
-      
-      let bgColor = 'bg-gray-50';
-      let textColor = 'text-gray-700';
-      let borderColor = 'border-gray-200';
-      
-      if (event) {
-        switch (event.type) {
-          case 'open':
-            bgColor = 'bg-emerald-200';
-            textColor = 'text-emerald-900';
-            borderColor = 'border-emerald-400';
-            break;
-          case 'event':
-            bgColor = 'bg-amber-200';
-            textColor = 'text-amber-900';
-            borderColor = 'border-amber-400';
-            break;
-          case 'closed':
-            bgColor = 'bg-red-200';
-            textColor = 'text-red-900';
-            borderColor = 'border-red-400';
-            break;
-        }
-      }
-      
-      if (isToday) {
-        borderColor = 'border-moss-green border-2';
-      }
+
+      const vis = dayVisual(items);
+      const bgColor = vis.bg;
+      const textColor = vis.text;
+      const borderColor = isToday ? 'border-moss-green border-2' : vis.border;
 
       const dateLabel = `${currentYear}年${currentMonth}月${day}日`;
-      const hasDetail = event && (event.location?.trim() || event.notes?.trim());
+      const hasItems = !!items && items.length > 0;
+      // 詳細（場所・補足）がある、または項目が複数ある日はタップでモーダル
+      const hasDetail = hasItems && (items!.length > 1 || items!.some((e) => e.location?.trim() || e.notes?.trim()));
+      const primary = hasItems ? items![0] : null;
 
       const cellClass = `p-2 min-h-[60px] border ${borderColor} ${bgColor} ${textColor} text-sm rounded-lg relative hover:shadow-md transition-all duration-200 text-left w-full`;
 
-      // スマホ: 数字 + 営/イ/休、詳細ありは≫（上端揃え）
+      // スマホ: 数字 + 営/イ/休、イベント印📍、詳細/複数は≫
       if (isMobile) {
-        const typeLabel = event?.type === 'open' ? '営' : event?.type === 'event' ? 'イ' : event?.type === 'closed' ? '休' : null;
+        const typeLabel = primary ? (primary.type === 'open' ? '営' : primary.type === 'event' ? 'イ' : '休') : null;
         days.push(
-          event ? (
+          hasItems ? (
             <button
               key={day}
               type="button"
-              onClick={() => setModalEvent({ dateLabel, dateStr, event })}
+              onClick={() => setModalEvent({ dateLabel, dateStr, items: items! })}
               className={`${cellClass} cursor-pointer flex flex-col items-center justify-start min-h-[44px] pt-1.5 pb-1 px-1`}
             >
               <span className="font-semibold text-sm leading-tight">{day}</span>
-              <span className="text-xs font-medium leading-tight mt-0.5">{typeLabel}</span>
+              <span className="text-xs font-medium leading-tight mt-0.5">{typeLabel}{vis.hasEvent && primary?.type !== 'event' ? '📍' : ''}</span>
               {hasDetail && <span className="text-xs opacity-80 mt-0.5">≫</span>}
             </button>
           ) : (
@@ -178,26 +167,26 @@ function StoreCalendar() {
           )
         );
       } else {
-        // PC: タイトル表示、詳細ありの日だけ≫でモーダル
+        // PC: 代表タイトル + イベント印、詳細/複数の日は≫でモーダル
         days.push(
-        event ? (
+        hasItems ? (
           hasDetail ? (
             <button
               key={day}
               type="button"
-              onClick={() => setModalEvent({ dateLabel, dateStr, event })}
+              onClick={() => setModalEvent({ dateLabel, dateStr, items: items! })}
               className={`${cellClass} cursor-pointer`}
             >
-              <div className="font-semibold mb-1">{day}</div>
+              <div className="font-semibold mb-1 flex items-center justify-between">{day}{vis.hasEvent && <span title="イベントあり">📍</span>}</div>
               <div className="text-xs leading-tight flex items-end justify-between gap-1">
-                <span className="font-medium line-clamp-2 flex-1 min-w-0">{event.title}</span>
+                <span className="font-medium line-clamp-2 flex-1 min-w-0">{primary!.title}{items!.length > 1 ? ` 他${items!.length - 1}件` : ''}</span>
                 <span className="flex-shrink-0 opacity-70">≫</span>
               </div>
             </button>
           ) : (
             <div key={day} className={cellClass}>
-              <div className="font-semibold mb-1">{day}</div>
-              <div className="text-xs font-medium line-clamp-2">{event.title}</div>
+              <div className="font-semibold mb-1 flex items-center justify-between">{day}{vis.hasEvent && <span title="イベントあり">📍</span>}</div>
+              <div className="text-xs font-medium line-clamp-2">{primary!.title}</div>
             </div>
           )
         ) : (
@@ -324,26 +313,32 @@ function StoreCalendar() {
                   </svg>
                 </button>
               </div>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${
-                modalEvent.event.type === 'open' ? 'bg-emerald-100 text-emerald-800' :
-                modalEvent.event.type === 'event' ? 'bg-amber-100 text-amber-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {modalEvent.event.type === 'open' ? '営業日' : modalEvent.event.type === 'event' ? 'イベント出店' : '休業日'}
-              </span>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2 break-words min-w-0">{modalEvent.event.title}</h4>
-              {modalEvent.event.location && (
-                <p className="text-gray-600 mb-2 flex items-start gap-2 min-w-0">
-                  <span className="flex-shrink-0">📍</span>
-                  <span className="break-words min-w-0">{modalEvent.event.location}</span>
-                </p>
-              )}
-              {modalEvent.event.notes && (
-                <p className="text-gray-600 whitespace-pre-wrap flex items-start gap-2 min-w-0 break-words">
-                  <span className="flex-shrink-0">💭</span>
-                  <span className="min-w-0 break-words">{modalEvent.event.notes}</span>
-                </p>
-              )}
+              <div className="space-y-4">
+                {modalEvent.items.map((item, idx) => (
+                  <div key={item.id ?? idx} className={idx > 0 ? 'pt-4 border-t border-gray-100' : ''}>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-2 ${
+                      item.type === 'open' ? 'bg-emerald-100 text-emerald-800' :
+                      item.type === 'event' ? 'bg-amber-100 text-amber-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {itemTypeLabel(item.type)}
+                    </span>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2 break-words min-w-0">{item.title}</h4>
+                    {item.location && (
+                      <p className="text-gray-600 mb-2 flex items-start gap-2 min-w-0">
+                        <span className="flex-shrink-0">📍</span>
+                        <span className="break-words min-w-0">{item.location}</span>
+                      </p>
+                    )}
+                    {item.notes && (
+                      <p className="text-gray-600 whitespace-pre-wrap flex items-start gap-2 min-w-0 break-words">
+                        <span className="flex-shrink-0">💭</span>
+                        <span className="min-w-0 break-words">{item.notes}</span>
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="p-4 border-t border-gray-100">
               <button
