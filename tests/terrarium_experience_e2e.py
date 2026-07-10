@@ -67,6 +67,24 @@ def assert_descriptive_image_alt(page: Page) -> None:
     assert descriptive, f"expected a descriptive non-empty image alt, found {alts!r}"
 
 
+def assert_storyboard_sequence_is_the_visual_source(page: Page) -> None:
+    assert_experience_exists(page)
+    frames = page.locator(f'{EXPERIENCE} [data-testid="terrarium-frame"]')
+    assert frames.count() == 12, (
+        f"expected the 12 storyboard frames, found {frames.count()}"
+    )
+    sources = [
+        (frames.nth(index).get_attribute("src") or "")
+        for index in range(frames.count())
+    ]
+    assert all("terrarium-storyboard" in source for source in sources), (
+        f"every visual frame must come from the storyboard assets: {sources!r}"
+    )
+    assert all("IMG_0501" not in source for source in sources), (
+        "the original product photo must not be used by the experience"
+    )
+
+
 def assert_progress_ui_and_copy(page: Page) -> None:
     assert_experience_exists(page)
     progress = page.locator(f'{EXPERIENCE} [role="progressbar"]')
@@ -187,6 +205,11 @@ def run(browser: Browser) -> list[Check]:
     load_home(desktop)
     record(checks, "terrarium section exists", lambda: assert_experience_exists(desktop))
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
+    record(
+        checks,
+        "twelve storyboard frames are the only visual sequence",
+        lambda: assert_storyboard_sequence_is_the_visual_source(desktop),
+    )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)
     desktop_context.close()
