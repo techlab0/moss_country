@@ -85,6 +85,12 @@ export async function middleware(request: NextRequest) {
       '/api/admin/logout',
     ]);
 
+    // 公開ページ（店舗ページ）が参照する読み取り専用エンドポイントはGETのみ認証不要
+    const publicReadOnlyPaths = new Set(['/api/admin/calendar', '/api/admin/faqs']);
+    if (request.method === 'GET' && publicReadOnlyPaths.has(pathname)) {
+      return NextResponse.next();
+    }
+
     if (!publicAdminApiPaths.has(pathname)) {
       const session = await getAdminSessionFromRequest(request);
       if (!session) {
