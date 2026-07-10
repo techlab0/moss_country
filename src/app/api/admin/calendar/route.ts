@@ -8,13 +8,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET(request: NextRequest) {
+// 公開ページ（店舗ページ）のカレンダー表示にも使われるため、GETは認証不要（返す内容は公開情報のみ）
+export async function GET() {
   try {
-    const session = await verifyAdminSession(request);
-    if (!session) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
-    }
-
     const { data: events, error } = await supabase
       .from('calendar_events')
       .select('*')
