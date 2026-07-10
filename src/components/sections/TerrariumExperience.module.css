@@ -1,0 +1,262 @@
+.experience {
+  position: relative;
+  /* Cover the site's sticky white header while this artwork is pinned. */
+  z-index: 60;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100svh;
+  overflow: clip;
+  background: #030706;
+  color: #edf4e7;
+  --fern: #b7d891;
+  --mist: rgba(223, 238, 211, 0.72);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: 620px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(75, 105, 59, 0.18), transparent 30%),
+    linear-gradient(150deg, #07100c 0%, #020403 58%, #080705 100%);
+}
+
+.ambientBackground,
+.vignette,
+.lightBeam,
+.particles,
+.fog {
+  position: absolute;
+  inset: 0;
+}
+
+.ambientBackground { opacity: 0.12; transform: scale(1.08); }
+.ambientImage { object-fit: cover; filter: blur(24px) saturate(0.7) brightness(0.46); }
+.vignette { z-index: 1; background: radial-gradient(ellipse at 50% 48%, transparent 18%, rgba(0, 3, 2, 0.56) 57%, #010302 100%); }
+.particles { z-index: 4; width: 100%; height: 100%; pointer-events: none; }
+
+.lightBeam {
+  z-index: 2;
+  left: 38%;
+  right: auto;
+  width: 38%;
+  background: linear-gradient(105deg, transparent 12%, rgba(218, 238, 195, 0.18) 46%, rgba(200, 229, 169, 0.025) 73%, transparent 78%);
+  filter: blur(16px);
+  transform: skewX(-8deg);
+  transform-origin: top;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.heading {
+  position: absolute;
+  z-index: 7;
+  top: clamp(6rem, 14vh, 9.5rem);
+  left: clamp(1.5rem, 6vw, 7rem);
+  max-width: 25rem;
+}
+
+.kicker,
+.chapterEyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--fern);
+}
+
+.title {
+  margin: 1.15rem 0 0;
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: clamp(2rem, 3.25vw, 4.25rem);
+  font-weight: 400;
+  line-height: 1.42;
+  letter-spacing: 0.075em;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.72);
+}
+
+.artwork {
+  position: absolute;
+  z-index: 3;
+  top: 12.5%;
+  left: 50%;
+  width: min(35vw, 46vh);
+  height: min(67vw, 70vh);
+  transform: translateX(-50%);
+  will-change: transform;
+}
+
+.photoReveal,
+.detailLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 48% 48% 10% 10% / 33% 33% 12% 12%;
+  filter: contrast(1.06) saturate(0.96) brightness(0.96);
+}
+
+.photoReveal { clip-path: inset(88% 0 0 0 round 48% 48% 10% 10%); }
+
+.sourceImage {
+  left: -34% !important;
+  width: 168% !important;
+  max-width: none !important;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.detailLayer { z-index: 2; opacity: 0; pointer-events: none; }
+.mossLayer { clip-path: polygon(6% 43%, 93% 43%, 100% 89%, 84% 100%, 10% 97%, 0 75%); filter: saturate(1.28) contrast(1.08) brightness(1.07); }
+.canopyLayer { clip-path: polygon(22% 0, 78% 0, 85% 49%, 69% 64%, 30% 57%, 16% 29%); filter: saturate(1.18) brightness(1.1); }
+
+.glassOutline {
+  position: absolute;
+  z-index: 4;
+  left: 3%;
+  right: 3%;
+  bottom: 1%;
+  height: 60%;
+  border: 1px solid rgba(229, 246, 224, 0.7);
+  border-top-color: rgba(238, 249, 234, 0.32);
+  border-radius: 13% 13% 46% 46% / 11% 11% 19% 19%;
+  box-shadow: inset 12px 0 22px -18px rgba(240, 255, 238, 0.7), inset -12px 0 24px -20px rgba(240, 255, 238, 0.65), 0 28px 52px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.glassRim {
+  position: absolute;
+  z-index: 5;
+  top: 39.5%;
+  left: 2.5%;
+  width: 95%;
+  height: 17%;
+  border: 2px solid rgba(236, 248, 230, 0.56);
+  border-radius: 50%;
+  box-shadow: inset 0 4px 10px rgba(232, 250, 223, 0.12), 0 -2px 7px rgba(242, 255, 238, 0.3);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.glassHighlight {
+  position: absolute;
+  z-index: 5;
+  left: 7%;
+  bottom: 11%;
+  width: 8%;
+  height: 38%;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(240, 250, 235, 0.2), transparent);
+  filter: blur(2px);
+  transform: rotate(9deg);
+  pointer-events: none;
+}
+
+.plinth {
+  position: absolute;
+  z-index: -1;
+  left: -14%;
+  right: -14%;
+  bottom: -4%;
+  height: 14%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(93, 79, 53, 0.34), rgba(0, 0, 0, 0.8) 66%, transparent 71%);
+  filter: blur(7px);
+}
+
+.chapterRail {
+  position: absolute;
+  z-index: 7;
+  right: clamp(1.5rem, 6vw, 7rem);
+  bottom: clamp(5rem, 13vh, 9rem);
+  width: min(25vw, 20rem);
+  min-height: 10rem;
+}
+
+.copyChapter { position: absolute; inset: 0; opacity: 0; }
+.copyChapter:first-child { opacity: 1; }
+.chapterNumber { position: absolute; right: 100%; top: 0; margin-right: 1.25rem; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(226, 239, 213, 0.46); }
+.chapterEyebrow { padding-bottom: 0.7rem; border-bottom: 1px solid rgba(199, 221, 179, 0.22); }
+.chapterTitle { margin: 1.1rem 0 0; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif; font-size: clamp(1.25rem, 1.75vw, 2rem); letter-spacing: 0.08em; }
+.chapterBody { margin: 0.8rem 0 0; font-size: 0.82rem; font-weight: 300; line-height: 2; letter-spacing: 0.08em; color: rgba(233, 239, 228, 0.72); }
+
+.progress {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  right: clamp(0.75rem, 2vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transform: translateY(-50%);
+}
+
+.progressTrack { width: 1px; height: 22vh; min-height: 8rem; background: rgba(221, 234, 210, 0.17); overflow: hidden; }
+.progressFill { display: block; width: 100%; height: 100%; background: var(--fern); transform: scaleY(0); transform-origin: top; }
+.progressCopy { font-family: Georgia, serif; font-size: 0.62rem; letter-spacing: 0.08em; color: rgba(229, 239, 220, 0.58); writing-mode: vertical-rl; }
+
+.scrollHint {
+  position: absolute;
+  z-index: 7;
+  left: clamp(1.5rem, 6vw, 7rem);
+  bottom: 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(225, 236, 217, 0.5);
+}
+.scrollHint span { width: 2.75rem; height: 1px; background: rgba(213, 231, 198, 0.42); }
+
+.fog { z-index: 6; opacity: 0; background: radial-gradient(ellipse at 50% 72%, rgba(129, 157, 107, 0.38), rgba(7, 19, 13, 0.76) 42%, #020604 76%); backdrop-filter: blur(4px); pointer-events: none; }
+.srOnly,
+.reducedMotionNote { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 767px) {
+  .stage { min-height: 540px; }
+  .heading { top: 5.5rem; left: 1.25rem; }
+  .title { margin-top: 0.7rem; font-size: clamp(1.6rem, 8vw, 2.5rem); }
+  .kicker { font-size: 0.54rem; letter-spacing: 0.22em; }
+  .artwork { top: 21%; width: min(78vw, 42vh); height: min(132vw, 67vh); }
+  .chapterRail { right: auto; left: 1.25rem; bottom: 4.5rem; width: min(71vw, 18rem); min-height: 8.5rem; }
+  .chapterNumber { display: none; }
+  .chapterEyebrow { font-size: 0.56rem; padding-bottom: 0.45rem; }
+  .chapterTitle { margin-top: 0.7rem; font-size: 1.08rem; }
+  .chapterBody { margin-top: 0.45rem; font-size: 0.72rem; line-height: 1.75; }
+  .progress { right: 0.8rem; }
+  .progressTrack { height: 16vh; }
+  .scrollHint { display: none; }
+  .particles { display: none; }
+  .ambientBackground { opacity: 0.08; }
+  .glassHighlight { display: none; }
+}
+
+@media (max-height: 700px) and (min-width: 768px) {
+  .heading { top: 4.5rem; }
+  .chapterRail { bottom: 3.5rem; }
+  .artwork { top: 9%; height: 75vh; width: 46vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience { min-height: auto; }
+  .stage { height: min(90svh, 820px); min-height: 580px; }
+  .photoReveal { clip-path: none !important; }
+  .detailLayer { opacity: 1 !important; transform: none !important; }
+  .artwork { transform: translateX(-50%) !important; }
+  .glassOutline,
+  .glassRim { opacity: 0.7 !important; }
+  .lightBeam { opacity: 0.35 !important; }
+  .copyChapter { display: none; }
+  .copyChapter:nth-child(3) { display: block; opacity: 1 !important; transform: none !important; }
+  .progressFill { transform: scaleY(1) !important; }
+  .scrollHint,
+  .particles { display: none; }
+}

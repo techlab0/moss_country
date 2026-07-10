@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/Hero';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +12,14 @@ import { CircularCarousel } from '@/components/ui/CircularCarousel';
 import { LatestNews } from '@/components/sections/LatestNews';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
+
+const TerrariumExperience = dynamic(
+  () => import('@/components/sections/TerrariumExperience').then((module) => module.TerrariumExperience),
+  {
+    ssr: false,
+    loading: () => <section className="min-h-[100svh] bg-[#030706]" aria-hidden="true" />,
+  },
+);
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
@@ -90,6 +99,8 @@ export default function Home() {
       <div className="absolute inset-0 bg-emerald-900/20" />
       {/* Hero Section */}
       <Hero heroImageUrl={heroImageUrl} />
+
+      <TerrariumExperience />
 
       {/* MOSS COUNTRYとは */}
       <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">
@@ -196,7 +207,7 @@ export default function Home() {
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light text-white mb-8 sm:mb-12 leading-tight">
-              <span className="text-emerald-400 font-bold">MOSS COUNTRY's</span>
+              <span className="text-emerald-400 font-bold">MOSS COUNTRY&apos;s</span>
               <br />
               Work
             </h2>
