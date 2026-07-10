@@ -76,24 +76,18 @@
 .artwork {
   position: absolute;
   z-index: 3;
-  top: 50%;
-  left: 50%;
-  height: min(72vh, 720px);
-  aspect-ratio: 5 / 4;
-  max-width: 72vw;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
   overflow: hidden;
   background: #010201;
-  box-shadow:
-    0 44px 90px rgba(0, 0, 0, 0.62),
-    0 0 100px rgba(112, 139, 78, 0.09);
-  transform: translate(-50%, -48%);
+  border: 0;
   will-change: transform;
 }
 
 .frameStack,
-.frameVignette,
-.frameBorder {
+.frameVignette {
   position: absolute;
   inset: 0;
 }
@@ -117,15 +111,8 @@
 .frameVignette {
   z-index: 2;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent 13%, transparent 87%, rgba(0, 0, 0, 0.22)),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.28));
-  pointer-events: none;
-}
-
-.frameBorder {
-  z-index: 3;
-  border: 1px solid rgba(221, 235, 208, 0.14);
-  box-shadow: inset 0 0 38px rgba(0, 0, 0, 0.38);
+    linear-gradient(90deg, rgba(0, 0, 0, 0.66), transparent 29%, transparent 68%, rgba(0, 0, 0, 0.48)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 25%, transparent 64%, rgba(0, 0, 0, 0.62));
   pointer-events: none;
 }
 
@@ -271,9 +258,6 @@
     width: 28vw;
   }
 
-  .artwork {
-    height: min(66vh, 650px);
-  }
 }
 
 @media (max-width: 767px) {
@@ -296,15 +280,6 @@
     margin-top: 0.6rem;
     font-size: clamp(1.5rem, 7.6vw, 2.15rem);
     line-height: 1.42;
-  }
-
-  .artwork {
-    top: 45%;
-    width: 92vw;
-    height: auto;
-    max-width: none;
-    aspect-ratio: 5 / 4;
-    transform: translate(-50%, -50%);
   }
 
   .chapterRail {
@@ -361,9 +336,6 @@
     bottom: 3rem;
   }
 
-  .artwork {
-    height: 74vh;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

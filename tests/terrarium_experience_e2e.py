@@ -70,19 +70,41 @@ def assert_descriptive_image_alt(page: Page) -> None:
 def assert_storyboard_sequence_is_the_visual_source(page: Page) -> None:
     assert_experience_exists(page)
     frames = page.locator(f'{EXPERIENCE} [data-testid="terrarium-frame"]')
-    assert frames.count() == 12, (
-        f"expected the 12 storyboard frames, found {frames.count()}"
+    assert frames.count() == 24, (
+        f"expected the 24 individually generated sequence frames, found {frames.count()}"
     )
     sources = [
         (frames.nth(index).get_attribute("src") or "")
         for index in range(frames.count())
     ]
-    assert all("terrarium-storyboard" in source for source in sources), (
-        f"every visual frame must come from the storyboard assets: {sources!r}"
+    assert all("terrarium-sequence" in source for source in sources), (
+        f"every visual frame must come from the individually generated sequence: {sources!r}"
     )
     assert all("IMG_0501" not in source for source in sources), (
         "the original product photo must not be used by the experience"
     )
+
+
+def assert_artwork_fills_viewport_without_border(page: Page) -> None:
+    artwork = page.locator(f'{EXPERIENCE} [data-testid="terrarium-artwork"]')
+    assert artwork.count() == 1, "expected one fullscreen terrarium artwork"
+    metrics = artwork.evaluate(
+        """element => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return {
+                width: rect.width,
+                height: rect.height,
+                viewportWidth: innerWidth,
+                viewportHeight: innerHeight,
+                borders: [style.borderTopWidth, style.borderRightWidth,
+                          style.borderBottomWidth, style.borderLeftWidth],
+            };
+        }"""
+    )
+    assert metrics["width"] >= metrics["viewportWidth"] * 0.99, metrics
+    assert metrics["height"] >= metrics["viewportHeight"] * 0.99, metrics
+    assert all(border == "0px" for border in metrics["borders"]), metrics
 
 
 def assert_progress_ui_and_copy(page: Page) -> None:
@@ -207,8 +229,13 @@ def run(browser: Browser) -> list[Check]:
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,
-        "twelve storyboard frames are the only visual sequence",
+        "twenty-four generated frames are the only visual sequence",
         lambda: assert_storyboard_sequence_is_the_visual_source(desktop),
+    )
+    record(
+        checks,
+        "artwork fills the viewport without a border",
+        lambda: assert_artwork_fills_viewport_without_border(desktop),
     )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)

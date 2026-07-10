@@ -7,9 +7,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import styles from './TerrariumExperience.module.css';
 
-const STORYBOARD_FRAMES = Array.from({ length: 12 }, (_, index) => ({
+const STORYBOARD_FRAMES = Array.from({ length: 24 }, (_, index) => ({
   number: String(index + 1).padStart(2, '0'),
-  src: `/images/terrarium-storyboard/frame-${String(index + 1).padStart(2, '0')}.webp`,
+  src: `/images/terrarium-sequence/frame-${String(index + 1).padStart(2, '0')}.webp`,
 }));
 
 const CHAPTERS = [
@@ -21,22 +21,36 @@ const CHAPTERS = [
     body: 'まだ何もない静かな空間に、ガラスの輪郭だけが光を受ける。',
   },
   {
-    startFrame: 3,
+    startFrame: 4,
     number: '02',
     eyebrow: 'Foundation',
     title: '大地の記憶を、重ねる。',
     body: '土、石、火山岩。小さな景色の骨格が、ひとつずつ組み上がる。',
   },
   {
-    startFrame: 6,
+    startFrame: 8,
     number: '03',
     eyebrow: 'Cultivation',
     title: '緑が、地形を包んでいく。',
     body: '苔と繊細な植物が岩を覆い、ガラスの内側に生命が満ちる。',
   },
   {
-    startFrame: 9,
+    startFrame: 12,
     number: '04',
+    eyebrow: 'Completion',
+    title: 'ひとつの風景が、完成する。',
+    body: '光と湿度が満ち、手のひらほどの世界が静かに呼吸を始める。',
+  },
+  {
+    startFrame: 16,
+    number: '05',
+    eyebrow: 'Perspective',
+    title: '角度を変え、景色を辿る。',
+    body: '器の周囲をゆっくり巡りながら、岩肌と苔がつくる奥行きを見つめる。',
+  },
+  {
+    startFrame: 20,
+    number: '06',
     eyebrow: 'Immersion',
     title: 'そして、森の内側へ。',
     body: '完成した作品へ近づき、苔の一粒を雄大な森として見つめる。',
@@ -89,9 +103,9 @@ export function TerrariumExperience() {
       gsap.set(chapters[chapters.length - 1], { opacity: 1 });
       progressBar.style.transform = 'scaleY(1)';
       progressTrack.setAttribute('aria-valuenow', '100');
-      progressTrack.setAttribute('aria-valuetext', 'フレーム 12 / 12');
+      progressTrack.setAttribute('aria-valuetext', 'フレーム 24 / 24');
       progressCopy.textContent = '100%';
-      frameCopy.textContent = '12 / 12';
+      frameCopy.textContent = '24 / 24';
       return;
     }
 
@@ -132,7 +146,7 @@ export function TerrariumExperience() {
           scrollTrigger: {
             trigger: section,
             start: 'top top',
-            end: isDesktop ? '+=660%' : '+=430%',
+            end: isDesktop ? '+=900%' : '+=640%',
             pin: stage,
             pinSpacing: true,
             anticipatePin: 1,
@@ -152,7 +166,7 @@ export function TerrariumExperience() {
                 `フレーム ${frameIndex + 1} / ${STORYBOARD_FRAMES.length}`,
               );
               progressCopy.textContent = `${percentage}%`;
-              frameCopy.textContent = `${frameNumber} / 12`;
+              frameCopy.textContent = `${frameNumber} / 24`;
             },
           },
         });
@@ -162,13 +176,13 @@ export function TerrariumExperience() {
           timeline
             .to(
               frames[index - 1],
-              { opacity: 0, scale: 0.992, duration: 0.42, ease: 'power1.inOut' },
+              { opacity: 0, scale: 0.996, duration: 0.72, ease: 'power1.inOut' },
               position,
             )
             .fromTo(
               frames[index],
               { opacity: 0, scale: 1.018 },
-              { opacity: 1, scale: 1, duration: 0.42, ease: 'power1.inOut' },
+              { opacity: 1, scale: 1, duration: 0.72, ease: 'power1.inOut' },
               position,
             );
         }
@@ -179,8 +193,6 @@ export function TerrariumExperience() {
             .to(chapters[index - 1], { opacity: 0, y: -14, duration: 0.24 }, position)
             .to(chapters[index], { opacity: 1, y: 0, duration: 0.32 }, position + 0.12);
         }
-
-        timeline.to(artwork, { scale: 1.025, duration: 1.1, ease: 'power1.inOut' }, 9.7);
 
         return () => {
           timeline.scrollTrigger?.kill();
@@ -200,7 +212,7 @@ export function TerrariumExperience() {
       ref={sectionRef}
       className={styles.experience}
       data-testid="terrarium-experience"
-      data-storyboard-source="generated-12-panel"
+      data-storyboard-source="generated-24-frame-sequence"
       aria-labelledby="terrarium-experience-title"
     >
       <div ref={stageRef} className={styles.stage}>
@@ -217,6 +229,7 @@ export function TerrariumExperience() {
         <figure
           ref={artworkRef}
           className={styles.artwork}
+          data-testid="terrarium-artwork"
           aria-describedby="terrarium-experience-description"
         >
           <div className={styles.frameStack}>
@@ -228,16 +241,15 @@ export function TerrariumExperience() {
                 src={frame.src}
                 alt={index === 0 ? '暗闇からガラスの器が現れ、苔の森へ育っていくテラリウム作品' : ''}
                 fill
-                sizes="(max-width: 767px) 92vw, 900px"
-                quality={90}
+                sizes="100vw"
+                quality={95}
                 priority={index === 0}
                 className={styles.frame}
               />
             ))}
           </div>
           <div className={styles.frameVignette} aria-hidden="true" />
-          <div className={styles.frameBorder} aria-hidden="true" />
-          <span ref={frameCopyRef} className={styles.frameCopy} aria-hidden="true">01 / 12</span>
+          <span ref={frameCopyRef} className={styles.frameCopy} aria-hidden="true">01 / 24</span>
         </figure>
 
         <div className={styles.chapterRail} aria-hidden="true">
@@ -264,7 +276,7 @@ export function TerrariumExperience() {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={0}
-            aria-valuetext="フレーム 1 / 12"
+            aria-valuetext="フレーム 1 / 24"
           >
             <span ref={progressBarRef} className={styles.progressFill} aria-hidden="true" />
           </div>
@@ -273,7 +285,7 @@ export function TerrariumExperience() {
 
         <p className={styles.scrollHint} aria-hidden="true"><span /> Scroll to cultivate</p>
         <p id="terrarium-experience-description" className={styles.srOnly}>
-          暗闇にガラスの器が現れ、土と石を重ね、苔と植物が育ち、最後に苔の森へ近づく12段階の物語です。
+          暗闇にガラスの器が現れ、土と石を重ね、苔と植物が育ち、最後に苔の森へ近づく24段階の物語です。
         </p>
         <p className={styles.reducedMotionNote} data-motion="reduced">
           動きを減らす設定では、完成した苔の森を静止画で表示しています。
