@@ -31,7 +31,7 @@ export const ScrollToTopButton: React.FC = () => {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 z-50 w-12 h-12 bg-moss-green text-white rounded-full shadow-lg hover:bg-moss-green/90 transition-all duration-300 flex items-center justify-center ${
+      className={`fixed bottom-[calc(2rem+env(safe-area-inset-bottom))] right-8 z-50 w-12 h-12 bg-moss-green text-white rounded-full shadow-lg hover:bg-moss-green/90 transition-all duration-300 flex items-center justify-center ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
       }`}
       aria-label="ページトップに戻る"
