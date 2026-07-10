@@ -2,13 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { verifyAdminSession } from '@/lib/auth';
 
-export async function GET(request: NextRequest) {
+// 公開ページ（店舗ページ）のFAQ表示にも使われるため、GETは認証不要（is_active=true のみ返す）
+export async function GET() {
   try {
-    const session = await verifyAdminSession(request);
-    if (!session) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
-    }
-
     const { data: faqs, error } = await supabaseAdmin
       .from('faqs')
       .select('*')

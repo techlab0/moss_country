@@ -206,13 +206,13 @@ export default function FAQManagePage() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center mb-2">
-                      <span className="bg-moss-green text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">
+                      <span className="bg-moss-green text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3 flex-shrink-0">
                         Q{index + 1}
                       </span>
                       <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
                     </div>
                     <div className="flex items-start ml-11">
-                      <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-1">
+                      <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-1 flex-shrink-0">
                         A
                       </span>
                       <p className="text-gray-700">{faq.answer}</p>
