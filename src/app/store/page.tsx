@@ -30,13 +30,13 @@ const storeInfo = {
   },
 };
 
-// その日の項目群からセルの配色を決める（営業＋イベント重複日は上下2色）。
+// その日の項目群からセルの配色を決める（営業＋イベント重複日は斜め2色）。
 function dayVisual(items: CalendarItem[] | undefined) {
   const hasOpen = items?.some((i) => i.type === 'open');
   const hasEvent = items?.some((i) => i.type === 'event');
   const hasClosed = items?.some((i) => i.type === 'closed');
-  // 営業とイベントが重なる日は上半分を緑（営業）、下半分を黄（イベント）の2色で示す
-  if (hasOpen && hasEvent) return { bg: 'bg-gradient-to-b from-emerald-200 from-50% to-amber-200 to-50%', text: 'text-emerald-900', border: 'border-emerald-400', hasEvent: true };
+  // 営業とイベントが重なる日は左上を緑（営業）、右下を黄（イベント）の斜め2色で示す
+  if (hasOpen && hasEvent) return { bg: 'bg-gradient-to-br from-emerald-200 from-50% to-amber-200 to-50%', text: 'text-emerald-900', border: 'border-emerald-400', hasEvent: true };
   if (hasOpen) return { bg: 'bg-emerald-200', text: 'text-emerald-900', border: 'border-emerald-400', hasEvent: !!hasEvent };
   if (hasEvent) return { bg: 'bg-amber-200', text: 'text-amber-900', border: 'border-amber-400', hasEvent: true };
   if (hasClosed) return { bg: 'bg-red-200', text: 'text-red-900', border: 'border-red-400', hasEvent: false };
@@ -250,7 +250,7 @@ function StoreCalendar() {
           <span className="text-white">イベント出店</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-gradient-to-b from-emerald-200 from-50% to-amber-200 to-50% border border-emerald-400 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-gradient-to-br from-emerald-200 from-50% to-amber-200 to-50% border border-emerald-400 rounded mr-2"></div>
           <span className="text-white">営業＋イベント</span>
         </div>
         <div className="flex items-center">
