@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/Hero';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +12,11 @@ import { CircularCarousel } from '@/components/ui/CircularCarousel';
 import { LatestNews } from '@/components/sections/LatestNews';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
+
+const TerrariumJourney = dynamic(
+  () => import('@/components/three/TerrariumJourney').then((mod) => mod.TerrariumJourney),
+  { ssr: false }
+);
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
@@ -90,6 +96,9 @@ export default function Home() {
       <div className="absolute inset-0 bg-emerald-900/20" />
       {/* Hero Section */}
       <Hero heroImageUrl={heroImageUrl} />
+
+      {/* スクロール連動テラリウム3Dセクション */}
+      <TerrariumJourney />
 
       {/* MOSS COUNTRYとは */}
       <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl">
