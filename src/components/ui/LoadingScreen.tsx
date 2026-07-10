@@ -14,29 +14,12 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   showProgress = false
 }) => {
   const containerClasses = fullScreen
-    ? "fixed top-0 left-0 right-0 bottom-0 z-50 flex flex-col bg-stone-900 w-full h-full min-h-screen"
+    ? "fixed inset-0 z-50 flex flex-col items-center justify-center bg-stone-900"
     : "flex items-center justify-center py-12";
 
   return (
-    <div 
-      className={containerClasses}
-      style={fullScreen ? { 
-        height: '120vh', 
-        minHeight: '120vh',
-        width: '100vw',
-        position: 'fixed',
-        top: 0,
-        left: 0
-      } : undefined}
-    >
-      <div 
-        className="flex flex-col items-center" 
-        style={fullScreen ? { 
-          height: '100vh', 
-          paddingTop: '35vh',  // 上部余白でコンテンツを適切に配置
-          paddingBottom: '35vh' // 下部余白
-        } : undefined}
-      >
+    <div className={containerClasses}>
+      <div className="flex flex-col items-center">
         {/* 上部のローディング要素 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2">
@@ -56,7 +39,11 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         </div>
 
         {/* 下部のローディング要素 */}
-        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-6"></div>
+        {/* 円の縁をなぞって弧が伸び縮みしながら回るスピナー */}
+        <svg className="w-10 h-10 mb-6 text-emerald-400" viewBox="0 0 50 50" role="status" aria-label="読み込み中">
+          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="4" className="opacity-20" />
+          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="loading-ring-arc" />
+        </svg>
 
         {/* メッセージ */}
         <div className="text-center">

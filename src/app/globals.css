@@ -322,3 +322,16 @@ body.admin-layout textarea:focus {
 .ease-custom {
   transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+/* ローディング画面のリングスピナー: 円周(2πr ≈ 125.6)に沿って弧が伸び縮みしながら回転する */
+.loading-ring-arc {
+  transform-origin: center;
+  animation: loading-ring-rotate 1.6s linear infinite, loading-ring-dash 1.4s ease-in-out infinite;
+}
+@keyframes loading-ring-rotate {
+  100% { transform: rotate(360deg); }
+}
+@keyframes loading-ring-dash {
+  0% { stroke-dasharray: 1 125; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 90 125; stroke-dashoffset: -30; }
+  100% { stroke-dasharray: 90 125; stroke-dashoffset: -124; }
+}
