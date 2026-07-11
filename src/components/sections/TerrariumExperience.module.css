@@ -97,7 +97,7 @@
   background: #000;
 }
 
-.sequenceVideo,
+.sequenceCanvas,
 .reducedMotionFrame {
   position: absolute;
   inset: 0;
@@ -106,9 +106,11 @@
   object-fit: cover;
 }
 
-.sequenceVideo {
+.sequenceCanvas {
   display: block;
   background: #000;
+  transform-origin: center;
+  will-change: transform;
 }
 
 .reducedMotionFrame {
@@ -355,7 +357,7 @@
     min-height: 580px;
   }
 
-  .sequenceVideo {
+  .sequenceCanvas {
     display: none;
   }
 

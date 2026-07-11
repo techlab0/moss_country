@@ -6,9 +6,13 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import styles from './TerrariumExperience.module.css';
+import { createCanvasSequenceRenderer } from './terrariumCanvasSequence';
 
 const SOURCE_FRAME_COUNT = 24;
-const INTERPOLATED_VIDEO_SRC = '/images/terrarium-sequence/interpolated-48fps.mp4';
+const INTERPOLATED_FRAME_COUNT = 91;
+const getInterpolatedFrameUrl = (index: number) => (
+  `/images/terrarium-motion/frame-${String(index).padStart(3, '0')}.webp`
+);
 
 const CHAPTERS = [
   {
@@ -58,7 +62,7 @@ const CHAPTERS = [
 export function TerrariumExperience() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const chapterRefs = useRef<Array<HTMLDivElement | null>>([]);
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLSpanElement>(null);
@@ -68,7 +72,7 @@ export function TerrariumExperience() {
   useEffect(() => {
     const section = sectionRef.current;
     const stage = stageRef.current;
-    const video = videoRef.current;
+    const canvas = canvasRef.current;
     const progressTrack = progressTrackRef.current;
     const progressBar = progressBarRef.current;
     const progressCopy = progressCopyRef.current;
@@ -78,7 +82,7 @@ export function TerrariumExperience() {
     if (
       !section ||
       !stage ||
-      !video ||
+      !canvas ||
       !progressTrack ||
       !progressBar ||
       !progressCopy ||
@@ -89,34 +93,32 @@ export function TerrariumExperience() {
     }
 
     gsap.registerPlugin(ScrollTrigger);
+    const renderer = createCanvasSequenceRenderer({
+      canvas,
+      frameCount: INTERPOLATED_FRAME_COUNT,
+      frameUrl: getInterpolatedFrameUrl,
+    });
 
-    let media: ReturnType<typeof gsap.matchMedia> | undefined;
-    let initialized = false;
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduceMotionQuery.matches) {
+      renderer.render(INTERPOLATED_FRAME_COUNT - 1);
+      gsap.set(chapters, { opacity: 0 });
+      gsap.set(chapters[chapters.length - 1], { opacity: 1 });
+      progressBar.style.transform = 'scaleY(1)';
+      progressTrack.setAttribute('aria-valuenow', '100');
+      progressTrack.setAttribute('aria-valuetext', 'フレーム 24 / 24');
+      progressCopy.textContent = '100%';
+      frameCopy.textContent = '24 / 24';
+      return () => renderer.destroy();
+    }
 
-    const initialize = () => {
-      if (initialized || !Number.isFinite(video.duration) || video.duration <= 0) return;
-      initialized = true;
-
-      const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (reduceMotionQuery.matches) {
-        video.pause();
-        gsap.set(chapters, { opacity: 0 });
-        gsap.set(chapters[chapters.length - 1], { opacity: 1 });
-        progressBar.style.transform = 'scaleY(1)';
-        progressTrack.setAttribute('aria-valuenow', '100');
-        progressTrack.setAttribute('aria-valuetext', 'フレーム 24 / 24');
-        progressCopy.textContent = '100%';
-        frameCopy.textContent = '24 / 24';
-        return;
-      }
-
-      media = gsap.matchMedia(section);
-      media.add(
-        {
-          isDesktop: '(min-width: 768px)',
-          isMobile: '(max-width: 767px)',
-        },
-        (mediaContext) => {
+    const media = gsap.matchMedia(section);
+    media.add(
+      {
+        isDesktop: '(min-width: 768px)',
+        isMobile: '(max-width: 767px)',
+      },
+      (mediaContext) => {
         const { isDesktop } = mediaContext.conditions as { isDesktop: boolean; isMobile: boolean };
         let lenis: Lenis | undefined;
         let lenisTicker: ((time: number) => void) | undefined;
@@ -136,11 +138,10 @@ export function TerrariumExperience() {
           gsap.ticker.lagSmoothing(0);
         }
 
-        video.pause();
-        video.currentTime = 0;
         gsap.set(chapters, { opacity: 0, y: 18 });
         gsap.set(chapters[0], { opacity: 1, y: 0 });
 
+        const timelineClock = { progress: 0 };
         const timeline = gsap.timeline({
           defaults: { ease: 'none' },
           scrollTrigger: {
@@ -154,10 +155,15 @@ export function TerrariumExperience() {
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
+              const interpolatedFrame = self.progress * (INTERPOLATED_FRAME_COUNT - 1);
+              const cameraScale = 1.008 + self.progress * 0.024;
+              const cameraDrift = Math.sin(self.progress * Math.PI) * 0.35;
               const frameIndex = Math.min(
                 SOURCE_FRAME_COUNT - 1,
                 Math.floor(self.progress * SOURCE_FRAME_COUNT),
               );
+              renderer.render(interpolatedFrame, self.direction);
+              canvas.style.transform = `translate3d(${cameraDrift}%, ${-self.progress * 0.2}%, 0) scale(${cameraScale})`;
               const frameNumber = String(frameIndex + 1).padStart(2, '0');
               progressBar.style.transform = `scaleY(${self.progress})`;
               progressTrack.setAttribute('aria-valuenow', String(percentage));
@@ -172,12 +178,8 @@ export function TerrariumExperience() {
         });
 
         timeline.to(
-          video,
-          {
-            currentTime: Math.max(0, video.duration - 0.04),
-            duration: SOURCE_FRAME_COUNT - 1,
-            ease: 'none',
-          },
+          timelineClock,
+          { progress: 1, duration: SOURCE_FRAME_COUNT - 1, ease: 'none' },
           0,
         );
 
@@ -195,16 +197,12 @@ export function TerrariumExperience() {
           if (lenis && handleLenisScroll) lenis.off('scroll', handleLenisScroll);
           lenis?.destroy();
         };
-        },
-      );
-    };
-
-    if (video.readyState >= 1) initialize();
-    else video.addEventListener('loadedmetadata', initialize, { once: true });
+      },
+    );
 
     return () => {
-      video.removeEventListener('loadedmetadata', initialize);
-      media?.revert();
+      media.revert();
+      renderer.destroy();
     };
   }, []);
 
@@ -213,7 +211,7 @@ export function TerrariumExperience() {
       ref={sectionRef}
       className={styles.experience}
       data-testid="terrarium-experience"
-      data-storyboard-source="optical-flow-48fps-from-24-generated-frames"
+      data-storyboard-source="cached-canvas-from-91-interpolated-frames"
       aria-labelledby="terrarium-experience-title"
     >
       <div ref={stageRef} className={styles.stage}>
@@ -233,18 +231,15 @@ export function TerrariumExperience() {
           aria-describedby="terrarium-experience-description"
         >
           <div className={styles.frameStack}>
-            <video
-              ref={videoRef}
-              data-testid="terrarium-interpolated-video"
-              data-interpolation="optical-flow-48fps"
-              src={INTERPOLATED_VIDEO_SRC}
-              poster="/images/terrarium-sequence/frame-01.webp"
-              preload="auto"
-              muted
-              playsInline
-              tabIndex={-1}
+            <canvas
+              ref={canvasRef}
+              data-testid="terrarium-interpolated-canvas"
+              data-renderer="cached-canvas-blend"
+              data-frame-count={INTERPOLATED_FRAME_COUNT}
+              data-current-frame="0"
+              role="img"
               aria-label="暗闇からガラスの器が現れ、苔の森へ育っていくテラリウム作品"
-              className={styles.sequenceVideo}
+              className={styles.sequenceCanvas}
             />
             <Image
               src="/images/terrarium-sequence/frame-24.webp"

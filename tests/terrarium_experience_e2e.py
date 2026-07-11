@@ -67,22 +67,14 @@ def assert_descriptive_image_alt(page: Page) -> None:
     assert descriptive, f"expected a descriptive non-empty image alt, found {alts!r}"
 
 
-def assert_interpolated_video_is_the_visual_source(page: Page) -> None:
+def assert_interpolated_canvas_is_the_visual_source(page: Page) -> None:
     assert_experience_exists(page)
-    video = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-video"]')
-    assert video.count() == 1, "expected one optical-flow interpolated video"
-    source = video.get_attribute("src") or ""
-    assert "terrarium-sequence/interpolated-48fps.mp4" in source, source
-    assert video.get_attribute("data-interpolation") == "optical-flow-48fps"
-    assert video.get_attribute("preload") == "auto"
-    assert video.get_attribute("playsinline") is not None
-    assert "IMG_0501" not in source
-    metadata = video.evaluate(
-        "video => ({ readyState: video.readyState, duration: video.duration, muted: video.muted })"
-    )
-    assert metadata["readyState"] >= 1, metadata
-    assert metadata["duration"] > 0, metadata
-    assert metadata["muted"], metadata
+    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
+    assert canvas.count() == 1, "expected one cached optical-flow canvas"
+    assert canvas.get_attribute("data-renderer") == "cached-canvas-blend"
+    assert int(canvas.get_attribute("data-frame-count") or 0) >= 80
+    assert len((canvas.get_attribute("aria-label") or "").strip()) >= 6
+    assert canvas.get_attribute("data-current-frame") is not None
 
 
 def assert_artwork_fills_viewport_without_border(page: Page) -> None:
@@ -107,9 +99,9 @@ def assert_artwork_fills_viewport_without_border(page: Page) -> None:
     assert all(border == "0px" for border in metrics["borders"]), metrics
 
 
-def assert_video_tracks_scroll_continuously(page: Page) -> None:
+def assert_canvas_tracks_scroll_continuously(page: Page) -> None:
     section = page.locator(EXPERIENCE)
-    video = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-video"]')
+    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
     bounds = section.bounding_box()
     viewport = page.viewport_size
     assert bounds and viewport, "terrarium scroll geometry is unavailable"
@@ -120,12 +112,15 @@ def assert_video_tracks_scroll_continuously(page: Page) -> None:
         position = start + (end - start) * step / 10
         page.evaluate("y => window.scrollTo(0, y)", position)
         page.wait_for_timeout(500)
-        samples.append(video.evaluate("element => element.currentTime"))
+        samples.append(float(canvas.get_attribute("data-current-frame") or 0))
 
-    duration = video.evaluate("element => element.duration")
-    assert samples[-1] >= duration * 0.85, {"duration": duration, "samples": samples}
-    assert len({round(value, 1) for value in samples}) >= 8, samples
-    assert all(later >= earlier - 0.08 for earlier, later in zip(samples, samples[1:])), samples
+    frame_count = int(canvas.get_attribute("data-frame-count") or 0)
+    assert samples[-1] >= (frame_count - 1) * 0.85, {
+        "frameCount": frame_count,
+        "samples": samples,
+    }
+    assert len({round(value) for value in samples}) >= 8, samples
+    assert all(later >= earlier - 1 for earlier, later in zip(samples, samples[1:])), samples
 
 
 def assert_progress_ui_and_copy(page: Page) -> None:
@@ -250,8 +245,8 @@ def run(browser: Browser) -> list[Check]:
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,
-        "optical-flow video is the visual sequence",
-        lambda: assert_interpolated_video_is_the_visual_source(desktop),
+        "cached optical-flow canvas is the visual sequence",
+        lambda: assert_interpolated_canvas_is_the_visual_source(desktop),
     )
     record(
         checks,
@@ -260,8 +255,8 @@ def run(browser: Browser) -> list[Check]:
     )
     record(
         checks,
-        "interpolated video tracks scroll continuously",
-        lambda: assert_video_tracks_scroll_continuously(desktop),
+        "interpolated canvas tracks scroll continuously",
+        lambda: assert_canvas_tracks_scroll_continuously(desktop),
     )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)
