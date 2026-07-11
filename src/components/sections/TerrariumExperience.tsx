@@ -13,57 +13,14 @@ const INTERPOLATED_FRAME_COUNT = 91;
 const getInterpolatedFrameUrl = (index: number) => (
   `/images/terrarium-motion/frame-${String(index).padStart(3, '0')}.webp`
 );
-
-const CHAPTERS = [
-  {
-    startFrame: 0,
-    number: '01',
-    eyebrow: 'Presence',
-    title: '暗闇に、器が現れる。',
-    body: 'まだ何もない静かな空間に、ガラスの輪郭だけが光を受ける。',
-  },
-  {
-    startFrame: 4,
-    number: '02',
-    eyebrow: 'Foundation',
-    title: '大地の記憶を、重ねる。',
-    body: '土、石、火山岩。小さな景色の骨格が、ひとつずつ組み上がる。',
-  },
-  {
-    startFrame: 8,
-    number: '03',
-    eyebrow: 'Cultivation',
-    title: '緑が、地形を包んでいく。',
-    body: '苔と繊細な植物が岩を覆い、ガラスの内側に生命が満ちる。',
-  },
-  {
-    startFrame: 12,
-    number: '04',
-    eyebrow: 'Completion',
-    title: 'ひとつの風景が、完成する。',
-    body: '光と湿度が満ち、手のひらほどの世界が静かに呼吸を始める。',
-  },
-  {
-    startFrame: 16,
-    number: '05',
-    eyebrow: 'Perspective',
-    title: '角度を変え、景色を辿る。',
-    body: '器の周囲をゆっくり巡りながら、岩肌と苔がつくる奥行きを見つめる。',
-  },
-  {
-    startFrame: 20,
-    number: '06',
-    eyebrow: 'Immersion',
-    title: 'そして、森の内側へ。',
-    body: '完成した作品へ近づき、苔の一粒を雄大な森として見つめる。',
-  },
-] as const;
+const getCrispFrameUrl = (index: number) => (
+  `/images/terrarium-sequence/frame-${String(index + 1).padStart(2, '0')}.webp`
+);
 
 export function TerrariumExperience() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chapterRefs = useRef<Array<HTMLDivElement | null>>([]);
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLSpanElement>(null);
   const progressCopyRef = useRef<HTMLSpanElement>(null);
@@ -77,7 +34,6 @@ export function TerrariumExperience() {
     const progressBar = progressBarRef.current;
     const progressCopy = progressCopyRef.current;
     const frameCopy = frameCopyRef.current;
-    const chapters = chapterRefs.current.filter((chapter): chapter is HTMLDivElement => chapter !== null);
 
     if (
       !section ||
@@ -86,8 +42,7 @@ export function TerrariumExperience() {
       !progressTrack ||
       !progressBar ||
       !progressCopy ||
-      !frameCopy ||
-      chapters.length !== CHAPTERS.length
+      !frameCopy
     ) {
       return;
     }
@@ -95,15 +50,16 @@ export function TerrariumExperience() {
     gsap.registerPlugin(ScrollTrigger);
     const renderer = createCanvasSequenceRenderer({
       canvas,
+      crispFrameCount: SOURCE_FRAME_COUNT,
+      crispFrameUrl: getCrispFrameUrl,
       frameCount: INTERPOLATED_FRAME_COUNT,
       frameUrl: getInterpolatedFrameUrl,
     });
+    renderer.renderCrisp(0);
 
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (reduceMotionQuery.matches) {
-      renderer.render(INTERPOLATED_FRAME_COUNT - 1);
-      gsap.set(chapters, { opacity: 0 });
-      gsap.set(chapters[chapters.length - 1], { opacity: 1 });
+      renderer.renderCrisp(SOURCE_FRAME_COUNT - 1);
       progressBar.style.transform = 'scaleY(1)';
       progressTrack.setAttribute('aria-valuenow', '100');
       progressTrack.setAttribute('aria-valuetext', 'フレーム 24 / 24');
@@ -138,9 +94,6 @@ export function TerrariumExperience() {
           gsap.ticker.lagSmoothing(0);
         }
 
-        gsap.set(chapters, { opacity: 0, y: 18 });
-        gsap.set(chapters[0], { opacity: 1, y: 0 });
-
         const timelineClock = { progress: 0 };
         const timeline = gsap.timeline({
           defaults: { ease: 'none' },
@@ -152,17 +105,28 @@ export function TerrariumExperience() {
             pinSpacing: true,
             anticipatePin: 1,
             scrub: isDesktop ? 0.35 : 0.18,
+            snap: {
+              snapTo: ScrollTrigger.snapDirectional(1 / (SOURCE_FRAME_COUNT - 1)),
+              duration: { min: 0.28, max: 0.55 },
+              delay: 0.04,
+              ease: 'power2.inOut',
+              inertia: false,
+            },
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
               const interpolatedFrame = self.progress * (INTERPOLATED_FRAME_COUNT - 1);
+              const sourceFrame = self.progress * (SOURCE_FRAME_COUNT - 1);
+              const nearestSourceFrame = Math.round(sourceFrame);
+              const isNearCrispStop = Math.abs(sourceFrame - nearestSourceFrame) < 0.035;
               const cameraScale = 1.008 + self.progress * 0.024;
               const cameraDrift = Math.sin(self.progress * Math.PI) * 0.35;
               const frameIndex = Math.min(
                 SOURCE_FRAME_COUNT - 1,
                 Math.floor(self.progress * SOURCE_FRAME_COUNT),
               );
-              renderer.render(interpolatedFrame, self.direction);
+              if (isNearCrispStop) renderer.renderCrisp(nearestSourceFrame);
+              else renderer.render(interpolatedFrame, self.direction);
               canvas.style.transform = `translate3d(${cameraDrift}%, ${-self.progress * 0.2}%, 0) scale(${cameraScale})`;
               const frameNumber = String(frameIndex + 1).padStart(2, '0');
               progressBar.style.transform = `scaleY(${self.progress})`;
@@ -182,13 +146,6 @@ export function TerrariumExperience() {
           { progress: 1, duration: SOURCE_FRAME_COUNT - 1, ease: 'none' },
           0,
         );
-
-        for (let index = 1; index < chapters.length; index += 1) {
-          const position = CHAPTERS[index].startFrame - 1;
-          timeline
-            .to(chapters[index - 1], { opacity: 0, y: -14, duration: 0.24 }, position)
-            .to(chapters[index], { opacity: 1, y: 0, duration: 0.32 }, position + 0.12);
-        }
 
         return () => {
           timeline.scrollTrigger?.kill();
@@ -211,7 +168,7 @@ export function TerrariumExperience() {
       ref={sectionRef}
       className={styles.experience}
       data-testid="terrarium-experience"
-      data-storyboard-source="cached-canvas-from-91-interpolated-frames"
+      data-storyboard-source="directional-crisp-snap-through-91-interpolated-frames"
       aria-labelledby="terrarium-experience-title"
     >
       <div ref={stageRef} className={styles.stage}>
@@ -253,21 +210,6 @@ export function TerrariumExperience() {
           <div className={styles.frameVignette} aria-hidden="true" />
           <span ref={frameCopyRef} className={styles.frameCopy} aria-hidden="true">01 / 24</span>
         </figure>
-
-        <div className={styles.chapterRail} aria-hidden="true">
-          {CHAPTERS.map((chapter, index) => (
-            <div
-              key={chapter.number}
-              ref={(element) => { chapterRefs.current[index] = element; }}
-              className={styles.copyChapter}
-            >
-              <span className={styles.chapterNumber}>{chapter.number}</span>
-              <p className={styles.chapterEyebrow}>{chapter.eyebrow}</p>
-              <p className={styles.chapterTitle}>{chapter.title}</p>
-              <p className={styles.chapterBody}>{chapter.body}</p>
-            </div>
-          ))}
-        </div>
 
         <div className={styles.progress}>
           <div

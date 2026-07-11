@@ -5,6 +5,8 @@ const WARM_FRAME_RADIUS = 10;
 
 type CanvasSequenceOptions = {
   canvas: HTMLCanvasElement;
+  crispFrameCount: number;
+  crispFrameUrl: (index: number) => string;
   frameCount: number;
   frameUrl: (index: number) => string;
 };
@@ -12,6 +14,7 @@ type CanvasSequenceOptions = {
 type CanvasSequenceRenderer = {
   destroy: () => void;
   render: (frame: number, direction?: number) => void;
+  renderCrisp: (index: number) => void;
 };
 
 const clamp = (value: number, minimum: number, maximum: number) => (
@@ -20,17 +23,27 @@ const clamp = (value: number, minimum: number, maximum: number) => (
 
 export function createCanvasSequenceRenderer({
   canvas,
+  crispFrameCount,
+  crispFrameUrl,
   frameCount,
   frameUrl,
 }: CanvasSequenceOptions): CanvasSequenceRenderer {
   const context = canvas.getContext('2d', { alpha: false, desynchronized: true });
-  if (!context) return { destroy: () => undefined, render: () => undefined };
+  if (!context) {
+    return {
+      destroy: () => undefined,
+      render: () => undefined,
+      renderCrisp: () => undefined,
+    };
+  }
 
   const abortController = new AbortController();
   const blobUrls = new Map<number, string>();
   const blobPromises = new Map<number, Promise<string>>();
   const decodedFrames = new Map<number, HTMLImageElement>();
   const decodePromises = new Map<number, Promise<HTMLImageElement>>();
+  const crispFrames = new Map<number, HTMLImageElement>();
+  const crispPromises = new Map<number, Promise<HTMLImageElement>>();
   let disposed = false;
   let latestRequest = 0;
   let targetFrame = 0;
@@ -86,6 +99,29 @@ export function createCanvasSequenceRenderer({
     return promise;
   };
 
+  const loadCrispFrame = (index: number) => {
+    const cached = crispFrames.get(index);
+    if (cached) return Promise.resolve(cached);
+    const pending = crispPromises.get(index);
+    if (pending) return pending;
+
+    const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new window.Image();
+      image.decoding = 'async';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error(`Unable to decode crisp terrarium frame ${index}`));
+      image.src = crispFrameUrl(index);
+    })
+      .then((image) => {
+        if (!disposed) crispFrames.set(index, image);
+        return image;
+      })
+      .finally(() => crispPromises.delete(index));
+
+    crispPromises.set(index, promise);
+    return promise;
+  };
+
   const trimDecodedFrames = (center: number) => {
     if (decodedFrames.size <= MAX_DECODED_FRAMES) return;
     const retained = [...decodedFrames.keys()]
@@ -135,6 +171,36 @@ export function createCanvasSequenceRenderer({
       trimDecodedFrames(frame);
     } catch {
       // Keep the last successfully rendered frame while the next one is loading.
+    }
+  };
+
+  const drawCrisp = async (index: number) => {
+    const request = ++latestRequest;
+    try {
+      const image = await loadCrispFrame(index);
+      if (disposed || request !== latestRequest) return;
+      context.globalAlpha = 1;
+      context.fillStyle = '#000';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      drawCover(image, 1);
+      canvas.dataset.crispFrame = String(index);
+      canvas.dataset.currentFrame = (
+        (index / (crispFrameCount - 1)) * (frameCount - 1)
+      ).toFixed(2);
+
+      const trimCrispFrames = () => crispFrames.forEach((cachedImage, cachedIndex) => {
+        if (Math.abs(cachedIndex - index) <= 1) return;
+        cachedImage.src = '';
+        crispFrames.delete(cachedIndex);
+      });
+      trimCrispFrames();
+      [index - 1, index + 1]
+        .filter((nextIndex) => nextIndex >= 0 && nextIndex < crispFrameCount)
+        .forEach((nextIndex) => {
+          void loadCrispFrame(nextIndex).then(trimCrispFrames).catch(() => undefined);
+        });
+    } catch {
+      // Keep the last rendered interpolation frame if the source image is not ready yet.
     }
   };
 
@@ -195,8 +261,12 @@ export function createCanvasSequenceRenderer({
   return {
     render(frame, direction = 1) {
       targetFrame = clamp(frame, 0, frameCount - 1);
+      delete canvas.dataset.crispFrame;
       warmFrames(targetFrame, direction);
       void draw(targetFrame);
+    },
+    renderCrisp(index) {
+      void drawCrisp(clamp(Math.round(index), 0, crispFrameCount - 1));
     },
     destroy() {
       disposed = true;
@@ -206,6 +276,8 @@ export function createCanvasSequenceRenderer({
       window.clearTimeout(prefetchTimer);
       decodedFrames.forEach((image) => { image.src = ''; });
       decodedFrames.clear();
+      crispFrames.forEach((image) => { image.src = ''; });
+      crispFrames.clear();
       blobUrls.forEach((url) => URL.revokeObjectURL(url));
       blobUrls.clear();
     },

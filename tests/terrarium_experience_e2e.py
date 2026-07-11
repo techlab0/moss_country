@@ -123,6 +123,27 @@ def assert_canvas_tracks_scroll_continuously(page: Page) -> None:
     assert all(later >= earlier - 1 for earlier, later in zip(samples, samples[1:])), samples
 
 
+def assert_scroll_settles_on_crisp_frames_without_chapter_copy(page: Page) -> None:
+    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
+    section = page.locator(EXPERIENCE)
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(750)
+    bounds = section.bounding_box()
+    viewport = page.viewport_size
+    assert bounds and viewport, "terrarium scroll geometry is unavailable"
+    assert page.get_by_text("ひとつの風景が、完成する。", exact=True).count() == 0, (
+        "the lower-right chapter explanation must be removed"
+    )
+
+    start = bounds["y"]
+    end = bounds["y"] + bounds["height"] - viewport["height"]
+    page.evaluate("y => window.scrollTo(0, y)", start + (end - start) * 0.31)
+    page.wait_for_timeout(1_500)
+    crisp_frame = canvas.get_attribute("data-crisp-frame")
+    assert crisp_frame is not None, "scroll must settle on an original crisp source frame"
+    assert 0 <= int(crisp_frame) < 24, crisp_frame
+
+
 def assert_progress_ui_and_copy(page: Page) -> None:
     assert_experience_exists(page)
     progress = page.locator(f'{EXPERIENCE} [role="progressbar"]')
@@ -257,6 +278,11 @@ def run(browser: Browser) -> list[Check]:
         checks,
         "interpolated canvas tracks scroll continuously",
         lambda: assert_canvas_tracks_scroll_continuously(desktop),
+    )
+    record(
+        checks,
+        "scroll settles on crisp frames without chapter copy",
+        lambda: assert_scroll_settles_on_crisp_frames_without_chapter_copy(desktop),
     )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)
