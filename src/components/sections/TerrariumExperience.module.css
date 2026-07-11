@@ -97,15 +97,22 @@
   background: #000;
 }
 
-.frame {
+.sequenceVideo,
+.reducedMotionFrame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transform-origin: center;
-  will-change: opacity, transform;
 }
 
-.frame:first-child {
-  opacity: 1;
+.sequenceVideo {
+  display: block;
+  background: #000;
+}
+
+.reducedMotionFrame {
+  display: none;
 }
 
 .frameVignette {
@@ -348,13 +355,12 @@
     min-height: 580px;
   }
 
-  .frame {
-    opacity: 0 !important;
-    transform: none !important;
+  .sequenceVideo {
+    display: none;
   }
 
-  .frame:last-child {
-    opacity: 1 !important;
+  .reducedMotionFrame {
+    display: block;
   }
 
   .copyChapter {

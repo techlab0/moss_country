@@ -67,22 +67,22 @@ def assert_descriptive_image_alt(page: Page) -> None:
     assert descriptive, f"expected a descriptive non-empty image alt, found {alts!r}"
 
 
-def assert_storyboard_sequence_is_the_visual_source(page: Page) -> None:
+def assert_interpolated_video_is_the_visual_source(page: Page) -> None:
     assert_experience_exists(page)
-    frames = page.locator(f'{EXPERIENCE} [data-testid="terrarium-frame"]')
-    assert frames.count() == 24, (
-        f"expected the 24 individually generated sequence frames, found {frames.count()}"
+    video = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-video"]')
+    assert video.count() == 1, "expected one optical-flow interpolated video"
+    source = video.get_attribute("src") or ""
+    assert "terrarium-sequence/interpolated-48fps.mp4" in source, source
+    assert video.get_attribute("data-interpolation") == "optical-flow-48fps"
+    assert video.get_attribute("preload") == "auto"
+    assert video.get_attribute("playsinline") is not None
+    assert "IMG_0501" not in source
+    metadata = video.evaluate(
+        "video => ({ readyState: video.readyState, duration: video.duration, muted: video.muted })"
     )
-    sources = [
-        (frames.nth(index).get_attribute("src") or "")
-        for index in range(frames.count())
-    ]
-    assert all("terrarium-sequence" in source for source in sources), (
-        f"every visual frame must come from the individually generated sequence: {sources!r}"
-    )
-    assert all("IMG_0501" not in source for source in sources), (
-        "the original product photo must not be used by the experience"
-    )
+    assert metadata["readyState"] >= 1, metadata
+    assert metadata["duration"] > 0, metadata
+    assert metadata["muted"], metadata
 
 
 def assert_artwork_fills_viewport_without_border(page: Page) -> None:
@@ -105,6 +105,27 @@ def assert_artwork_fills_viewport_without_border(page: Page) -> None:
     assert metrics["width"] >= metrics["viewportWidth"] * 0.99, metrics
     assert metrics["height"] >= metrics["viewportHeight"] * 0.99, metrics
     assert all(border == "0px" for border in metrics["borders"]), metrics
+
+
+def assert_video_tracks_scroll_continuously(page: Page) -> None:
+    section = page.locator(EXPERIENCE)
+    video = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-video"]')
+    bounds = section.bounding_box()
+    viewport = page.viewport_size
+    assert bounds and viewport, "terrarium scroll geometry is unavailable"
+    start = bounds["y"]
+    end = bounds["y"] + bounds["height"] - viewport["height"]
+    samples: list[float] = []
+    for step in range(11):
+        position = start + (end - start) * step / 10
+        page.evaluate("y => window.scrollTo(0, y)", position)
+        page.wait_for_timeout(500)
+        samples.append(video.evaluate("element => element.currentTime"))
+
+    duration = video.evaluate("element => element.duration")
+    assert samples[-1] >= duration * 0.85, {"duration": duration, "samples": samples}
+    assert len({round(value, 1) for value in samples}) >= 8, samples
+    assert all(later >= earlier - 0.08 for earlier, later in zip(samples, samples[1:])), samples
 
 
 def assert_progress_ui_and_copy(page: Page) -> None:
@@ -229,13 +250,18 @@ def run(browser: Browser) -> list[Check]:
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,
-        "twenty-four generated frames are the only visual sequence",
-        lambda: assert_storyboard_sequence_is_the_visual_source(desktop),
+        "optical-flow video is the visual sequence",
+        lambda: assert_interpolated_video_is_the_visual_source(desktop),
     )
     record(
         checks,
         "artwork fills the viewport without a border",
         lambda: assert_artwork_fills_viewport_without_border(desktop),
+    )
+    record(
+        checks,
+        "interpolated video tracks scroll continuously",
+        lambda: assert_video_tracks_scroll_continuously(desktop),
     )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)
