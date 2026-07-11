@@ -104,10 +104,10 @@ export function TerrariumExperience() {
             pin: stage,
             pinSpacing: true,
             anticipatePin: 1,
-            scrub: isDesktop ? 0.35 : 0.18,
+            scrub: isDesktop ? 0.28 : 0.16,
             snap: {
               snapTo: ScrollTrigger.snapDirectional(1 / (SOURCE_FRAME_COUNT - 1)),
-              duration: { min: 0.28, max: 0.55 },
+              duration: { min: 0.38, max: 0.78 },
               delay: 0.04,
               ease: 'power2.inOut',
               inertia: false,
