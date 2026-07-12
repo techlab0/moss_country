@@ -85,10 +85,51 @@
   will-change: transform;
 }
 
-.webglStack,
+.photoStack,
 .frameVignette {
   position: absolute;
   inset: 0;
+}
+
+.photoStack {
+  overflow: hidden;
+  background: #000;
+  isolation: isolate;
+}
+
+.photoImage {
+  z-index: 1;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: translate3d(var(--terrarium-x), var(--terrarium-y), 0)
+    scale(var(--terrarium-scale)) rotate(var(--terrarium-rotate));
+  transform-origin: 50% 56%;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.photoLight,
+.photoShadow {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.photoLight {
+  opacity: var(--terrarium-light);
+  background: radial-gradient(
+    ellipse at 46% 28%,
+    rgba(217, 239, 185, 0.34),
+    rgba(126, 164, 79, 0.08) 24%,
+    transparent 54%
+  );
+  mix-blend-mode: screen;
+}
+
+.photoShadow {
+  opacity: var(--terrarium-shadow);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.2), transparent 32%, rgba(0, 0, 0, 0.12));
 }
 
 .webglStack {
@@ -262,6 +303,10 @@
   .grain {
     opacity: 0.11;
   }
+
+  .photoImage {
+    object-position: 50% 51%;
+  }
 }
 
 @media (max-height: 700px) and (min-width: 768px) {
@@ -289,6 +334,15 @@
   .webglPosterHidden {
     display: block;
     opacity: 1;
+  }
+
+  .photoImage {
+    transform: scale(1.035);
+  }
+
+  .photoLight,
+  .photoShadow {
+    display: none;
   }
 
   .progressFill {

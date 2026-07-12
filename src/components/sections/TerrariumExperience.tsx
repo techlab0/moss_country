@@ -1,22 +1,16 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import { TerrariumPhotographicScroll } from './TerrariumPhotographicScroll';
 import styles from './TerrariumExperience.module.css';
-
-const MODEL_URL = '/models/terrarium-hero-web.glb';
-const TerrariumWebGL = dynamic(
-  () => import('./TerrariumWebGL').then((module) => module.TerrariumWebGL),
-  { ssr: false },
-);
 
 export function TerrariumExperience() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const modelProgressRef = useRef(0);
+  const visualProgressRef = useRef(0);
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLSpanElement>(null);
   const progressCopyRef = useRef<HTMLSpanElement>(null);
@@ -42,7 +36,7 @@ export function TerrariumExperience() {
 
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (reduceMotionQuery.matches) {
-      modelProgressRef.current = 1;
+      visualProgressRef.current = 1;
       progressBar.style.transform = 'scaleY(1)';
       progressTrack.setAttribute('aria-valuenow', '100');
       progressTrack.setAttribute('aria-valuetext', 'テラリウムの森を表示');
@@ -87,7 +81,8 @@ export function TerrariumExperience() {
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
-              modelProgressRef.current = self.progress;
+              visualProgressRef.current = self.progress;
+              stage.style.setProperty('--terrarium-progress', self.progress.toFixed(4));
               progressBar.style.transform = `scaleY(${self.progress})`;
               progressTrack.setAttribute('aria-valuenow', String(percentage));
               progressTrack.setAttribute(
@@ -117,7 +112,7 @@ export function TerrariumExperience() {
       ref={sectionRef}
       className={styles.experience}
       data-testid="terrarium-experience"
-      data-storyboard-source="interactive-three-gltf-terrarium"
+      data-storyboard-source="photographic-terrarium-scroll"
       aria-labelledby="terrarium-experience-title"
     >
       <div ref={stageRef} className={styles.stage}>
@@ -136,7 +131,7 @@ export function TerrariumExperience() {
           data-testid="terrarium-artwork"
           aria-describedby="terrarium-experience-description"
         >
-          <TerrariumWebGL modelUrl={MODEL_URL} progressRef={modelProgressRef} />
+          <TerrariumPhotographicScroll progressRef={visualProgressRef} />
           <div className={styles.frameVignette} aria-hidden="true" />
         </figure>
 
@@ -158,7 +153,7 @@ export function TerrariumExperience() {
 
         <p className={styles.scrollHint} aria-hidden="true"><span /> Scroll to cultivate</p>
         <p id="terrarium-experience-description" className={styles.srOnly}>
-          背の高いシダと立体的な苔に満ちたガラスの森を、スクロールで回転・拡大しながら鑑賞できます。
+          背の高いシダと湿った苔に満ちたガラスの森を、スクロールでゆっくり近づきながら鑑賞できます。
         </p>
         <p className={styles.reducedMotionNote} data-motion="reduced">
           動きを減らす設定では、完成した苔の森を静止画で表示しています。

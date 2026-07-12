@@ -67,17 +67,14 @@ def assert_descriptive_image_alt(page: Page) -> None:
     assert descriptive, f"expected a descriptive non-empty image alt, found {alts!r}"
 
 
-def assert_webgl_canvas_is_the_visual_source(page: Page) -> None:
+def assert_photograph_is_the_visual_source(page: Page) -> None:
     assert_experience_exists(page)
-    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-canvas"]')
-    assert canvas.count() == 1, "expected one WebGL terrarium canvas"
-    assert canvas.get_attribute("data-renderer") == "three-gltf"
-    assert canvas.get_attribute("data-model") == "/models/terrarium-hero-web.glb"
-    assert len((canvas.get_attribute("aria-label") or "").strip()) >= 6
-    assert canvas.get_attribute("data-load-state") in {"loading", "ready"}
-
-    poster = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-poster"]')
-    assert poster.count() == 1, "expected an accessible poster while WebGL loads"
+    photo = page.locator(f'{EXPERIENCE} [data-testid="terrarium-photo"]')
+    assert photo.count() == 1, "expected one photographic terrarium source"
+    assert photo.get_attribute("data-renderer") == "photographic-scroll"
+    assert page.locator(f'{EXPERIENCE} canvas').count() == 0, (
+        "the photographic experience must not render a soft interpolated canvas"
+    )
 
 
 def assert_artwork_fills_viewport_without_border(page: Page) -> None:
@@ -102,26 +99,26 @@ def assert_artwork_fills_viewport_without_border(page: Page) -> None:
     assert all(border == "0px" for border in metrics["borders"]), metrics
 
 
-def assert_webgl_model_tracks_scroll_continuously(page: Page) -> None:
+def assert_photograph_tracks_scroll_continuously(page: Page) -> None:
     section = page.locator(EXPERIENCE)
-    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-canvas"]')
+    photo = page.locator(f'{EXPERIENCE} [data-testid="terrarium-photo"]')
     bounds = section.bounding_box()
     viewport = page.viewport_size
     assert bounds and viewport, "terrarium scroll geometry is unavailable"
     start = bounds["y"]
     end = bounds["y"] + bounds["height"] - viewport["height"]
-    rotations: list[float] = []
     scales: list[float] = []
+    progress_values: list[float] = []
     for step in range(11):
         position = start + (end - start) * step / 10
         page.evaluate("y => window.scrollTo(0, y)", position)
         page.wait_for_timeout(500)
-        rotations.append(float(canvas.get_attribute("data-model-rotation") or 0))
-        scales.append(float(canvas.get_attribute("data-model-scale") or 1))
+        progress_values.append(float(photo.get_attribute("data-photo-progress") or 0))
+        scales.append(float(photo.get_attribute("data-photo-scale") or 1))
 
-    assert rotations[-1] - rotations[0] >= 0.55, rotations
-    assert scales[-1] - scales[0] >= 0.12, scales
-    assert len({round(value, 2) for value in rotations}) >= 8, rotations
+    assert progress_values[-1] - progress_values[0] >= 0.85, progress_values
+    assert scales[-1] - scales[0] >= 0.16, scales
+    assert len({round(value, 2) for value in scales}) >= 8, scales
 
 
 def assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(page: Page) -> None:
@@ -261,8 +258,8 @@ def run(browser: Browser) -> list[Check]:
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,
-        "WebGL canvas is the visual source",
-        lambda: assert_webgl_canvas_is_the_visual_source(desktop),
+        "photograph is the visual source",
+        lambda: assert_photograph_is_the_visual_source(desktop),
     )
     record(
         checks,
@@ -271,8 +268,8 @@ def run(browser: Browser) -> list[Check]:
     )
     record(
         checks,
-        "WebGL model tracks scroll continuously",
-        lambda: assert_webgl_model_tracks_scroll_continuously(desktop),
+        "photograph tracks scroll continuously",
+        lambda: assert_photograph_tracks_scroll_continuously(desktop),
     )
     record(
         checks,
