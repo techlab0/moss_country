@@ -67,14 +67,17 @@ def assert_descriptive_image_alt(page: Page) -> None:
     assert descriptive, f"expected a descriptive non-empty image alt, found {alts!r}"
 
 
-def assert_interpolated_canvas_is_the_visual_source(page: Page) -> None:
+def assert_webgl_canvas_is_the_visual_source(page: Page) -> None:
     assert_experience_exists(page)
-    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
-    assert canvas.count() == 1, "expected one cached optical-flow canvas"
-    assert canvas.get_attribute("data-renderer") == "cached-canvas-blend"
-    assert int(canvas.get_attribute("data-frame-count") or 0) >= 80
+    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-canvas"]')
+    assert canvas.count() == 1, "expected one WebGL terrarium canvas"
+    assert canvas.get_attribute("data-renderer") == "three-gltf"
+    assert canvas.get_attribute("data-model") == "/models/terrarium-hero-web.glb"
     assert len((canvas.get_attribute("aria-label") or "").strip()) >= 6
-    assert canvas.get_attribute("data-current-frame") is not None
+    assert canvas.get_attribute("data-load-state") in {"loading", "ready"}
+
+    poster = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-poster"]')
+    assert poster.count() == 1, "expected an accessible poster while WebGL loads"
 
 
 def assert_artwork_fills_viewport_without_border(page: Page) -> None:
@@ -99,32 +102,29 @@ def assert_artwork_fills_viewport_without_border(page: Page) -> None:
     assert all(border == "0px" for border in metrics["borders"]), metrics
 
 
-def assert_canvas_tracks_scroll_continuously(page: Page) -> None:
+def assert_webgl_model_tracks_scroll_continuously(page: Page) -> None:
     section = page.locator(EXPERIENCE)
-    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
+    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-webgl-canvas"]')
     bounds = section.bounding_box()
     viewport = page.viewport_size
     assert bounds and viewport, "terrarium scroll geometry is unavailable"
     start = bounds["y"]
     end = bounds["y"] + bounds["height"] - viewport["height"]
-    samples: list[float] = []
+    rotations: list[float] = []
+    scales: list[float] = []
     for step in range(11):
         position = start + (end - start) * step / 10
         page.evaluate("y => window.scrollTo(0, y)", position)
         page.wait_for_timeout(500)
-        samples.append(float(canvas.get_attribute("data-current-frame") or 0))
+        rotations.append(float(canvas.get_attribute("data-model-rotation") or 0))
+        scales.append(float(canvas.get_attribute("data-model-scale") or 1))
 
-    frame_count = int(canvas.get_attribute("data-frame-count") or 0)
-    assert samples[-1] >= (frame_count - 1) * 0.85, {
-        "frameCount": frame_count,
-        "samples": samples,
-    }
-    assert len({round(value) for value in samples}) >= 8, samples
-    assert all(later >= earlier - 1 for earlier, later in zip(samples, samples[1:])), samples
+    assert rotations[-1] - rotations[0] >= 0.55, rotations
+    assert scales[-1] - scales[0] >= 0.12, scales
+    assert len({round(value, 2) for value in rotations}) >= 8, rotations
 
 
-def assert_scroll_settles_on_crisp_frames_without_chapter_copy(page: Page) -> None:
-    canvas = page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]')
+def assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(page: Page) -> None:
     section = page.locator(EXPERIENCE)
     page.evaluate("window.scrollTo(0, 0)")
     page.wait_for_timeout(750)
@@ -135,13 +135,8 @@ def assert_scroll_settles_on_crisp_frames_without_chapter_copy(page: Page) -> No
         "the lower-right chapter explanation must be removed"
     )
 
-    start = bounds["y"]
-    end = bounds["y"] + bounds["height"] - viewport["height"]
-    page.evaluate("y => window.scrollTo(0, y)", start + (end - start) * 0.31)
-    page.wait_for_timeout(1_500)
-    crisp_frame = canvas.get_attribute("data-crisp-frame")
-    assert crisp_frame is not None, "scroll must settle on an original crisp source frame"
-    assert 0 <= int(crisp_frame) < 24, crisp_frame
+    assert page.locator(f'{EXPERIENCE} [data-testid="terrarium-interpolated-canvas"]').count() == 0
+    assert page.locator(f'{EXPERIENCE} [data-testid="terrarium-frame-copy"]').count() == 0
 
 
 def assert_progress_ui_and_copy(page: Page) -> None:
@@ -266,8 +261,8 @@ def run(browser: Browser) -> list[Check]:
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,
-        "cached optical-flow canvas is the visual sequence",
-        lambda: assert_interpolated_canvas_is_the_visual_source(desktop),
+        "WebGL canvas is the visual source",
+        lambda: assert_webgl_canvas_is_the_visual_source(desktop),
     )
     record(
         checks,
@@ -276,13 +271,13 @@ def run(browser: Browser) -> list[Check]:
     )
     record(
         checks,
-        "interpolated canvas tracks scroll continuously",
-        lambda: assert_canvas_tracks_scroll_continuously(desktop),
+        "WebGL model tracks scroll continuously",
+        lambda: assert_webgl_model_tracks_scroll_continuously(desktop),
     )
     record(
         checks,
-        "scroll settles on crisp frames without chapter copy",
-        lambda: assert_scroll_settles_on_crisp_frames_without_chapter_copy(desktop),
+        "obsolete frame UI and chapter copy are absent",
+        lambda: assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(desktop),
     )
     record(checks, "progress UI exposes semantic state and copy", lambda: assert_progress_ui_and_copy(desktop))
     exercise_scroll(desktop)

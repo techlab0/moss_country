@@ -85,19 +85,20 @@
   will-change: transform;
 }
 
-.frameStack,
+.webglStack,
 .frameVignette {
   position: absolute;
   inset: 0;
 }
 
-.frameStack {
+.webglStack {
   overflow: hidden;
   background: #000;
 }
 
-.sequenceCanvas,
-.reducedMotionFrame {
+.webglCanvas,
+.webglPoster,
+.webglPosterHidden {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -105,15 +106,35 @@
   object-fit: cover;
 }
 
-.sequenceCanvas {
+.webglCanvas {
+  z-index: 1;
   display: block;
   background: #000;
-  transform-origin: center;
-  will-change: transform;
+  touch-action: pan-y;
 }
 
-.reducedMotionFrame {
-  display: none;
+.webglPoster,
+.webglPosterHidden {
+  z-index: 2;
+  transition: opacity 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.webglPosterHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.webglStatus {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: clamp(2rem, 7vh, 5rem);
+  color: rgba(221, 235, 209, 0.58);
+  font-family: Georgia, serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
 }
 
 .frameVignette {
@@ -122,18 +143,6 @@
     linear-gradient(90deg, rgba(0, 0, 0, 0.66), transparent 29%, transparent 68%, rgba(0, 0, 0, 0.48)),
     linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 25%, transparent 64%, rgba(0, 0, 0, 0.62));
   pointer-events: none;
-}
-
-.frameCopy {
-  position: absolute;
-  z-index: 5;
-  right: 1rem;
-  bottom: 0.85rem;
-  font-family: Georgia, serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  color: rgba(231, 239, 223, 0.55);
-  text-shadow: 0 1px 8px #000;
 }
 
 .progress {
@@ -272,12 +281,14 @@
     min-height: 580px;
   }
 
-  .sequenceCanvas {
+  .webglCanvas {
     display: none;
   }
 
-  .reducedMotionFrame {
+  .webglPoster,
+  .webglPosterHidden {
     display: block;
+    opacity: 1;
   }
 
   .progressFill {
