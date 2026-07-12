@@ -27,17 +27,24 @@ class TerrariumPhotographicContractTests(unittest.TestCase):
         self.assertNotIn("TerrariumWebGL", source)
         self.assertNotIn("terrarium-hero-web.glb", source)
         self.assertIn('data-storyboard-source="photographic-terrarium-scroll"', source)
+        self.assertIn("ROTATION_SNAP_POINTS", source)
+        self.assertIn("snapTo", source)
 
     def test_photo_scroll_keeps_motion_on_one_sharp_source(self) -> None:
         source = PHOTO_SCROLL.read_text(encoding="utf-8")
         self.assertIn("next/image", source)
-        self.assertIn("terrarium-hero-key-030-v1.png", source)
-        self.assertIn('data-renderer="photographic-scroll"', source)
+        for filename in (
+            "terrarium-hero-angle-left-024-v1.png",
+            "terrarium-hero-key-030-v1.png",
+            "terrarium-hero-angle-right-028-v1.png",
+            "terrarium-hero-angle-right-close-v1.png",
+        ):
+            self.assertIn(filename, source)
+        self.assertIn("ROTATION_FRAMES", source)
+        self.assertIn('data-renderer="photographic-multiview"', source)
         self.assertIn("--terrarium-progress", source)
-        self.assertIn("CAMERA_STOPS", source)
-        self.assertIn("interpolateCameraPose", source)
-        self.assertIn('data-photo-x="0.0000"', source)
-        self.assertIn('data-photo-rotation="0.0000"', source)
+        self.assertIn("data-rotation-view", source)
+        self.assertIn('data-active-view="left"', source)
         self.assertNotIn("canvas", source.lower())
         self.assertNotIn("frameIndex", source)
 
@@ -46,6 +53,7 @@ class TerrariumPhotographicContractTests(unittest.TestCase):
         self.assertIn("prefers-reduced-motion", source)
         self.assertIn("alt=", source)
         self.assertIn('data-testid="terrarium-photo"', source)
+        self.assertIn('data-testid="terrarium-rotation-frame"', source)
 
     def test_generated_hero_is_large_enough_for_fullscreen_delivery(self) -> None:
         self.assertTrue(HERO_IMAGE.exists())

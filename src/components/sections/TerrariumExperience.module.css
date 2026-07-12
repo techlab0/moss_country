@@ -100,14 +100,19 @@
   isolation: isolate;
 }
 
+.rotationFrame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform-origin: 50% 54%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
 .photoImage {
   z-index: 1;
   object-fit: cover;
   object-position: 50% 50%;
-  transform: translate3d(var(--terrarium-x), var(--terrarium-y), 0)
-    scale(var(--terrarium-scale)) rotate(var(--terrarium-rotate));
-  transform-origin: 50% 56%;
-  will-change: transform;
   backface-visibility: hidden;
 }
 
@@ -356,8 +361,8 @@
     opacity: 1;
   }
 
-  .photoImage {
-    transform: scale(1.025);
+  .rotationFrame {
+    transform: none !important;
   }
 
   .photoLight,

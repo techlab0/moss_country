@@ -7,6 +7,8 @@ import Lenis from 'lenis';
 import { TerrariumPhotographicScroll } from './TerrariumPhotographicScroll';
 import styles from './TerrariumExperience.module.css';
 
+const ROTATION_SNAP_POINTS = [0, 1 / 3, 2 / 3, 1];
+
 export function TerrariumExperience() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -78,6 +80,14 @@ export function TerrariumExperience() {
             pinSpacing: true,
             anticipatePin: 1,
             scrub: isDesktop ? 0.42 : 0.24,
+            snap: {
+              snapTo: (value) => ROTATION_SNAP_POINTS.reduce(
+                (closest, point) => Math.abs(point - value) < Math.abs(closest - value) ? point : closest,
+              ),
+              duration: { min: 0.18, max: 0.42 },
+              delay: 0.06,
+              ease: 'power2.out',
+            },
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
@@ -157,7 +167,7 @@ export function TerrariumExperience() {
 
         <p className={styles.scrollHint} aria-hidden="true"><span /> Scroll to cultivate</p>
         <p id="terrarium-experience-description" className={styles.srOnly}>
-          背の高いシダと湿った苔に満ちたガラスの森を、スクロールでゆっくり近づきながら鑑賞できます。
+          背の高いシダと湿った苔に満ちたガラスの森を、スクロールで左から右へ回り込み、近づきながら鑑賞できます。
         </p>
         <p className={styles.reducedMotionNote} data-motion="reduced">
           動きを減らす設定では、完成した苔の森を静止画で表示しています。
