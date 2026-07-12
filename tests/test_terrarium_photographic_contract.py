@@ -34,6 +34,10 @@ class TerrariumPhotographicContractTests(unittest.TestCase):
         self.assertIn("terrarium-hero-key-030-v1.png", source)
         self.assertIn('data-renderer="photographic-scroll"', source)
         self.assertIn("--terrarium-progress", source)
+        self.assertIn("CAMERA_STOPS", source)
+        self.assertIn("interpolateCameraPose", source)
+        self.assertIn('data-photo-x="0.0000"', source)
+        self.assertIn('data-photo-rotation="0.0000"', source)
         self.assertNotIn("canvas", source.lower())
         self.assertNotIn("frameIndex", source)
 

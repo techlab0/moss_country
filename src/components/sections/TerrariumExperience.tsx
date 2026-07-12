@@ -83,6 +83,10 @@ export function TerrariumExperience() {
               const percentage = Math.round(self.progress * 100);
               visualProgressRef.current = self.progress;
               stage.style.setProperty('--terrarium-progress', self.progress.toFixed(4));
+              const headingProgress = Math.min(1, Math.max(0, (self.progress - 0.18) / 0.18));
+              stage.style.setProperty('--terrarium-heading-opacity', (1 - headingProgress).toFixed(4));
+              stage.style.setProperty('--terrarium-heading-x', `${(-2.4 * headingProgress).toFixed(4)}rem`);
+              stage.style.setProperty('--terrarium-hint-opacity', Math.max(0, 1 - self.progress * 5).toFixed(4));
               progressBar.style.transform = `scaleY(${self.progress})`;
               progressTrack.setAttribute('aria-valuenow', String(percentage));
               progressTrack.setAttribute(

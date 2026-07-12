@@ -109,16 +109,22 @@ def assert_photograph_tracks_scroll_continuously(page: Page) -> None:
     end = bounds["y"] + bounds["height"] - viewport["height"]
     scales: list[float] = []
     progress_values: list[float] = []
+    horizontal_positions: list[float] = []
+    rotations: list[float] = []
     for step in range(11):
         position = start + (end - start) * step / 10
         page.evaluate("y => window.scrollTo(0, y)", position)
         page.wait_for_timeout(500)
         progress_values.append(float(photo.get_attribute("data-photo-progress") or 0))
         scales.append(float(photo.get_attribute("data-photo-scale") or 1))
+        horizontal_positions.append(float(photo.get_attribute("data-photo-x") or 0))
+        rotations.append(float(photo.get_attribute("data-photo-rotation") or 0))
 
     assert progress_values[-1] - progress_values[0] >= 0.85, progress_values
-    assert scales[-1] - scales[0] >= 0.16, scales
+    assert scales[-1] - scales[0] >= 0.28, scales
     assert len({round(value, 2) for value in scales}) >= 8, scales
+    assert max(horizontal_positions) - min(horizontal_positions) >= 2.0, horizontal_positions
+    assert max(rotations) - min(rotations) >= 0.5, rotations
 
 
 def assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(page: Page) -> None:

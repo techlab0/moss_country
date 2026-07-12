@@ -51,6 +51,9 @@
   left: clamp(1.5rem, 5.5vw, 6.5rem);
   width: min(27rem, 30vw);
   pointer-events: none;
+  opacity: var(--terrarium-heading-opacity, 1);
+  transform: translate3d(var(--terrarium-heading-x, 0), 0, 0);
+  will-change: transform, opacity;
 }
 
 .kicker {
@@ -109,11 +112,27 @@
 }
 
 .photoLight,
+.photoSheen,
 .photoShadow {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
+}
+
+.photoSheen {
+  opacity: var(--terrarium-sheen-opacity);
+  background: linear-gradient(
+    112deg,
+    transparent 40%,
+    rgba(230, 244, 217, 0.16) 48%,
+    rgba(255, 255, 255, 0.24) 50%,
+    rgba(198, 224, 178, 0.08) 53%,
+    transparent 61%
+  );
+  transform: translate3d(var(--terrarium-sheen-x), 0, 0);
+  will-change: transform, opacity;
+  mix-blend-mode: screen;
 }
 
 .photoLight {
@@ -238,6 +257,7 @@
   font-size: 0.58rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  opacity: var(--terrarium-hint-opacity, 1);
 }
 
 .scrollHint span {
@@ -337,10 +357,11 @@
   }
 
   .photoImage {
-    transform: scale(1.035);
+    transform: scale(1.025);
   }
 
   .photoLight,
+  .photoSheen,
   .photoShadow {
     display: none;
   }
