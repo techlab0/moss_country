@@ -4,7 +4,8 @@
   width: 100%;
   min-height: 100svh;
   overflow: clip;
-  background: #020403;
+  /* 統一バックドロップの上に置くため透過。ステージ自身が不透明な暗色を持つ */
+  background: transparent;
   color: #edf4e7;
   --fern: #badf8d;
 }
@@ -18,6 +19,29 @@
   background:
     radial-gradient(circle at 50% 44%, rgba(80, 103, 54, 0.16), transparent 30%),
     linear-gradient(145deg, #07100b 0%, #010201 54%, #080704 100%);
+}
+
+/* ステージの上端・下端を統一バックドロップの色へ約120pxで溶かし、
+   セクション境界の「継ぎ目」を消す */
+.stage::before,
+.stage::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 5;
+  height: 120px;
+  pointer-events: none;
+}
+
+.stage::before {
+  top: 0;
+  background: linear-gradient(180deg, #060a08 0%, rgba(6, 10, 8, 0) 100%);
+}
+
+.stage::after {
+  bottom: 0;
+  background: linear-gradient(0deg, #060a08 0%, rgba(6, 10, 8, 0) 100%);
 }
 
 .ambientGlow,

@@ -69,7 +69,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
         y: 0,
         opacity: 1,
         stagger: 0.03,
-        duration: 0.7,
+        duration: 0.8,
         ease: 'power2.out',
         scrollTrigger: {
           trigger: heading,
@@ -84,8 +84,8 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
         gsap.to(inner, {
           y: 0,
           opacity: 1,
-          duration: 1.1,
-          ease: 'power3.out',
+          duration: 1,
+          ease: 'power2.out',
           delay: index * 0.15,
           scrollTrigger: {
             trigger: inner,
@@ -123,7 +123,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
     <section
       ref={sectionRef}
       data-home-screen="regular"
-      className="py-10 sm:py-12 md:py-12 lg:py-14 bg-stone-950/90 backdrop-blur-md shadow-2xl"
+      className="relative py-10 sm:py-12 md:py-12 lg:py-14"
     >
       <Container>
         <div className="text-center mb-8 sm:mb-10 md:mb-10 lg:mb-12">
@@ -171,8 +171,8 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
               title: t('card1Title'),
               desc: ov('card1Desc'),
               fallback: <>一つひとつ手作業で<br className="hidden sm:block" />丁寧に作られた<br className="hidden sm:block" />本物のテラリウム</>,
-              border: 'border-emerald-400/20 hover:border-emerald-400/40',
-              bg: 'bg-emerald-900/30 hover:bg-emerald-900/40',
+              border: 'border-emerald-400/15 hover:border-emerald-400/40',
+              bg: 'bg-stone-950/50 hover:bg-stone-900/60',
               accentText: 'group-hover:text-emerald-200',
               accentBar: 'bg-emerald-400',
             },
@@ -181,8 +181,8 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
               title: t('card2Title'),
               desc: ov('card2Desc'),
               fallback: <>苔テラリウムの<br className="hidden sm:block" />専門店として<br className="hidden sm:block" />地域密着</>,
-              border: 'border-amber-600/20 hover:border-amber-600/40',
-              bg: 'bg-amber-900/30 hover:bg-amber-900/40',
+              border: 'border-amber-600/15 hover:border-amber-600/40',
+              bg: 'bg-stone-950/50 hover:bg-stone-900/60',
               accentText: 'group-hover:text-amber-200',
               accentBar: 'bg-amber-500',
             },
@@ -191,8 +191,8 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
               title: t('card3Title'),
               desc: ov('card3Desc'),
               fallback: <>初心者から上級者まで<br className="hidden sm:block" />楽しめる<br className="hidden sm:block" />ワークショップ</>,
-              border: 'border-teal-400/20 hover:border-teal-400/40',
-              bg: 'bg-teal-900/30 hover:bg-teal-900/40',
+              border: 'border-teal-400/15 hover:border-teal-400/40',
+              bg: 'bg-stone-950/50 hover:bg-stone-900/60',
               accentText: 'group-hover:text-teal-200',
               accentBar: 'bg-teal-400',
             },
@@ -204,7 +204,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
             >
               <div
                 ref={(el) => { cardInnerRefs.current[index] = el; }}
-                className={`backdrop-blur-md rounded-2xl p-5 sm:p-6 md:p-6 border transition-all duration-300 ${card.bg} ${card.border}`}
+                className={`backdrop-blur-sm rounded-2xl p-5 sm:p-6 md:p-6 border transition-all duration-300 ${card.bg} ${card.border}`}
               >
                 <h3 className={`text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 transition-colors duration-300 ${card.accentText}`}>{card.title}</h3>
                 <div className={`w-12 sm:w-16 h-0.5 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300 ${card.accentBar}`}></div>

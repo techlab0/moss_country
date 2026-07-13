@@ -81,7 +81,7 @@ export const LatestNews: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section data-home-screen="regular" className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+      <section data-home-screen="regular" className="relative py-12 sm:py-16 md:py-24">
         <Container>
           <InlineLoading message="新着情報を読み込み中..." />
         </Container>
@@ -94,7 +94,7 @@ export const LatestNews: React.FC = () => {
   }
 
   return (
-    <section ref={sectionRef} data-home-screen="regular" className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+    <section ref={sectionRef} data-home-screen="regular" className="relative py-12 sm:py-16 md:py-24">
       <Container>
         <div ref={headingRef} className="text-center mb-8 sm:mb-12 md:mb-16">
           <div className="mb-6 sm:mb-8">
@@ -119,7 +119,7 @@ export const LatestNews: React.FC = () => {
             >
               <Link
                 href={`/blog/${post.slug.current}`}
-                className="block bg-stone-900/70 backdrop-blur-md rounded-lg p-4 sm:p-6 hover:bg-stone-800/70 transition-all duration-300 border border-emerald-400/20 hover:border-emerald-400/50"
+                className="block bg-stone-950/50 backdrop-blur-sm rounded-lg p-4 sm:p-6 hover:bg-stone-900/60 transition-all duration-300 border border-emerald-400/15 hover:border-emerald-400/40"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1">

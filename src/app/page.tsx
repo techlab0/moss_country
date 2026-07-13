@@ -5,39 +5,29 @@ import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/Hero';
 import { LatestNews } from '@/components/sections/LatestNews';
 import { AboutSection } from '@/components/sections/home/AboutSection';
-import { ProductShowcase } from '@/components/sections/home/ProductShowcase';
+import { ProductsSection } from '@/components/sections/home/ProductsSection';
 import { WorkshopSection } from '@/components/sections/home/WorkshopSection';
 import { CTASection } from '@/components/sections/home/CTASection';
 import { HomeScrollJourney } from '@/components/sections/home/HomeScrollJourney';
-import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { defaultHeroImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 
 const TerrariumExperience = dynamic(
   () => import('@/components/sections/TerrariumExperience').then((module) => module.TerrariumExperience),
   {
     ssr: false,
-    loading: () => <section className="min-h-[100svh] bg-[#030706]" aria-hidden="true" />,
+    loading: () => <section className="min-h-[100svh]" aria-hidden="true" />,
   },
 );
+
+// 統一バックドロップ用のSVGノイズ（feTurbulence）。外部リクエストなしのdata URI。
+const NOISE_TEXTURE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
   const { t, img, ov } = usePageContent('home');
-  const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
-  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['main'].src);
-  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['main-mobile'].src);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // ヒーロー画像を取得（エラー時はデフォルト画像を維持）
   useEffect(() => {
@@ -54,109 +44,87 @@ export default function Home() {
       });
   }, []);
 
-  // 背景画像を取得（エラー時はデフォルト画像を維持）
-  useEffect(() => {
-    // PC用背景画像
-    fetch(`/api/images/background?page=main&mobile=false`)
-      .then(res => res.json())
-      .then((imageInfo) => {
-        if (imageInfo?.src && !imageInfo.error) {
-          setBackgroundImageUrl(imageInfo.src);
-        }
-      })
-      .catch((error) => {
-        console.warn('Failed to load background image (PC), using default:', error);
-        // エラー時はデフォルト画像を維持（既に設定済み）
-      });
-    // モバイル用背景画像
-    fetch(`/api/images/background?page=main&mobile=true`)
-      .then(res => res.json())
-      .then((imageInfo) => {
-        if (imageInfo?.src && !imageInfo.error) {
-          setBackgroundImageMobileUrl(imageInfo.src);
-        }
-      })
-      .catch((error) => {
-        console.warn('Failed to load background image (Mobile), using default:', error);
-        // エラー時はデフォルト画像を維持（既に設定済み）
-      });
-  }, []);
-
   return (
     <div className="relative">
-      {/* 背景画像: iOS Safariはbackground-attachment:fixedを無視し、cover基準が
-          ページ要素全体（1万px超）になって画像が巨大に拡大されるため、
-          position:fixedのdivで「ビューポート基準のcover」を実現する */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 pointer-events-none"
-        style={{
-          backgroundImage: isMobile
-            ? `url('${backgroundImageMobileUrl}')`
-            : `url('${backgroundImageUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-      {/* Unified Background Overlay */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-emerald-900/20" />
-      <HomeScrollJourney>
-      {/* Hero Section */}
-      <div data-home-screen="regular">
-        <Hero heroImageUrl={heroImageUrl} />
+      {/* 統一バックドロップ:
+          ページ全体をひとつの世界として繋ぐ、深い緑黒の縦グラデーション
+          ＋ 淡い苔緑のグロー ＋ SVGノイズの微細な質感。
+          -z-10のfixedなので、透過した各セクションの背後に常にこれが見える。 */}
+      <div aria-hidden="true" className="fixed inset-0 -z-10 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: [
+              'radial-gradient(ellipse 85% 55% at 18% 10%, rgba(96, 134, 70, 0.05), transparent 62%)',
+              'radial-gradient(ellipse 75% 50% at 84% 46%, rgba(96, 134, 70, 0.055), transparent 60%)',
+              'radial-gradient(ellipse 95% 60% at 38% 90%, rgba(110, 148, 80, 0.045), transparent 64%)',
+              'linear-gradient(180deg, #050807 0%, #0a0f0b 45%, #060a08 100%)',
+            ].join(', '),
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ opacity: 0.035, backgroundImage: `url("${NOISE_TEXTURE}")` }}
+        />
       </div>
 
-      <TerrariumExperience />
+      <HomeScrollJourney>
+        {/* Hero Section */}
+        <div data-home-screen="regular">
+          <Hero heroImageUrl={heroImageUrl} />
+        </div>
 
-      {/* MOSS COUNTRYとは */}
-      <AboutSection t={t} ov={ov} />
+        <TerrariumExperience />
 
-      {/* 新着情報 */}
-      <LatestNews />
+        {/* MOSS COUNTRYとは */}
+        <AboutSection t={t} ov={ov} />
 
-      {/* 商品ショーケース */}
-      <ProductShowcase
-        items={[
-          {
-            id: '1',
-            title: t('carousel1Title'),
-            description: t('carousel1Desc'),
-            image: img('carousel1Image'),
-            category: 'Terrarium',
-            link: '/products'
-          },
-          {
-            id: '2',
-            title: t('carousel2Title'),
-            description: t('carousel2Desc'),
-            image: img('carousel2Image'),
-            category: 'Moss Ball',
-            link: '/products'
-          },
-          {
-            id: '3',
-            title: t('carousel3Title'),
-            description: t('carousel3Desc'),
-            image: img('carousel3Image'),
-            category: 'Tools',
-            link: '/products'
-          },
-          {
-            id: '4',
-            title: t('carousel4Title'),
-            description: t('carousel4Desc'),
-            image: img('carousel4Image'),
-            category: 'Workshop',
-            link: '/workshop'
-          },
-        ]}
-      />
+        {/* 新着情報 */}
+        <LatestNews />
 
-      {/* ワークショップ案内 */}
-      <WorkshopSection t={t} ov={ov} img={img} />
+        {/* 商品カテゴリー概要 - 円形カルーセル */}
+        <ProductsSection
+          items={[
+            {
+              id: '1',
+              title: t('carousel1Title'),
+              description: t('carousel1Desc'),
+              image: img('carousel1Image'),
+              category: 'Terrarium',
+              link: '/products'
+            },
+            {
+              id: '2',
+              title: t('carousel2Title'),
+              description: t('carousel2Desc'),
+              image: img('carousel2Image'),
+              category: 'Moss Ball',
+              link: '/products'
+            },
+            {
+              id: '3',
+              title: t('carousel3Title'),
+              description: t('carousel3Desc'),
+              image: img('carousel3Image'),
+              category: 'Tools',
+              link: '/products'
+            },
+            {
+              id: '4',
+              title: t('carousel4Title'),
+              description: t('carousel4Desc'),
+              image: img('carousel4Image'),
+              category: 'Workshop',
+              link: '/workshop'
+            },
+          ]}
+        />
 
-      {/* ECサイト誘導CTA */}
-      <CTASection ov={ov} />
+        {/* ワークショップ案内 */}
+        <WorkshopSection t={t} ov={ov} img={img} />
+
+        {/* ECサイト誘導CTA */}
+        <CTASection ov={ov} />
       </HomeScrollJourney>
     </div>
   );

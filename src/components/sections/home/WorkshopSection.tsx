@@ -59,8 +59,8 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
         gsap.set(textBlock, { clipPath: 'inset(0% 100% 0% 0%)' });
         gsap.to(textBlock, {
           clipPath: 'inset(0% 0% 0% 0%)',
-          duration: 1.3,
-          ease: 'power3.out',
+          duration: 1,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: textBlock,
             start: 'top 82%',
@@ -75,21 +75,21 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
 
   return (
     <section ref={sectionRef} data-home-screen="regular" className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
-      <div className="absolute inset-0" />
       <Container className="relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
           <div
             ref={textBlockRef}
-            className="glass-card-dark rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 relative overflow-hidden bg-emerald-900/90 backdrop-blur-md order-2 md:order-1"
+            className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 relative overflow-hidden bg-stone-950/50 backdrop-blur-sm border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)] order-2 md:order-1"
           >
             <div className="mb-4 sm:mb-6 relative z-10">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Workshop Experience</span>
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-white mb-4 sm:mb-6 leading-tight sm:leading-normal relative z-10">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-white mb-3 sm:mb-4 leading-tight sm:leading-normal relative z-10">
               {t('workshopTitle')}
               <br />
               <span className="text-emerald-300 font-bold">{t('workshopTitleAccent')}</span>
             </h2>
+            <div className="w-16 h-px bg-gradient-to-r from-emerald-400/70 to-transparent mb-4 sm:mb-5 relative z-10"></div>
             <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-4 sm:mb-6 leading-relaxed font-light relative z-10">
               {ov('workshopLead') !== undefined ? (
                 <span className="whitespace-pre-line">{ov('workshopLead')}</span>
@@ -121,7 +121,7 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
               </Button>
             </a>
           </div>
-          <div className="glass-card-dark rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 h-64 sm:h-80 md:h-96 relative overflow-hidden order-1 md:order-2">
+          <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 h-64 sm:h-80 md:h-96 relative overflow-hidden bg-stone-950/40 border border-emerald-400/10 order-1 md:order-2">
             <div ref={imageWrapRef} className="absolute inset-0">
               <ImagePlaceholder
                 src={img('workshopImage')}
