@@ -1,0 +1,245 @@
+.section {
+  position: relative;
+  z-index: 50;
+  isolation: isolate;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: 640px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(80, 103, 54, 0.14), transparent 32%),
+    linear-gradient(150deg, #060d09 0%, #010201 55%, #070604 100%);
+}
+
+.imageColumn {
+  position: absolute;
+  inset: 0;
+  right: 0;
+  width: 55%;
+  height: 100%;
+}
+
+.imageLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: clip-path, transform, filter, opacity;
+  backface-visibility: hidden;
+}
+
+.image {
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+.imageVignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 20%, transparent 82%, rgba(0, 0, 0, 0.28));
+}
+
+.infoColumn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 45%;
+  height: 100%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 4.5rem);
+}
+
+.indexRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+  color: rgba(229, 239, 220, 0.6);
+  font-family: Georgia, serif;
+}
+
+.index {
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+  letter-spacing: 0.08em;
+  color: #badf8d;
+}
+
+.indexTotal {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 4.5rem);
+  padding-top: clamp(4.5rem, 10vh, 6.5rem);
+}
+
+.category {
+  display: inline-block;
+  color: #a9d888;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0 0 1.25rem;
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: clamp(1.75rem, 2.6vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.4;
+  color: #edf4e7;
+}
+
+.description {
+  margin: 0 0 2rem;
+  max-width: 30rem;
+  color: rgba(229, 239, 220, 0.78);
+  font-size: clamp(0.9rem, 1vw, 1.05rem);
+  line-height: 1.9;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  color: #badf8d;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid rgba(186, 223, 141, 0.4);
+  padding-bottom: 0.3rem;
+  transition: border-color 300ms ease, color 300ms ease, gap 300ms ease;
+}
+
+.link:hover {
+  color: #d9efb9;
+  border-color: rgba(217, 239, 185, 0.85);
+  gap: 0.9rem;
+}
+
+.skipButton {
+  position: absolute;
+  z-index: 10;
+  right: clamp(1rem, 3vw, 3rem);
+  bottom: clamp(1rem, 3.5vh, 2.5rem);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(221, 234, 210, 0.28);
+  border-radius: 999px;
+  background: rgba(2, 4, 3, 0.28);
+  color: rgba(229, 239, 220, 0.55);
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: opacity 300ms ease, color 300ms ease, border-color 300ms ease;
+}
+
+.skipButton:hover,
+.skipButton:focus-visible {
+  color: rgba(237, 244, 231, 0.95);
+  border-color: rgba(221, 234, 210, 0.6);
+  outline: none;
+}
+
+/* リストレイアウト（prefers-reduced-motion / JS未検出時のフォールバック） */
+.staticList {
+  padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 5vw, 3rem);
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.staticCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  border: 1px solid rgba(186, 223, 141, 0.16);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: rgba(8, 14, 10, 0.6);
+}
+
+.staticImageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+}
+
+.staticBody {
+  padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem) 2rem;
+}
+
+@media (min-width: 768px) {
+  .staticCard {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .staticImageWrap {
+    aspect-ratio: auto;
+    height: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .stage {
+    min-height: 620px;
+  }
+
+  .imageColumn {
+    width: 100%;
+  }
+
+  .imageVignette {
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.35) 46%, rgba(0, 0, 0, 0.86) 100%);
+  }
+
+  .infoColumn {
+    width: 100%;
+    justify-content: flex-end;
+    padding: 1.25rem 1.25rem 2.25rem;
+  }
+
+  .indexRow {
+    margin-bottom: 1rem;
+  }
+
+  .panel {
+    padding: 1.25rem 1.25rem 2.25rem;
+    padding-top: 1.25rem;
+    justify-content: flex-end;
+  }
+
+  .description {
+    max-width: none;
+  }
+
+  .skipButton {
+    right: 0.85rem;
+    bottom: 0.85rem;
+    font-size: 0.66rem;
+    padding: 0.4rem 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imageLayer,
+  .panel {
+    transition: none !important;
+  }
+}

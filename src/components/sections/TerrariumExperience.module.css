@@ -271,6 +271,39 @@
   background: rgba(213, 231, 198, 0.42);
 }
 
+.skipButton {
+  position: absolute;
+  z-index: 10;
+  right: clamp(1rem, 3vw, 3rem);
+  bottom: clamp(1rem, 3.5vh, 2.5rem);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(221, 234, 210, 0.28);
+  border-radius: 999px;
+  background: rgba(2, 4, 3, 0.28);
+  color: rgba(229, 239, 220, 0.55);
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: opacity 300ms ease, color 300ms ease, border-color 300ms ease;
+}
+
+.skipButton:hover,
+.skipButton:focus-visible {
+  color: rgba(237, 244, 231, 0.95);
+  border-color: rgba(221, 234, 210, 0.6);
+  outline: none;
+}
+
+@media (max-width: 767px) {
+  .skipButton {
+    right: 0.85rem;
+    bottom: 0.85rem;
+    font-size: 0.66rem;
+    padding: 0.4rem 0.85rem;
+  }
+}
+
 .srOnly,
 .reducedMotionNote {
   position: absolute;
@@ -375,7 +408,8 @@
     transform: scaleY(1) !important;
   }
 
-  .scrollHint {
+  .scrollHint,
+  .skipButton {
     display: none;
   }
 }

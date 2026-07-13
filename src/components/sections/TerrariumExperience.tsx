@@ -16,6 +16,18 @@ export function TerrariumExperience() {
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLSpanElement>(null);
   const progressCopyRef = useRef<HTMLSpanElement>(null);
+  const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  const handleSkip = () => {
+    const section = sectionRef.current;
+    const trigger = scrollTriggerRef.current;
+    const targetY = trigger
+      ? trigger.end
+      : section
+        ? section.getBoundingClientRect().bottom + window.scrollY
+        : 0;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -107,7 +119,10 @@ export function TerrariumExperience() {
             },
         });
 
+        scrollTriggerRef.current = scrollTrigger;
+
         return () => {
+          scrollTriggerRef.current = null;
           scrollTrigger.kill();
           if (lenisTicker) gsap.ticker.remove(lenisTicker);
           if (lenis && handleLenisScroll) lenis.off('scroll', handleLenisScroll);
@@ -166,6 +181,16 @@ export function TerrariumExperience() {
         </div>
 
         <p className={styles.scrollHint} aria-hidden="true"><span /> Scroll to cultivate</p>
+
+        <button
+          type="button"
+          className={styles.skipButton}
+          aria-label="テラリウム鑑賞をとばして次のセクションへ進む"
+          onClick={handleSkip}
+        >
+          とばす ↓
+        </button>
+
         <p id="terrarium-experience-description" className={styles.srOnly}>
           背の高いシダと湿った苔に満ちたガラスの森を、スクロールで左から右へ回り込み、近づきながら鑑賞できます。
         </p>

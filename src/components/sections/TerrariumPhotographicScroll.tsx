@@ -72,6 +72,20 @@ export function TerrariumPhotographicScroll({ progressRef }: TerrariumPhotograph
   const visualRef = useRef<HTMLDivElement>(null);
   const frameRefs = useRef<Array<HTMLDivElement | null>>([]);
 
+  // マウント後、2〜4枚目をブラウザキャッシュへ先読みしておく（Next/Imageのlazy読み込みで
+  // スクロール到達時に初回デコードが遅れるのを避けるため）。1枚目はpriorityで即時読み込み。
+  useEffect(() => {
+    const prefetchTargets = ROTATION_FRAMES.slice(1);
+    const prefetched = prefetchTargets.map((frame) => {
+      const image = new window.Image();
+      image.src = frame.src;
+      return image;
+    });
+    return () => {
+      prefetched.length = 0;
+    };
+  }, []);
+
   useEffect(() => {
     const visual = visualRef.current;
     const frames = frameRefs.current;
@@ -88,7 +102,16 @@ export function TerrariumPhotographicScroll({ progressRef }: TerrariumPhotograph
     }
 
     let frameId = 0;
+    let running = false;
     let renderedProgress = progressRef.current;
+
+    // 切替中（blendが0.15〜0.85）だけ山形にブラーをかけ、「カメラが振れた」印象を出す。
+    // blend=0.5でピーク(最大1.2px)、境界(0.15/0.85)で0になる三角波。
+    const getTransitionBlur = (blend: number) => {
+      if (blend <= 0.15 || blend >= 0.85) return 0;
+      const distanceFromPeak = Math.abs(blend - 0.5) / 0.35;
+      return 1.2 * (1 - distanceFromPeak);
+    };
 
     const render = () => {
       renderedProgress += (progressRef.current - renderedProgress) * 0.14;
@@ -99,7 +122,7 @@ export function TerrariumPhotographicScroll({ progressRef }: TerrariumPhotograph
       const localProgress = framePosition - fromIndex;
       const blend = fromIndex === toIndex
         ? 0
-        : smoothstep(clamp01((localProgress - 0.28) / 0.44));
+        : smoothstep(clamp01((localProgress - 0.38) / 0.24));
       const activeIndex = blend < 0.5 ? fromIndex : toIndex;
 
       frames.forEach((frame, index) => {
@@ -116,19 +139,47 @@ export function TerrariumPhotographicScroll({ progressRef }: TerrariumPhotograph
       });
 
       const lightArc = Math.sin(progress * Math.PI);
+      const transitionBlur = getTransitionBlur(blend);
       visual.style.setProperty('--terrarium-progress', progress.toFixed(5));
       visual.style.setProperty('--terrarium-light', (lightArc * 0.14).toFixed(5));
       visual.style.setProperty('--terrarium-shadow', (progress * 0.14).toFixed(5));
       visual.style.setProperty('--terrarium-sheen-x', `${(-42 + progress * 118).toFixed(4)}%`);
       visual.style.setProperty('--terrarium-sheen-opacity', (lightArc * 0.13).toFixed(5));
+      visual.style.filter = transitionBlur > 0.001 ? `blur(${transitionBlur.toFixed(3)}px)` : '';
       visual.dataset.photoProgress = progress.toFixed(4);
       visual.dataset.activeView = ROTATION_FRAMES[activeIndex].id;
       visual.dataset.sharpness = Math.max(blend, 1 - blend).toFixed(4);
-      frameId = window.requestAnimationFrame(render);
+      if (running) frameId = window.requestAnimationFrame(render);
     };
 
-    render();
-    return () => window.cancelAnimationFrame(frameId);
+    const startLoop = () => {
+      if (running) return;
+      running = true;
+      render();
+    };
+
+    const stopLoop = () => {
+      running = false;
+      window.cancelAnimationFrame(frameId);
+    };
+
+    // ビューポート外（余白200px）ではrAFを止め、無駄なレンダリングを避ける。
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          startLoop();
+        } else {
+          stopLoop();
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    visibilityObserver.observe(visual);
+
+    return () => {
+      visibilityObserver.disconnect();
+      stopLoop();
+    };
   }, [progressRef]);
 
   return (
@@ -156,8 +207,8 @@ export function TerrariumPhotographicScroll({ progressRef }: TerrariumPhotograph
             alt={index === 0 ? '左から右へ回り込みながら鑑賞できる、苔とシダに満ちたガラスのテラリウム' : ''}
             fill
             sizes="100vw"
-            quality={95}
-            loading="eager"
+            quality={82}
+            priority={index === 0}
             className={styles.photoImage}
           />
         </div>
