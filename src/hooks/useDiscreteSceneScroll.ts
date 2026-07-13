@@ -81,7 +81,9 @@ export function useDiscreteSceneScroll({
     const advance = (direction: -1 | 1, event: Event) => {
       const trigger = triggerRef.current;
       const section = sectionRef.current;
-      if (!trigger || !section || !trigger.isActive) return;
+      if (!trigger || !section) return;
+      const withinPinnedRange = window.scrollY >= trigger.start - 2 && window.scrollY <= trigger.end + 2;
+      if (!withinPinnedRange) return;
 
       const currentIndex = nearestPointIndex(trigger.progress, points);
       const targetIndex = currentIndex + direction;

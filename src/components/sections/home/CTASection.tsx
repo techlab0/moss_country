@@ -73,7 +73,7 @@ export function CTASection({ ov }: CTASectionProps) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-16 sm:py-24 md:py-32 text-white relative overflow-hidden">
+    <section ref={sectionRef} data-home-screen="regular" className="py-16 sm:py-24 md:py-32 text-white relative overflow-hidden">
       <div
         ref={glowRef}
         aria-hidden="true"

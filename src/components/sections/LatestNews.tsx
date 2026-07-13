@@ -81,7 +81,7 @@ export const LatestNews: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+      <section data-home-screen="regular" className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
         <Container>
           <InlineLoading message="新着情報を読み込み中..." />
         </Container>
@@ -94,7 +94,7 @@ export const LatestNews: React.FC = () => {
   }
 
   return (
-    <section ref={sectionRef} className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+    <section ref={sectionRef} data-home-screen="regular" className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
       <Container>
         <div ref={headingRef} className="text-center mb-8 sm:mb-12 md:mb-16">
           <div className="mb-6 sm:mb-8">

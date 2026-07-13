@@ -59,6 +59,7 @@ export function TerrariumExperience() {
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (reduceMotionQuery.matches) {
       visualProgressRef.current = 1;
+      section.dataset.homeProgress = '1';
       progressBar.style.transform = 'scaleY(1)';
       progressTrack.setAttribute('aria-valuenow', '100');
       progressTrack.setAttribute('aria-valuetext', 'テラリウムの森を表示');
@@ -91,10 +92,12 @@ export function TerrariumExperience() {
             invalidateOnRefresh: true,
             onToggle: (self) => {
               stage.dataset.pinActive = String(self.isActive);
+              section.dataset.pinActive = String(self.isActive);
             },
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
               visualProgressRef.current = self.progress;
+              section.dataset.homeProgress = self.progress.toFixed(4);
               stage.style.setProperty('--terrarium-progress', self.progress.toFixed(4));
               const headingProgress = Math.min(1, Math.max(0, (self.progress - 0.26) / 0.2));
               stage.style.setProperty('--terrarium-heading-opacity', (1 - headingProgress).toFixed(4));
@@ -111,10 +114,13 @@ export function TerrariumExperience() {
         });
 
         scrollTriggerRef.current = scrollTrigger;
+        section.dataset.pinReady = 'true';
 
         return () => {
           scrollTriggerRef.current = null;
+          section.dataset.pinReady = 'false';
           stage.dataset.pinActive = 'false';
+          section.dataset.pinActive = 'false';
           scrollTrigger.kill();
         };
       },
@@ -131,6 +137,11 @@ export function TerrariumExperience() {
       className={styles.experience}
       data-testid="terrarium-experience"
       data-storyboard-source="photographic-terrarium-scroll"
+      data-home-screen="pinned"
+      data-home-pinned="true"
+      data-home-progress="0"
+      data-pin-active="false"
+      data-pin-ready="false"
       aria-labelledby="terrarium-experience-title"
     >
       <div ref={stageRef} className={styles.stage}>

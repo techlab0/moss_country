@@ -122,21 +122,22 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
   return (
     <section
       ref={sectionRef}
-      className="py-12 sm:py-16 md:py-24 lg:py-32 bg-stone-950/90 backdrop-blur-md shadow-2xl"
+      data-home-screen="regular"
+      className="py-10 sm:py-12 md:py-12 lg:py-14 bg-stone-950/90 backdrop-blur-md shadow-2xl"
     >
       <Container>
-        <div className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24">
+        <div className="text-center mb-8 sm:mb-10 md:mb-10 lg:mb-12">
           <div className="mb-6 sm:mb-8">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-400 font-normal">About MOSS COUNTRY</span>
           </div>
           <h2
             ref={headingRef}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal text-white leading-tight sm:leading-relaxed px-4"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-normal text-white leading-tight sm:leading-relaxed px-4"
             style={{ fontFamily: "'Yu Mincho', 'Hiragino Mincho ProN', serif" }}
           >
             {titleContent}
           </h2>
-          <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto mt-8 sm:mt-12 mb-8 sm:mb-12"></div>
+          <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8"></div>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-normal text-white max-w-4xl mx-auto leading-relaxed px-4">
             {ov('aboutLead') !== undefined ? (
               <span className="whitespace-pre-line">{ov('aboutLead')}</span>
@@ -203,7 +204,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
             >
               <div
                 ref={(el) => { cardInnerRefs.current[index] = el; }}
-                className={`backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border transition-all duration-300 ${card.bg} ${card.border}`}
+                className={`backdrop-blur-md rounded-2xl p-5 sm:p-6 md:p-6 border transition-all duration-300 ${card.bg} ${card.border}`}
               >
                 <h3 className={`text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 transition-colors duration-300 ${card.accentText}`}>{card.title}</h3>
                 <div className={`w-12 sm:w-16 h-0.5 mx-auto mb-6 group-hover:w-16 sm:group-hover:w-20 transition-all duration-300 ${card.accentBar}`}></div>
@@ -215,7 +216,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
           ))}
         </div>
 
-        <div className="text-center mt-12 sm:mt-16 md:mt-20">
+        <div className="text-center mt-8 sm:mt-10 md:mt-10">
           <a href="/story">
             <Button
               variant="primary"

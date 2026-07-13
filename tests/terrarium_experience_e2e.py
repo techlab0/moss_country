@@ -61,6 +61,35 @@ def assert_experience_exists(page: Page) -> None:
     assert section.is_visible(), "terrarium experience section is not visible"
 
 
+def assert_homepage_changes_one_full_screen_per_wheel(page: Page) -> None:
+    screens = page.locator('[data-home-screen]')
+    assert screens.count() >= 6, f"expected a fullscreen journey, found {screens.count()} screens"
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(350)
+
+    page.mouse.wheel(0, 520)
+    page.wait_for_timeout(1_250)
+    terrarium_top = page.locator(EXPERIENCE).evaluate(
+        "element => element.getBoundingClientRect().top"
+    )
+    assert abs(terrarium_top) <= 4, (
+        f"one wheel should land exactly on the terrarium screen, top={terrarium_top}"
+    )
+
+    # The next gesture belongs to the pinned terrarium and must change only
+    # its internal scene instead of leaking into the following About screen.
+    page.mouse.wheel(0, 520)
+    page.wait_for_timeout(1_100)
+    artwork_top_after = page.locator(f'{EXPERIENCE} [data-testid="terrarium-artwork"]').evaluate(
+        "element => element.getBoundingClientRect().top"
+    )
+    photo_progress = float(
+        page.locator(f'{EXPERIENCE} [data-testid="terrarium-photo"]').get_attribute("data-photo-progress") or 0
+    )
+    assert abs(artwork_top_after) <= 4, artwork_top_after
+    assert 0.27 <= photo_progress <= 0.40, photo_progress
+
+
 def assert_descriptive_image_alt(page: Page) -> None:
     assert_experience_exists(page)
     images = page.locator(f"{EXPERIENCE} img")
@@ -111,11 +140,16 @@ def assert_artwork_fills_viewport_without_border(page: Page) -> None:
 def assert_photograph_tracks_scroll_continuously(page: Page) -> None:
     section = page.locator(EXPERIENCE)
     photo = page.locator(f'{EXPERIENCE} [data-testid="terrarium-photo"]')
-    bounds = section.bounding_box()
+    bounds = section.evaluate(
+        """element => {
+            const rect = element.getBoundingClientRect();
+            return { top: rect.top + window.scrollY, height: rect.height };
+        }"""
+    )
     viewport = page.viewport_size
     assert bounds and viewport, "terrarium scroll geometry is unavailable"
-    start = bounds["y"]
-    end = bounds["y"] + bounds["height"] - viewport["height"]
+    start = bounds["top"]
+    end = bounds["top"] + bounds["height"] - viewport["height"]
     progress_values: list[float] = []
     active_views: list[str] = []
     for step in range(11):
@@ -154,18 +188,29 @@ def assert_one_wheel_gesture_advances_one_scene(page: Page) -> None:
 
 
 def assert_following_section_is_not_covered_by_pinned_artwork(page: Page) -> None:
-    section = page.locator(EXPERIENCE)
     about_heading = page.get_by_text("About MOSS COUNTRY", exact=True)
-    section_end = section.evaluate(
-        "element => element.getBoundingClientRect().bottom + window.scrollY"
+    about_section = about_heading.locator('xpath=ancestor::section[1]')
+    about_top = about_section.evaluate(
+        "element => element.getBoundingClientRect().top + window.scrollY"
     )
-    page.evaluate("y => window.scrollTo(0, y)", section_end + 40)
+    page.evaluate("y => window.scrollTo(0, y)", about_top)
     page.wait_for_timeout(600)
     assert about_heading.is_visible(), "the About section should be visible after the terrarium"
-    top_element = about_heading.evaluate(
-        "element => document.elementFromPoint(element.getBoundingClientRect().x + 2, element.getBoundingClientRect().y + 2)"
+    layer_state = about_heading.evaluate(
+        """element => {
+            const rect = element.getBoundingClientRect();
+            const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+            return {
+                isOnTop: top === element || element.contains(top) || Boolean(top?.contains(element)),
+                rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                topElement: top ? `${top.tagName}.${String(top.className)}` : null,
+                scrollY: window.scrollY,
+            };
+        }"""
     )
-    assert top_element is not None, "the About section must remain above completed pinned artwork"
+    assert layer_state["isOnTop"], (
+        f"the About section must remain above completed pinned artwork: {layer_state}"
+    )
 
 
 def assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(page: Page) -> None:
@@ -302,6 +347,11 @@ def run(browser: Browser) -> list[Check]:
     attach_error_capture(desktop, runtime_errors)
     load_home(desktop)
     record(checks, "terrarium section exists", lambda: assert_experience_exists(desktop))
+    record(
+        checks,
+        "homepage changes one full screen per wheel",
+        lambda: assert_homepage_changes_one_full_screen_per_wheel(desktop),
+    )
     record(checks, "terrarium image has descriptive alt", lambda: assert_descriptive_image_alt(desktop))
     record(
         checks,

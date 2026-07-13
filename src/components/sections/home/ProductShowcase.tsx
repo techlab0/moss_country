@@ -136,8 +136,10 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
           invalidateOnRefresh: true,
           onToggle: (self) => {
             stage.dataset.pinActive = String(self.isActive);
+            section.dataset.pinActive = String(self.isActive);
           },
           onUpdate: (self) => {
+            section.dataset.homeProgress = self.progress.toFixed(4);
             const nearestIndex = SEGMENT_POINTS.reduce(
               (closestIndex, point, index) => Math.abs(point - self.progress) < Math.abs(SEGMENT_POINTS[closestIndex] - self.progress)
                 ? index
@@ -153,10 +155,13 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
         });
 
         scrollTriggerRef.current = scrollTrigger;
+        section.dataset.pinReady = 'true';
 
         return () => {
           scrollTriggerRef.current = null;
+          section.dataset.pinReady = 'false';
           stage.dataset.pinActive = 'false';
+          section.dataset.pinActive = 'false';
           scrollTrigger.kill();
         };
       },
@@ -169,7 +174,7 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
 
   if (isReducedMotion) {
     return (
-      <section ref={sectionRef} className={styles.section} aria-label="MOSS COUNTRY の商品ショーケース">
+      <section ref={sectionRef} className={styles.section} data-home-screen="regular" aria-label="MOSS COUNTRY の商品ショーケース">
         <div className={styles.staticList}>
           {items.map((item) => (
             <article key={item.id} className={styles.staticCard}>
@@ -202,6 +207,11 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
       className={styles.section}
       aria-roledescription="carousel"
       aria-label="MOSS COUNTRY の商品ショーケース"
+      data-home-screen="pinned"
+      data-home-pinned="true"
+      data-home-progress="0"
+      data-pin-active="false"
+      data-pin-ready="false"
     >
       <div ref={stageRef} className={styles.stage}>
         <div className={styles.imageColumn}>

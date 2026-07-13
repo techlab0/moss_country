@@ -8,6 +8,7 @@ import { AboutSection } from '@/components/sections/home/AboutSection';
 import { ProductShowcase } from '@/components/sections/home/ProductShowcase';
 import { WorkshopSection } from '@/components/sections/home/WorkshopSection';
 import { CTASection } from '@/components/sections/home/CTASection';
+import { HomeScrollJourney } from '@/components/sections/home/HomeScrollJourney';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 
@@ -99,9 +100,11 @@ export default function Home() {
       />
       {/* Unified Background Overlay */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-emerald-900/20" />
-      <div className="relative z-10">
+      <HomeScrollJourney>
       {/* Hero Section */}
-      <Hero heroImageUrl={heroImageUrl} />
+      <div data-home-screen="regular">
+        <Hero heroImageUrl={heroImageUrl} />
+      </div>
 
       <TerrariumExperience />
 
@@ -154,7 +157,7 @@ export default function Home() {
 
       {/* ECサイト誘導CTA */}
       <CTASection ov={ov} />
-      </div>
+      </HomeScrollJourney>
     </div>
   );
 }

@@ -1,0 +1,103 @@
+.journey {
+  position: relative;
+  z-index: 10;
+  isolation: isolate;
+}
+
+.journey :global([data-home-screen='pinned']) {
+  z-index: 1;
+}
+
+.transitionCurtain {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.curtainMain,
+.curtainAccent {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: translate3d(0, 105%, 0);
+  will-change: transform;
+}
+
+.curtainMain {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(43, 75, 45, 0.42), transparent 52%),
+    #061009;
+}
+
+.curtainAccent {
+  top: auto;
+  height: clamp(0.45rem, 1.2vh, 0.8rem);
+  background: linear-gradient(90deg, #6f8f4f, #c5dfa1 48%, #557442);
+  box-shadow: 0 0 32px rgba(180, 214, 137, 0.38);
+}
+
+.transitionCurtain[data-transitioning='true'] {
+  visibility: visible;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainMain {
+  animation: curtain-down 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainAccent {
+  animation: accent-down 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainMain {
+  animation: curtain-up 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainAccent {
+  animation: accent-up 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+@keyframes curtain-down {
+  0% { transform: translate3d(0, 105%, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -105%, 0); }
+}
+
+@keyframes accent-down {
+  0% { transform: translate3d(0, 105vh, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -105vh, 0); }
+}
+
+@keyframes curtain-up {
+  0% { transform: translate3d(0, -105%, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 105%, 0); }
+}
+
+@keyframes accent-up {
+  0% { transform: translate3d(0, -105vh, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 105vh, 0); }
+}
+
+@media (min-width: 768px) {
+  .journey :global([data-home-screen='regular']) {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    height: 100svh;
+    min-height: 100svh;
+    align-items: center;
+    isolation: isolate;
+    overflow: clip;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transitionCurtain {
+    display: none;
+  }
+}
