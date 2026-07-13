@@ -1,6 +1,5 @@
 .section {
   position: relative;
-  z-index: 50;
   isolation: isolate;
   /* ピン中のスクロールジッタ（特にiOS）でステージがずれても
      背後のセクションや背景画像が透けないよう、スペーサー領域ごと不透明にする */
@@ -22,8 +21,7 @@
 .imageColumn {
   position: absolute;
   inset: 0;
-  right: 0;
-  width: 55%;
+  width: 100%;
   height: 100%;
 }
 
@@ -45,20 +43,24 @@
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 20%, transparent 82%, rgba(0, 0, 0, 0.28));
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.58) 38%, rgba(0, 0, 0, 0.08) 72%, rgba(0, 0, 0, 0.22) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.16), transparent 55%, rgba(0, 0, 0, 0.42));
 }
 
 .infoColumn {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 45%;
+  left: 0;
+  width: min(48rem, 58%);
   height: 100%;
   z-index: 3;
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding: clamp(1.5rem, 4vw, 4.5rem);
+  background: linear-gradient(90deg, rgba(3, 8, 5, 0.76), rgba(3, 8, 5, 0.38) 70%, transparent);
+  backdrop-filter: blur(2px);
 }
 
 .indexRow {
@@ -225,6 +227,8 @@
     width: 100%;
     justify-content: flex-end;
     padding: 1.25rem 1.25rem 2.25rem;
+    background: linear-gradient(180deg, transparent 35%, rgba(2, 6, 4, 0.84) 68%, rgba(2, 6, 4, 0.96));
+    backdrop-filter: none;
   }
 
   .indexRow {

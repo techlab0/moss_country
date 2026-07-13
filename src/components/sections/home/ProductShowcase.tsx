@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useDiscreteSceneScroll } from '@/hooks/useDiscreteSceneScroll';
 import styles from './ProductShowcase.module.css';
 
 export interface ProductShowcaseItem {
@@ -31,6 +32,12 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
   const activeIndexRef = useRef(0);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+
+  useDiscreteSceneScroll({
+    sectionRef,
+    triggerRef: scrollTriggerRef,
+    points: SEGMENT_POINTS,
+  });
 
   const handleSkip = () => {
     const section = sectionRef.current;
@@ -65,8 +72,7 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
         isDesktop: '(min-width: 768px)',
         isMobile: '(max-width: 767px)',
       },
-      (mediaContext) => {
-        const { isDesktop } = mediaContext.conditions as { isDesktop: boolean; isMobile: boolean };
+      () => {
 
         const playTransition = (newIndex: number, oldIndex: number | null) => {
           const newImg = imageRefs.current[newIndex];
@@ -115,11 +121,10 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
         const scrollTrigger = ScrollTrigger.create({
           trigger: section,
           start: 'top top',
-          end: isDesktop ? '+=320%' : '+=280%',
+          end: '+=300%',
           pin: stage,
           pinSpacing: true,
           anticipatePin: 1,
-          scrub: true,
           snap: {
             snapTo: (value) => SEGMENT_POINTS.reduce(
               (closest, point) => Math.abs(point - value) < Math.abs(closest - value) ? point : closest,

@@ -1,6 +1,5 @@
 .experience {
   position: relative;
-  z-index: 60;
   isolation: isolate;
   width: 100%;
   min-height: 100svh;

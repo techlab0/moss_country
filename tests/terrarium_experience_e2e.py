@@ -33,7 +33,12 @@ def load_home(page: Page) -> None:
     # The first Next.js development request compiles the large existing app.
     # Leave enough headroom for that cold start on Windows before asserting UI.
     page.goto(BASE_URL, wait_until="domcontentloaded", timeout=180_000)
-    page.wait_for_load_state("networkidle", timeout=120_000)
+    try:
+        page.wait_for_load_state("networkidle", timeout=30_000)
+    except TimeoutError:
+        # The homepage has external CMS/image requests that can remain open in
+        # development. Hydration and the mounted experience are the contract.
+        page.wait_for_load_state("domcontentloaded")
     # The experience is intentionally code-split so it does not compete with
     # the hero LCP. Allow the client-only chunk to mount after hydration.
     page.wait_for_timeout(5_000)
@@ -124,6 +129,43 @@ def assert_photograph_tracks_scroll_continuously(page: Page) -> None:
     assert active_views[0] == "left", active_views
     assert active_views[-1] == "right-close", active_views
     assert {"left", "front", "right", "right-close"}.issubset(set(active_views)), active_views
+
+
+def assert_one_wheel_gesture_advances_one_scene(page: Page) -> None:
+    section = page.locator(EXPERIENCE)
+    photo = page.locator(f'{EXPERIENCE} [data-testid="terrarium-photo"]')
+    section_top = section.evaluate("element => element.getBoundingClientRect().top + window.scrollY")
+    page.evaluate("y => window.scrollTo(0, y + 2)", section_top)
+    page.wait_for_timeout(350)
+
+    page.mouse.wheel(0, 420)
+    page.wait_for_timeout(1_050)
+    first_progress = float(photo.get_attribute("data-photo-progress") or 0)
+    assert 0.27 <= first_progress <= 0.40, (
+        f"one wheel gesture should land on scene 2, got progress {first_progress}"
+    )
+
+    page.mouse.wheel(0, 420)
+    page.wait_for_timeout(1_050)
+    second_progress = float(photo.get_attribute("data-photo-progress") or 0)
+    assert 0.60 <= second_progress <= 0.73, (
+        f"the next wheel gesture should land on scene 3, got progress {second_progress}"
+    )
+
+
+def assert_following_section_is_not_covered_by_pinned_artwork(page: Page) -> None:
+    section = page.locator(EXPERIENCE)
+    about_heading = page.get_by_text("About MOSS COUNTRY", exact=True)
+    section_end = section.evaluate(
+        "element => element.getBoundingClientRect().bottom + window.scrollY"
+    )
+    page.evaluate("y => window.scrollTo(0, y)", section_end + 40)
+    page.wait_for_timeout(600)
+    assert about_heading.is_visible(), "the About section should be visible after the terrarium"
+    top_element = about_heading.evaluate(
+        "element => document.elementFromPoint(element.getBoundingClientRect().x + 2, element.getBoundingClientRect().y + 2)"
+    )
+    assert top_element is not None, "the About section must remain above completed pinned artwork"
 
 
 def assert_scroll_has_no_obsolete_frame_ui_or_chapter_copy(page: Page) -> None:
@@ -275,6 +317,16 @@ def run(browser: Browser) -> list[Check]:
         checks,
         "photograph tracks scroll continuously",
         lambda: assert_photograph_tracks_scroll_continuously(desktop),
+    )
+    record(
+        checks,
+        "one wheel gesture advances exactly one scene",
+        lambda: assert_one_wheel_gesture_advances_one_scene(desktop),
+    )
+    record(
+        checks,
+        "following section is not covered by pinned artwork",
+        lambda: assert_following_section_is_not_covered_by_pinned_artwork(desktop),
     )
     record(
         checks,

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
+import { useDiscreteSceneScroll } from '@/hooks/useDiscreteSceneScroll';
 import { TerrariumPhotographicScroll } from './TerrariumPhotographicScroll';
 import styles from './TerrariumExperience.module.css';
 
@@ -17,6 +17,12 @@ export function TerrariumExperience() {
   const progressBarRef = useRef<HTMLSpanElement>(null);
   const progressCopyRef = useRef<HTMLSpanElement>(null);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  useDiscreteSceneScroll({
+    sectionRef,
+    triggerRef: scrollTriggerRef,
+    points: ROTATION_SNAP_POINTS,
+  });
 
   const handleSkip = () => {
     const section = sectionRef.current;
@@ -66,34 +72,14 @@ export function TerrariumExperience() {
         isDesktop: '(min-width: 768px)',
         isMobile: '(max-width: 767px)',
       },
-      (mediaContext) => {
-        const { isDesktop } = mediaContext.conditions as { isDesktop: boolean; isMobile: boolean };
-        let lenis: Lenis | undefined;
-        let lenisTicker: ((time: number) => void) | undefined;
-        let handleLenisScroll: (() => void) | undefined;
-
-        if (isDesktop) {
-          lenis = new Lenis({
-            lerp: 0.09,
-            smoothWheel: true,
-            syncTouch: false,
-            wheelMultiplier: 0.82,
-          });
-          handleLenisScroll = () => ScrollTrigger.update();
-          lenis.on('scroll', handleLenisScroll);
-          lenisTicker = (time: number) => lenis?.raf(time * 1000);
-          gsap.ticker.add(lenisTicker);
-          gsap.ticker.lagSmoothing(0);
-        }
-
+      () => {
         const scrollTrigger = ScrollTrigger.create({
             trigger: section,
             start: 'top top',
-            end: isDesktop ? '+=470%' : '+=350%',
+            end: '+=300%',
             pin: stage,
             pinSpacing: true,
             anticipatePin: 1,
-            scrub: isDesktop ? 0.42 : 0.24,
             snap: {
               snapTo: (value) => ROTATION_SNAP_POINTS.reduce(
                 (closest, point) => Math.abs(point - value) < Math.abs(closest - value) ? point : closest,
@@ -110,7 +96,7 @@ export function TerrariumExperience() {
               const percentage = Math.round(self.progress * 100);
               visualProgressRef.current = self.progress;
               stage.style.setProperty('--terrarium-progress', self.progress.toFixed(4));
-              const headingProgress = Math.min(1, Math.max(0, (self.progress - 0.18) / 0.18));
+              const headingProgress = Math.min(1, Math.max(0, (self.progress - 0.26) / 0.2));
               stage.style.setProperty('--terrarium-heading-opacity', (1 - headingProgress).toFixed(4));
               stage.style.setProperty('--terrarium-heading-x', `${(-2.4 * headingProgress).toFixed(4)}rem`);
               stage.style.setProperty('--terrarium-hint-opacity', Math.max(0, 1 - self.progress * 5).toFixed(4));
@@ -130,9 +116,6 @@ export function TerrariumExperience() {
           scrollTriggerRef.current = null;
           stage.dataset.pinActive = 'false';
           scrollTrigger.kill();
-          if (lenisTicker) gsap.ticker.remove(lenisTicker);
-          if (lenis && handleLenisScroll) lenis.off('scroll', handleLenisScroll);
-          lenis?.destroy();
         };
       },
     );

@@ -98,7 +98,8 @@ export default function Home() {
         }}
       />
       {/* Unified Background Overlay */}
-      <div className="absolute inset-0 bg-emerald-900/20" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-emerald-900/20" />
+      <div className="relative z-10">
       {/* Hero Section */}
       <Hero heroImageUrl={heroImageUrl} />
 
@@ -153,6 +154,7 @@ export default function Home() {
 
       {/* ECサイト誘導CTA */}
       <CTASection ov={ov} />
+      </div>
     </div>
   );
 }
