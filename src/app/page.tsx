@@ -82,17 +82,21 @@ export default function Home() {
   }, []);
 
   return (
-    <div
-      className="relative"
-      style={{
-        backgroundImage: isMobile
-          ? `url('${backgroundImageMobileUrl}')`
-          : `url('${backgroundImageUrl}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
+    <div className="relative">
+      {/* 背景画像: iOS Safariはbackground-attachment:fixedを無視し、cover基準が
+          ページ要素全体（1万px超）になって画像が巨大に拡大されるため、
+          position:fixedのdivで「ビューポート基準のcover」を実現する */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10 pointer-events-none"
+        style={{
+          backgroundImage: isMobile
+            ? `url('${backgroundImageMobileUrl}')`
+            : `url('${backgroundImageUrl}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
       {/* Unified Background Overlay */}
       <div className="absolute inset-0 bg-emerald-900/20" />
       {/* Hero Section */}

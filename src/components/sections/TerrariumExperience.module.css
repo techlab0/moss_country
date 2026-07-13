@@ -286,6 +286,14 @@
   letter-spacing: 0.14em;
   cursor: pointer;
   transition: opacity 300ms ease, color 300ms ease, border-color 300ms ease;
+  /* ピンが実際に効いている間だけ表示する（前後のセクションのボタンと同時に見えるのを防ぐ） */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage[data-pin-active='true'] .skipButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .skipButton:hover,
@@ -327,6 +335,7 @@
 @media (max-width: 767px) {
   .stage {
     min-height: 620px;
+    background: #030706;
   }
 
   .heading {
@@ -346,12 +355,32 @@
     line-height: 1.42;
   }
 
+  /* 元画像は16:9横長。全画面クロップだと容器の輪郭が画面外に出て回転が分からないため、
+     モバイルでは16:9のバンドとして縦センタリングし、上下は背景色で埋める（レターボックス） */
+  .artwork {
+    inset: 50% 0 auto 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    transform: translateY(-50%);
+  }
+
+  /* バンド表示ではフレーム全体が見えるので、強い縁取りは不要 */
+  .frameVignette {
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.24));
+  }
+
+  /* 進行度バーはバンドと重ならないよう下の余白域へ移す */
   .progress {
-    right: 0.65rem;
+    top: auto;
+    right: 0.85rem;
+    bottom: 3.6rem;
+    transform: none;
   }
 
   .progressTrack {
-    height: 15vh;
+    height: 11vh;
+    min-height: 5rem;
   }
 
   .scrollHint {
@@ -363,7 +392,7 @@
   }
 
   .photoImage {
-    object-position: 50% 51%;
+    object-position: 50% 50%;
   }
 }
 

@@ -49,6 +49,8 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
     if (!section || !stage) return;
 
     gsap.registerPlugin(ScrollTrigger);
+    // iOSのアドレスバー伸縮によるrefreshでピンが飛ぶのを防ぐ
+    ScrollTrigger.config({ ignoreMobileResize: true });
 
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (reduceMotionQuery.matches) {
@@ -127,6 +129,9 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
             ease: 'power2.out',
           },
           invalidateOnRefresh: true,
+          onToggle: (self) => {
+            stage.dataset.pinActive = String(self.isActive);
+          },
           onUpdate: (self) => {
             const nearestIndex = SEGMENT_POINTS.reduce(
               (closestIndex, point, index) => Math.abs(point - self.progress) < Math.abs(SEGMENT_POINTS[closestIndex] - self.progress)
@@ -146,6 +151,7 @@ export function ProductShowcase({ items }: ProductShowcaseProps) {
 
         return () => {
           scrollTriggerRef.current = null;
+          stage.dataset.pinActive = 'false';
           scrollTrigger.kill();
         };
       },

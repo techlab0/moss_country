@@ -47,6 +47,8 @@ export function TerrariumExperience() {
     }
 
     gsap.registerPlugin(ScrollTrigger);
+    // iOSのアドレスバー伸縮によるrefreshでピンが飛ぶのを防ぐ
+    ScrollTrigger.config({ ignoreMobileResize: true });
 
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (reduceMotionQuery.matches) {
@@ -101,6 +103,9 @@ export function TerrariumExperience() {
               ease: 'power2.out',
             },
             invalidateOnRefresh: true,
+            onToggle: (self) => {
+              stage.dataset.pinActive = String(self.isActive);
+            },
             onUpdate: (self) => {
               const percentage = Math.round(self.progress * 100);
               visualProgressRef.current = self.progress;
@@ -123,6 +128,7 @@ export function TerrariumExperience() {
 
         return () => {
           scrollTriggerRef.current = null;
+          stage.dataset.pinActive = 'false';
           scrollTrigger.kill();
           if (lenisTicker) gsap.ticker.remove(lenisTicker);
           if (lenis && handleLenisScroll) lenis.off('scroll', handleLenisScroll);

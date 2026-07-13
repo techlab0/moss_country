@@ -2,6 +2,9 @@
   position: relative;
   z-index: 50;
   isolation: isolate;
+  /* ピン中のスクロールジッタ（特にiOS）でステージがずれても
+     背後のセクションや背景画像が透けないよう、スペーサー領域ごと不透明にする */
+  background-color: #0a0d0b;
 }
 
 .stage {
@@ -10,7 +13,8 @@
   height: 100svh;
   min-height: 640px;
   overflow: hidden;
-  background:
+  background-color: #0a0d0b;
+  background-image:
     radial-gradient(circle at 50% 40%, rgba(80, 103, 54, 0.14), transparent 32%),
     linear-gradient(150deg, #060d09 0%, #010201 55%, #070604 100%);
 }
@@ -147,6 +151,14 @@
   letter-spacing: 0.14em;
   cursor: pointer;
   transition: opacity 300ms ease, color 300ms ease, border-color 300ms ease;
+  /* ピンが実際に効いている間だけ表示する（前後のセクションのボタンと同時に見えるのを防ぐ） */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage[data-pin-active='true'] .skipButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .skipButton:hover,
