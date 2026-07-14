@@ -114,14 +114,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       };
     }
     
-    // 端のカードがコンテナ内に完全に収まり、矢印ボタンと重ならない広がりに調整
-    const radius = 560;
-    const maxAngle = 42;
+    // 円弧配置: 中央が最も高く手前、両脇へ向かって円周に沿って下がりながら小さくなる。
+    // radius/maxAngle は横の広がり、縦の湾曲は arcDepth で別制御する。
+    const radius = 540;
+    const maxAngle = 50;
     const angle = (normalizedIndex / visibleRange) * maxAngle;
 
     // Calculate scale and opacity based on distance from center
     const distanceFromCenter = Math.abs(normalizedIndex);
-    const scale = normalizedIndex === 0 ? 1.08 : Math.max(0.7, 1 - (distanceFromCenter * 0.2));
+    const scale = normalizedIndex === 0 ? 1.06 : Math.max(0.64, 1 - (distanceFromCenter * 0.22));
     
     // Smooth opacity transition
     let opacity = 1;
@@ -135,11 +136,14 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     
     // Calculate x, y positions for centered arc with additional spacing
     const radian = (angle * Math.PI) / 180;
-    const cardSpacing = 40; // Additional horizontal spacing between cards
+    const cardSpacing = 46; // Additional horizontal spacing between cards
     const cardWidth = 256; // Card width in pixels (w-64 = 256px)
     const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing) - (cardWidth / 2); // Adjust center position
-    // 端のカードが弧の湾曲でコンテナ下端からはみ出さないよう、下方向の沈み込みに上限を設ける
-    const y = Math.min(-Math.cos(radian) * radius + radius - 150, -82);
+    // 縦位置は横半径と切り離し、円弧の落差(arcDepth)で制御する。
+    // 中央(0)を最も高く、両脇へ向かって円周に沿って沈める。上限キャップは設けない
+    // （設けると下端が一直線に揃って弧が潰れる）。上方に少し寄せて全体をコンテナ中央へ。
+    const arcDepth = 300;
+    const y = (1 - Math.cos(radian)) * arcDepth - 60;
     
     return {
       transform: `translate(${x}px, ${y}px) scale(${scale})`,
@@ -178,8 +182,8 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
         </svg>
       </button>
 
-      {/* Arc Arrangement Container */}
-      <div className="relative h-96 [@media(max-height:720px)]:h-[21rem] flex items-center justify-center overflow-hidden mx-auto max-w-[76rem]">
+      {/* Arc Arrangement Container（円弧の落差が収まる高さを確保。潰さないため縦は切り取らない） */}
+      <div className="relative h-[30rem] [@media(max-height:720px)]:h-[22rem] flex items-center justify-center overflow-x-clip mx-auto max-w-[76rem]">
         <div className="relative w-full h-full flex items-center justify-center">
           {items.map((item, index) => (
             <div

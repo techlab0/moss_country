@@ -95,6 +95,21 @@
   }
 }
 
+/* モバイルはスクロールを奪わない自由スクロール。ただし各シーンを最低でも1画面高にして
+   シーンごとの背景（SceneBackdrop）とスクロール連動の切替演出が噛み合うようにする。
+   高さは min-height（固定 height ではない）＋ overflow を切らないことで、
+   小さい端末で内容が縦にあふれても欠けないようにする。 */
+@media (max-width: 767px) {
+  .journey :global([data-home-screen='regular']) {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    min-height: 100svh;
+    align-items: center;
+    isolation: isolate;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .transitionCurtain {
     display: none;

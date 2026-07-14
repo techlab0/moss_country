@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getBlogPosts } from '@/lib/sanity';
 import type { BlogPost } from '@/types/sanity';
 import { Container } from '@/components/layout/Container';
@@ -13,9 +11,6 @@ export const LatestNews: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const ruleRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   // データ取得ロジック（変更禁止）
   useEffect(() => {
@@ -33,51 +28,9 @@ export const LatestNews: React.FC = () => {
     fetchLatestPosts();
   }, []);
 
-  // 演出: 見出しが横線とともに引かれ、カードが1枚ずつ左からスライド＋フェードで現れる
-  useEffect(() => {
-    if (isLoading || posts.length === 0) return;
-    const section = sectionRef.current;
-    const heading = headingRef.current;
-    const rule = ruleRef.current;
-    const cards = cardRefs.current.filter((el): el is HTMLDivElement => el !== null);
-    if (!section) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        if (heading) gsap.set(heading, { opacity: 1, y: 0 });
-        if (rule) gsap.set(rule, { scaleX: 1 });
-        gsap.set(cards, { opacity: 1, x: 0 });
-        return;
-      }
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 80%',
-          once: true,
-        },
-      });
-
-      if (heading) {
-        gsap.set(heading, { opacity: 0, y: 16 });
-        tl.to(heading, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 0);
-      }
-      if (rule) {
-        gsap.set(rule, { scaleX: 0, transformOrigin: '50% 50%' });
-        tl.to(rule, { scaleX: 1, duration: 0.9, ease: 'power2.out' }, 0.1);
-      }
-      if (cards.length > 0) {
-        gsap.set(cards, { opacity: 0, x: -48 });
-        tl.to(cards, { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out', stagger: 0.15 }, 0.2);
-      }
-    }, section);
-
-    return () => ctx.revert();
-  }, [isLoading, posts.length]);
+  // シーンの入場演出は SceneBackdrop が [data-scene-content] 単位で行う。
+  // ここで個別のScrollTrigger演出を持つと、非同期取得したカードが
+  // opacity:0 のまま取り残される競合が起きるため、内部演出は持たない。
 
   if (isLoading) {
     return (
@@ -95,7 +48,7 @@ export const LatestNews: React.FC = () => {
     <section ref={sectionRef} data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24 [@media(max-height:720px)]:py-6">
       <div data-scene-content>
       <Container>
-        <div ref={headingRef} className="text-center mb-8 sm:mb-12 md:mb-16 [@media(max-height:720px)]:mb-4">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 [@media(max-height:720px)]:mb-4">
           <div className="mb-6 sm:mb-8 [@media(max-height:720px)]:mb-3">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">
               Latest News
@@ -106,7 +59,7 @@ export const LatestNews: React.FC = () => {
             <br />
             News & Updates
           </h2>
-          <div ref={ruleRef} className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
+          <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
         </div>
 
         {posts.length === 0 && (
@@ -116,10 +69,9 @@ export const LatestNews: React.FC = () => {
         )}
 
         <div className="max-w-4xl mx-auto space-y-4">
-          {posts.map((post, index) => (
+          {posts.map((post) => (
             <div
               key={post._id}
-              ref={(el) => { cardRefs.current[index] = el; }}
               className="group"
             >
               <Link
