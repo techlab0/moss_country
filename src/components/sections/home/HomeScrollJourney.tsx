@@ -22,6 +22,13 @@ export function HomeScrollJourney({ children }: HomeScrollJourneyProps) {
   const inputLockedRef = useRef(false);
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // モバイル用スクロールスナップ（CSS側は max-width:767px でゲート）。
+  // ホーム表示中だけ有効にし、他ページに影響させない。
+  useEffect(() => {
+    document.documentElement.classList.add('home-scroll-snap');
+    return () => document.documentElement.classList.remove('home-scroll-snap');
+  }, []);
+
   useEffect(() => {
     const journey = journeyRef.current;
     const curtain = curtainRef.current;
