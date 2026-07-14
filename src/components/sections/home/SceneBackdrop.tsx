@@ -84,22 +84,61 @@ export function SceneBackdrop() {
       return null;
     };
 
-    const applyScene = (nextId: string | null) => {
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    // 一度表示したシーンのコンテンツは以後アニメーションし直さない（「表示させっぱなし」）
+    const revealedContent = new Set<string>();
+
+    const getContent = (id: string | null): HTMLElement | null => {
+      if (!id) return null;
+      const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+      return section?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
+    };
+
+    // ── モバイル: 下スクロールはフェード、上スクロールは即時（アニメなし）。
+    //    背景は常に現在シーンの画像を表示し、黒のまま取り残されない（GSAPタイムライン不使用）。
+    const applySceneMobile = (nextId: string | null, direction: 'up' | 'down') => {
+      if (nextId === activeIdRef.current) return;
+      activeIdRef.current = nextId;
+      const animate = direction === 'down' && !reduceMotion;
+
+      layerRefs.current.forEach((layer, id) => {
+        layer.style.transition = animate ? 'opacity 0.55s ease' : 'none';
+        layer.style.transform = 'none';
+        layer.style.opacity = id === nextId ? '1' : '0';
+      });
+
+      const content = getContent(nextId);
+      if (content) {
+        if (animate && nextId && !revealedContent.has(nextId)) {
+          content.style.transition = 'none';
+          content.style.transform = 'translateY(24px)';
+          content.style.opacity = '0';
+          void content.offsetWidth; // reflow でフェードを確実に再生
+          content.style.transition = 'transform 0.6s ease, opacity 0.6s ease';
+          content.style.transform = 'translateY(0)';
+          content.style.opacity = '1';
+        } else {
+          content.style.transition = 'none';
+          content.style.transform = 'translateY(0)';
+          content.style.opacity = '1';
+        }
+        if (nextId) revealedContent.add(nextId);
+      }
+    };
+
+    // ── デスクトップ: 黒 → 白ヘアライン → 画像の順で切り替わる高級感のある遷移
+    const applySceneDesktop = (nextId: string | null) => {
       const previousId = activeIdRef.current;
       if (nextId === previousId) return;
       activeIdRef.current = nextId;
 
       const previousLayer = previousId ? layerRefs.current.get(previousId) ?? null : null;
       const nextLayer = nextId ? layerRefs.current.get(nextId) ?? null : null;
-      const nextSection = nextId
-        ? document.querySelector<HTMLElement>(`[data-scene-id="${nextId}"]`)
-        : null;
-      const nextContent = nextSection?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
+      const nextContent = getContent(nextId);
 
       timelineRef.current?.kill();
 
       if (reduceMotion) {
-        // 動きを減らす設定では即座に最終状態へ
         layerRefs.current.forEach((layer, id) => {
           gsap.set(layer, { opacity: id === nextId ? 1 : 0, scale: 1 });
         });
@@ -110,12 +149,9 @@ export function SceneBackdrop() {
       const tl = gsap.timeline();
       timelineRef.current = tl;
 
-      // 1) 旧背景が黒へ沈む
       if (previousLayer) {
         tl.to(previousLayer, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0);
       }
-
-      // 2) 細い白のヘアラインが画面を横切る
       if (hairline) {
         tl.fromTo(
           hairline,
@@ -125,8 +161,6 @@ export function SceneBackdrop() {
         );
         tl.to(hairline, { opacity: 0, duration: 0.25, ease: 'power1.out' }, 0.62);
       }
-
-      // 3) 新背景が黒から浮かび上がる
       if (nextLayer) {
         tl.fromTo(
           nextLayer,
@@ -135,8 +169,6 @@ export function SceneBackdrop() {
           0.3,
         );
       }
-
-      // 4) コンテンツも同じタイミングでフェードイン
       if (nextContent) {
         tl.fromTo(
           nextContent,
@@ -147,18 +179,27 @@ export function SceneBackdrop() {
       }
     };
 
+    let lastScrollY = window.scrollY;
     let scrollScheduled = false;
     const handleScroll = () => {
       if (scrollScheduled) return;
       scrollScheduled = true;
-      // rAFではなくmicrotask/timeoutでも動くように軽いスロットル
       window.setTimeout(() => {
         scrollScheduled = false;
-        applyScene(findActiveSceneId());
+        const y = window.scrollY;
+        const direction: 'up' | 'down' = y >= lastScrollY ? 'down' : 'up';
+        lastScrollY = y;
+        const nextId = findActiveSceneId();
+        if (isMobile) applySceneMobile(nextId, direction);
+        else applySceneDesktop(nextId);
       }, 80);
     };
 
-    applyScene(findActiveSceneId());
+    // 初期表示（下方向として扱う）
+    const initialId = findActiveSceneId();
+    if (isMobile) applySceneMobile(initialId, 'down');
+    else applySceneDesktop(initialId);
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll, { passive: true });
 
@@ -196,6 +237,8 @@ export function SceneBackdrop() {
             fill
             sizes="100vw"
             quality={80}
+            // 各シーンの主役ビジュアル。lazyだとモバイルで表示されないことがあるため確実に先読みする
+            priority
             className="object-cover"
             style={{ objectPosition: scene.position }}
           />
