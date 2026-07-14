@@ -64,7 +64,7 @@ export function ProductsSection({ items }: ProductsSectionProps) {
       ref={sectionRef}
       data-home-screen="regular"
       data-scene-id="products"
-      className="relative py-4 sm:py-5 overflow-hidden"
+      className="relative py-4 sm:py-5 md:py-8 overflow-hidden"
     >
       {/* カルーセルの左右カードが不自然に切れないよう、Containerより広い専用ラッパーを使う */}
       <div data-scene-content className="relative z-10 w-full max-w-[84rem] mx-auto px-2 sm:px-4">

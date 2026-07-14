@@ -145,15 +145,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       };
     }
     
-    // 円弧配置: 中央が最も高く手前、両脇へ向かって円周に沿って下がりながら小さくなる。
+    // 円弧配置: 中央が最も大きく手前、両脇へ向かって円周に沿って下がりながら小さくなる。
     // radius/maxAngle は横の広がり、縦の湾曲は arcDepth で別制御する。
-    const radius = 540;
-    const maxAngle = 50;
+    const radius = 480;
+    const maxAngle = 46;
     const angle = (normalizedIndex / visibleRange) * maxAngle;
 
     // Calculate scale and opacity based on distance from center
     const distanceFromCenter = Math.abs(normalizedIndex);
-    const scale = normalizedIndex === 0 ? 1.06 : Math.max(0.64, 1 - (distanceFromCenter * 0.22));
+    const scale = normalizedIndex === 0 ? 1.02 : Math.max(0.66, 1 - (distanceFromCenter * 0.2));
     
     // Smooth opacity transition
     let opacity = 1;
@@ -167,17 +167,16 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     
     // Calculate x, y positions for centered arc with additional spacing
     const radian = (angle * Math.PI) / 180;
-    const cardSpacing = 46; // Additional horizontal spacing between cards
-    const cardWidth = 256; // Card width in pixels (w-64 = 256px)
-    const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing) - (cardWidth / 2); // Adjust center position
-    // 縦位置は横半径と切り離し、円弧の落差(arcDepth)で制御する。
-    // 中央(0)を最も高く、両脇へ向かって円周に沿って沈める。上限キャップは設けない
-    // （設けると下端が一直線に揃って弧が潰れる）。上方に少し寄せて全体をコンテナ中央へ。
-    const arcDepth = 300;
-    const y = (1 - Math.cos(radian)) * arcDepth - 60;
+    const cardSpacing = 40; // Additional horizontal spacing between cards
+    // translate(-50%,-50%) でカードをコンテナ中央に正しく置いてから円弧オフセットを重ねる。
+    // （インラインtransformがTailwindの-translate-y-1/2を打ち消してカードが下に垂れ、説明文と重なる問題への対処）
+    const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing);
+    // 中央(0)を最も高く、両脇へ円周に沿って穏やかに沈める（コンテナ内に収まる落差）
+    const arcDepth = 150;
+    const y = (1 - Math.cos(radian)) * arcDepth;
     
     return {
-      transform: `translate(${x}px, ${y}px) scale(${scale})`,
+      transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`,
       opacity,
       zIndex: normalizedIndex === 0 ? 10 : Math.max(1, 5 - distanceFromCenter),
       transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -213,10 +212,9 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
         </svg>
       </button>
 
-      {/* Arc Arrangement Container。
-          PC: 円弧の落差が収まる高さを確保（縦は切り取らない）。
-          モバイル: 中央1枚ぶんの高さに収め、直下の説明文と重ならないようYもクリップする。 */}
-      <div className="relative h-[22rem] [@media(max-height:720px)]:h-[20rem] overflow-clip md:h-[30rem] md:[@media(max-height:720px)]:h-[22rem] md:overflow-x-clip md:overflow-y-visible flex items-center justify-center mx-auto max-w-[76rem]">
+      {/* Arc Arrangement Container。円弧がちょうど収まる高さにし、直下の説明文へ垂れ込まないよう
+          縦横ともクリップする（カードはコンテナ中央基準で配置されるため弧は潰れない）。 */}
+      <div className="relative h-[22rem] [@media(max-height:720px)]:h-[20rem] md:h-[21rem] md:[@media(max-height:720px)]:h-[19rem] overflow-clip flex items-center justify-center mx-auto max-w-[76rem]">
         <div className="relative w-full h-full flex items-center justify-center">
           {items.map((item, index) => (
             <div
@@ -266,12 +264,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
               isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
             }`}
           >
-            <div className="text-sm uppercase tracking-wider text-emerald-300 mb-2">
-              {currentItem.category}
-            </div>
-            <h2 className="text-2xl md:text-3xl font-light mb-3 leading-tight text-white">
-              {currentItem.title}
-            </h2>
+            {/* カテゴリ・タイトルはカード内パネルに表示済みのため、ここでは説明文とCTAのみ */}
             <p className="text-base md:text-lg text-gray-200 leading-relaxed mb-4 [@media(max-height:720px)]:mb-3 line-clamp-2 px-4">
               {currentItem.description}
             </p>
