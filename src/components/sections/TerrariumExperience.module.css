@@ -21,7 +21,7 @@
     linear-gradient(145deg, #07100b 0%, #010201 54%, #080704 100%);
 }
 
-/* ステージの上端・下端を統一バックドロップの色へ約120pxで溶かし、
+/* ステージの上端・下端を黒ベース（#050505）へ約120pxで溶かし、
    セクション境界の「継ぎ目」を消す */
 .stage::before,
 .stage::after {
@@ -36,12 +36,12 @@
 
 .stage::before {
   top: 0;
-  background: linear-gradient(180deg, #060a08 0%, rgba(6, 10, 8, 0) 100%);
+  background: linear-gradient(180deg, #050505 0%, rgba(5, 5, 5, 0) 100%);
 }
 
 .stage::after {
   bottom: 0;
-  background: linear-gradient(0deg, #060a08 0%, rgba(6, 10, 8, 0) 100%);
+  background: linear-gradient(0deg, #050505 0%, rgba(5, 5, 5, 0) 100%);
 }
 
 .ambientGlow,

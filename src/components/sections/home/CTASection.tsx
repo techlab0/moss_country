@@ -70,7 +70,7 @@ export function CTASection({ ov }: CTASectionProps) {
   }, []);
 
   return (
-    <section ref={sectionRef} data-home-screen="regular" className="py-16 sm:py-24 md:py-32 text-white relative overflow-hidden">
+    <section ref={sectionRef} data-home-screen="regular" data-scene-id="cta" className="py-16 sm:py-24 md:py-32 text-white relative overflow-hidden">
       <div
         ref={glowRef}
         aria-hidden="true"
@@ -79,6 +79,7 @@ export function CTASection({ ov }: CTASectionProps) {
           background: 'radial-gradient(ellipse 70% 55% at 50% 45%, rgba(110, 145, 78, 0.14), transparent 68%)',
         }}
       />
+      <div data-scene-content>
       <Container className="relative z-10">
         <div ref={cardRef} className="text-center rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-16 mx-4 bg-stone-950/50 backdrop-blur-sm border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           <div className="mb-6 sm:mb-8">
@@ -129,6 +130,7 @@ export function CTASection({ ov }: CTASectionProps) {
           </div>
         </div>
       </Container>
+      </div>
     </section>
   );
 }

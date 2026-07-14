@@ -9,6 +9,7 @@ import { ProductsSection } from '@/components/sections/home/ProductsSection';
 import { WorkshopSection } from '@/components/sections/home/WorkshopSection';
 import { CTASection } from '@/components/sections/home/CTASection';
 import { HomeScrollJourney } from '@/components/sections/home/HomeScrollJourney';
+import { SceneBackdrop } from '@/components/sections/home/SceneBackdrop';
 import { defaultHeroImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 
@@ -19,10 +20,6 @@ const TerrariumExperience = dynamic(
     loading: () => <section className="min-h-[100svh]" aria-hidden="true" />,
   },
 );
-
-// 統一バックドロップ用のSVGノイズ（feTurbulence）。外部リクエストなしのdata URI。
-const NOISE_TEXTURE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
@@ -45,32 +42,13 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative">
-      {/* 統一バックドロップ:
-          ページ全体をひとつの世界として繋ぐ、深い緑黒の縦グラデーション
-          ＋ 淡い苔緑のグロー ＋ SVGノイズの微細な質感。
-          -z-10のfixedなので、透過した各セクションの背後に常にこれが見える。 */}
-      <div aria-hidden="true" className="fixed inset-0 -z-10 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: [
-              'radial-gradient(ellipse 85% 55% at 18% 10%, rgba(96, 134, 70, 0.05), transparent 62%)',
-              'radial-gradient(ellipse 75% 50% at 84% 46%, rgba(96, 134, 70, 0.055), transparent 60%)',
-              'radial-gradient(ellipse 95% 60% at 38% 90%, rgba(110, 148, 80, 0.045), transparent 64%)',
-              'linear-gradient(180deg, #050807 0%, #0a0f0b 45%, #060a08 100%)',
-            ].join(', '),
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ opacity: 0.035, backgroundImage: `url("${NOISE_TEXTURE}")` }}
-        />
-      </div>
-
+    <div className="relative bg-[#050505]">
       <HomeScrollJourney>
-        {/* Hero Section */}
-        <div data-home-screen="regular">
+        {/* 全シーン共通の固定背景ステージ（黒ベース＋シーンごとのテラリウム画像） */}
+        <SceneBackdrop />
+
+        {/* Hero Section（relative必須: 固定背景ステージより前面に描画するため） */}
+        <div data-home-screen="regular" className="relative">
           <Hero heroImageUrl={heroImageUrl} />
         </div>
 

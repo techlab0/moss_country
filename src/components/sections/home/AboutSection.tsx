@@ -123,10 +123,12 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
     <section
       ref={sectionRef}
       data-home-screen="regular"
-      className="relative py-10 sm:py-12 md:py-12 lg:py-14"
+      data-scene-id="about"
+      className="relative py-10 sm:py-12 md:py-12 lg:py-14 [@media(max-height:720px)]:py-5"
     >
+      <div data-scene-content>
       <Container>
-        <div className="text-center mb-8 sm:mb-10 md:mb-10 lg:mb-12">
+        <div className="text-center mb-8 sm:mb-10 md:mb-10 lg:mb-12 [@media(max-height:720px)]:mb-5">
           <div className="mb-6 sm:mb-8">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-400 font-normal">About MOSS COUNTRY</span>
           </div>
@@ -137,7 +139,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
           >
             {titleContent}
           </h2>
-          <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8"></div>
+          <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto mt-6 sm:mt-8 mb-6 sm:mb-8 [@media(max-height:720px)]:mt-4 [@media(max-height:720px)]:mb-4"></div>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-normal text-white max-w-4xl mx-auto leading-relaxed px-4">
             {ov('aboutLead') !== undefined ? (
               <span className="whitespace-pre-line">{ov('aboutLead')}</span>
@@ -216,7 +218,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
           ))}
         </div>
 
-        <div className="text-center mt-8 sm:mt-10 md:mt-10">
+        <div className="text-center mt-8 sm:mt-10 md:mt-10 [@media(max-height:720px)]:mt-5">
           <a href="/story">
             <Button
               variant="primary"
@@ -228,6 +230,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
           </a>
         </div>
       </Container>
+      </div>
     </section>
   );
 }

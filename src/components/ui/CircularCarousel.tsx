@@ -114,13 +114,14 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       };
     }
     
-    const radius = 600; // Larger radius for more spacing
-    const maxAngle = 50; // Wider angle spread for more spacing
+    // 端のカードがコンテナ内に完全に収まり、矢印ボタンと重ならない広がりに調整
+    const radius = 560;
+    const maxAngle = 42;
     const angle = (normalizedIndex / visibleRange) * maxAngle;
-    
+
     // Calculate scale and opacity based on distance from center
     const distanceFromCenter = Math.abs(normalizedIndex);
-    const scale = normalizedIndex === 0 ? 1.0 : Math.max(0.7, 1 - (distanceFromCenter * 0.2));
+    const scale = normalizedIndex === 0 ? 1.08 : Math.max(0.7, 1 - (distanceFromCenter * 0.2));
     
     // Smooth opacity transition
     let opacity = 1;
@@ -134,10 +135,11 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     
     // Calculate x, y positions for centered arc with additional spacing
     const radian = (angle * Math.PI) / 180;
-    const cardSpacing = 80; // Additional horizontal spacing between cards
+    const cardSpacing = 40; // Additional horizontal spacing between cards
     const cardWidth = 256; // Card width in pixels (w-64 = 256px)
     const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing) - (cardWidth / 2); // Adjust center position
-    const y = -Math.cos(radian) * radius + radius - 150; // Adjusted for better centering
+    // 端のカードが弧の湾曲でコンテナ下端からはみ出さないよう、下方向の沈み込みに上限を設ける
+    const y = Math.min(-Math.cos(radian) * radius + radius - 150, -82);
     
     return {
       transform: `translate(${x}px, ${y}px) scale(${scale})`,
@@ -152,14 +154,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   const currentItem = items[displayIndex];
 
   return (
-    <div className={`relative py-4 sm:py-6 ${className}`}>
-      {/* Navigation Buttons */}
+    <div className={`relative py-4 sm:py-6 [@media(max-height:720px)]:py-2 ${className}`}>
+      {/* Navigation Buttons（カードと重ならないよう外縁に配置） */}
       <button
         onClick={prevItem}
         disabled={isAnimating}
-        className="absolute left-8 top-1/2 transform -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-amber-100/20 backdrop-blur-md border border-amber-800/30 flex items-center justify-center text-amber-800 hover:bg-amber-100/30 transition-all duration-300 disabled:opacity-50 group"
+        aria-label="前の作品へ"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-stone-950/50 backdrop-blur-sm border border-emerald-400/20 flex items-center justify-center text-emerald-200 hover:bg-stone-900/70 hover:border-emerald-400/45 transition-all duration-300 disabled:opacity-50 group"
       >
-        <svg className="w-8 h-8 transform group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
@@ -167,15 +170,16 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       <button
         onClick={nextItem}
         disabled={isAnimating}
-        className="absolute right-8 top-1/2 transform -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-amber-100/20 backdrop-blur-md border border-amber-800/30 flex items-center justify-center text-amber-800 hover:bg-amber-100/30 transition-all duration-300 disabled:opacity-50 group"
+        aria-label="次の作品へ"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-stone-950/50 backdrop-blur-sm border border-emerald-400/20 flex items-center justify-center text-emerald-200 hover:bg-stone-900/70 hover:border-emerald-400/45 transition-all duration-300 disabled:opacity-50 group"
       >
-        <svg className="w-8 h-8 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       {/* Arc Arrangement Container */}
-      <div className="relative h-96 flex items-center justify-center overflow-hidden mx-auto max-w-6xl">
+      <div className="relative h-96 [@media(max-height:720px)]:h-[21rem] flex items-center justify-center overflow-hidden mx-auto max-w-[76rem]">
         <div className="relative w-full h-full flex items-center justify-center">
           {items.map((item, index) => (
             <div
@@ -185,9 +189,9 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
               onClick={() => goToItem(index)}
             >
               {/* Card */}
-              <div className="w-64 h-80 bg-amber-50/20 backdrop-blur-md rounded-3xl border border-amber-800/30 overflow-hidden shadow-2xl hover:shadow-3xl transition-shadow duration-300 relative">
+              <div className="w-64 h-80 [@media(max-height:720px)]:h-72 bg-stone-950/60 backdrop-blur-md rounded-3xl border border-emerald-400/20 overflow-hidden shadow-2xl hover:shadow-3xl transition-shadow duration-300 relative">
                 {/* Image */}
-                <div className="h-48 overflow-hidden">
+                <div className="h-48 [@media(max-height:720px)]:h-40 overflow-hidden">
                   <ImagePlaceholder
                     src={item.image}
                     alt={item.title}
@@ -198,15 +202,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
                 </div>
                 
                 {/* Frosted Glass Content */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-amber-900/80 backdrop-blur-xl border-t border-amber-800/50 p-4 text-white shadow-lg">
-                  <div className="text-xs uppercase tracking-wider text-amber-200 mb-1">
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-stone-950/80 backdrop-blur-xl border-t border-emerald-400/20 p-4 text-white shadow-lg">
+                  <div className="text-xs uppercase tracking-wider text-emerald-300 mb-1">
                     {item.category}
                   </div>
                   <h3 className="text-lg font-light mb-2 leading-tight">
                     {item.title}
                   </h3>
                   {item.price && (
-                    <div className="text-sm font-medium text-amber-200">
+                    <div className="text-sm font-medium text-emerald-300">
                       {item.price}
                     </div>
                   )}
@@ -218,7 +222,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       </div>
 
       {/* Current Item Details */}
-      <div className="mt-6 md:mt-8 text-center text-white">
+      <div className="mt-4 md:mt-5 [@media(max-height:720px)]:mt-2 text-center text-white">
         <div className="max-w-2xl mx-auto">
           <div
             className={`transform transition-all duration-500 ${
@@ -231,7 +235,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
             <h2 className="text-2xl md:text-3xl font-light mb-3 leading-tight text-white">
               {currentItem.title}
             </h2>
-            <p className="text-base md:text-lg text-gray-200 leading-relaxed mb-5">
+            <p className="text-base md:text-lg text-gray-200 leading-relaxed mb-4 [@media(max-height:720px)]:mb-3 line-clamp-2 px-4">
               {currentItem.description}
             </p>
             {currentItem.price && (
@@ -253,15 +257,16 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       </div>
 
       {/* Dots Indicator */}
-      <div className="flex justify-center space-x-3 mt-6">
+      <div className="flex justify-center space-x-3 mt-4 [@media(max-height:720px)]:mt-2">
         {items.map((_, index) => (
           <button
             key={index}
             onClick={() => goToItem(index)}
             disabled={isAnimating}
+            aria-label={`作品 ${index + 1} を表示`}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               index === currentIndex
-                ? 'bg-amber-600 scale-125'
+                ? 'bg-emerald-400 scale-125'
                 : 'bg-stone-400/40 hover:bg-stone-400/60'
             }`}
           />

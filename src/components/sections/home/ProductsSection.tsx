@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Container } from '@/components/layout/Container';
 import { CircularCarousel } from '@/components/ui/CircularCarousel';
 
 export interface ProductsSectionItem {
@@ -64,17 +63,17 @@ export function ProductsSection({ items }: ProductsSectionProps) {
     <section
       ref={sectionRef}
       data-home-screen="regular"
-      className="relative py-6 sm:py-8 overflow-hidden"
+      data-scene-id="products"
+      className="relative py-4 sm:py-5 overflow-hidden"
     >
-      <Container className="relative z-10">
-        <div ref={headingRef} className="text-center mb-3 sm:mb-4 px-4">
-          <div className="mb-3 sm:mb-4">
+      {/* カルーセルの左右カードが不自然に切れないよう、Containerより広い専用ラッパーを使う */}
+      <div data-scene-content className="relative z-10 w-full max-w-[84rem] mx-auto px-2 sm:px-4">
+        <div ref={headingRef} className="text-center mb-2 sm:mb-3 px-4">
+          <div className="mb-2 sm:mb-3">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Our Products</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-light text-white mb-4 sm:mb-5 leading-tight">
-            <span className="text-emerald-400 font-bold">MOSS COUNTRY&apos;s</span>
-            <br />
-            Work
+          <h2 className="text-2xl sm:text-3xl md:text-[2.1rem] font-light text-white mb-3 sm:mb-4 leading-tight">
+            <span className="text-emerald-400 font-bold">MOSS COUNTRY&apos;s</span>{' '}Work
           </h2>
           <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
         </div>
@@ -82,7 +81,7 @@ export function ProductsSection({ items }: ProductsSectionProps) {
         <div ref={carouselRef}>
           <CircularCarousel items={items} />
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

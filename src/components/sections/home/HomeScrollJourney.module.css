@@ -27,16 +27,15 @@
 }
 
 .curtainMain {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(43, 75, 45, 0.42), transparent 52%),
-    #061009;
+  /* 黒と白の高級感: 緑を排した漆黒のカーテン */
+  background: #050505;
 }
 
 .curtainAccent {
   top: auto;
-  height: clamp(0.45rem, 1.2vh, 0.8rem);
-  background: linear-gradient(90deg, #6f8f4f, #c5dfa1 48%, #557442);
-  box-shadow: 0 0 32px rgba(180, 214, 137, 0.38);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
 }
 
 .transitionCurtain[data-transitioning='true'] {

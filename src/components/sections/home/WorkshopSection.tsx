@@ -74,7 +74,8 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
   }, []);
 
   return (
-    <section ref={sectionRef} data-home-screen="regular" className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
+    <section ref={sectionRef} data-home-screen="regular" data-scene-id="workshop" className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
+      <div data-scene-content>
       <Container className="relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
           <div
@@ -134,6 +135,7 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
           </div>
         </div>
       </Container>
+      </div>
     </section>
   );
 }

@@ -81,7 +81,7 @@ export const LatestNews: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section data-home-screen="regular" className="relative py-12 sm:py-16 md:py-24">
+      <section data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24">
         <Container>
           <InlineLoading message="新着情報を読み込み中..." />
         </Container>
@@ -89,26 +89,31 @@ export const LatestNews: React.FC = () => {
     );
   }
 
-  if (posts.length === 0) {
-    return null; // 記事がない場合は表示しない
-  }
+  // 記事0件でもNewsシーン自体は必ず表示する（フルページ構成でシーンが抜けないように）
 
   return (
-    <section ref={sectionRef} data-home-screen="regular" className="relative py-12 sm:py-16 md:py-24">
+    <section ref={sectionRef} data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24 [@media(max-height:720px)]:py-6">
+      <div data-scene-content>
       <Container>
-        <div ref={headingRef} className="text-center mb-8 sm:mb-12 md:mb-16">
-          <div className="mb-6 sm:mb-8">
+        <div ref={headingRef} className="text-center mb-8 sm:mb-12 md:mb-16 [@media(max-height:720px)]:mb-4">
+          <div className="mb-6 sm:mb-8 [@media(max-height:720px)]:mb-3">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">
               Latest News
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-white mb-8 sm:mb-12 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-white mb-8 sm:mb-12 [@media(max-height:720px)]:mb-4 leading-tight">
             <span className="text-emerald-400 font-bold">新着情報</span>
             <br />
             News & Updates
           </h2>
           <div ref={ruleRef} className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
         </div>
+
+        {posts.length === 0 && (
+          <p className="text-center text-gray-300 text-sm sm:text-base">
+            現在お知らせはありません。最新情報は近日公開予定です。
+          </p>
+        )}
 
         <div className="max-w-4xl mx-auto space-y-4">
           {posts.map((post, index) => (
@@ -154,7 +159,7 @@ export const LatestNews: React.FC = () => {
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-12 [@media(max-height:720px)]:mt-5">
           <Link
             href="/blog"
             className="inline-flex items-center px-8 py-3 text-emerald-300 border border-emerald-400 rounded-full hover:bg-emerald-400 hover:text-stone-900 transition-all duration-300 font-medium"
@@ -166,6 +171,7 @@ export const LatestNews: React.FC = () => {
           </Link>
         </div>
       </Container>
+      </div>
     </section>
   );
 };
