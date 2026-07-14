@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/Hero';
 import { LatestNews } from '@/components/sections/LatestNews';
 import { AboutSection } from '@/components/sections/home/AboutSection';
@@ -12,14 +11,6 @@ import { HomeScrollJourney } from '@/components/sections/home/HomeScrollJourney'
 import { SceneBackdrop } from '@/components/sections/home/SceneBackdrop';
 import { defaultHeroImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
-
-const TerrariumExperience = dynamic(
-  () => import('@/components/sections/TerrariumExperience').then((module) => module.TerrariumExperience),
-  {
-    ssr: false,
-    loading: () => <section className="min-h-[100svh]" aria-hidden="true" />,
-  },
-);
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
@@ -51,8 +42,6 @@ export default function Home() {
         <div data-home-screen="regular" className="relative">
           <Hero heroImageUrl={heroImageUrl} />
         </div>
-
-        <TerrariumExperience />
 
         {/* MOSS COUNTRYとは */}
         <AboutSection t={t} ov={ov} />
