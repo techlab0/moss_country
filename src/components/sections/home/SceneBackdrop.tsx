@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Image from 'next/image';
+import { getImageProps } from 'next/image';
 import gsap from 'gsap';
 
 /**
@@ -16,6 +16,8 @@ import gsap from 'gsap';
 interface SceneDefinition {
   id: string;
   src: string;
+  /** モバイル(<768px)用の縦型(9:16)画像。coverクロップで容器が切れないよう専用生成されたもの */
+  mobileSrc: string;
   /** background-position 相当（object-position） */
   position: string;
   /** 黒オーバーレイの不透明度（0.55〜0.70） */
@@ -26,30 +28,35 @@ const SCENES: readonly SceneDefinition[] = [
   {
     id: 'about',
     src: '/images/terrarium-generated/terrarium-artwork-woodland-arch-v1.png',
+    mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-root-cave-v1.png',
     position: '50% 42%',
     overlay: 0.6,
   },
   {
     id: 'news',
     src: '/images/terrarium-generated/terrarium-artwork-moonlit-wetland-v1.png',
+    mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-misty-spires-v1.png',
     position: '50% 45%',
     overlay: 0.66,
   },
   {
     id: 'products',
     src: '/images/terrarium-generated/terrarium-hero-key-030-v1.png',
+    mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-circular-spring-v1.png',
     position: '50% 50%',
     overlay: 0.7,
   },
   {
     id: 'workshop',
     src: '/images/terrarium-generated/terrarium-hero-angle-right-close-v1.png',
+    mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-copper-fern-v1.png',
     position: '50% 40%',
     overlay: 0.62,
   },
   {
     id: 'cta',
     src: '/images/terrarium-generated/terrarium-artwork-basalt-ravine-v1.png',
+    mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-waterfall-cliff-v1.png',
     position: '50% 46%',
     overlay: 0.58,
   },
@@ -231,17 +238,30 @@ export function SceneBackdrop() {
           data-scene-layer={scene.id}
           className="absolute inset-0 opacity-0 will-change-[opacity,transform]"
         >
-          <Image
-            src={scene.src}
-            alt=""
-            fill
-            sizes="100vw"
-            quality={80}
-            // 各シーンの主役ビジュアル。lazyだとモバイルで表示されないことがあるため確実に先読みする
-            priority
-            className="object-cover"
-            style={{ objectPosition: scene.position }}
-          />
+          {(() => {
+            // 画面幅による画像の出し分け（アートディレクション）は、JSの状態ではなく
+            // <picture> のブラウザネイティブなメディア選択で行う。JS凍結環境や
+            // ハイドレーション初期値の問題に左右されず、該当する側しかダウンロードされない。
+            const common = { alt: '', fill: true as const, sizes: '100vw', quality: 80 };
+            const { props: mobileProps } = getImageProps({ ...common, src: scene.mobileSrc });
+            const { props: desktopProps } = getImageProps({ ...common, src: scene.src });
+            const { srcSet: desktopSrcSet, ...imgProps } = desktopProps;
+            return (
+              <picture>
+                <source media="(max-width: 767px)" srcSet={mobileProps.srcSet} />
+                <source media="(min-width: 768px)" srcSet={desktopSrcSet} />
+                <img
+                  {...imgProps}
+                  alt=""
+                  // lazyだとモバイルで表示されないことがあるため確実に先読みする
+                  loading="eager"
+                  fetchPriority="high"
+                  className="object-cover"
+                  style={{ ...imgProps.style, objectPosition: scene.position }}
+                />
+              </picture>
+            );
+          })()}
           {/* 黒オーバーレイ＋ビネットで沈めて可読性を確保 */}
           <div
             className="absolute inset-0"
