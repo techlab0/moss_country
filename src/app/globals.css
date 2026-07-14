@@ -335,27 +335,3 @@ body.admin-layout textarea:focus {
   50% { stroke-dasharray: 90 125; stroke-dashoffset: -30; }
   100% { stroke-dasharray: 90 125; stroke-dashoffset: -124; }
 }
-
-/* ホーム（モバイル）: シーン単位のスクロールスナップ。
-   PCのホイール制御の代わりに、指を離すと最寄りのシーン境界に吸着させる。
-   クラスは HomeScrollJourney がホーム表示中だけ <html> に付与する（他ページに影響させない）。
-   シーンがビューポートより縦に長い場合、ブラウザはスナップ領域内の自由スクロールを許容するため
-   mandatory でも内容が到達不能にはならない。 */
-@media (max-width: 767px) {
-  html.home-scroll-snap {
-    scroll-snap-type: y mandatory;
-  }
-  html.home-scroll-snap [data-home-screen] {
-    scroll-snap-align: start;
-  }
-  /* フッターまでスクロールし切れるよう、末尾にも吸着点を置く */
-  html.home-scroll-snap footer {
-    scroll-snap-align: end;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html.home-scroll-snap {
-    scroll-snap-type: none;
-  }
-}

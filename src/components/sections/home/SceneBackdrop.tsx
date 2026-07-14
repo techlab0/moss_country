@@ -101,7 +101,7 @@ export function SceneBackdrop() {
       return section?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
     };
 
-    // ── モバイル: 下スクロールはフェード、上スクロールは即時（アニメなし）。
+    // ── モバイル: 背景レイヤーの切替のみ担当。下スクロールはフェード、上は即時。
     //    背景は常に現在シーンの画像を表示し、黒のまま取り残されない（GSAPタイムライン不使用）。
     const applySceneMobile = (nextId: string | null, direction: 'up' | 'down') => {
       if (nextId === activeIdRef.current) return;
@@ -113,23 +113,61 @@ export function SceneBackdrop() {
         layer.style.transform = 'none';
         layer.style.opacity = id === nextId ? '1' : '0';
       });
+    };
 
-      const content = getContent(nextId);
-      if (content) {
-        if (animate && nextId && !revealedContent.has(nextId)) {
-          content.style.transition = 'none';
-          content.style.transform = 'translateY(24px)';
-          content.style.opacity = '0';
-          void content.offsetWidth; // reflow でフェードを確実に再生
-          content.style.transition = 'transform 0.6s ease, opacity 0.6s ease';
-          content.style.transform = 'translateY(0)';
-          content.style.opacity = '1';
-        } else {
-          content.style.transition = 'none';
-          content.style.transform = 'translateY(0)';
-          content.style.opacity = '1';
+    // ── モバイルのコンテンツ表示: 下スクロール中は各セクションを非表示にしておき、
+    //    セクション上端がビューポートの80%ラインに達した瞬間にフェードで表示する。
+    //    一度表示したら以後は出しっぱなし（上スクロールで消えない）。
+    const sceneIds = SCENES.map((scene) => scene.id);
+
+    const showContent = (content: HTMLElement, animate: boolean) => {
+      if (animate) {
+        content.style.transition = 'transform 0.6s ease, opacity 0.6s ease';
+      } else {
+        content.style.transition = 'none';
+      }
+      content.style.transform = 'translateY(0)';
+      content.style.opacity = '1';
+    };
+
+    const revealOnArrival = (direction: 'up' | 'down') => {
+      const revealLine = window.innerHeight * 0.8;
+      for (const id of sceneIds) {
+        if (revealedContent.has(id)) continue;
+        const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+        const content = getContent(id);
+        if (!section || !content) continue;
+        const top = section.getBoundingClientRect().top;
+        // 非同期マウントされたコンテンツ（News等）は初期化時に存在しないため、
+        // 発見した時点でまだ到達前なら遅延して隠す（画面外なのでちらつかない）
+        if (!content.dataset.revealPrepared) {
+          content.dataset.revealPrepared = '1';
+          if (!reduceMotion && top >= revealLine) {
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(24px)';
+          }
         }
-        if (nextId) revealedContent.add(nextId);
+        if (top < revealLine) {
+          revealedContent.add(id);
+          showContent(content, direction === 'down' && !reduceMotion);
+        }
+      }
+    };
+
+    // 初期化（モバイルのみ）: ビューポートより下のセクションを事前に隠す。
+    // JSでのみ隠すので、JSが動かない環境では通常表示のまま（コンテンツ喪失なし）。
+    const initMobileReveal = () => {
+      for (const id of sceneIds) {
+        const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+        const content = getContent(id);
+        if (!section || !content) continue;
+        content.dataset.revealPrepared = '1';
+        if (!reduceMotion && section.getBoundingClientRect().top >= window.innerHeight) {
+          content.style.opacity = '0';
+          content.style.transform = 'translateY(24px)';
+        } else {
+          revealedContent.add(id);
+        }
       }
     };
 
@@ -197,15 +235,23 @@ export function SceneBackdrop() {
         const direction: 'up' | 'down' = y >= lastScrollY ? 'down' : 'up';
         lastScrollY = y;
         const nextId = findActiveSceneId();
-        if (isMobile) applySceneMobile(nextId, direction);
-        else applySceneDesktop(nextId);
+        if (isMobile) {
+          applySceneMobile(nextId, direction);
+          revealOnArrival(direction);
+        } else {
+          applySceneDesktop(nextId);
+        }
       }, 80);
     };
 
     // 初期表示（下方向として扱う）
     const initialId = findActiveSceneId();
-    if (isMobile) applySceneMobile(initialId, 'down');
-    else applySceneDesktop(initialId);
+    if (isMobile) {
+      initMobileReveal();
+      applySceneMobile(initialId, 'down');
+    } else {
+      applySceneDesktop(initialId);
+    }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll, { passive: true });
