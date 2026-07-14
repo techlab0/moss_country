@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ImagePlaceholder } from './ImagePlaceholder';
 
@@ -26,6 +26,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  // モバイル(<768px)は幅が足りず円弧が成立しないため、中央1枚のみの表示に切り替える
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const nextItem = () => {
     if (isAnimating) return;
@@ -61,6 +70,28 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
 
   // Calculate positions for horizontal-like arc arrangement
   const getItemStyle = (index: number) => {
+    // モバイル: 中央の1枚だけをコンテナ中央に平置き。両脇は隠す（弧・縦オフセットなし）。
+    // translate(-50%,-50%) でカードの高さに依存せず中央に固定する。
+    if (isMobile) {
+      if (index === currentIndex) {
+        return {
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: 1,
+          zIndex: 10,
+          transition: 'opacity 0.4s ease',
+          visibility: 'visible' as const,
+        };
+      }
+      return {
+        transform: 'translate(-50%, -50%) scale(0.92)',
+        opacity: 0,
+        zIndex: 0,
+        transition: 'opacity 0.35s ease',
+        pointerEvents: 'none' as const,
+        visibility: 'hidden' as const,
+      };
+    }
+
     const visibleRange = 2; // Show 2 items on each side of center (5 total)
     const relativeIndex = index - currentIndex;
     
@@ -182,8 +213,10 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
         </svg>
       </button>
 
-      {/* Arc Arrangement Container（円弧の落差が収まる高さを確保。潰さないため縦は切り取らない） */}
-      <div className="relative h-[30rem] [@media(max-height:720px)]:h-[22rem] flex items-center justify-center overflow-x-clip mx-auto max-w-[76rem]">
+      {/* Arc Arrangement Container。
+          PC: 円弧の落差が収まる高さを確保（縦は切り取らない）。
+          モバイル: 中央1枚ぶんの高さに収め、直下の説明文と重ならないようYもクリップする。 */}
+      <div className="relative h-[22rem] [@media(max-height:720px)]:h-[20rem] overflow-clip md:h-[30rem] md:[@media(max-height:720px)]:h-[22rem] md:overflow-x-clip md:overflow-y-visible flex items-center justify-center mx-auto max-w-[76rem]">
         <div className="relative w-full h-full flex items-center justify-center">
           {items.map((item, index) => (
             <div
