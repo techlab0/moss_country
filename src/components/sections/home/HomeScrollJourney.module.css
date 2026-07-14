@@ -1,0 +1,117 @@
+.journey {
+  position: relative;
+  z-index: 10;
+  isolation: isolate;
+}
+
+.journey :global([data-home-screen='pinned']) {
+  z-index: 1;
+}
+
+.transitionCurtain {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.curtainMain,
+.curtainAccent {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: translate3d(0, 105%, 0);
+  will-change: transform;
+}
+
+.curtainMain {
+  /* 黒と白の高級感: 緑を排した漆黒のカーテン */
+  background: #050505;
+}
+
+.curtainAccent {
+  top: auto;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+}
+
+.transitionCurtain[data-transitioning='true'] {
+  visibility: visible;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainMain {
+  animation: curtain-down 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainAccent {
+  animation: accent-down 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainMain {
+  animation: curtain-up 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+.transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainAccent {
+  animation: accent-up 920ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+@keyframes curtain-down {
+  0% { transform: translate3d(0, 105%, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -105%, 0); }
+}
+
+@keyframes accent-down {
+  0% { transform: translate3d(0, 105vh, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -105vh, 0); }
+}
+
+@keyframes curtain-up {
+  0% { transform: translate3d(0, -105%, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 105%, 0); }
+}
+
+@keyframes accent-up {
+  0% { transform: translate3d(0, -105vh, 0); }
+  46%, 54% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 105vh, 0); }
+}
+
+@media (min-width: 768px) {
+  .journey :global([data-home-screen='regular']) {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    height: 100svh;
+    min-height: 100svh;
+    align-items: center;
+    isolation: isolate;
+    overflow: clip;
+  }
+}
+
+/* モバイルはスクロールを奪わない自由スクロール。ただし各シーンを最低でも1画面高にして
+   シーンごとの背景（SceneBackdrop）とスクロール連動の切替演出が噛み合うようにする。
+   高さは min-height（固定 height ではない）＋ overflow を切らないことで、
+   小さい端末で内容が縦にあふれても欠けないようにする。 */
+@media (max-width: 767px) {
+  .journey :global([data-home-screen='regular']) {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    min-height: 100svh;
+    align-items: center;
+    isolation: isolate;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transitionCurtain {
+    display: none;
+  }
+}

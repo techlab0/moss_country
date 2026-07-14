@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { getBlogPosts } from '@/lib/sanity';
 import type { BlogPost } from '@/types/sanity';
 import { Container } from '@/components/layout/Container';
-import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { InlineLoading } from '@/components/ui/LoadingScreen';
 
 export const LatestNews: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const sectionRef = useRef<HTMLElement>(null);
 
+  // データ取得ロジック（変更禁止）
   useEffect(() => {
     const fetchLatestPosts = async () => {
       try {
@@ -27,9 +28,13 @@ export const LatestNews: React.FC = () => {
     fetchLatestPosts();
   }, []);
 
+  // シーンの入場演出は SceneBackdrop が [data-scene-content] 単位で行う。
+  // ここで個別のScrollTrigger演出を持つと、非同期取得したカードが
+  // opacity:0 のまま取り残される競合が起きるため、内部演出は持たない。
+
   if (isLoading) {
     return (
-      <section className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+      <section data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24">
         <Container>
           <InlineLoading message="新着情報を読み込み中..." />
         </Container>
@@ -37,38 +42,41 @@ export const LatestNews: React.FC = () => {
     );
   }
 
-  if (posts.length === 0) {
-    return null; // 記事がない場合は表示しない
-  }
+  // 記事0件でもNewsシーン自体は必ず表示する（フルページ構成でシーンが抜けないように）
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 bg-stone-900/70 backdrop-blur-md">
+    <section ref={sectionRef} data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24 [@media(max-height:720px)]:py-6">
+      <div data-scene-content>
       <Container>
-        <AnimatedSection animation="fade-in" className="text-center mb-8 sm:mb-12 md:mb-16">
-          <div className="mb-6 sm:mb-8">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 [@media(max-height:720px)]:mb-4">
+          <div className="mb-6 sm:mb-8 [@media(max-height:720px)]:mb-3">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">
               Latest News
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-white mb-8 sm:mb-12 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-white mb-8 sm:mb-12 [@media(max-height:720px)]:mb-4 leading-tight">
             <span className="text-emerald-400 font-bold">新着情報</span>
             <br />
             News & Updates
           </h2>
           <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent mx-auto"></div>
-        </AnimatedSection>
+        </div>
+
+        {posts.length === 0 && (
+          <p className="text-center text-gray-300 text-sm sm:text-base">
+            現在お知らせはありません。最新情報は近日公開予定です。
+          </p>
+        )}
 
         <div className="max-w-4xl mx-auto space-y-4">
-          {posts.map((post, index) => (
-            <AnimatedSection 
-              key={post._id} 
-              animation="slide-up" 
-              delay={index * 70}
+          {posts.map((post) => (
+            <div
+              key={post._id}
               className="group"
             >
-              <Link 
+              <Link
                 href={`/blog/${post.slug.current}`}
-                className="block bg-white/10 backdrop-blur-sm rounded-lg p-4 sm:p-6 hover:bg-white/20 transition-all duration-300 border border-white/10 hover:border-emerald-400/50"
+                className="block bg-stone-950/50 backdrop-blur-sm rounded-lg p-4 sm:p-6 hover:bg-stone-900/60 transition-all duration-300 border border-emerald-400/15 hover:border-emerald-400/40"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1">
@@ -99,12 +107,12 @@ export const LatestNews: React.FC = () => {
                   </div>
                 </div>
               </Link>
-            </AnimatedSection>
+            </div>
           ))}
         </div>
 
-        <AnimatedSection animation="fade-in" delay={400} className="text-center mt-12">
-          <Link 
+        <div className="text-center mt-12 [@media(max-height:720px)]:mt-5">
+          <Link
             href="/blog"
             className="inline-flex items-center px-8 py-3 text-emerald-300 border border-emerald-400 rounded-full hover:bg-emerald-400 hover:text-stone-900 transition-all duration-300 font-medium"
           >
@@ -113,8 +121,9 @@ export const LatestNews: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
-        </AnimatedSection>
+        </div>
       </Container>
+      </div>
     </section>
   );
 };

@@ -43,6 +43,10 @@ public/images/background/background_mov02.mov
 *.mov
 public/images/background/*.mov
 
+# Local Blender sources, backups, and unoptimized exports
+/3d-source/
+/public/models/terrarium-prototype.glb
+
 # Server logs (may contain customer emails / payment metadata)
 server.log
 *.log

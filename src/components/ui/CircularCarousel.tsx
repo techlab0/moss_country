@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ImagePlaceholder } from './ImagePlaceholder';
 
@@ -26,6 +26,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  // モバイル(<768px)は幅が足りず円弧が成立しないため、中央1枚のみの表示に切り替える
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const nextItem = () => {
     if (isAnimating) return;
@@ -61,6 +70,28 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
 
   // Calculate positions for horizontal-like arc arrangement
   const getItemStyle = (index: number) => {
+    // モバイル: 中央の1枚だけをコンテナ中央に平置き。両脇は隠す（弧・縦オフセットなし）。
+    // translate(-50%,-50%) でカードの高さに依存せず中央に固定する。
+    if (isMobile) {
+      if (index === currentIndex) {
+        return {
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: 1,
+          zIndex: 10,
+          transition: 'opacity 0.4s ease',
+          visibility: 'visible' as const,
+        };
+      }
+      return {
+        transform: 'translate(-50%, -50%) scale(0.92)',
+        opacity: 0,
+        zIndex: 0,
+        transition: 'opacity 0.35s ease',
+        pointerEvents: 'none' as const,
+        visibility: 'hidden' as const,
+      };
+    }
+
     const visibleRange = 2; // Show 2 items on each side of center (5 total)
     const relativeIndex = index - currentIndex;
     
@@ -114,13 +145,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       };
     }
     
-    const radius = 600; // Larger radius for more spacing
-    const maxAngle = 50; // Wider angle spread for more spacing
+    // 円弧配置: 中央が最も大きく手前、両脇へ向かって円周に沿って下がりながら小さくなる。
+    // radius/maxAngle は横の広がり、縦の湾曲は arcDepth で別制御する。
+    const radius = 480;
+    const maxAngle = 46;
     const angle = (normalizedIndex / visibleRange) * maxAngle;
-    
+
     // Calculate scale and opacity based on distance from center
     const distanceFromCenter = Math.abs(normalizedIndex);
-    const scale = normalizedIndex === 0 ? 1.0 : Math.max(0.7, 1 - (distanceFromCenter * 0.2));
+    const scale = normalizedIndex === 0 ? 1.02 : Math.max(0.66, 1 - (distanceFromCenter * 0.2));
     
     // Smooth opacity transition
     let opacity = 1;
@@ -134,13 +167,16 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     
     // Calculate x, y positions for centered arc with additional spacing
     const radian = (angle * Math.PI) / 180;
-    const cardSpacing = 80; // Additional horizontal spacing between cards
-    const cardWidth = 256; // Card width in pixels (w-64 = 256px)
-    const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing) - (cardWidth / 2); // Adjust center position
-    const y = -Math.cos(radian) * radius + radius - 150; // Adjusted for better centering
+    const cardSpacing = 40; // Additional horizontal spacing between cards
+    // translate(-50%,-50%) でカードをコンテナ中央に正しく置いてから円弧オフセットを重ねる。
+    // （インラインtransformがTailwindの-translate-y-1/2を打ち消してカードが下に垂れ、説明文と重なる問題への対処）
+    const x = Math.sin(radian) * radius + (normalizedIndex * cardSpacing);
+    // 中央(0)を最も高く、両脇へ円周に沿って穏やかに沈める（コンテナ内に収まる落差）
+    const arcDepth = 150;
+    const y = (1 - Math.cos(radian)) * arcDepth;
     
     return {
-      transform: `translate(${x}px, ${y}px) scale(${scale})`,
+      transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`,
       opacity,
       zIndex: normalizedIndex === 0 ? 10 : Math.max(1, 5 - distanceFromCenter),
       transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -152,14 +188,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
   const currentItem = items[displayIndex];
 
   return (
-    <div className={`relative py-12 ${className}`}>
-      {/* Navigation Buttons */}
+    <div className={`relative py-4 sm:py-6 [@media(max-height:720px)]:py-2 ${className}`}>
+      {/* Navigation Buttons（カードと重ならないよう外縁に配置） */}
       <button
         onClick={prevItem}
         disabled={isAnimating}
-        className="absolute left-8 top-1/2 transform -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-amber-100/20 backdrop-blur-md border border-amber-800/30 flex items-center justify-center text-amber-800 hover:bg-amber-100/30 transition-all duration-300 disabled:opacity-50 group"
+        aria-label="前の作品へ"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-stone-950/50 backdrop-blur-sm border border-emerald-400/20 flex items-center justify-center text-emerald-200 hover:bg-stone-900/70 hover:border-emerald-400/45 transition-all duration-300 disabled:opacity-50 group"
       >
-        <svg className="w-8 h-8 transform group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
@@ -167,15 +204,17 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       <button
         onClick={nextItem}
         disabled={isAnimating}
-        className="absolute right-8 top-1/2 transform -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-amber-100/20 backdrop-blur-md border border-amber-800/30 flex items-center justify-center text-amber-800 hover:bg-amber-100/30 transition-all duration-300 disabled:opacity-50 group"
+        aria-label="次の作品へ"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-stone-950/50 backdrop-blur-sm border border-emerald-400/20 flex items-center justify-center text-emerald-200 hover:bg-stone-900/70 hover:border-emerald-400/45 transition-all duration-300 disabled:opacity-50 group"
       >
-        <svg className="w-8 h-8 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
-      {/* Arc Arrangement Container */}
-      <div className="relative h-96 flex items-center justify-center overflow-hidden mx-auto max-w-6xl">
+      {/* Arc Arrangement Container。円弧がちょうど収まる高さにし、直下の説明文へ垂れ込まないよう
+          縦横ともクリップする（カードはコンテナ中央基準で配置されるため弧は潰れない）。 */}
+      <div className="relative h-[22rem] [@media(max-height:720px)]:h-[20rem] md:h-[21rem] md:[@media(max-height:720px)]:h-[19rem] overflow-clip flex items-center justify-center mx-auto max-w-[76rem]">
         <div className="relative w-full h-full flex items-center justify-center">
           {items.map((item, index) => (
             <div
@@ -185,9 +224,9 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
               onClick={() => goToItem(index)}
             >
               {/* Card */}
-              <div className="w-64 h-80 bg-amber-50/20 backdrop-blur-md rounded-3xl border border-amber-800/30 overflow-hidden shadow-2xl hover:shadow-3xl transition-shadow duration-300 relative">
+              <div className="w-64 h-80 [@media(max-height:720px)]:h-72 bg-stone-950/60 backdrop-blur-md rounded-3xl border border-emerald-400/20 overflow-hidden shadow-2xl hover:shadow-3xl transition-shadow duration-300 relative">
                 {/* Image */}
-                <div className="h-48 overflow-hidden">
+                <div className="h-48 [@media(max-height:720px)]:h-40 overflow-hidden">
                   <ImagePlaceholder
                     src={item.image}
                     alt={item.title}
@@ -198,15 +237,15 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
                 </div>
                 
                 {/* Frosted Glass Content */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-amber-900/80 backdrop-blur-xl border-t border-amber-800/50 p-4 text-white shadow-lg">
-                  <div className="text-xs uppercase tracking-wider text-amber-200 mb-1">
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-stone-950/80 backdrop-blur-xl border-t border-emerald-400/20 p-4 text-white shadow-lg">
+                  <div className="text-xs uppercase tracking-wider text-emerald-300 mb-1">
                     {item.category}
                   </div>
                   <h3 className="text-lg font-light mb-2 leading-tight">
                     {item.title}
                   </h3>
                   {item.price && (
-                    <div className="text-sm font-medium text-amber-200">
+                    <div className="text-sm font-medium text-emerald-300">
                       {item.price}
                     </div>
                   )}
@@ -218,33 +257,28 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       </div>
 
       {/* Current Item Details */}
-      <div className="mt-16 text-center text-white">
+      <div className="mt-4 md:mt-5 [@media(max-height:720px)]:mt-2 text-center text-white">
         <div className="max-w-2xl mx-auto">
-          <div 
+          <div
             className={`transform transition-all duration-500 ${
               isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
             }`}
           >
-            <div className="text-sm uppercase tracking-wider text-emerald-300 mb-4">
-              {currentItem.category}
-            </div>
-            <h2 className="text-4xl md:text-5xl font-light mb-6 leading-tight text-white">
-              {currentItem.title}
-            </h2>
-            <p className="text-xl text-gray-200 leading-relaxed mb-8">
+            {/* カテゴリ・タイトルはカード内パネルに表示済みのため、ここでは説明文とCTAのみ */}
+            <p className="text-base md:text-lg text-gray-200 leading-relaxed mb-4 [@media(max-height:720px)]:mb-3 line-clamp-2 px-4">
               {currentItem.description}
             </p>
             {currentItem.price && (
-              <div className="text-3xl font-light text-emerald-300 mb-8">
+              <div className="text-2xl font-light text-emerald-300 mb-5">
                 {currentItem.price}
               </div>
             )}
             {currentItem.link ? (
-              <Link href={currentItem.link} className="inline-block px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+              <Link href={currentItem.link} className="inline-block px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
                 詳しく見る
               </Link>
             ) : (
-              <button className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+              <button className="px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all duration-300 transform hover:scale-105">
                 詳しく見る
               </button>
             )}
@@ -253,15 +287,16 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       </div>
 
       {/* Dots Indicator */}
-      <div className="flex justify-center space-x-3 mt-12">
+      <div className="flex justify-center space-x-3 mt-4 [@media(max-height:720px)]:mt-2">
         {items.map((_, index) => (
           <button
             key={index}
             onClick={() => goToItem(index)}
             disabled={isAnimating}
+            aria-label={`作品 ${index + 1} を表示`}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               index === currentIndex
-                ? 'bg-amber-600 scale-125'
+                ? 'bg-emerald-400 scale-125'
                 : 'bg-stone-400/40 hover:bg-stone-400/60'
             }`}
           />
