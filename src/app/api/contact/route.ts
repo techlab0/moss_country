@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 
 // Validation schema for contact form
 const contactSchema = z.object({
@@ -40,12 +41,15 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
     
     let contactId: string | null = null;
-    
+    // サーバーサイドのメール送信結果（未設定・失敗でもレスポンスには含めるがエラー扱いはしない）
+    let storeNotified = false;
+    let customerConfirmed = false;
+
     // Try to save to database (with timeout)
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
-      
+
       const { data: contactData, error: dbError } = await supabaseAdmin
         .from('contact_inquiries')
         .insert({
@@ -71,21 +75,63 @@ export async function POST(request: NextRequest) {
       } else {
         contactId = contactData?.id || null;
         console.log('Contact inquiry saved to database successfully:', contactId);
+
+        // 店舗宛のお問い合わせ通知メール
+        const notifyResult = await sendMail({
+          to: STORE_EMAIL,
+          subject: `【MOSS COUNTRY】新しいお問い合わせ: ${validatedData.subject}`,
+          text: [
+            'お問い合わせフォームより新しいお問い合わせがありました。',
+            '',
+            `お名前: ${validatedData.name}`,
+            `メールアドレス: ${validatedData.email}`,
+            `電話番号: ${validatedData.phone || '未入力'}`,
+            `お問い合わせ種類: ${validatedData.inquiryType}`,
+            `件名: ${validatedData.subject}`,
+            '',
+            'お問い合わせ内容:',
+            validatedData.message,
+          ].join('\n'),
+        });
+        storeNotified = notifyResult.sent;
+
+        // 送信者（お客様）宛の受付確認メール
+        const confirmResult = await sendMail({
+          to: validatedData.email,
+          subject: 'お問い合わせありがとうございます - MOSS COUNTRY',
+          text: [
+            `${validatedData.name} 様`,
+            '',
+            'この度はMOSS COUNTRYへお問い合わせいただき、誠にありがとうございます。',
+            '以下の内容でお問い合わせを受け付けました。24時間以内にご返信させていただきます。',
+            '',
+            `件名: ${validatedData.subject}`,
+            `お問い合わせ種類: ${validatedData.inquiryType}`,
+            '',
+            'お問い合わせ内容:',
+            validatedData.message,
+            '',
+            '----',
+            'MOSS COUNTRY',
+          ].join('\n'),
+        });
+        customerConfirmed = confirmResult.sent;
       }
     } catch (dbSaveError) {
       console.error('Database save failed:', dbSaveError);
       // データベース保存失敗でもフォーム送信は継続
     }
 
-    // EmailJS handling is done on the frontend
+    // EmailJS handling is done on the frontend (環境変数が設定されていれば動く冗長系として残す)
     // Always return success since EmailJS will handle the notification
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: 'お問い合わせありがとうございます。24時間以内にご返信させていただきます。',
         contactId: contactId,
-        dbSaved: contactId !== null
+        dbSaved: contactId !== null,
+        email: { storeNotified, customerConfirmed },
       },
       { status: 200 }
     );

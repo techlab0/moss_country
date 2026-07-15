@@ -176,7 +176,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
         </div>
 
         {/* アクションボタン */}
-        <div className="space-y-2">
+        {/* Buttonはinline-flex（インライン要素）のため、space-y(margin-top)では
+            縦方向の間隔が反映されない。flex-col + gapで確実に間隔を空ける。 */}
+        <div className="flex flex-col gap-2">
           {inventoryLoading || !inventoryHasData ? (
             <Button variant="primary" className="w-full" disabled>
               在庫確認中...

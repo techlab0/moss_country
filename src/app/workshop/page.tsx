@@ -25,6 +25,7 @@ export default function WorkshopPage() {
     ...meta,
     name: t(`plan${i + 1}Name`),
     price: t(`plan${i + 1}Price`),
+    duration: t(`plan${i + 1}Duration`),
     description: t(`plan${i + 1}Desc`),
     image: img(`plan${i + 1}Image`),
   }));
@@ -241,6 +242,14 @@ export default function WorkshopPage() {
                     <span className="text-moss-green font-bold text-xl">{size.price}</span>
                   </div>
                   <p className="text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
+                  {size.duration && (
+                    <p className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+                      <svg className="w-4 h-4 text-moss-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      所要時間：{size.duration}
+                    </p>
+                  )}
                   <p className="text-gray-600 whitespace-pre-line">{size.description}</p>
                 </CardHeader>
               </Card>

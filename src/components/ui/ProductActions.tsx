@@ -90,17 +90,17 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
-              className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors text-gray-900"
             >
               −
             </button>
-            <span className={`w-12 text-center font-medium ${quantity >= availableStock ? 'text-orange-600' : ''}`}>
+            <span className={`w-12 text-center font-medium ${quantity >= availableStock ? 'text-orange-600' : 'text-gray-900'}`}>
               {quantity}
             </span>
             <button
               onClick={() => setQuantity(quantity + 1)}
               disabled={quantity >= availableStock}
-              className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors text-gray-900"
             >
               +
             </button>
@@ -116,7 +116,9 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
       )}
 
       {/* アクションボタン */}
-      <div className="space-y-3">
+      {/* Buttonはinline-flex（インライン要素）のため、space-y(margin-top)では
+          縦方向の間隔が反映されない。flex-col + gapで確実に間隔を空ける。 */}
+      <div className="flex flex-col gap-3">
         {isInStock ? (
           <>
             <Button 
@@ -151,7 +153,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
             )}
           </>
         ) : (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <Button variant="primary" className="w-full" disabled>
               在庫切れ
             </Button>

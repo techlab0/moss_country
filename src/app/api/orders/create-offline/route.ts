@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
 import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing';
 import { InventoryService } from '@/lib/inventory';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
@@ -129,6 +130,80 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
+    // 注文保存成功後、顧客宛の注文確認メールと店舗宛の新規注文通知メールを送信する
+    // （送信の成否は注文作成フローには影響させない）
+    const itemLines = cart.items.map(item => {
+      const variantLabel = item.variant?.name ? `（${item.variant.name}）` : '';
+      return `・${item.product.name}${variantLabel} × ${item.quantity} = ¥${(item.price * item.quantity).toLocaleString()}`;
+    });
+    const addr = orderData.shippingAddress;
+    const shippingAddressLines = addr
+      ? [
+          `〒${addr.postalCode} ${addr.state}${addr.city}${addr.address1}${addr.address2 ? ' ' + addr.address2 : ''}`,
+          `${addr.lastName} ${addr.firstName} 様`,
+          addr.phone ? `電話番号: ${addr.phone}` : null,
+        ].filter(Boolean).join('\n')
+      : '未入力';
+
+    let customerConfirmed = false;
+    let storeNotified = false;
+    try {
+      const customerResult = await sendMail({
+        to: customerData.email,
+        subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${orderNumber})`,
+        text: [
+          `${customerData.lastName} ${customerData.firstName} 様`,
+          '',
+          'この度はMOSS COUNTRYにてご注文いただき、誠にありがとうございます。',
+          '以下の内容でご注文を承りました。',
+          '',
+          `注文番号: ${orderNumber}`,
+          '',
+          '【ご注文内容】',
+          ...itemLines,
+          '',
+          `小計: ¥${totals.subtotal.toLocaleString()}`,
+          `送料: ¥${totals.shippingCost.toLocaleString()}`,
+          `消費税: ¥${totals.tax.toLocaleString()}`,
+          `合計: ¥${totals.total.toLocaleString()}`,
+          '',
+          `お支払い方法: ${paymentMethodLabel}`,
+          '',
+          '【お届け先】',
+          shippingAddressLines,
+          '',
+          '----',
+          'MOSS COUNTRY',
+        ].join('\n'),
+      });
+      customerConfirmed = customerResult.sent;
+
+      const storeResult = await sendMail({
+        to: STORE_EMAIL,
+        subject: `【MOSS COUNTRY】新規注文（オフライン決済）: ${orderNumber}`,
+        text: [
+          'オフライン決済（銀行振込・代金引換）の新規注文がありました。',
+          '',
+          `注文番号: ${orderNumber}`,
+          `お客様: ${customerData.lastName} ${customerData.firstName} (${customerData.email})`,
+          `電話番号: ${customerData.phone || '未入力'}`,
+          '',
+          '【ご注文内容】',
+          ...itemLines,
+          '',
+          `合計: ¥${totals.total.toLocaleString()}`,
+          `お支払い方法: ${paymentMethodLabel}`,
+          '',
+          '【お届け先】',
+          shippingAddressLines,
+        ].join('\n'),
+      });
+      storeNotified = storeResult.sent;
+    } catch (mailError) {
+      // メール送信の失敗で注文作成自体は失敗させない
+      console.error('Failed to send offline order emails:', mailError);
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -136,6 +211,7 @@ export async function POST(request: NextRequest) {
         orderNumber,
         total: totals.total,
       },
+      email: { customerConfirmed, storeNotified },
     });
   } catch (error) {
     console.error('Error creating offline-payment order:', error);

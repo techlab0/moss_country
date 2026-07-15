@@ -143,31 +143,31 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {product.description && (
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3">商品説明</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">商品説明</h2>
                 <p className="text-gray-700 leading-relaxed">{product.description}</p>
               </div>
             )}
 
             {product.dimensions && (
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3">サイズ</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">サイズ</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   {product.dimensions.width && (
                     <div>
                       <span className="text-gray-600">幅:</span>
-                      <span className="ml-1 font-medium">{product.dimensions.width}cm</span>
+                      <span className="ml-1 font-medium text-gray-900">{product.dimensions.width}cm</span>
                     </div>
                   )}
                   {product.dimensions.height && (
                     <div>
                       <span className="text-gray-600">高さ:</span>
-                      <span className="ml-1 font-medium">{product.dimensions.height}cm</span>
+                      <span className="ml-1 font-medium text-gray-900">{product.dimensions.height}cm</span>
                     </div>
                   )}
                   {product.dimensions.depth && (
                     <div>
                       <span className="text-gray-600">奥行:</span>
-                      <span className="ml-1 font-medium">{product.dimensions.depth}cm</span>
+                      <span className="ml-1 font-medium text-gray-900">{product.dimensions.depth}cm</span>
                     </div>
                   )}
                 </div>
@@ -176,7 +176,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {product.materials && product.materials.length > 0 && (
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3">素材</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">素材</h2>
                 <div className="flex flex-wrap gap-2">
                   {product.materials.map((material, index) => (
                     <span key={index} className="bg-light-green text-moss-green px-3 py-1 rounded-full text-sm">
@@ -189,7 +189,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {product.careInstructions && (
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3">お手入れ方法</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">お手入れ方法</h2>
                 <p className="text-gray-700 leading-relaxed">{product.careInstructions}</p>
               </div>
             )}
