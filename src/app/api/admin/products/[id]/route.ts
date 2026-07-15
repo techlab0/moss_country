@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client, writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
 
 // 特定商品取得（useCdn: false で確実に取得。画像は url 付きで返す＝編集画面サムネイル用）
 export async function GET(
@@ -80,6 +81,28 @@ export async function PATCH(
     // 在庫数に基づいてinStockを自動更新
     if (typeof body.stockQuantity === 'number') {
       body.inStock = body.stockQuantity > 0;
+    }
+
+    // slugが送られてきた場合、空・「-」など無効な値なら安全網としてフォールバック生成し、
+    // 他商品と衝突しないことを確認してから保存する
+    if ('slug' in body) {
+      let slugCurrent =
+        typeof body.slug === 'string' ? body.slug : body.slug?.current || '';
+      slugCurrent = slugCurrent.trim();
+      if (!slugCurrent || slugCurrent === '-') {
+        slugCurrent = generateProductSlug(String(body.name || ''));
+      }
+
+      const isSlugTaken = async (candidate: string) => {
+        const existingId = await writeClient.fetch(
+          `*[_type == "product" && slug.current == $slug && _id != $id][0]._id`,
+          { slug: candidate, id }
+        );
+        return Boolean(existingId);
+      };
+      slugCurrent = await resolveUniqueSlug(slugCurrent, isSlugTaken);
+
+      body.slug = { _type: 'slug' as const, current: slugCurrent };
     }
 
     const product = await writeClient

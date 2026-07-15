@@ -16,6 +16,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [repairing, setRepairing] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -93,6 +94,32 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error('在庫更新エラー:', error);
       alert('在庫の更新に失敗しました');
+    }
+  };
+
+  const handleRepairSlugs = async () => {
+    if (!confirm('スラッグ（URL用）が未設定の商品を自動修復します。よろしいですか？')) {
+      return;
+    }
+
+    setRepairing(true);
+    try {
+      const response = await fetch('/api/admin/products/repair-slugs', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('修復に失敗しました');
+      }
+
+      const data = await response.json();
+      alert(`${data.count}件修復しました`);
+      fetchProducts(); // 商品一覧を再取得
+    } catch (error) {
+      console.error('スラッグ修復エラー:', error);
+      alert('スラッグの修復に失敗しました');
+    } finally {
+      setRepairing(false);
     }
   };
 
@@ -188,8 +215,15 @@ export default function AdminProductsPage() {
 
       {/* 商品一覧 */}
       <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b">
+        <div className="px-6 py-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-medium">商品一覧</h2>
+          <button
+            onClick={handleRepairSlugs}
+            disabled={repairing}
+            className="text-xs px-3 py-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {repairing ? '修復中...' : 'スラッグ未設定の商品を修復'}
+          </button>
         </div>
         
         <div className="overflow-x-auto">
