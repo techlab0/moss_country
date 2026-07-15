@@ -36,7 +36,7 @@ export default function Home() {
     <div className="relative bg-[#050505]">
       <HomeScrollJourney>
         {/* 全シーン共通の固定背景ステージ（黒ベース＋シーンごとのテラリウム画像） */}
-        <SceneBackdrop />
+        <SceneBackdrop img={img} />
 
         {/* Hero Section（relative必須: 固定背景ステージより前面に描画するため） */}
         <div data-home-screen="regular" className="relative">

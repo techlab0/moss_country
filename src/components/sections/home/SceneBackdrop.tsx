@@ -15,6 +15,10 @@ import gsap from 'gsap';
 
 interface SceneDefinition {
   id: string;
+  /** 管理画面「ページ編集」で上書きできるフィールドキー（PC用） */
+  imageKey: string;
+  /** 管理画面「ページ編集」で上書きできるフィールドキー（スマホ用） */
+  mobileImageKey: string;
   src: string;
   /** モバイル(<768px)用の縦型(9:16)画像。coverクロップで容器が切れないよう専用生成されたもの */
   mobileSrc: string;
@@ -27,6 +31,8 @@ interface SceneDefinition {
 const SCENES: readonly SceneDefinition[] = [
   {
     id: 'about',
+    imageKey: 'sceneAboutImage',
+    mobileImageKey: 'sceneAboutImageMobile',
     src: '/images/terrarium-generated/terrarium-artwork-woodland-arch-v1.png',
     mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-root-cave-v1.png',
     position: '50% 42%',
@@ -34,6 +40,8 @@ const SCENES: readonly SceneDefinition[] = [
   },
   {
     id: 'news',
+    imageKey: 'sceneNewsImage',
+    mobileImageKey: 'sceneNewsImageMobile',
     src: '/images/terrarium-generated/terrarium-artwork-moonlit-wetland-v1.png',
     mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-misty-spires-v1.png',
     position: '50% 45%',
@@ -41,6 +49,8 @@ const SCENES: readonly SceneDefinition[] = [
   },
   {
     id: 'products',
+    imageKey: 'sceneProductsImage',
+    mobileImageKey: 'sceneProductsImageMobile',
     src: '/images/terrarium-generated/terrarium-hero-key-030-v1.png',
     mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-circular-spring-v1.png',
     position: '50% 50%',
@@ -48,6 +58,8 @@ const SCENES: readonly SceneDefinition[] = [
   },
   {
     id: 'workshop',
+    imageKey: 'sceneWorkshopImage',
+    mobileImageKey: 'sceneWorkshopImageMobile',
     src: '/images/terrarium-generated/terrarium-hero-angle-right-close-v1.png',
     mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-copper-fern-v1.png',
     position: '50% 40%',
@@ -55,6 +67,8 @@ const SCENES: readonly SceneDefinition[] = [
   },
   {
     id: 'cta',
+    imageKey: 'sceneCtaImage',
+    mobileImageKey: 'sceneCtaImageMobile',
     src: '/images/terrarium-generated/terrarium-artwork-basalt-ravine-v1.png',
     mobileSrc: '/images/terrarium-generated/terrarium-mobile-artwork-waterfall-cliff-v1.png',
     position: '50% 46%',
@@ -66,7 +80,11 @@ const SCENES: readonly SceneDefinition[] = [
 const NOISE_TEXTURE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
-export function SceneBackdrop() {
+interface SceneBackdropProps {
+  img: (key: string) => string;
+}
+
+export function SceneBackdrop({ img }: SceneBackdropProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hairlineRef = useRef<HTMLDivElement>(null);
@@ -289,8 +307,10 @@ export function SceneBackdrop() {
             // <picture> のブラウザネイティブなメディア選択で行う。JS凍結環境や
             // ハイドレーション初期値の問題に左右されず、該当する側しかダウンロードされない。
             const common = { alt: '', fill: true as const, sizes: '100vw', quality: 80 };
-            const { props: mobileProps } = getImageProps({ ...common, src: scene.mobileSrc });
-            const { props: desktopProps } = getImageProps({ ...common, src: scene.src });
+            const desktopSrc = img(scene.imageKey) || scene.src;
+            const mobileSrc = img(scene.mobileImageKey) || scene.mobileSrc;
+            const { props: mobileProps } = getImageProps({ ...common, src: mobileSrc });
+            const { props: desktopProps } = getImageProps({ ...common, src: desktopSrc });
             const { srcSet: desktopSrcSet, ...imgProps } = desktopProps;
             return (
               <picture>
