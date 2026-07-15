@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
+import { generateProductSlug } from '@/lib/slugUtils';
 
 interface SanityImageRef {
   _type: 'image';
@@ -84,6 +85,11 @@ const NewProductPage = () => {
       alert('商品画像を1枚以上追加してください');
       return;
     }
+    const trimmedSlug = formData.slug.trim();
+    if (!trimmedSlug || trimmedSlug === '-') {
+      alert('スラッグ（URL用）を入力してください。商品名を入力すると自動生成されます。');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -111,20 +117,11 @@ const NewProductPage = () => {
     }
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  };
-
   const handleNameChange = (name: string) => {
     setFormData(prev => ({
       ...prev,
       name,
-      slug: generateSlug(name)
+      slug: generateProductSlug(name)
     }));
   };
 
@@ -161,14 +158,24 @@ const NewProductPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                スラッグ (URL用)
+                スラッグ (URL用) （必須）
               </label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                onBlur={() => {
+                  setFormData(prev => {
+                    const trimmed = prev.slug.trim();
+                    if (!trimmed || trimmed === '-') {
+                      return { ...prev, slug: generateProductSlug(prev.name) };
+                    }
+                    return prev;
+                  });
+                }}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="product-slug"
+                required
               />
             </div>
           </div>

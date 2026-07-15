@@ -211,6 +211,31 @@ export function generateSEOFriendlySlug(title: string): string {
   return slug;
 }
 
+// 商品用スラッグ生成（日本語名にも対応。生成できない場合はタイムスタンプでフォールバック）
+export function generateProductSlug(name: string): string {
+  const slug = generateSEOFriendlySlug(name);
+  if (slug && slug !== '-') return slug;
+  // 日本語のみ等で有効なslugが作れない場合のフォールバック（一意性は呼び出し側で担保）
+  return `item-${Date.now().toString(36)}`;
+}
+
+// 候補スラッグが既存データと衝突する場合、-2, -3... を付けて回避する
+// isTaken: 候補スラッグが既に使われているか判定する非同期関数（呼び出し側でDBを問い合わせる）
+export async function resolveUniqueSlug(
+  baseSlug: string,
+  isTaken: (candidate: string) => Promise<boolean>
+): Promise<string> {
+  if (!(await isTaken(baseSlug))) return baseSlug;
+
+  for (let i = 2; i <= 10; i++) {
+    const candidate = `${baseSlug}-${i}`;
+    if (!(await isTaken(candidate))) return candidate;
+  }
+
+  // 10回試しても衝突する場合はタイムスタンプサフィックスで確実に一意にする
+  return `${baseSlug}-${Date.now().toString(36)}`;
+}
+
 // SEOメタデータ生成
 export function generateSEOMetadata(title: string, excerpt: string, category?: string) {
   const seoTitle = title.length > 60 ? `${title.substring(0, 57)}...` : title;

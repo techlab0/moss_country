@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
 
 // 商品一覧取得（useCdn: false で登録直後の商品も即時反映）
 export async function GET(request: NextRequest) {
@@ -57,19 +58,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // スラッグは常に Sanity の slug 型 { current: string } で送る
-    const slugCurrent =
-      typeof body.slug === 'string'
-        ? body.slug
-        : body.slug?.current ||
-          (body.name
-            ? String(body.name)
-                .toLowerCase()
-                .replace(/[^a-z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-|-$/g, '')
-            : '');
-    const slug = slugCurrent ? { _type: 'slug' as const, current: slugCurrent } : undefined;
+    let slugCurrent =
+      typeof body.slug === 'string' ? body.slug : body.slug?.current || '';
+    slugCurrent = slugCurrent.trim();
+    if (!slugCurrent || slugCurrent === '-') {
+      slugCurrent = generateProductSlug(String(body.name || ''));
+    }
+
+    const isSlugTaken = async (candidate: string) => {
+      const existingId = await writeClient.fetch(
+        `*[_type == "product" && slug.current == $slug][0]._id`,
+        { slug: candidate }
+      );
+      return Boolean(existingId);
+    };
+    slugCurrent = await resolveUniqueSlug(slugCurrent, isSlugTaken);
+
+    const slug = { _type: 'slug' as const, current: slugCurrent };
 
     // フォームの dimensions → スキーマの size
     const size =
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
     const doc: Record<string, unknown> = {
       _type: 'product',
       ...rest,
-      ...(slug && { slug }),
+      slug,
       ...(size && { size }),
       inStock: (body.stockQuantity ?? 0) > 0,
       _createdAt: new Date().toISOString(),
