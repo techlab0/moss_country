@@ -5,6 +5,9 @@
 @tailwind utilities;
 
 :root {
+  /* サイトはライトデザイン固定。OSダークモード時にUAがフォーム部品・既定文字色を
+     白系に切り替えるのを防ぐため、カラースキームを常にlightに固定する。 */
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
   /* 基本の文字色（コンポーネントで明示しないときのフォールバック） */

@@ -14,7 +14,7 @@ const mobileWorkshopMenus = [
     price: '基本容器',
     description: '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。',
     image: '/images/workshop/glass-canister-ss.JPG',
-    time: '約60分',
+    time: '約90分',
   },
   {
     id: 'glass-ball-s',
@@ -23,7 +23,7 @@ const mobileWorkshopMenus = [
     price: '応相談',
     description: '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。',
     image: '/images/workshop/glass-ball-s.JPG',
-    time: '約90分',
+    time: '約120分',
   },
   {
     id: 'pop-jar',
@@ -32,7 +32,7 @@ const mobileWorkshopMenus = [
     price: '応相談',
     description: 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。',
     image: '/images/workshop/pop-jar.JPG',
-    time: '約90分',
+    time: '約120分',
   },
 ];
 
@@ -143,7 +143,7 @@ const cancellationFees = [
 ];
 
 const facilityGuides = [
-  '所要時間は60〜120分です。人数・内容により前後します。',
+  '所要時間は90〜120分です。人数・内容により前後します。',
   '準備は約60分、撤収は約60分を目安としています。',
   '会議テーブル（180cm）1台につき、参加目安は3名までです。',
   '対象年齢は小学生以上です。小学生は保護者同伴で参加可能です。',

@@ -3,7 +3,7 @@ import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
 // 決済直後に作成した注文をすぐ検索するため、CDNキャッシュではなく常に最新を返す writeClient を使う
 import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
-// 注文確認メールはSquare側のレシート機能を使用するため、EmailJSは不要
+import { sendMail } from '@/lib/mailer'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -243,7 +243,7 @@ async function handleOrderUpdate(event: SquareWebhookEvent) {
 /**
  * Process successful payment
  */
-async function processSuccessfulPayment(order: { _id: string; orderNumber: string; customer: object; items: Array<{ product: { _ref: string }; quantity: number }>; total: number }, payment: { id: string; receiptUrl?: string }) {
+async function processSuccessfulPayment(order: { _id: string; orderNumber: string; customer: { email?: string; firstName?: string; lastName?: string }; items: Array<{ product: { _ref: string }; quantity: number }>; total: number }, payment: { id: string; receiptUrl?: string }) {
   try {
     console.log(`Processing successful payment for order ${order.orderNumber}`)
 
@@ -262,7 +262,31 @@ async function processSuccessfulPayment(order: { _id: string; orderNumber: strin
     const inventoryItems = order.items.map(item => ({ productId: item.product._ref, quantity: item.quantity }))
     await InventoryService.confirmCartPurchase(inventoryItems, order._id)
 
-    // 注文確認メールはSquareの自動レシート送信機能を使用
+    // 注文確認メールはSquareの自動レシート送信機能を使用しているが、
+    // 念のため顧客メールが取得できる場合はこちらからも注文確認メールを送る
+    if (order.customer?.email) {
+      try {
+        const customerName = [order.customer.lastName, order.customer.firstName].filter(Boolean).join(' ')
+        await sendMail({
+          to: order.customer.email,
+          subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${order.orderNumber})`,
+          text: [
+            customerName ? `${customerName} 様` : 'お客様',
+            '',
+            'この度はMOSS COUNTRYにてご注文いただき、誠にありがとうございます。',
+            'お支払いが完了しましたのでご確認ください。',
+            '',
+            `注文番号: ${order.orderNumber}`,
+            `お支払い金額: ¥${order.total.toLocaleString()}`,
+            '',
+            '----',
+            'MOSS COUNTRY',
+          ].join('\n'),
+        })
+      } catch (mailError) {
+        console.error(`Failed to send order confirmation email for order ${order.orderNumber}:`, mailError)
+      }
+    }
     console.log(`Payment processed for order ${order.orderNumber}. Customer will receive Square receipt automatically.`)
 
     console.log(`Successfully processed payment for order ${order.orderNumber}`)
