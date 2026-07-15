@@ -2,7 +2,7 @@ import { getProductBySlug } from '@/lib/sanity'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
-import { ProductImageWithFallback } from '@/components/ui/ProductImageWithFallback'
+import { ProductImageGallery } from '@/components/ui/ProductImageGallery'
 import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -30,26 +30,34 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const name = String(product?.name ?? '')
   const category = String(product?.category ?? '')
 
-  // 画像URLは getSafeImageUrl 内で try/catch しているが、念のためここでも try で囲む
-  let mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
-  try {
-    if (product.images?.[0]) {
-      mainImageUrl = getSafeImageUrl(product.images[0], 600, 600)
+  // 画像URLは getSafeImageUrl 内で try/catch しているが、念のためここでも try で囲む。
+  // 有効なasset（url/_id/_refのいずれかを持つ）だけを抽出してギャラリー用配列を構築する
+  const galleryImages: { full: string; thumb: string }[] = []
+  for (const image of product.images ?? []) {
+    const asset = image?.asset as Record<string, unknown> | undefined
+    const hasValidAsset = Boolean(
+      asset &&
+      typeof asset === 'object' &&
+      (asset.url || asset._id || asset._ref)
+    )
+    if (!hasValidAsset) continue
+
+    let full = PRODUCT_IMAGE_FALLBACK_LOGO
+    let thumb = PRODUCT_IMAGE_FALLBACK_LOGO
+    try {
+      full = getSafeImageUrl(image, 1200, 1200)
+    } catch {
+      full = PRODUCT_IMAGE_FALLBACK_LOGO
     }
-  } catch {
-    mainImageUrl = PRODUCT_IMAGE_FALLBACK_LOGO
+    try {
+      thumb = getSafeImageUrl(image, 200, 200)
+    } catch {
+      thumb = PRODUCT_IMAGE_FALLBACK_LOGO
+    }
+    galleryImages.push({ full, thumb })
   }
 
-  const hasImages = Boolean(
-    product.images?.length &&
-    product.images[0]?.asset &&
-    typeof product.images[0].asset === 'object' &&
-    (
-      ('url' in product.images[0].asset && (product.images[0].asset as { url?: string }).url) ||
-      ('_id' in product.images[0].asset) ||
-      ('_ref' in product.images[0].asset && (product.images[0].asset as { _ref?: string })._ref)
-    )
-  )
+  const hasImages = galleryImages.length > 0
 
   return (
     <div 
@@ -72,44 +80,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
           <div className="space-y-4">
             {hasImages ? (
-              <>
-                <div className="aspect-square overflow-hidden rounded-lg bg-white/80 flex items-center justify-center">
-                  <ProductImageWithFallback
-                    src={mainImageUrl}
-                    alt={name}
-                    width={600}
-                    height={600}
-                    className="w-full h-full object-contain"
-                    fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
-                  />
-                </div>
-                {(product.images?.length ?? 0) > 1 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {product.images!.slice(1, 5).map((image, index) => {
-                      const asset = image?.asset as Record<string, unknown> | undefined;
-                      const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
-                      let thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
-                      try {
-                        if (hasValidAsset) thumbUrl = getSafeImageUrl(image, 150, 150);
-                      } catch {
-                        thumbUrl = PRODUCT_IMAGE_FALLBACK_LOGO;
-                      }
-                      return hasValidAsset ? (
-                        <div key={index} className="aspect-square overflow-hidden rounded bg-white/80 flex items-center justify-center">
-                          <ProductImageWithFallback
-                            src={thumbUrl}
-                            alt={`${name} ${index + 2}`}
-                            width={150}
-                            height={150}
-                            className="w-full h-full object-contain"
-                            fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
-                          />
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-                )}
-              </>
+              <ProductImageGallery
+                images={galleryImages}
+                alt={name}
+                fallbackSrc={PRODUCT_IMAGE_FALLBACK_LOGO}
+              />
             ) : (
               <div className="aspect-square rounded-lg bg-white/80 flex items-center justify-center overflow-hidden">
                 <img
