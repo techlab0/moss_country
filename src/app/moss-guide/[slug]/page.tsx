@@ -130,7 +130,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
 
   return (
     <div 
-      className="min-h-screen relative"
+      className="min-h-screen relative site-page-tone"
       style={{
         backgroundImage: isMobile 
           ? `url('/images/misc/moss02_sp.png')` 
@@ -142,7 +142,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
       }}
     >
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-white/80" />
+      <div className="absolute inset-0 bg-[#050505]/60" />
       
       <div className="relative z-10">
         {/* Navigation */}

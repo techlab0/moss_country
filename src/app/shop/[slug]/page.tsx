@@ -61,7 +61,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div 
-      className="min-h-screen py-8 bg-fixed-desktop"
+      className="min-h-screen py-8 bg-fixed-desktop site-page-tone"
       style={{
         backgroundImage: `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',

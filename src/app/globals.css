@@ -310,6 +310,15 @@ body.admin-layout textarea:focus {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
+/* トップページの黒レイヤー＋ビネットを下層ページの背景にも適用する。
+   inset shadow は背景より前、コンテンツより後ろに描画されるため、
+   カードや文字の明るさを落とさず背景画像だけを静かに沈められる。 */
+.site-page-tone {
+  box-shadow:
+    inset 0 0 220px 32px rgba(5, 5, 5, 0.68),
+    inset 0 0 0 100vmax rgba(5, 5, 5, 0.54);
+}
+
 /* 高度なシャドウ効果 */
 .shadow-3xl {
   box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.5);

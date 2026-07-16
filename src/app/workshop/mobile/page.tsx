@@ -217,7 +217,7 @@ export default function MobileWorkshopPage() {
 
   return (
     <div
-      className="min-h-screen relative"
+      className="min-h-screen relative site-page-tone"
       style={{
         backgroundImage: isMobile
           ? `url('${backgroundImageMobileUrl}')`
