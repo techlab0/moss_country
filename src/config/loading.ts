@@ -22,7 +22,7 @@ export const LOADING_CONFIG = {
     },
     
     // 商品ページ - 画像が多い
-    '/products': {
+    '/shop': {
       maxTime: 6000,
       minTime: 1000,
       message: '商品を読み込み中...'

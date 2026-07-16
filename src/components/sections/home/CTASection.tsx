@@ -109,7 +109,7 @@ export function CTASection({ ov }: CTASectionProps) {
             )}
           </p>
           <div ref={buttonsRef} className="flex flex-col gap-4 sm:gap-6 justify-center items-center sm:flex-row">
-            <Link href="/products" className="w-full sm:w-auto">
+            <Link href="/shop" className="w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="lg"

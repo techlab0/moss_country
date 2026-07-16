@@ -120,7 +120,7 @@ export const emailJSConfig = {
 // サイト設定
 export const siteConfig = {
   name: 'MOSS COUNTRY',
-  url: isProduction ? 'https://moss-country.com' : 'http://localhost:3000',
+  url: isProduction ? 'https://mosscountry.com' : 'http://localhost:3000',
   description: '北海道の苔テラリウム専門店',
   adminEmails: ['admin@mosscountry.com'],
 };

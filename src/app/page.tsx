@@ -58,7 +58,7 @@ export default function Home() {
               description: t('carousel1Desc'),
               image: img('carousel1Image'),
               category: 'Terrarium',
-              link: '/products'
+              link: '/shop'
             },
             {
               id: '2',
@@ -66,7 +66,7 @@ export default function Home() {
               description: t('carousel2Desc'),
               image: img('carousel2Image'),
               category: 'Moss Ball',
-              link: '/products'
+              link: '/shop'
             },
             {
               id: '3',
@@ -74,7 +74,7 @@ export default function Home() {
               description: t('carousel3Desc'),
               image: img('carousel3Image'),
               category: 'Tools',
-              link: '/products'
+              link: '/shop'
             },
             {
               id: '4',

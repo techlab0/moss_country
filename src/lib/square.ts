@@ -26,9 +26,10 @@ export const SQUARE_CONFIG = {
   environment: process.env.SQUARE_ENVIRONMENT || 'sandbox',
   currency: 'JPY', // Japanese Yen
   apiBaseUrl: SQUARE_BASE_URL, // Square API base URL
-  appBaseUrl: process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000', // Our app's base URL
+  // 決済後リダイレクト・レシートURLの基点。本番はNEXT_PUBLIC_SITE_URLで独自ドメインを指定し、
+  // 未設定時はVercelのデプロイURL（プレビュー環境など）にフォールバックする
+  appBaseUrl: process.env.NEXT_PUBLIC_SITE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
 } as const
 
 /**

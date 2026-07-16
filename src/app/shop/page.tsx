@@ -371,7 +371,7 @@ export default function ProductsPage() {
                             {category}
                           </h3>
                         </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
                           {filtered.map((product) => (
                             <ProductCard key={product._id} product={product} />
                           ))}

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '苔図鑑 | MOSS COUNTRY',
     description: '様々な苔の種類と特徴をご紹介。苔選びに役立つ詳細情報が満載です。',
-    url: 'https://moss-country.com/moss-guide',
+    url: 'https://mosscountry.com/moss-guide',
     images: [
       {
         url: '/images/og-moss-guide.jpg',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: '様々な苔の種類と特徴をご紹介。苔選びに役立つ詳細情報が満載です。',
   },
   alternates: {
-    canonical: 'https://moss-country.com/moss-guide',
+    canonical: 'https://mosscountry.com/moss-guide',
   },
 }
 

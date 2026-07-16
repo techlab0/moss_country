@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '店舗情報・アクセス | MOSS COUNTRY',
     description: '札幌市西区のテラリウム専門店。営業時間や詳細なアクセス情報をご案内。',
-    url: 'https://moss-country.com/store',
+    url: 'https://mosscountry.com/store',
     images: [
       {
         url: '/images/og-store.jpg',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: '札幌市西区のテラリウム専門店。営業時間や詳細なアクセス情報をご案内。',
   },
   alternates: {
-    canonical: 'https://moss-country.com/store',
+    canonical: 'https://mosscountry.com/store',
   },
 }
 

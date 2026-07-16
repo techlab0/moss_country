@@ -50,7 +50,7 @@ function PaymentSuccessContent() {
                 トップページに戻る
               </Button>
             </Link>
-            <Link href="/products" className="w-full sm:w-auto">
+            <Link href="/shop" className="w-full sm:w-auto">
               <Button
                 variant="ghost"
                 className="w-full sm:w-auto text-stone-300 border border-stone-700 hover:bg-stone-800"

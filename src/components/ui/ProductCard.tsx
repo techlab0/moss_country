@@ -49,9 +49,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   }, [product, addToCart, inventoryLoading, hasInventory, isOutOfStock]);
 
   return (
-    <Card className={`hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
-      <Link href={`/products/${getProductSlug(product)}`}>
-        <div className="h-64 overflow-hidden relative">
+    <Card className={`h-full flex flex-col md:hover:transform md:hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
+      <Link href={`/shop/${getProductSlug(product)}`}>
+        <div className="h-40 sm:h-56 md:h-64 overflow-hidden relative bg-stone-50 p-2 sm:p-3">
           {(() => {
             const asset = product.images?.[0]?.asset as any;
             const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
@@ -62,10 +62,10 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
                   width: 400,
                   height: 300,
                   quality: 85,
-                  sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                  sizes: "(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw",
                   priority: product.featured
                 })}
-                className={`w-full h-full object-cover ${(!inventoryLoading && isOutOfStock) ? 'grayscale' : ''}`}
+                className={`w-full h-full object-contain ${(!inventoryLoading && isOutOfStock) ? 'grayscale' : ''}`}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = PRODUCT_IMAGE_FALLBACK_LOGO;
                 }}
@@ -144,28 +144,28 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
       </Link>
 
       {/* 商品情報 */}
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="bg-moss-green text-white px-2 py-1 rounded text-xs">
+      <div className="p-3 sm:p-6 flex flex-1 flex-col">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
+          <span className="bg-moss-green text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs leading-tight">
             {product.category}
           </span>
           <InventoryBadge productId={product._id} />
         </div>
 
-        <Link href={`/products/${getProductSlug(product)}`}>
-          <h3 className="text-xl font-semibold text-moss-green mb-2 hover:text-moss-green/80 transition-colors line-clamp-2">
+        <Link href={`/shop/${getProductSlug(product)}`}>
+          <h3 className="text-sm sm:text-xl leading-snug font-semibold text-moss-green mb-2 hover:text-moss-green/80 transition-colors line-clamp-2">
             {product.name}
           </h3>
         </Link>
 
         {product.description && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3">
             {product.description}
           </p>
         )}
 
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xl sm:text-2xl font-bold text-moss-green">
+        <div className="flex flex-wrap items-center justify-between gap-1 mb-3 sm:mb-4">
+          <div className="text-base sm:text-2xl font-bold text-moss-green">
             ¥{product.price.toLocaleString()}
           </div>
           {isLowStock && hasInventory && (
@@ -178,37 +178,42 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
         {/* アクションボタン */}
         {/* Buttonはinline-flex（インライン要素）のため、space-y(margin-top)では
             縦方向の間隔が反映されない。flex-col + gapで確実に間隔を空ける。 */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 mt-auto">
           {inventoryLoading || !inventoryHasData ? (
-            <Button variant="primary" className="w-full" disabled>
+            <Button variant="primary" className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base" disabled>
               在庫確認中...
             </Button>
           ) : hasInventory && !isOutOfStock ? (
             <Button
               variant="primary"
-              className="w-full"
+              className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base"
               onClick={handleAddToCart}
               disabled={isAdding}
             >
               {isAdding ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  カートに追加中...
+                  <span className="sm:hidden">追加中...</span>
+                  <span className="hidden sm:inline">カートに追加中...</span>
                 </div>
               ) : showSuccess ? (
                 <div className="flex items-center justify-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  カートに追加済み
+                  <span className="sm:hidden">追加済み</span>
+                  <span className="hidden sm:inline">カートに追加済み</span>
                 </div>
               ) : (
-                `カートに追加 - ¥${product.price.toLocaleString()}`
+                <>
+                  <span className="sm:hidden">カートに追加</span>
+                  <span className="hidden sm:inline">カートに追加 - ¥{product.price.toLocaleString()}</span>
+                </>
               )}
             </Button>
           ) : (
             <>
-              <Button variant="primary" className="w-full" disabled>
+              <Button variant="primary" className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base" disabled>
                 {inventoryHasData ? '在庫切れ' : '在庫確認中...'}
               </Button>
               <InventoryAlert 
@@ -218,8 +223,8 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
             </>
           )}
 
-          <Link href={`/products/${getProductSlug(product)}`}>
-            <Button variant="ghost" className="w-full border border-gray-300 hover:bg-gray-50">
+          <Link href={`/shop/${getProductSlug(product)}`}>
+            <Button variant="ghost" className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base border border-gray-300 hover:bg-gray-50">
               詳細を見る
             </Button>
           </Link>

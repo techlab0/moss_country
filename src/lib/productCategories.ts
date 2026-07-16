@@ -1,6 +1,6 @@
 /**
  * 商品カテゴリ定義（共通定数）
- * /products ページの表示順序と、Admin フォームのドロップダウンで使用
+ * /shop ページの表示順序と、Admin フォームのドロップダウンで使用
  */
 
 export const PRODUCT_CATEGORIES = [
