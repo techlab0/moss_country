@@ -195,7 +195,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen site-page-tone">
       {/* Hero Section */}
       <section className="py-20 relative min-h-[50vh] flex items-center" style={{
         backgroundImage: `url('${heroImageUrl}')`,

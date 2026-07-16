@@ -24,12 +24,12 @@ export default async function FAQPage() {
   }, {} as Record<string, FAQ[]>)
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8 site-page-tone">
       <Container>
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-moss-green mb-4">よくあるご質問</h1>
+          <h1 className="text-4xl font-bold text-white drop-shadow-lg mb-4">よくあるご質問</h1>
           <div className="w-24 h-1 bg-moss-green mx-auto mb-6"></div>
-          <p className="text-xl text-gray-700 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-100 drop-shadow max-w-2xl mx-auto">
             MOSS COUNTRYのテラリウムや商品について、
             お客様からよくいただくご質問をまとめました。
           </p>
@@ -37,13 +37,13 @@ export default async function FAQPage() {
 
         {faqs.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">現在FAQがありません。</p>
+            <p className="text-gray-100 text-lg">現在FAQがありません。</p>
           </div>
         ) : (
           <div className="space-y-8">
             {Object.entries(groupedFAQs).map(([category, categoryFAQs]) => (
               <div key={category}>
-                <h2 className="text-2xl font-semibold text-moss-green mb-6 pb-2 border-b-2 border-moss-green">
+                <h2 className="text-2xl font-semibold text-white drop-shadow mb-6 pb-2 border-b-2 border-white/70">
                   {category}
                 </h2>
                 <div className="grid gap-4">

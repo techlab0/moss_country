@@ -47,6 +47,17 @@ public/images/background/*.mov
 /3d-source/
 /public/models/terrarium-prototype.glb
 
+# Local Blender experiments and generated artifacts
+**/__pycache__/
+*.py[cod]
+/scripts/blender/build_terrarium_prototype.py
+/scripts/blender/render_terrarium_keyframes.py
+/public/images/terrarium-generated/terrarium-mobile-artwork-quartz-valley-v1.png
+/public/images/terrarium-generated/terrarium-mobile-artwork-terraced-wetland-v1.png
+
+# Local development launcher
+/.claude/launch.json
+
 # Server logs (may contain customer emails / payment metadata)
 server.log
 *.log

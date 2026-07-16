@@ -172,7 +172,7 @@ export default function ProductsPage() {
 
   return (
     <div
-      className="min-h-screen relative bg-fixed-desktop"
+      className="min-h-screen relative bg-fixed-desktop site-page-tone"
       style={{
         backgroundImage: isMobile
           ? `url('${backgroundImageMobileUrl}')`
@@ -226,11 +226,11 @@ export default function ProductsPage() {
             </div>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
             {terrariumCategories.map((category, index) => {
               return (
                 <Card key={index} className="text-center glass-card-dark">
-                  <CardHeader>
+                  <CardHeader className="!p-3 sm:!p-6">
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
                       <img
                         src={category.image}
@@ -238,8 +238,8 @@ export default function ProductsPage() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
-                    <p className="text-gray-100 font-medium text-base">{category.description}</p>
+                    <h3 className="text-sm sm:text-xl leading-snug font-bold text-white mb-2">{category.name}</h3>
+                    <p className="text-gray-100 font-medium text-xs sm:text-base leading-relaxed line-clamp-3 sm:line-clamp-none">{category.description}</p>
                   </CardHeader>
                 </Card>
               );
@@ -260,11 +260,11 @@ export default function ProductsPage() {
             </div>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
             {supplyCategories.map((category, index) => {
               return (
                 <Card key={index} className="text-center glass-card-dark">
-                  <CardHeader>
+                  <CardHeader className="!p-3 sm:!p-6">
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
                       <img
                         src={category.image}
@@ -272,8 +272,8 @@ export default function ProductsPage() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
-                    <p className="text-gray-100 font-medium text-base">{category.description}</p>
+                    <h3 className="text-sm sm:text-xl leading-snug font-bold text-white mb-2">{category.name}</h3>
+                    <p className="text-gray-100 font-medium text-xs sm:text-base leading-relaxed line-clamp-3 sm:line-clamp-none">{category.description}</p>
                   </CardHeader>
                 </Card>
               );

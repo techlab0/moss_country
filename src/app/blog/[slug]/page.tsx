@@ -22,7 +22,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div 
-      className="min-h-screen py-8"
+      className="min-h-screen py-8 site-page-tone"
       style={{
         backgroundImage: `url('/images/misc/moss01.jpeg')`,
         backgroundSize: 'cover',
