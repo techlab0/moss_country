@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       *[_type == "product"] | order(sortOrder asc, _createdAt desc) {
         _id,
         name,
+        nameReading,
         slug,
         price,
         category,

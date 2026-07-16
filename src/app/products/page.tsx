@@ -10,6 +10,7 @@ import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 import { usePageContent } from '@/hooks/usePageContent';
+import { compareByReading } from '@/lib/productSort';
 
 const careGuideMeta = [
   { list: ['本が読めるくらいの明るさがあればOK', '強い日差しには弱いので、直射日光は避けてください', '蛍光灯やLEDで生育が可能です'] },
@@ -145,7 +146,7 @@ export default function ProductsPage() {
 
     if (sortBy !== 'recommended') {
       result = [...result].sort((a, b) => {
-        if (sortBy === 'name') return a.name.localeCompare(b.name, 'ja');
+        if (sortBy === 'name') return compareByReading(a, b);
         if (sortBy === 'priceAsc') return a.price - b.price;
         if (sortBy === 'priceDesc') return b.price - a.price;
         return 0;

@@ -20,6 +20,7 @@ export async function GET(
         _id,
         _type,
         name,
+        nameReading,
         slug,
         description,
         price,
