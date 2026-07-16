@@ -51,6 +51,12 @@ export interface Product {
   materials?: string[]
   careInstructions?: string
   sortOrder?: number
+  // 在庫数。未設定（undefined）の場合は在庫あり扱い（既存アダプタのデフォルト挙動）。
+  stockQuantity?: number
+  // 予約済み（受注済み未出荷）数量。availableStock = stockQuantity - reserved の計算に使用。
+  reserved?: number
+  // 在庫少と判定する閾値。管理画面の在庫ステータス判定に使用。
+  lowStockThreshold?: number
 }
 
 export interface BlogPost {
