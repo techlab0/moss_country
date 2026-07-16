@@ -17,6 +17,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [repairing, setRepairing] = useState(false);
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'priceAsc' | 'priceDesc' | 'stockAsc'>('default');
 
   useEffect(() => {
     fetchProducts();
@@ -46,7 +47,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  const getStockStatus = (stock: number, threshold: number): string => {
+  const getStockStatus = (stock: number, threshold: number): 'in_stock' | 'low_stock' | 'out_of_stock' => {
     if (stock === 0) return 'out_of_stock';
     if (stock <= threshold) return 'low_stock';
     return 'in_stock';
@@ -141,6 +142,22 @@ export default function AdminProductsPage() {
     return product.status === filter;
   });
 
+  // 元配列（filteredProducts）は壊さずコピーしてソート
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name, 'ja');
+      case 'priceAsc':
+        return a.price - b.price;
+      case 'priceDesc':
+        return b.price - a.price;
+      case 'stockAsc':
+        return (a.availableStock ?? 0) - (b.availableStock ?? 0);
+      default:
+        return 0; // 登録順（現状の並びを維持）
+    }
+  });
+
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -179,38 +196,57 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* フィルター */}
-      <div className="flex space-x-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 text-sm font-medium rounded-md ${
-            filter === 'all'
-              ? 'bg-moss-green text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          すべて ({products.length})
-        </button>
-        <button
-          onClick={() => setFilter('in_stock')}
-          className={`px-4 py-2 text-sm font-medium rounded-md ${
-            filter === 'in_stock'
-              ? 'bg-moss-green text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          在庫あり ({products.filter(p => p.status === 'in_stock').length})
-        </button>
-        <button
-          onClick={() => setFilter('low_stock')}
-          className={`px-4 py-2 text-sm font-medium rounded-md ${
-            filter === 'low_stock'
-              ? 'bg-moss-green text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          在庫少 ({products.filter(p => p.status === 'low_stock').length})
-        </button>
+      {/* フィルター・並び替え */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${
+              filter === 'all'
+                ? 'bg-moss-green text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            すべて ({products.length})
+          </button>
+          <button
+            onClick={() => setFilter('in_stock')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${
+              filter === 'in_stock'
+                ? 'bg-moss-green text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            在庫あり ({products.filter(p => p.status === 'in_stock').length})
+          </button>
+          <button
+            onClick={() => setFilter('low_stock')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${
+              filter === 'low_stock'
+                ? 'bg-moss-green text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            在庫少 ({products.filter(p => p.status === 'low_stock').length})
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="admin-product-sort" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            並び替え
+          </label>
+          <select
+            id="admin-product-sort"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+          >
+            <option value="default">登録順</option>
+            <option value="name">あいうえお順</option>
+            <option value="priceAsc">価格が安い順</option>
+            <option value="priceDesc">価格が高い順</option>
+            <option value="stockAsc">在庫が少ない順</option>
+          </select>
+        </div>
       </div>
 
       {/* 商品一覧 */}
@@ -251,7 +287,7 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => {
+              {sortedProducts.map((product) => {
                 const statusConfig = getStatusConfig(product.status || 'in_stock');
                 
                 return (

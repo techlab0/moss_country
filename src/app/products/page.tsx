@@ -41,6 +41,9 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'priceAsc' | 'priceDesc'>('recommended');
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['products'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['products'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['products-mobile'].src);
@@ -117,6 +120,40 @@ export default function ProductsPage() {
         // エラー時はデフォルト画像を維持（既に設定済み）
       });
   }, []);
+
+  // 検索・在庫・並び替えをカテゴリ内の商品配列に適用
+  const filterAndSortProducts = (list: Product[]): Product[] => {
+    let result = list;
+
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      result = result.filter((p) => {
+        const name = (p.name || '').toLowerCase();
+        const description = (p.description || '').toLowerCase();
+        return name.includes(query) || description.includes(query);
+      });
+    }
+
+    if (inStockOnly) {
+      result = result.filter((p) => {
+        const stockQuantity = p.stockQuantity ?? undefined;
+        if (stockQuantity === undefined) return true; // 未設定は在庫あり扱い
+        const availableStock = stockQuantity - (p.reserved || 0);
+        return availableStock > 0;
+      });
+    }
+
+    if (sortBy !== 'recommended') {
+      result = [...result].sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name, 'ja');
+        if (sortBy === 'priceAsc') return a.price - b.price;
+        if (sortBy === 'priceDesc') return b.price - a.price;
+        return 0;
+      });
+    }
+
+    return result;
+  };
 
   if (isLoading) {
     return (
@@ -266,28 +303,84 @@ export default function ProductsPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-16">
-              {PRODUCT_CATEGORIES.map((category) => {
-                const categoryProducts = products.filter(
-                  (p) => resolveCategory(p.category) === category
-                );
-                if (categoryProducts.length === 0) return null;
+            <>
+              {/* 検索・在庫フィルタ・並び替えツールバー */}
+              <div className="bg-stone-950/60 backdrop-blur-md rounded-xl p-4 sm:p-6 mb-12 flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="商品名で検索"
+                    aria-label="商品名で検索"
+                    className="w-full px-4 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-moss-green"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-white text-sm font-medium whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={inStockOnly}
+                    onChange={(e) => setInStockOnly(e.target.checked)}
+                    className="w-4 h-4 accent-moss-green"
+                  />
+                  在庫ありのみ
+                </label>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="product-sort" className="text-white text-sm font-medium whitespace-nowrap">
+                    並び替え
+                  </label>
+                  <select
+                    id="product-sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    className="px-3 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-moss-green"
+                  >
+                    <option value="recommended">おすすめ順</option>
+                    <option value="name">あいうえお順</option>
+                    <option value="priceAsc">価格が安い順</option>
+                    <option value="priceDesc">価格が高い順</option>
+                  </select>
+                </div>
+              </div>
+
+              {(() => {
+                const categorySections = PRODUCT_CATEGORIES.map((category) => {
+                  const categoryProducts = products.filter(
+                    (p) => resolveCategory(p.category) === category
+                  );
+                  return { category, filtered: filterAndSortProducts(categoryProducts) };
+                }).filter((section) => section.filtered.length > 0);
+
+                if (categorySections.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <div className="bg-black/60 backdrop-blur-sm p-8 rounded-lg">
+                        <p className="text-white text-lg">条件に一致する商品が見つかりませんでした</p>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div key={category}>
-                    <div className="bg-black/50 backdrop-blur-sm p-6 mb-8">
-                      <h3 className="text-2xl md:text-3xl font-bold text-white text-center">
-                        {category}
-                      </h3>
-                    </div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {categoryProducts.map((product) => (
-                        <ProductCard key={product._id} product={product} />
-                      ))}
-                    </div>
+                  <div className="space-y-16">
+                    {categorySections.map(({ category, filtered }) => (
+                      <div key={category}>
+                        <div className="bg-black/50 backdrop-blur-sm p-6 mb-8">
+                          <h3 className="text-2xl md:text-3xl font-bold text-white text-center">
+                            {category}
+                          </h3>
+                        </div>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                          {filtered.map((product) => (
+                            <ProductCard key={product._id} product={product} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
-              })}
-            </div>
+              })()}
+            </>
           )}
         </Container>
       </section>

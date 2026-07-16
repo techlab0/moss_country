@@ -11,6 +11,9 @@ export async function GET() {
         slug,
         price,
         category,
+        description,
+        stockQuantity,
+        reserved,
         images[] {
           _type,
           _key,
