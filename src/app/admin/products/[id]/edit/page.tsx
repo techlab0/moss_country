@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
+import { suggestReadingFromName } from '@/lib/productSort';
 
 interface SanityImageRef {
   _type: 'image';
@@ -19,6 +20,7 @@ interface ImageWithPreview {
 
 interface ProductFormData {
   name: string;
+  nameReading: string;
   slug: string;
   description: string;
   price: number;
@@ -47,6 +49,7 @@ export default function EditProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
+    nameReading: '',
     slug: '',
     description: '',
     price: 0,
@@ -81,6 +84,7 @@ export default function EditProductPage() {
           | undefined;
         setFormData({
           name: String(product.name ?? ''),
+          nameReading: String(product.nameReading ?? ''),
           slug: slugStr,
           description: String(product.description ?? ''),
           price: Number(product.price ?? 0),
@@ -154,6 +158,7 @@ export default function EditProductPage() {
     try {
       const payload: Record<string, unknown> = {
         name: formData.name,
+        nameReading: formData.nameReading,
         slug: { _type: 'slug' as const, current: formData.slug },
         description: formData.description,
         price: formData.price,
@@ -185,7 +190,11 @@ export default function EditProductPage() {
   };
 
   const handleNameChange = (name: string) => {
-    setFormData((prev) => ({ ...prev, name, slug: generateProductSlug(name) }));
+    setFormData((prev) => {
+      // ふりがなが未入力のときだけ、ひらがな/カタカナ名から機械的に補完する（手動入力を優先）
+      const suggestedReading = prev.nameReading.trim() ? prev.nameReading : suggestReadingFromName(name) ?? '';
+      return { ...prev, name, nameReading: suggestedReading, slug: generateProductSlug(name) };
+    });
   };
 
   const handleMaterialsChange = (materialsString: string) => {
@@ -237,6 +246,17 @@ export default function EditProductPage() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">ふりがな（ひらがな）</label>
+              <input
+                type="text"
+                value={formData.nameReading}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nameReading: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="こけだま"
+              />
+              <p className="text-xs text-gray-500 mt-1">あいうえお順の並び替えに使います</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">スラッグ (URL用) （必須）</label>

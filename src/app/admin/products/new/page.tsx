@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
+import { suggestReadingFromName } from '@/lib/productSort';
 
 interface SanityImageRef {
   _type: 'image';
@@ -18,6 +19,7 @@ interface ImageWithPreview {
 
 interface ProductFormData {
   name: string;
+  nameReading: string;
   slug: string;
   description: string;
   price: number;
@@ -45,6 +47,7 @@ const NewProductPage = () => {
   const [images, setImages] = useState<ImageWithPreview[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
+    nameReading: '',
     slug: '',
     description: '',
     price: 0,
@@ -118,11 +121,16 @@ const NewProductPage = () => {
   };
 
   const handleNameChange = (name: string) => {
-    setFormData(prev => ({
-      ...prev,
-      name,
-      slug: generateProductSlug(name)
-    }));
+    setFormData(prev => {
+      // ふりがなが未入力のときだけ、ひらがな/カタカナ名から機械的に補完する（手動入力を優先）
+      const suggestedReading = prev.nameReading.trim() ? prev.nameReading : suggestReadingFromName(name) ?? '';
+      return {
+        ...prev,
+        name,
+        nameReading: suggestedReading,
+        slug: generateProductSlug(name)
+      };
+    });
   };
 
   const handleMaterialsChange = (materialsString: string) => {
@@ -154,6 +162,20 @@ const NewProductPage = () => {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ふりがな（ひらがな）
+              </label>
+              <input
+                type="text"
+                value={formData.nameReading}
+                onChange={(e) => setFormData(prev => ({ ...prev, nameReading: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="こけだま"
+              />
+              <p className="text-xs text-gray-500 mt-1">あいうえお順の並び替えに使います</p>
             </div>
 
             <div>

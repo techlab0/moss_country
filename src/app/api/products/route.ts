@@ -8,6 +8,7 @@ export async function GET() {
       `*[_type == "product"] | order(sortOrder asc) {
         _id,
         name,
+        nameReading,
         slug,
         price,
         category,

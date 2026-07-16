@@ -12,6 +12,12 @@ export const product = defineType({
       validation: Rule => Rule.required()
     }),
     defineField({
+      name: 'nameReading',
+      title: 'ふりがな（並び替え用・ひらがな）',
+      type: 'string',
+      description: 'あいうえお順の並び替えに使用します。ひらがなで入力してください（例: こけだま）。',
+    }),
+    defineField({
       name: 'slug',
       title: 'スラッグ',
       type: 'slug',

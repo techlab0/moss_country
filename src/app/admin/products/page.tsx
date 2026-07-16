@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '@/lib/adapters';
+import { compareByReading } from '@/lib/productSort';
 import type { Product } from '@/types/sanity';
 
 interface ProductWithInventory extends Product {
@@ -146,7 +147,7 @@ export default function AdminProductsPage() {
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case 'name':
-        return a.name.localeCompare(b.name, 'ja');
+        return compareByReading(a, b);
       case 'priceAsc':
         return a.price - b.price;
       case 'priceDesc':

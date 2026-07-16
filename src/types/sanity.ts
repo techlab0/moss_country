@@ -10,6 +10,8 @@ export interface Product {
   _id: string
   _type: 'product'
   name: string
+  // あいうえお順の並び替え用ふりがな（ひらがな）。未入力の場合は name をフォールバックに使用する。
+  nameReading?: string
   slug: {
     current: string
     _type: 'slug'
