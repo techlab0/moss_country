@@ -32,7 +32,7 @@ const navigation = [
 // 管理画面ではサイト用ヘッダーを表示しないため、サイト内ページへはこのメニューから移動する
 const siteNavigation = [
   { name: 'ホーム', href: '/', icon: '🏠' },
-  { name: '商品', href: '/products', icon: '🛍️' },
+  { name: '商品', href: '/shop', icon: '🛍️' },
   { name: '苔図鑑', href: '/moss-guide', icon: '📗' },
   { name: 'ワークショップ', href: '/workshop', icon: '🧑‍🏫' },
   { name: 'ブログ', href: '/blog', icon: '✍️' },

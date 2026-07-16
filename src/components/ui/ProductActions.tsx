@@ -200,7 +200,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
               </button>
             </Link>
             <span className="text-green-600 text-sm">・</span>
-            <Link href="/products">
+            <Link href="/shop">
               <button className="text-green-700 text-sm underline hover:no-underline">
                 買い物を続ける
               </button>

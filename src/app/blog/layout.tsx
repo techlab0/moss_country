@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ブログ・ニュース | MOSS COUNTRY',
     description: 'テラリウムの世界をもっと深く。MOSS COUNTRYからの最新情報をお届けします。',
-    url: 'https://moss-country.com/blog',
+    url: 'https://mosscountry.com/blog',
     images: [
       {
         url: '/images/og-blog.jpg',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: 'テラリウムの世界をもっと深く。MOSS COUNTRYからの最新情報をお届けします。',
   },
   alternates: {
-    canonical: 'https://moss-country.com/blog',
+    canonical: 'https://mosscountry.com/blog',
   },
 }
 

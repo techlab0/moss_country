@@ -161,7 +161,7 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
   },
   products: {
     title: '商品ページ',
-    path: '/products',
+    path: '/shop',
     fields: [
       { key: 'heroTitle', label: 'ヒーロー見出し（<br/>で改行）', type: 'text', default: 'MOSS COUNTRYの<br />テラリウムコレクション' },
       { key: 'heroLead', label: 'ヒーロー リード文', type: 'textarea', default: '一つひとつ手作業で丁寧に作られた本格テラリウム。初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。' },

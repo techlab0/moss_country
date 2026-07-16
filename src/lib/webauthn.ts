@@ -7,8 +7,8 @@ import type {
 
 // WebAuthn設定
 const RP_NAME = 'MOSS COUNTRY Admin';
-const RP_ID = process.env.NODE_ENV === 'production' ? 'moss-country.com' : 'localhost';
-const ORIGIN = process.env.NODE_ENV === 'production' ? 'https://moss-country.com' : 'http://localhost:3000';
+const RP_ID = process.env.NODE_ENV === 'production' ? 'mosscountry.com' : 'localhost';
+const ORIGIN = process.env.NODE_ENV === 'production' ? 'https://mosscountry.com' : 'http://localhost:3000';
 
 // ユーザー情報の型定義
 interface WebAuthnUser {

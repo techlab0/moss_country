@@ -71,7 +71,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Container>
         <div className="mb-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 inline-block">
-            <Link href="/products" className="text-moss-green hover:underline font-medium">
+            <Link href="/shop" className="text-moss-green hover:underline font-medium">
               ← 商品一覧に戻る
             </Link>
           </div>

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ワークショップ | MOSS COUNTRY',
     description: '自分の手で作る、特別なテラリウム体験。職人が丁寧に指導します。',
-    url: 'https://moss-country.com/workshop',
+    url: 'https://mosscountry.com/workshop',
     images: [
       {
         url: '/images/og-workshop.jpg',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: '自分の手で作る、特別なテラリウム体験。職人が丁寧に指導します。',
   },
   alternates: {
-    canonical: 'https://moss-country.com/workshop',
+    canonical: 'https://mosscountry.com/workshop',
   },
 }
 

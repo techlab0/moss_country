@@ -186,7 +186,7 @@ export default function CheckoutPage() {
             <p className="text-stone-400 mb-8">
               商品をカートに追加してからチェックアウトしてください。
             </p>
-            <Link href="/products">
+            <Link href="/shop">
               <Button variant="primary" size="lg">
                 商品を見る
               </Button>
@@ -367,7 +367,7 @@ export default function CheckoutPage() {
             </div>
             
             <div className="space-y-4">
-              <Link href="/products">
+              <Link href="/shop">
                 <Button variant="primary" size="lg" className="w-full sm:w-auto">
                   買い物を続ける
                 </Button>
@@ -681,7 +681,7 @@ export default function CheckoutPage() {
                       return (
                         <div key={itemKey} className="flex gap-4">
                           <div className="relative">
-                            <Link href={`/products/${getProductSlug(item.product)}`}>
+                            <Link href={`/shop/${getProductSlug(item.product)}`}>
                               <ImagePlaceholder
                                 src={imageUrl}
                                 alt={item.product.name}
@@ -695,7 +695,7 @@ export default function CheckoutPage() {
                             </span>
                           </div>
                           <div className="flex-grow">
-                            <Link href={`/products/${getProductSlug(item.product)}`}>
+                            <Link href={`/shop/${getProductSlug(item.product)}`}>
                               <h3 className="text-white font-medium text-sm line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer">
                                 {item.product.name}
                               </h3>

@@ -41,7 +41,7 @@ export const snsPlatformLabels: Record<SnsPlatform, string> = {
 // ページ別メンテナンス（準備中表示）の対象にできる公開ページ。
 // トップページは対象外（サイト全体を止めたい場合は全体メンテナンスモードを使う）
 export const maintenanceTargetPages: Array<{ path: string; label: string }> = [
-  { path: '/products', label: '商品' },
+  { path: '/shop', label: '商品' },
   { path: '/moss-guide', label: '苔図鑑' },
   { path: '/workshop', label: 'ワークショップ' },
   { path: '/workshop/mobile', label: '出張ワークショップ' },
@@ -55,13 +55,13 @@ export const maintenanceTargetPages: Array<{ path: string; label: string }> = [
 export const defaultSiteSettings: SiteSettingsData = {
   headerLinks: [
     { label: 'ホーム', href: '/', isVisible: true },
-    { label: '商品', href: '/products', isVisible: true },
+    { label: '商品', href: '/shop', isVisible: true },
     { label: '苔図鑑', href: '/moss-guide', isVisible: true },
     { label: 'ワークショップ', href: '/workshop', isVisible: true },
     { label: 'ブログ', href: '/blog', isVisible: true },
   ],
   footerSitemapLinks: [
-    { label: '商品', href: '/products', isVisible: true },
+    { label: '商品', href: '/shop', isVisible: true },
     { label: '苔図鑑', href: '/moss-guide', isVisible: true },
     { label: 'ワークショップ', href: '/workshop', isVisible: true },
     { label: '出張ワークショップ', href: '/workshop/mobile', isVisible: true },

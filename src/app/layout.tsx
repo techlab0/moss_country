@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://moss-country.com'),
+  metadataBase: new URL('https://mosscountry.com'),
   title: {
     default: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
     template: '%s | MOSS COUNTRY',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
     description: '小さなガラスの中に広がる、無限の自然の世界',
-    url: 'https://moss-country.com',
+    url: 'https://mosscountry.com',
     siteName: 'MOSS COUNTRY',
     images: [
       {

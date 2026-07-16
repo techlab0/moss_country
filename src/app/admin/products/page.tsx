@@ -336,7 +336,7 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Link
-                          href={`/products/${getProductSlug(product)}`}
+                          href={`/shop/${getProductSlug(product)}`}
                           target="_blank"
                           className="text-moss-green hover:text-moss-green/80"
                         >

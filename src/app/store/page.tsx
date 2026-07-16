@@ -368,7 +368,7 @@ const serviceDetails: Record<number, string[]> = {
   2: ['植物の植え替え', '容器のクリーニング'],
   3: ['初心者から上級者まで', '材料・道具込み', '作品持ち帰り可'],
 };
-const serviceLinks: Record<number, string | undefined> = { 0: '/products', 3: '/workshop' };
+const serviceLinks: Record<number, string | undefined> = { 0: '/shop', 3: '/workshop' };
 
 
 interface FAQ {

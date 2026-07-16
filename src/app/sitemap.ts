@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 import { client } from '@/lib/sanity'
 
 async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://moss-country.com'
-  
+  const baseUrl = 'https://mosscountry.com'
+
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -13,7 +13,7 @@ async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/products`,
+      url: `${baseUrl}/shop`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
@@ -84,7 +84,7 @@ async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
 }
 
 async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://moss-country.com'
+  const baseUrl = 'https://mosscountry.com'
   const dynamicRoutes: MetadataRoute.Sitemap = []
 
   // Get blog posts with individual error handling
@@ -123,7 +123,7 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
       const slug = getProductSlug(product)
       if (!slug) continue
       dynamicRoutes.push({
-        url: `${baseUrl}/products/${slug}`,
+        url: `${baseUrl}/shop/${slug}`,
         lastModified: new Date(product._updatedAt),
         changeFrequency: 'weekly',
         priority: 0.8,

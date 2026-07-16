@@ -6,11 +6,11 @@ export function StructuredData() {
   const organizationData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": "https://moss-country.com/#organization",
+    "@id": "https://mosscountry.com/#organization",
     "name": "MOSS COUNTRY",
     "alternateName": ["moss country", "mosscountry", "モスカントリー"],
-    "url": "https://moss-country.com",
-    "logo": "https://moss-country.com/images/mosscountry_logo.svg",
+    "url": "https://mosscountry.com",
+    "logo": "https://mosscountry.com/images/mosscountry_logo.svg",
     "description": "MOSS COUNTRY（モスカントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。",
     "address": {
       "@type": "PostalAddress",
@@ -25,8 +25,8 @@ export function StructuredData() {
     "openingHours": "Mo-Su 11:00-20:00",
     "priceRange": "¥¥",
     "image": [
-      "https://moss-country.com/images/misc/moss01.jpeg",
-      "https://moss-country.com/images/products/moss-country_products_bottle.png"
+      "https://mosscountry.com/images/misc/moss01.jpeg",
+      "https://mosscountry.com/images/products/moss-country_products_bottle.png"
     ],
     "sameAs": [
       "https://instagram.com/moss_country"
@@ -54,12 +54,12 @@ export function StructuredData() {
   const websiteData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": "https://moss-country.com/#website",
-    "url": "https://moss-country.com",
+    "@id": "https://mosscountry.com/#website",
+    "url": "https://mosscountry.com",
     "name": "MOSS COUNTRY",
     "description": "北海道の苔テラリウム専門店",
     "publisher": {
-      "@id": "https://moss-country.com/#organization"
+      "@id": "https://mosscountry.com/#organization"
     },
     "inLanguage": "ja-JP"
   };

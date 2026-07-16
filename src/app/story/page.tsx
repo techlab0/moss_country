@@ -279,7 +279,7 @@ export default function StoryPage() {
                 <Button 
                   variant="primary" 
                   size="lg"
-                  onClick={() => window.location.href = '/products'}
+                  onClick={() => window.location.href = '/shop'}
                   className="cursor-pointer"
                 >
                   作品を見る

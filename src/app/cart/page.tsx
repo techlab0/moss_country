@@ -34,7 +34,7 @@ function CartItemRow({
       <div className="flex flex-col sm:flex-row gap-6">
         {/* 商品画像 */}
         <div className="flex-shrink-0">
-          <Link href={`/products/${getProductSlug(item.product)}`}>
+          <Link href={`/shop/${getProductSlug(item.product)}`}>
             <ImagePlaceholder
               src={imageUrl}
               alt={item.product.name}
@@ -49,7 +49,7 @@ function CartItemRow({
         <div className="flex-grow">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
-              <Link href={`/products/${getProductSlug(item.product)}`}>
+              <Link href={`/shop/${getProductSlug(item.product)}`}>
                 <h3 className="text-xl font-medium text-white mb-2 hover:text-emerald-400 transition-colors cursor-pointer">
                   {item.product.name}
                 </h3>
@@ -176,7 +176,7 @@ export default function CartPage() {
                 お気に入りの商品を見つけて、カートに追加しましょう
               </p>
             </div>
-            <Link href="/products">
+            <Link href="/shop">
               <Button variant="primary" size="lg" className="px-8 py-3">
                 商品を見る
               </Button>
@@ -249,7 +249,7 @@ export default function CartPage() {
                 </Link>
 
                 {/* 続けて買い物 */}
-                <Link href="/products">
+                <Link href="/shop">
                   <Button 
                     variant="ghost" 
                     size="md" 

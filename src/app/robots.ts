@@ -8,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/',
       },
     ],
-    // sitemap: 'https://moss-country.com/sitemap.xml', // インデックス無効中はコメントアウト
+    // sitemap: 'https://mosscountry.com/sitemap.xml', // インデックス無効中はコメントアウト
   }
 }
