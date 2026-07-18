@@ -113,7 +113,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           {post.tags && post.tags.length > 0 && (
             <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold mb-3">タグ</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">タグ</h3>
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag, index) => (
                   <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
