@@ -180,43 +180,43 @@ export default function WorkshopPage() {
           </div>
           
           {/* Workshop Info */}
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 mb-12">
             <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <CardHeader className="!p-3 md:!p-6">
+                <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-moss-green mb-2">所要時間</h3>
-                <p className="text-2xl font-bold text-moss-green">約2時間</p>
-                <p className="text-gray-600 text-sm mt-2">ゆっくりと丁寧に制作できます</p>
+                <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">所要時間</h3>
+                <p className="text-base md:text-2xl font-bold text-moss-green">約2時間</p>
+                <p className="text-gray-600 text-xs md:text-sm mt-2">ゆっくりと丁寧に制作できます</p>
               </CardHeader>
             </Card>
-            
+
             <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <CardHeader className="!p-3 md:!p-6">
+                <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-moss-green mb-2">利用人数</h3>
-                <p className="text-2xl font-bold text-moss-green">1～4人</p>
-                <p className="text-gray-600 text-sm mt-2">少人数での丁寧な指導</p>
+                <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">利用人数</h3>
+                <p className="text-base md:text-2xl font-bold text-moss-green">1～4人</p>
+                <p className="text-gray-600 text-xs md:text-sm mt-2">少人数での丁寧な指導</p>
               </CardHeader>
             </Card>
-            
-            <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <Card className="text-center col-span-2 md:col-span-1">
+              <CardHeader className="!p-3 md:!p-6">
+                <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-moss-green mb-2">対象年齢</h3>
-                <p className="text-2xl font-bold text-moss-green">9歳以上推奨</p>
-                <p className="text-gray-600 text-sm mt-2">お子様も楽しく参加できます</p>
+                <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">対象年齢</h3>
+                <p className="text-base md:text-2xl font-bold text-moss-green">9歳以上推奨</p>
+                <p className="text-gray-600 text-xs md:text-sm mt-2">お子様も楽しく参加できます</p>
               </CardHeader>
             </Card>
           </div>
@@ -226,7 +226,7 @@ export default function WorkshopPage() {
             <h3 className="text-2xl font-bold text-white mb-6">作品サイズ・料金</h3>
           </div>
           
-          <div className="grid md:grid-cols-3 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
             {workshopSizes.map((size) => (
               <Card key={size.id} className="hover:transform hover:scale-105 transition-all duration-300">
                 <div className="overflow-hidden">
@@ -236,21 +236,21 @@ export default function WorkshopPage() {
                     className="w-full h-auto object-contain"
                   />
                 </div>
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-2xl font-semibold text-moss-green">{size.name}</h3>
-                    <span className="text-moss-green font-bold text-xl">{size.price}</span>
+                <CardHeader className="!p-3 md:!p-6">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-0.5 md:gap-0 mb-2">
+                    <h3 className="text-base md:text-2xl font-semibold text-moss-green">{size.name}</h3>
+                    <span className="text-moss-green font-bold text-sm md:text-xl">{size.price}</span>
                   </div>
-                  <p className="text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
+                  <p className="text-sm md:text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
                   {size.duration && (
-                    <p className="flex items-center gap-1 text-sm text-gray-600 mb-3">
-                      <svg className="w-4 h-4 text-moss-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <p className="flex items-center gap-1 text-xs md:text-sm text-gray-600 mb-3">
+                      <svg className="w-4 h-4 text-moss-green shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       所要時間：{size.duration}
                     </p>
                   )}
-                  <p className="text-gray-600 whitespace-pre-line">{size.description}</p>
+                  <p className="text-gray-600 text-sm md:text-base whitespace-pre-line">{size.description}</p>
                 </CardHeader>
               </Card>
             ))}
@@ -308,35 +308,35 @@ export default function WorkshopPage() {
 
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg p-8 shadow-lg text-center">
-              <div className="grid md:grid-cols-3 gap-8 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 mb-8">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-moss-green mb-2">フレキシブルなスケジュール</h3>
-                  <p className="text-gray-600">店舗営業日ならいつでもOK</p>
+                  <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">フレキシブルなスケジュール</h3>
+                  <p className="text-gray-600 text-xs md:text-base">店舗営業日ならいつでもOK</p>
                 </div>
-                
+
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-moss-green mb-2">事前予約推奨</h3>
-                  <p className="text-gray-600">予約状況により当日参加可能</p>
+                  <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">事前予約推奨</h3>
+                  <p className="text-gray-600 text-xs md:text-base">予約状況により当日参加可能</p>
                 </div>
-                
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <div className="text-center col-span-2 md:col-span-1">
+                  <div className="w-10 h-10 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-5 h-5 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-moss-green mb-2">少人数制</h3>
-                  <p className="text-gray-600">1回最大4人まで</p>
+                  <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">少人数制</h3>
+                  <p className="text-gray-600 text-xs md:text-base">1回最大4人まで</p>
                 </div>
               </div>
               
@@ -429,14 +429,14 @@ export default function WorkshopPage() {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {bookingSteps.map((item, index) => (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white font-bold text-xl">{item.step}</span>
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white font-bold text-base md:text-xl">{item.step}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-moss-green mb-2">{item.title}</h3>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+                  <h3 className="text-sm md:text-lg font-semibold text-moss-green mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-xs md:text-sm">{item.description}</p>
                 </div>
               ))}
             </div>
