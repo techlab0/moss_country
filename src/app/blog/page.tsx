@@ -279,7 +279,7 @@ export default function BlogPage() {
                         </div>
                         
                         {/* タイトル */}
-                        <h2 className="text-xl md:text-2xl font-bold mb-3 line-clamp-2 group-hover:text-moss-green transition-colors leading-tight">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-moss-green transition-colors leading-tight">
                           {post.title}
                         </h2>
                         

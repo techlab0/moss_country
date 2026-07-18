@@ -190,19 +190,16 @@ export const InventoryAlert: React.FC<InventoryAlertProps> = ({
             </p>
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
-          {onNotifyWhenAvailable && (
+        {onNotifyWhenAvailable && (
+          <div className="mt-3 flex gap-2">
             <button
               onClick={onNotifyWhenAvailable}
               className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
             >
               再入荷通知を受け取る
             </button>
-          )}
-          <button className="text-xs text-red-600 hover:text-red-800 transition-colors">
-            似た商品を見る
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     );
   }
