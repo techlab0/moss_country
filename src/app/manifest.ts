@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#059669', // emerald-600
     icons: [
       {
-        src: '/images/mosscountry-favicon-terrarium.png',
+        src: '/images/mosscountry-favicon-rock-m.png',
         sizes: '1024x1024',
         type: 'image/png',
       },
