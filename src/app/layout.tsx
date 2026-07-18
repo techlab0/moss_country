@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/images/mosscountry-favicon-ai.png', sizes: '1024x1024', type: 'image/png' },
+      { url: '/images/mosscountry-favicon-ai-v2.png', sizes: '1024x1024', type: 'image/png' },
       { url: '/favicon.ico', sizes: '16x16 24x24 32x32 48x48' },
     ],
     shortcut: '/favicon.ico',
