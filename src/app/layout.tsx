@@ -80,9 +80,12 @@ export const metadata: Metadata = {
     google: 'your-google-site-verification-code', // 後で実際の値に置き換え
   },
   icons: {
-    icon: '/images/mosscountry_logo.svg',
-    shortcut: '/images/mosscountry_logo.svg',
-    apple: '/images/mosscountry_logo.svg',
+    icon: [
+      { url: '/images/mosscountry-favicon-ai.png', sizes: '1024x1024', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '16x16 24x24 32x32 48x48' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 
