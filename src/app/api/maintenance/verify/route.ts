@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SignJWT } from 'jose';
+import { getAdminJwtSecretKey } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/simpleRateLimit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(`maintenance-verify:${ip}`, 5, 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
     const { password } = await request.json();
 
     // 入力検証
@@ -15,20 +26,15 @@ export async function POST(request: NextRequest) {
     // Sanityからメンテナンスパスワードを取得
     const { getMaintenanceSettings } = require('@/lib/sanity');
     const settings = await getMaintenanceSettings();
-    
-    console.log('Maintenance verify - settings:', settings);
-    console.log('Maintenance verify - input password:', password);
-    
+
     if (!settings || !settings.password) {
-      console.log('No maintenance password configured');
       return NextResponse.json(
         { error: 'メンテナンスパスワードが設定されていません' },
         { status: 500 }
       );
     }
-    
+
     const maintenancePassword = settings.password;
-    console.log('Maintenance verify - stored password:', maintenancePassword);
 
     if (password !== maintenancePassword) {
       return NextResponse.json(
@@ -37,14 +43,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // パスワードが正しい場合、認証クッキーを設定
-    const response = NextResponse.json({ 
-      success: true, 
-      message: '認証に成功しました' 
+    // パスワードが正しい場合、署名付きJWTを認証クッキーとして発行する
+    const maintenanceToken = await new SignJWT({ scope: 'maintenance' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(getAdminJwtSecretKey());
+
+    const response = NextResponse.json({
+      success: true,
+      message: '認証に成功しました'
     });
 
     // 24時間有効な認証クッキーを設定
-    response.cookies.set('maintenance-access', 'allowed', {
+    response.cookies.set('maintenance-access', maintenanceToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',

@@ -130,7 +130,7 @@ export default function ProductionCheckPage() {
               </div>
               <div className="flex items-center text-gray-500">
                 <span className="mr-2">☐</span>
-                <span>EmailJSお問い合わせフォームの設定</span>
+                <span>お問い合わせフォームのメール送信設定（Gmail SMTP）</span>
               </div>
               <div className="flex items-center text-gray-500">
                 <span className="mr-2">☐</span>
