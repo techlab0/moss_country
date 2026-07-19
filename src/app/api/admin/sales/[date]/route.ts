@@ -4,6 +4,7 @@ import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
 import { taxBreakdown } from '@/lib/tax';
+import { getOrdersInDateRange } from '@/lib/orders';
 
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
 // dailySales ドキュメントはカウンタ（来店者数・購入組数）・調整・備考のみを保持する。
@@ -133,10 +134,9 @@ export async function GET(
         }`,
         { start, end }
       ),
-      // EC（オンライン）のその日の支払い済み注文
-      writeClient.fetch(
-        `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
-        { start, end }
+      // EC（オンライン）のその日の支払い済み注文（orderはPIIを含むためSupabaseから取得）
+      getOrdersInDateRange(start, end).then(orders =>
+        orders.filter(order => order.paymentStatus === 'paid').map(order => ({ total: order.total ?? 0 }))
       ),
     ]);
 
@@ -279,9 +279,9 @@ async function syncToSheetBestEffort(
         }`,
         { start, end }
       ),
-      writeClient.fetch(
-        `*[_type == "order" && paymentStatus == "paid" && createdAt >= $start && createdAt < $end]{ total }`,
-        { start, end }
+      // orderはPIIを含むためSupabaseから取得
+      getOrdersInDateRange(start, end).then(orders =>
+        orders.filter(order => order.paymentStatus === 'paid').map(order => ({ total: order.total ?? 0 }))
       ),
     ]);
 

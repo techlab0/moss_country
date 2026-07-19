@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { client } from '@/lib/sanity';
 import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing';
 import { InventoryService } from '@/lib/inventory';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { createOrder } from '@/lib/orders';
+import { checkRateLimit } from '@/lib/simpleRateLimit';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
@@ -17,6 +18,15 @@ const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
  */
 export async function POST(request: NextRequest) {
   try {
+    // このAPIは在庫予約を伴うため、連打による在庫枯渇DoSを防ぐレート制限をかける
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(`create-offline:${ip}`, 10, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { cart, customerData, orderData } = body as {
       cart: Cart;
@@ -70,60 +80,32 @@ export async function POST(request: NextRequest) {
     const orderNumber = `MOS-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const notesWithPaymentMethod = `【支払い方法: ${paymentMethodLabel}】${orderData.notes ? `\n${orderData.notes}` : ''}`;
 
-    const orderDoc = {
-      _type: 'order',
-      orderNumber,
-      customer: {
-        email: customerData.email,
-        firstName: customerData.firstName,
-        lastName: customerData.lastName,
-        phone: customerData.phone,
-      },
-      items: cart.items.map(item => ({
-        _type: 'object',
-        product: {
-          _type: 'reference',
-          _ref: item.product._id,
-        },
-        quantity: item.quantity,
-        price: item.price,
-        variant: item.variant?.name || null,
-      })),
-      subtotal: totals.subtotal,
-      shippingCost: totals.shippingCost,
-      tax: totals.tax,
-      total: totals.total,
-      status: 'pending',
-      // 銀行振込は入金確認まで、代金引換は配達完了まで未入金として扱う
-      paymentStatus: 'pending',
-      paymentMethod: orderData.paymentMethod,
-      shippingAddress: orderData.shippingAddress,
-      billingAddress: orderData.sameAsShipping
-        ? orderData.shippingAddress
-        : orderData.billingAddress,
-      shippingMethod: {
-        id: orderData.shippingMethod,
-        name: cart.shippingMethod?.name || 'Standard Shipping',
-        price: cart.shippingCost,
-        estimatedDays: cart.shippingMethod?.estimatedDays || 7,
-      },
-      notes: notesWithPaymentMethod,
-      metadata: {
-        customData: {
-          newsletter: orderData.newsletter,
-          terms: orderData.terms,
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    let createdOrder: { _id: string };
+    let createdOrder: { id: string; orderNumber: string };
     try {
-      createdOrder = await client.create(orderDoc);
-      if (!createdOrder._id) {
-        throw new Error('Failed to create order in database');
-      }
+      createdOrder = await createOrder({
+        orderNumber,
+        customerEmail: customerData.email,
+        customerFirstName: customerData.firstName,
+        customerLastName: customerData.lastName,
+        customerPhone: customerData.phone,
+        items: cart.items.map(item => ({
+          productId: item.product._id,
+          name: item.product.name,
+          quantity: item.quantity,
+          price: item.price,
+          variant: item.variant?.name || null,
+        })),
+        subtotal: totals.subtotal,
+        shippingCost: totals.shippingCost,
+        tax: totals.tax,
+        total: totals.total,
+        status: 'pending',
+        // 銀行振込は入金確認まで、代金引換は配達完了まで未入金として扱う
+        paymentStatus: 'pending',
+        paymentMethod: orderData.paymentMethod,
+        shippingAddress: orderData.shippingAddress,
+        notes: notesWithPaymentMethod,
+      });
     } catch (error) {
       // 注文作成に失敗した場合、確保済みの在庫予約を解放する
       await InventoryService.releaseCartItems(inventoryItems);
@@ -207,7 +189,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        orderId: createdOrder._id,
+        orderId: createdOrder.id,
         orderNumber,
         total: totals.total,
       },

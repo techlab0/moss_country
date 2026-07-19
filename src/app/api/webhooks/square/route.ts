@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
-// 決済直後に作成した注文をすぐ検索するため、CDNキャッシュではなく常に最新を返す writeClient を使う
+// 店頭QR決済（inStoreCharge）はPIIを含まずSanity据え置きのため、この検索のみwriteClientを使う
 import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
 import { sendMail } from '@/lib/mailer'
+import { getOrderBySquareId, updateOrderStatus, type Order } from '@/lib/orders'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -71,21 +72,9 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
     // squareOrderId は Square が決済に紐づけて自動作成する Order の ID。
     // 万一 squareOrderId が保存されていない/一致しない場合に備え、
     // 決済作成時に同期的に保存される squarePaymentId でもフォールバック検索する。
-    const orderQuery = `
-      *[_type == "order" && (squareOrderId == $orderId || squarePaymentId == $paymentId)][0] {
-        _id,
-        orderNumber,
-        customer,
-        items,
-        total,
-        status,
-        paymentStatus
-      }
-    `
-
-    const order = await client.fetch(orderQuery, {
-      orderId: (payment as { order_id?: string }).order_id ?? null,
-      paymentId,
+    const order = await getOrderBySquareId({
+      squareOrderId: (payment as { order_id?: string }).order_id ?? null,
+      squarePaymentId: paymentId,
     })
 
     if (!order) {
@@ -196,15 +185,7 @@ async function handleOrderUpdate(event: SquareWebhookEvent) {
     console.log(`Square order ${orderId} state: ${squareOrder.state}`)
 
     // Find our internal order
-    const orderQuery = `
-      *[_type == "order" && squareOrderId == $orderId][0] {
-        _id,
-        orderNumber,
-        status
-      }
-    `
-    
-    const order = await client.fetch(orderQuery, { orderId })
+    const order = await getOrderBySquareId({ squareOrderId: orderId })
 
     if (!order) {
       console.error(`Internal order not found for Square order ID: ${orderId}`)
@@ -223,13 +204,7 @@ async function handleOrderUpdate(event: SquareWebhookEvent) {
     }
 
     if (newStatus !== order.status) {
-      await client
-        .patch(order._id)
-        .set({
-          status: newStatus,
-          updatedAt: new Date().toISOString(),
-        })
-        .commit()
+      await updateOrderStatus(order.id, { status: newStatus })
 
       console.log(`Updated order ${order.orderNumber} status to ${newStatus}`)
     }
@@ -243,32 +218,28 @@ async function handleOrderUpdate(event: SquareWebhookEvent) {
 /**
  * Process successful payment
  */
-async function processSuccessfulPayment(order: { _id: string; orderNumber: string; customer: { email?: string; firstName?: string; lastName?: string }; items: Array<{ product: { _ref: string }; quantity: number }>; total: number }, payment: { id: string; receiptUrl?: string }) {
+async function processSuccessfulPayment(order: Order, payment: { id: string; receiptUrl?: string }) {
   try {
     console.log(`Processing successful payment for order ${order.orderNumber}`)
 
     // Update order status to paid
-    await client
-      .patch(order._id)
-      .set({
-        status: 'paid',
-        paymentStatus: 'paid',
-        squarePaymentId: payment.id,
-        updatedAt: new Date().toISOString(),
-      })
-      .commit()
+    await updateOrderStatus(order.id, {
+      status: 'paid',
+      paymentStatus: 'paid',
+      squarePaymentId: payment.id,
+    })
 
     // Convert reserved inventory to actual reduction
-    const inventoryItems = order.items.map(item => ({ productId: item.product._ref, quantity: item.quantity }))
-    await InventoryService.confirmCartPurchase(inventoryItems, order._id)
+    const inventoryItems = order.items.map(item => ({ productId: item.productId, quantity: item.quantity }))
+    await InventoryService.confirmCartPurchase(inventoryItems, order.id)
 
     // 注文確認メールはSquareの自動レシート送信機能を使用しているが、
     // 念のため顧客メールが取得できる場合はこちらからも注文確認メールを送る
-    if (order.customer?.email) {
+    if (order.customerEmail) {
       try {
-        const customerName = [order.customer.lastName, order.customer.firstName].filter(Boolean).join(' ')
+        const customerName = [order.customerLastName, order.customerFirstName].filter(Boolean).join(' ')
         await sendMail({
-          to: order.customer.email,
+          to: order.customerEmail,
           subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${order.orderNumber})`,
           text: [
             customerName ? `${customerName} 様` : 'お客様',
@@ -277,7 +248,7 @@ async function processSuccessfulPayment(order: { _id: string; orderNumber: strin
             'お支払いが完了しましたのでご確認ください。',
             '',
             `注文番号: ${order.orderNumber}`,
-            `お支払い金額: ¥${order.total.toLocaleString()}`,
+            `お支払い金額: ¥${(order.total ?? 0).toLocaleString()}`,
             '',
             '----',
             'MOSS COUNTRY',
@@ -300,24 +271,20 @@ async function processSuccessfulPayment(order: { _id: string; orderNumber: strin
 /**
  * Process failed payment
  */
-async function processFailedPayment(order: { _id: string; orderNumber: string; items: Array<{ product: { _ref: string }; quantity: number }> }, payment: { id: string }) {
+async function processFailedPayment(order: Order, payment: { id: string }) {
   try {
     console.log(`Processing failed payment for order ${order.orderNumber}`)
 
     // Update order status
-    await client
-      .patch(order._id)
-      .set({
-        status: 'cancelled',
-        paymentStatus: 'failed',
-        squarePaymentId: payment.id,
-        updatedAt: new Date().toISOString(),
-      })
-      .commit()
+    await updateOrderStatus(order.id, {
+      status: 'cancelled',
+      paymentStatus: 'failed',
+      squarePaymentId: payment.id,
+    })
 
     // Release reserved inventory
-    const inventoryItems = order.items.map(item => ({ productId: item.product._ref, quantity: item.quantity }))
-    await InventoryService.releaseCartItems(inventoryItems, order._id)
+    const inventoryItems = order.items.map(item => ({ productId: item.productId, quantity: item.quantity }))
+    await InventoryService.releaseCartItems(inventoryItems, order.id)
 
     console.log(`Successfully processed failed payment for order ${order.orderNumber}`)
 

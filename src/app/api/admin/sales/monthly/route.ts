@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc } from '@/lib/salesAggregation';
 import { taxBreakdown } from '@/lib/tax';
+import { getOrdersInDateRange } from '@/lib/orders';
 
 // 月次売上レポート用の集計API。
 // storeTransaction / 支払い済みinStoreCharge / 支払い済みorder / dailySales から
@@ -121,9 +122,11 @@ async function aggregateMonth(month: string): Promise<{ days: DayRow[]; summary:
       }`,
       { startUtc, endUtc }
     ),
-    writeClient.fetch(
-      `*[_type == "order" && paymentStatus == "paid" && createdAt >= $startUtc && createdAt < $endUtc]{ createdAt, total }`,
-      { startUtc, endUtc }
+    // orderはPIIを含むためSupabaseに移行済み。支払い済みのものだけ日別集計にマージする
+    getOrdersInDateRange(startUtc, endUtc).then(orders =>
+      orders
+        .filter(order => order.paymentStatus === 'paid')
+        .map(order => ({ createdAt: order.createdAt, total: order.total ?? 0 }))
     ),
     writeClient.fetch(
       `*[_type == "dailySales" && date >= $first && date <= $last]{

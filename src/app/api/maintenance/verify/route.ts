@@ -23,18 +23,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sanityからメンテナンスパスワードを取得
-    const { getMaintenanceSettings } = require('@/lib/sanity');
-    const settings = await getMaintenanceSettings();
+    // メンテナンスパスワードは環境変数で管理する（以前はSanityに平文保存しており、
+    // 公開データセット経由で閲覧できてしまっていたため環境変数に移行した）
+    const maintenancePassword = process.env.MAINTENANCE_PASSWORD;
 
-    if (!settings || !settings.password) {
+    if (!maintenancePassword) {
       return NextResponse.json(
-        { error: 'メンテナンスパスワードが設定されていません' },
+        { error: 'メンテナンスパスワードが未設定です' },
         { status: 500 }
       );
     }
-
-    const maintenancePassword = settings.password;
 
     if (password !== maintenancePassword) {
       return NextResponse.json(
