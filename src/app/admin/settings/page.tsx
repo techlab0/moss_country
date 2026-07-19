@@ -343,6 +343,49 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {/* 検索エンジン設定 */}
+          {siteSettings && (
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">検索エンジン設定</h2>
+
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
+                <div>
+                  <h3 className="font-medium text-gray-900">検索エンジンのインデックスを許可する</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    オフ: robots.txtで全ページのクロールを拒否します（公開前はオフ推奨）。<br />
+                    オン: クロールを許可し、sitemap.xmlを公開します。
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                  <input
+                    type="checkbox"
+                    checked={siteSettings.allowIndexing}
+                    onChange={(e) => setSiteSettings(prev => (prev ? { ...prev, allowIndexing: e.target.checked } : prev))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3 pt-4">
+                <div className={`w-3 h-3 rounded-full ${siteSettings.allowIndexing ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <span className="text-sm text-gray-700">
+                  現在: {siteSettings.allowIndexing ? '検索エンジンにインデックス許可中' : 'インデックス拒否中（非公開）'}
+                </span>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleSaveSiteSettings}
+                  disabled={isSaving}
+                  className="bg-moss-green hover:bg-moss-green/90 text-white px-6 py-2 rounded-md transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? '保存中...' : '検索エンジン設定を保存'}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

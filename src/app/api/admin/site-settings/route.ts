@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         footerSitemapLinks[]{ label, href, isVisible },
         footerLegalLinks[]{ label, href, isVisible },
         snsLinks[]{ platform, url, isVisible },
-        footerTagline, businessHours, businessDays, copyrightText, maintenancePages
+        footerTagline, businessHours, businessDays, copyrightText, maintenancePages, allowIndexing
       }`
     );
 
@@ -77,6 +77,7 @@ export async function PUT(request: NextRequest) {
       businessDays: typeof body.businessDays === 'string' ? body.businessDays : '',
       copyrightText: typeof body.copyrightText === 'string' ? body.copyrightText : '',
       maintenancePages,
+      allowIndexing: body.allowIndexing === true,
       updatedAt: new Date().toISOString(),
     });
 

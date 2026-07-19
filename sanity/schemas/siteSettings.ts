@@ -83,6 +83,13 @@ export const siteSettings = defineType({
       type: 'array',
       of: [{ type: 'string' }],
     }),
+    defineField({
+      name: 'allowIndexing',
+      title: '検索エンジンのインデックスを許可',
+      description: 'オンにするとrobots.txtがクロールを許可し、sitemapを公開します',
+      type: 'boolean',
+      initialValue: false,
+    }),
     defineField({ name: 'updatedAt', title: '更新日時', type: 'datetime' }),
   ],
   preview: {
