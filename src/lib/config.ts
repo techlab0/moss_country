@@ -26,9 +26,6 @@ export function validateProductionConfig(): {
 
   const optionalVariables = [
     'SANITY_API_TOKEN',
-    'NEXT_PUBLIC_EMAILJS_SERVICE_ID',
-    'NEXT_PUBLIC_EMAILJS_TEMPLATE_ID',
-    'NEXT_PUBLIC_EMAILJS_PUBLIC_KEY',
     'NEXT_PUBLIC_SQUARE_APPLICATION_ID',
     'SQUARE_ACCESS_TOKEN',
     'SQUARE_WEBHOOK_SIGNATURE_KEY',
@@ -102,18 +99,6 @@ export const squareConfig = {
   isConfigured: !!(
     process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID &&
     process.env.SQUARE_ACCESS_TOKEN
-  ),
-};
-
-// EmailJS設定（お問い合わせフォーム）
-export const emailJSConfig = {
-  serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
-  templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
-  publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY,
-  isConfigured: !!(
-    process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID &&
-    process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID &&
-    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
   ),
 };
 

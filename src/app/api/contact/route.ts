@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { checkRateLimit } from '@/lib/simpleRateLimit';
 
 // Validation schema for contact form
 const contactSchema = z.object({
@@ -16,6 +17,14 @@ const contactSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(`contact:${rateLimitIp}`, 5, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, message: 'リクエストが多すぎます。しばらくしてから再度お試しください。' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
 
     // ハニーポット（フォーム上は不可視の website フィールド）に値が入っていたらボットとみなす。
@@ -71,7 +80,7 @@ export async function POST(request: NextRequest) {
 
       if (dbError) {
         console.error('Database error:', dbError);
-        // データベースエラーでもフォーム送信は継続（EmailJSのみで処理）
+        // データベースエラーでもフォーム送信自体は成功として扱う
       } else {
         contactId = contactData?.id || null;
         console.log('Contact inquiry saved to database successfully:', contactId);
@@ -122,9 +131,6 @@ export async function POST(request: NextRequest) {
       // データベース保存失敗でもフォーム送信は継続
     }
 
-    // EmailJS handling is done on the frontend (環境変数が設定されていれば動く冗長系として残す)
-    // Always return success since EmailJS will handle the notification
-
     return NextResponse.json(
       {
         success: true,
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ValidationError以外はEmailJSで処理するため成功扱い
+    // ZodError以外の予期しないエラーは、ユーザーには成功として案内する
     return NextResponse.json(
       { 
         success: true, 

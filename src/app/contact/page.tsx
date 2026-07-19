@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import emailjs from '@emailjs/browser';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 
@@ -150,29 +149,8 @@ export default function ContactPage() {
       const result = await response.json();
 
       if (result.success) {
-        // EmailJSでメール送信
-        try {
-          await emailjs.send(
-            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
-            {
-              from_name: formData.name,
-              from_email: formData.email,
-              phone: formData.phone || '未記入',
-              inquiry_type: formData.inquiryType,
-              subject: formData.subject,
-              message: formData.message,
-              to_email: 'moss.country.kokenokuni@gmail.com',
-            },
-            process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
-          );
-          
-          setSubmitMessage('お問い合わせありがとうございます。24時間以内にご返信させていただきます。');
-        } catch (emailError) {
-          console.error('EmailJS送信エラー:', emailError);
-          setSubmitMessage('お問い合わせを受け付けました。メール通知の送信に失敗しましたが、お問い合わせ内容は正常に保存されました。24時間以内にご返信させていただきます。');
-        }
-        
+        setSubmitMessage('お問い合わせありがとうございます。24時間以内にご返信させていただきます。');
+
         setFormData({
           name: '',
           email: '',

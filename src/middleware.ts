@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminSessionFromRequest } from '@/lib/auth';
+import { jwtVerify } from 'jose';
+import { getAdminSessionFromRequest, getAdminJwtSecretKey } from '@/lib/auth';
+
+// メンテナンス通過クッキー（署名付きJWT）が有効かどうかを検証する。
+// 鍵未設定や検証失敗は「未認証」として扱う（例外を外に漏らさない）。
+async function hasValidMaintenanceAccess(request: NextRequest): Promise<boolean> {
+  const maintenanceAccess = request.cookies.get('maintenance-access');
+  if (!maintenanceAccess?.value) {
+    return false;
+  }
+
+  try {
+    const { payload } = await jwtVerify(maintenanceAccess.value, getAdminJwtSecretKey());
+    return payload.scope === 'maintenance';
+  } catch {
+    return false;
+  }
+}
 
 // メンテナンス状態取得APIはチェック対象外（fetch ループ防止）
 const MAINTENANCE_STATUS_PATH = '/api/maintenance/status';
@@ -65,10 +82,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
       }
     } else {
-      // メンテナンス認証クッキーをチェック
-      const maintenanceAccess = request.cookies.get('maintenance-access');
-
-      if (maintenanceAccess?.value !== 'allowed') {
+      // メンテナンス認証クッキーをチェック（署名付きJWTの検証）
+      if (!(await hasValidMaintenanceAccess(request))) {
         const maintenanceUrl = new URL('/maintenance', request.url);
         return NextResponse.redirect(maintenanceUrl);
       }
@@ -79,7 +94,6 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/admin')) {
     const publicAdminApiPaths = new Set([
       '/api/admin/login',
-      '/api/admin/auth/login',
       '/api/admin/2fa/verify',
       '/api/admin/2fa/webauthn/authenticate',
       '/api/admin/logout',

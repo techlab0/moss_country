@@ -112,7 +112,7 @@ export default function AdminInventoryPage() {
 
     try {
       // APIで在庫更新（Sanityに保存）
-      const response = await fetch('/api/inventory/update', {
+      const response = await fetch('/api/admin/inventory/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
