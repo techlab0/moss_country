@@ -27,6 +27,7 @@ export interface SiteSettingsData {
   businessDays: string;
   copyrightText: string;
   maintenancePages: string[];
+  allowIndexing: boolean;
 }
 
 export const snsPlatformLabels: Record<SnsPlatform, string> = {
@@ -88,6 +89,7 @@ export const defaultSiteSettings: SiteSettingsData = {
   businessDays: '不定休（カレンダーをご確認ください）',
   copyrightText: '© 2024 MOSS COUNTRY. All rights reserved.',
   maintenancePages: [],
+  allowIndexing: false,
 };
 
 /**
@@ -106,5 +108,6 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
     businessDays: saved.businessDays ?? defaultSiteSettings.businessDays,
     copyrightText: saved.copyrightText ?? defaultSiteSettings.copyrightText,
     maintenancePages: saved.maintenancePages ?? [],
+    allowIndexing: saved.allowIndexing === true,
   };
 }
