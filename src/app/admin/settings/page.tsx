@@ -271,6 +271,9 @@ export default function SettingsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="メンテナンスパスワードを入力"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  保存先は保護されたSupabase（管理者のみアクセス可能）です。公開データセットには保存されません。
+                </p>
               </div>
 
               <div>

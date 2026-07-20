@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 import { getAdminJwtSecretKey } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
+import { getAppSetting, MAINTENANCE_PASSWORD_KEY } from '@/lib/appSettings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,9 +24,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // メンテナンスパスワードは環境変数で管理する（以前はSanityに平文保存しており、
-    // 公開データセット経由で閲覧できてしまっていたため環境変数に移行した）
-    const maintenancePassword = process.env.MAINTENANCE_PASSWORD;
+    // メンテナンスパスワードはSupabase(app_settings)を優先し、管理画面で一度も
+    // 保存していない場合のみ環境変数 MAINTENANCE_PASSWORD にフォールバックする
+    // （以前はSanityに平文保存しており、公開データセット経由で漏えいしていたため移行した）
+    const maintenancePassword = (await getAppSetting(MAINTENANCE_PASSWORD_KEY)) || process.env.MAINTENANCE_PASSWORD;
 
     if (!maintenancePassword) {
       return NextResponse.json(
