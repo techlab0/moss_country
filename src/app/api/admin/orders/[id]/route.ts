@@ -54,6 +54,7 @@ function toApiOrder(order: Order) {
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     shippingAddress: order.shippingAddress,
+    shippingCarrier: order.shippingCarrier,
     trackingNumber: order.trackingNumber,
     notes: order.notes,
     createdAt: order.createdAt,

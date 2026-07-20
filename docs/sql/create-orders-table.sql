@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_method TEXT,
 
     shipping_address JSONB,
+    -- 顧客が選択した配送業者（yupack=ゆうパック / yamato=ヤマト運輸 宅急便）。未選択ならNULL。
+    shipping_carrier TEXT,
     notes TEXT,
     -- 指定されたカラム定義には無いが、既存の管理画面（/admin/orders/[id]）が
     -- 追跡番号の編集・保存機能を持っているため、回帰を防ぐために追加した。
@@ -71,5 +73,6 @@ CREATE OR REPLACE TRIGGER update_orders_updated_at
 COMMENT ON TABLE orders IS 'ECサイトの注文情報（顧客PIIを含むためservice_role専用）';
 COMMENT ON COLUMN orders.items IS '注文明細のスナップショット: [{ productId, name, price, quantity, variant }]';
 COMMENT ON COLUMN orders.shipping_address IS '配送先住所（JSON）';
+COMMENT ON COLUMN orders.shipping_carrier IS '顧客が選択した配送業者（yupack=ゆうパック / yamato=ヤマト運輸 宅急便）。未選択の旧注文はNULL。';
 COMMENT ON COLUMN orders.square_order_id IS 'Square側のOrder ID（Webhookでの照合に使用）';
 COMMENT ON COLUMN orders.square_payment_id IS 'Square側のPayment ID（Webhookでの照合に使用）';

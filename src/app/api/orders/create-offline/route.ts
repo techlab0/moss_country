@@ -4,11 +4,17 @@ import { InventoryService } from '@/lib/inventory';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { createOrder } from '@/lib/orders';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
+import { isCarrierId } from '@/lib/shipping';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
   bank_transfer: '銀行振込',
   cash_on_delivery: '代金引換',
+};
+
+const CARRIER_LABELS: Record<string, string> = {
+  yupack: 'ゆうパック（日本郵便）',
+  yamato: '宅急便（ヤマト運輸）',
 };
 
 /**
@@ -53,12 +59,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // クライアント申告の配送業者は 'yupack' | 'yamato' 以外を受け付けない（不正値はnull扱い）
+    const shippingCarrier = isCarrierId(orderData.shippingCarrier) ? orderData.shippingCarrier : null;
+
     // 価格・送料改ざん対策: クライアント申告額を信用せず、Sanityの正規データと送料設定から再計算する
     let totals;
     try {
       totals = await recalculateCartTotals(cart, {
         prefecture: orderData.shippingAddress?.state,
         express: orderData.shippingMethod === 'express',
+        carrier: shippingCarrier ?? undefined,
       });
     } catch (error) {
       if (error instanceof InvalidCartError) {
@@ -105,6 +115,7 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'pending',
         paymentMethod: orderData.paymentMethod,
         shippingAddress: orderData.shippingAddress,
+        shippingCarrier,
         notes: notesWithPaymentMethod,
       });
     } catch (error) {
@@ -151,13 +162,14 @@ export async function POST(request: NextRequest) {
           `合計: ¥${totals.total.toLocaleString()}`,
           '',
           `お支払い方法: ${paymentMethodLabel}`,
+          shippingCarrier ? `配送業者: ${CARRIER_LABELS[shippingCarrier]}` : null,
           '',
           '【お届け先】',
           shippingAddressLines,
           '',
           '----',
           'MOSS COUNTRY',
-        ].join('\n'),
+        ].filter((line): line is string => line !== null).join('\n'),
       });
       customerConfirmed = customerResult.sent;
 
@@ -176,10 +188,11 @@ export async function POST(request: NextRequest) {
           '',
           `合計: ¥${totals.total.toLocaleString()}`,
           `お支払い方法: ${paymentMethodLabel}`,
+          shippingCarrier ? `配送業者: ${CARRIER_LABELS[shippingCarrier]}` : null,
           '',
           '【お届け先】',
           shippingAddressLines,
-        ].join('\n'),
+        ].filter((line): line is string => line !== null).join('\n'),
       });
       storeNotified = storeResult.sent;
     } catch (mailError) {

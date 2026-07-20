@@ -5,7 +5,7 @@
 //
 // CDNキャッシュの古い価格を見てはいけないため、常に最新を返す writeClient を使う。
 import { writeClient as client } from '@/lib/sanity';
-import { getShippingSettings, resolveShippingFee, type ShippingItem } from '@/lib/shipping';
+import { getShippingSettings, resolveShippingFee, isCarrierId, type ShippingItem, type CarrierId } from '@/lib/shipping';
 import { taxBreakdown } from '@/lib/tax';
 import type { Cart } from '@/types/ecommerce';
 
@@ -21,6 +21,8 @@ export interface RecalculateOptions {
   prefecture?: string;
   // 速達（express）かどうか
   express?: boolean;
+  // 顧客が選択した配送業者。クライアント由来の値のため 'yupack' | 'yamato' 以外は無視する。
+  carrier?: CarrierId | string;
 }
 
 export class InvalidCartError extends Error {}
@@ -80,7 +82,7 @@ export async function recalculateCartTotals(
       shippingItems,
       options.prefecture,
       subtotal,
-      { express: options.express },
+      { express: options.express, carrier: isCarrierId(options.carrier) ? options.carrier : undefined },
       settings
     );
     if (!result.ok) {
