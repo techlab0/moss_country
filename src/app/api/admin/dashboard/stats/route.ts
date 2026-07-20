@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductsWithInventory, writeClient } from '@/lib/sanity';
+import { getProductsWithInventory } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+import { getOrders } from '@/lib/orders';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,10 +21,8 @@ export async function GET(request: NextRequest) {
       (product.stockQuantity || 0) <= (product.lowStockThreshold || 5)
     ).length;
     
-    // 注文データを取得して集計（キャッシュのない writeClient で常に最新を取得）
-    const orders: Array<{ total?: number; paymentStatus?: string }> = await writeClient.fetch(
-      `*[_type == "order"]{ total, paymentStatus }`
-    );
+    // 注文データを取得して集計
+    const orders = await getOrders();
     const totalOrders = orders.length;
     const totalRevenue = orders
       .filter(order => order.paymentStatus === 'paid')

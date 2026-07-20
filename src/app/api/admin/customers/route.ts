@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { writeClient } from '@/lib/sanity';
+import { getOrders } from '@/lib/orders';
 
 interface OrderForCustomerAggregation {
   customer?: { email?: string; firstName?: string; lastName?: string; phone?: string };
@@ -11,7 +11,7 @@ interface OrderForCustomerAggregation {
 }
 
 // 顧客は独立したデータベースを持たず、全注文をメールアドレスで集計して算出する
-// （GROQはgroup-by集計ができないため、既存のdashboard/statsと同じ「全件取得→JSでreduce」方式）
+// （既存のdashboard/statsと同じ「全件取得→JSでreduce」方式）
 export async function GET(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -19,9 +19,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const orders: OrderForCustomerAggregation[] = await writeClient.fetch(
-      `*[_type == "order"]{ customer, total, paymentStatus, createdAt, shippingAddress }`
-    );
+    const orders: OrderForCustomerAggregation[] = (await getOrders()).map(order => ({
+      customer: {
+        email: order.customerEmail || undefined,
+        firstName: order.customerFirstName || undefined,
+        lastName: order.customerLastName || undefined,
+        phone: order.customerPhone || undefined,
+      },
+      total: order.total ?? undefined,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      shippingAddress: order.shippingAddress
+        ? { state: order.shippingAddress.state, city: order.shippingAddress.city }
+        : undefined,
+    }));
 
     const byEmail = new Map<string, {
       id: string;

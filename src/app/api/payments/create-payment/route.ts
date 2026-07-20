@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { client } from '@/lib/sanity';
 import { convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing';
 import { InventoryService } from '@/lib/inventory';
+import { createOrder, updateOrderStatus } from '@/lib/orders';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 export async function POST(request: NextRequest) {
@@ -61,27 +61,21 @@ export async function POST(request: NextRequest) {
 
     // Generate unique order number
     const orderNumber = `MOS-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-    
-    // 開発環境ではSanity保存をスキップしてテスト
-    let createdOrder = { _id: `temp-order-${Date.now()}` };
-    
+
+    // 開発環境ではSupabase保存をスキップしてテスト
+    let createdOrder: { id: string; orderNumber: string } = { id: `temp-order-${Date.now()}`, orderNumber };
+
     if (process.env.NODE_ENV !== 'development') {
-      // 本番環境でのみSanityに保存
-      const orderDoc = {
-        _type: 'order',
+      // 本番環境でのみSupabaseに保存
+      createdOrder = await createOrder({
         orderNumber,
-        customer: {
-          email: customerData.email,
-          firstName: customerData.firstName,
-          lastName: customerData.lastName,
-          phone: customerData.phone,
-        },
+        customerEmail: customerData.email,
+        customerFirstName: customerData.firstName,
+        customerLastName: customerData.lastName,
+        customerPhone: customerData.phone,
         items: cart.items.map(item => ({
-          _type: 'object',
-          product: {
-            _type: 'reference',
-            _ref: item.product._id,
-          },
+          productId: item.product._id,
+          name: item.product.name,
           quantity: item.quantity,
           price: item.price,
           variant: item.variant?.name || null,
@@ -94,33 +88,10 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'pending',
         paymentMethod: 'credit_card',
         shippingAddress: orderData.shippingAddress,
-        billingAddress: orderData.sameAsShipping 
-          ? orderData.shippingAddress 
-          : orderData.billingAddress,
-        shippingMethod: {
-          id: orderData.shippingMethod,
-          name: cart.shippingMethod?.name || 'Standard Shipping',
-          price: cart.shippingCost,
-          estimatedDays: cart.shippingMethod?.estimatedDays || 7,
-        },
         notes: orderData.notes || '',
-        metadata: {
-          customData: {
-            newsletter: orderData.newsletter,
-            terms: orderData.terms,
-          },
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      createdOrder = await client.create(orderDoc);
-      
-      if (!createdOrder._id) {
-        throw new Error('Failed to create order in database');
-      }
+      });
     } else {
-      console.log('🚧 開発環境: Sanity保存をスキップしてSquare決済をテスト');
+      console.log('🚧 開発環境: Supabase保存をスキップしてSquare決済をテスト');
     }
 
     // Process payment with Square
@@ -129,20 +100,16 @@ export async function POST(request: NextRequest) {
       amount: totals.total,
       orderNumber,
       customerEmail: customerData.email,
-      orderId: createdOrder._id,
+      orderId: createdOrder.id,
     });
 
     if (!paymentResult.success) {
       // Update order status to failed (開発環境ではスキップ)
-      if (process.env.NODE_ENV !== 'development' && createdOrder._id.startsWith('temp-') === false) {
-        await client
-          .patch(createdOrder._id)
-          .set({
-            status: 'cancelled',
-            paymentStatus: 'failed',
-            updatedAt: new Date().toISOString(),
-          })
-          .commit();
+      if (process.env.NODE_ENV !== 'development' && createdOrder.id.startsWith('temp-') === false) {
+        await updateOrderStatus(createdOrder.id, {
+          status: 'cancelled',
+          paymentStatus: 'failed',
+        });
       }
 
       // 決済が失敗したため、確保しておいた在庫予約を解放する
@@ -160,31 +127,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order with payment success (開発環境ではスキップ)
-    if (process.env.NODE_ENV !== 'development' && createdOrder._id.startsWith('temp-') === false) {
-      const paidFields: Record<string, unknown> = {
+    if (process.env.NODE_ENV !== 'development' && createdOrder.id.startsWith('temp-') === false) {
+      const paidFields: Parameters<typeof updateOrderStatus>[1] = {
         status: 'paid',
         paymentStatus: 'paid',
         squarePaymentId: paymentResult.paymentId,
-        updatedAt: new Date().toISOString(),
       };
       // Squareは注文IDを指定しない決済でも自動的にOrderを作成するため、
       // Webhook側で squareOrderId から注文を特定できるように保存しておく
       if (paymentResult.orderId) {
         paidFields.squareOrderId = paymentResult.orderId;
       }
-      await client
-        .patch(createdOrder._id)
-        .set(paidFields)
-        .commit();
+      await updateOrderStatus(createdOrder.id, paidFields);
     } else {
-      console.log('✅ 開発環境: 決済成功 - Sanity更新をスキップ');
+      console.log('✅ 開発環境: 決済成功 - Supabase更新をスキップ');
     }
 
     // 決済がその場で完了しているため、予約済み在庫を実在庫の減算に確定する
     // （Webhookが後から届いても、既に paymentStatus: 'paid' のため二重処理はされない）
     if (process.env.NODE_ENV !== 'development') {
       try {
-        await InventoryService.confirmCartPurchase(inventoryItems, createdOrder._id);
+        await InventoryService.confirmCartPurchase(inventoryItems, createdOrder.id);
       } catch (inventoryError) {
         console.error('Failed to finalize inventory after successful payment:', inventoryError);
         // 決済は既に成立しているため処理は継続する（在庫は管理画面で手動調整が必要）
@@ -194,7 +157,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        orderId: createdOrder._id,
+        orderId: createdOrder.id,
         orderNumber,
         paymentId: paymentResult.paymentId,
         total: totals.total,

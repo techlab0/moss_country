@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { InventoryService } from '@/lib/inventory';
-
-interface OrderInventoryItem {
-  product: { _ref: string };
-  quantity: number;
-}
+import { getOrderById, updateOrderStatus, deleteOrder, type Order, type OrderItemSnapshot } from '@/lib/orders';
 
 const FINAL_STATUSES = ['cancelled', 'refunded'];
 
@@ -16,11 +11,11 @@ const FINAL_STATUSES = ['cancelled', 'refunded'];
  * それ以外（決済前で在庫は「予約」段階）なら予約を解放するだけにする。
  */
 async function restoreInventoryForCancelledOrder(
-  order: { paymentStatus?: string; items?: OrderInventoryItem[] },
+  order: { paymentStatus?: string; items?: OrderItemSnapshot[] },
   orderId: string
 ) {
   const items = (order.items || []).map(item => ({
-    productId: item.product._ref,
+    productId: item.productId,
     quantity: item.quantity,
   }));
 
@@ -31,6 +26,39 @@ async function restoreInventoryForCancelledOrder(
   } else {
     await InventoryService.releaseCartItems(items, orderId);
   }
+}
+
+function toApiOrder(order: Order) {
+  return {
+    _id: order.id,
+    orderNumber: order.orderNumber,
+    squareOrderId: order.squareOrderId,
+    squarePaymentId: order.squarePaymentId,
+    customer: {
+      email: order.customerEmail,
+      firstName: order.customerFirstName,
+      lastName: order.customerLastName,
+      phone: order.customerPhone,
+    },
+    items: order.items.map(item => ({
+      product: { _id: item.productId, name: item.name },
+      quantity: item.quantity,
+      price: item.price,
+      variant: item.variant,
+    })),
+    subtotal: order.subtotal,
+    shippingCost: order.shippingCost,
+    tax: order.tax,
+    total: order.total,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    shippingAddress: order.shippingAddress,
+    trackingNumber: order.trackingNumber,
+    notes: order.notes,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  };
 }
 
 export async function GET(
@@ -44,42 +72,13 @@ export async function GET(
     }
 
     const { id } = await params;
-    const order = await writeClient.fetch(
-      `*[_id == $id][0] {
-        _id,
-        orderNumber,
-        squareOrderId,
-        squarePaymentId,
-        customer,
-        items[] {
-          product-> { _id, name },
-          quantity,
-          price,
-          variant
-        },
-        subtotal,
-        shippingCost,
-        tax,
-        total,
-        status,
-        paymentStatus,
-        paymentMethod,
-        shippingAddress,
-        billingAddress,
-        shippingMethod,
-        trackingNumber,
-        notes,
-        createdAt,
-        updatedAt
-      }`,
-      { id }
-    );
+    const order = await getOrderById(id);
 
     if (!order) {
       return NextResponse.json({ error: '注文が見つかりません' }, { status: 404 });
     }
 
-    return NextResponse.json({ order });
+    return NextResponse.json({ order: toApiOrder(order) });
   } catch (error) {
     console.error('注文詳細取得エラー:', error);
     return NextResponse.json(
@@ -102,16 +101,13 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const current = await writeClient.fetch(
-      `*[_id == $id][0] { status, paymentStatus, items[] { product { _ref }, quantity } }`,
-      { id }
-    );
+    const current = await getOrderById(id);
 
     if (!current) {
       return NextResponse.json({ error: '注文が見つかりません' }, { status: 404 });
     }
 
-    const patchFields: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    const patchFields: Parameters<typeof updateOrderStatus>[1] = {};
     if (typeof body.status === 'string') patchFields.status = body.status;
     if (typeof body.paymentStatus === 'string') patchFields.paymentStatus = body.paymentStatus;
     if (typeof body.trackingNumber === 'string') patchFields.trackingNumber = body.trackingNumber;
@@ -127,9 +123,10 @@ export async function PATCH(
       await restoreInventoryForCancelledOrder(current, id);
     }
 
-    const updated = await writeClient.patch(id).set(patchFields).commit();
+    await updateOrderStatus(id, patchFields);
+    const updated = await getOrderById(id);
 
-    return NextResponse.json({ order: updated });
+    return NextResponse.json({ order: updated ? toApiOrder(updated) : null });
   } catch (error) {
     console.error('注文更新エラー:', error);
     return NextResponse.json(
@@ -151,10 +148,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const current = await writeClient.fetch(
-      `*[_id == $id][0] { status, paymentStatus, items[] { product { _ref }, quantity } }`,
-      { id }
-    );
+    const current = await getOrderById(id);
 
     if (!current) {
       return NextResponse.json({ error: '注文が見つかりません' }, { status: 404 });
@@ -164,7 +158,7 @@ export async function DELETE(
       await restoreInventoryForCancelledOrder(current, id);
     }
 
-    await writeClient.delete(id);
+    await deleteOrder(id);
 
     return NextResponse.json({ message: '注文を削除しました' });
   } catch (error) {
