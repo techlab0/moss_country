@@ -491,9 +491,11 @@ export async function getFeaturedMossSpecies(): Promise<MossSpecies[]> {
 }
 
 // Maintenance Settings queries
+// メンテナンスパスワードは以前ここに平文保存し、公開データセット経由で漏えいしたため、
+// Supabase（service_roleキー専用のapp_settingsテーブル）に移行済み。
+// このモジュールはisEnabled/messageのみを扱い、passwordの読み書きは一切行わない。
 export async function getMaintenanceSettings(): Promise<{
   isEnabled: boolean;
-  password: string;
   message?: string;
 } | null> {
   try {
@@ -502,7 +504,6 @@ export async function getMaintenanceSettings(): Promise<{
     const settings = await writeClient.fetch(`
       *[_type == "maintenanceSettings"][0] {
         isEnabled,
-        password,
         message
       }
     `);
@@ -516,7 +517,6 @@ export async function getMaintenanceSettings(): Promise<{
 
 export async function updateMaintenanceSettings(data: {
   isEnabled: boolean;
-  password: string;
   message?: string;
 }): Promise<void> {
   try {

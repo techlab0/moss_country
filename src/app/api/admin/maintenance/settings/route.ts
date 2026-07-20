@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMaintenanceSettings, updateMaintenanceSettings } from '@/lib/sanity';
+import { getAppSetting, setAppSetting, MAINTENANCE_PASSWORD_KEY } from '@/lib/appSettings';
 import { verifyAdminSession } from '@/lib/auth';
 
 type MaintenanceSettings = {
@@ -9,6 +10,7 @@ type MaintenanceSettings = {
 };
 
 // GET: 現在の設定を取得
+// isEnabled/messageはSanity、password（機密値）はSupabase(app_settings)から取得してマージする。
 export async function GET(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -16,18 +18,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const settings = await getMaintenanceSettings();
-    
+    const [settings, password] = await Promise.all([
+      getMaintenanceSettings(),
+      getAppSetting(MAINTENANCE_PASSWORD_KEY),
+    ]);
+
     // デフォルト値を設定
     const defaultSettings = {
       isEnabled: false,
-      password: '',
       message: '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。'
     };
-    
-    return NextResponse.json({ 
-      success: true, 
-      settings: settings || defaultSettings
+
+    return NextResponse.json({
+      success: true,
+      settings: {
+        ...(settings || defaultSettings),
+        password: password || '',
+      }
     });
   } catch (error) {
     console.error('Failed to read maintenance settings:', error);
@@ -39,6 +46,8 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: 設定を更新
+// isEnabled/messageはSanityへ、password（機密値）はSupabase(app_settings)へ保存する。
+// Sanityの既存passwordフィールドへは一切書き込まない。
 export async function POST(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);
@@ -63,14 +72,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const trimmedPassword = password.trim();
+    const resolvedMessage = message || '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。';
+
+    // Sanityにはpasswordを含めずisEnabled/messageのみ保存
+    await updateMaintenanceSettings({ isEnabled, message: resolvedMessage });
+
+    // passwordはSupabase(app_settings)へ保存
+    await setAppSetting(MAINTENANCE_PASSWORD_KEY, trimmedPassword);
+
     const newSettings: MaintenanceSettings = {
       isEnabled,
-      password: password.trim(),
-      message: message || '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。'
+      password: trimmedPassword,
+      message: resolvedMessage,
     };
-
-    // Sanityに設定を保存
-    await updateMaintenanceSettings(newSettings);
 
     return NextResponse.json({
       success: true,
