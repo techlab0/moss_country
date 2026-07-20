@@ -127,6 +127,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order with payment success (開発環境ではスキップ)
+    // 重要: この時点で決済は既に成立している。DB更新に失敗しても顧客に「決済失敗」と
+    // 返してはいけない（実際は課金済みのため、再決済による二重課金を招く）。
+    // 更新失敗は要手動確認としてログに残し、処理は継続して必ず成功レスポンスを返す。
+    // status は Square の payment.updated Webhook が後追いで 'paid' に確定させる。
     if (process.env.NODE_ENV !== 'development' && createdOrder.id.startsWith('temp-') === false) {
       const paidFields: Parameters<typeof updateOrderStatus>[1] = {
         status: 'paid',
@@ -138,7 +142,16 @@ export async function POST(request: NextRequest) {
       if (paymentResult.orderId) {
         paidFields.squareOrderId = paymentResult.orderId;
       }
-      await updateOrderStatus(createdOrder.id, paidFields);
+      try {
+        await updateOrderStatus(createdOrder.id, paidFields);
+      } catch (updateError) {
+        console.error('🚨 決済は成立したが注文ステータスの更新に失敗しました。手動確認が必要です:', {
+          orderId: createdOrder.id,
+          orderNumber,
+          squarePaymentId: paymentResult.paymentId,
+          error: updateError,
+        });
+      }
     } else {
       console.log('✅ 開発環境: 決済成功 - Supabase更新をスキップ');
     }
