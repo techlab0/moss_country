@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS orders (
     tax NUMERIC,
     total NUMERIC,
 
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded')),
+    -- 'paid' はカード決済成功時に必ずセットされる。アプリのOrderStatus型と完全一致させること
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded')),
     payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded', 'partially_refunded')),
     payment_method TEXT,
 
