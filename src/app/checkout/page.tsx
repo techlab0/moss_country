@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,7 @@ import {
   DEFAULT_SHIPPING_SETTINGS,
   type ShippingSettings,
   type ShippingItem,
+  type CarrierId,
 } from '@/lib/shipping';
 import { taxBreakdown } from '@/lib/tax';
 
@@ -42,6 +43,8 @@ export default function CheckoutPage() {
   });
   // 管理画面で編集された送料設定。取得できるまではコード内デフォルトで計算する
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
+  // 配送業者をユーザーが手動で選択したかどうか。まだなら送料設定取得時にデフォルト業者へ追従させる
+  const carrierTouchedRef = useRef(false);
   const [formData, setFormData] = useState<CheckoutFormData>({
     customer: {
       email: '',
@@ -75,6 +78,7 @@ export default function CheckoutPage() {
     },
     sameAsShipping: true,
     shippingMethod: cart.shippingMethod?.id || 'standard', // カートで選択済みの配送方法を使用
+    shippingCarrier: DEFAULT_SHIPPING_SETTINGS.carrier, // 送料設定取得後、管理者設定のデフォルト業者に更新される
     paymentMethod: 'credit_card',
     notes: '',
     newsletter: false,
@@ -94,7 +98,14 @@ export default function CheckoutPage() {
     fetch('/api/shipping/settings')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (mounted && data?.settings) setShippingSettings(data.settings as ShippingSettings);
+        if (mounted && data?.settings) {
+          const settings = data.settings as ShippingSettings;
+          setShippingSettings(settings);
+          // ユーザーがまだ配送業者を手動選択していなければ、管理者設定のデフォルト業者に合わせる
+          if (!carrierTouchedRef.current) {
+            setFormData((prev) => ({ ...prev, shippingCarrier: settings.carrier }));
+          }
+        }
       })
       .catch(() => {
         /* 取得失敗時はデフォルト設定で継続 */
@@ -104,8 +115,8 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  // 指定した配送方法での送料・税・合計をまとめて計算する。表示にもサーバー確定にも同じ resolveShippingFee を使う。
-  const computeCheckoutTotals = (methodId: string) => {
+  // 指定した配送方法・配送業者での送料・税・合計をまとめて計算する。表示にもサーバー確定にも同じ resolveShippingFee を使う。
+  const computeCheckoutTotals = (methodId: string, carrier?: CarrierId) => {
     if (!formData.shippingAddress.state || cart.items.length === 0) {
       return null;
     }
@@ -114,7 +125,7 @@ export default function CheckoutPage() {
       items,
       formData.shippingAddress.state,
       cart.subtotal,
-      { express: methodId === 'express' },
+      { express: methodId === 'express', carrier },
       shippingSettings
     );
     const finalShippingCost = result.ok ? result.fee : 0;
@@ -138,9 +149,10 @@ export default function CheckoutPage() {
     }
   }, [formData.customer.firstName, formData.customer.lastName]);
 
-  // 送料・税込合計の再計算（商品の寸法・重量と送料設定を考慮）
+  // 送料・税込合計の再計算（商品の寸法・重量・送料設定・選択中の配送業者を考慮）
   useEffect(() => {
-    const computed = computeCheckoutTotals(formData.shippingMethod);
+    const selectedCarrier = formData.shippingCarrier ?? shippingSettings.carrier;
+    const computed = computeCheckoutTotals(formData.shippingMethod, selectedCarrier);
     if (computed) {
       const { result, finalShippingCost, tax, total } = computed;
       setShippingCalculation({
@@ -150,7 +162,7 @@ export default function CheckoutPage() {
         tax,
         total,
         shippingDetails: {
-          carrierLabel: shippingSettings.carriers[shippingSettings.carrier]?.label,
+          carrierLabel: shippingSettings.carriers[selectedCarrier]?.label,
           size: result.size,
           dimensionSum: result.dimensionSum,
           totalWeight: result.totalWeight,
@@ -172,7 +184,7 @@ export default function CheckoutPage() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.shippingAddress.state, formData.shippingMethod, cart.items, cart.subtotal, shippingSettings]);
+  }, [formData.shippingAddress.state, formData.shippingMethod, formData.shippingCarrier, cart.items, cart.subtotal, shippingSettings]);
 
   // カートが空の場合のリダイレクト
   if (cart.items.length === 0 && !orderComplete) {
@@ -295,6 +307,7 @@ export default function CheckoutPage() {
           shippingAddress: formData.shippingAddress,
           billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
           shippingMethod: formData.shippingMethod,
+          shippingCarrier: formData.shippingCarrier,
           paymentMethod: formData.paymentMethod,
           sameAsShipping: formData.sameAsShipping,
           terms: formData.terms,
@@ -558,6 +571,49 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* 配送業者 */}
+                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                  <h2 className="text-xl font-medium text-white mb-6">配送業者</h2>
+                  <div className="space-y-3">
+                    {(Object.keys(shippingSettings.carriers) as CarrierId[]).map((carrierId) => {
+                      const carrierInfo = shippingSettings.carriers[carrierId];
+                      const computed = formData.shippingAddress.state && cart.items.length > 0
+                        ? computeCheckoutTotals(formData.shippingMethod, carrierId)
+                        : null;
+                      return (
+                        <label
+                          key={carrierId}
+                          className="flex items-center gap-4 p-4 border border-stone-700 rounded-lg cursor-pointer hover:border-stone-600 transition-colors"
+                        >
+                          <input
+                            type="radio"
+                            name="shippingCarrier"
+                            value={carrierId}
+                            checked={formData.shippingCarrier === carrierId}
+                            onChange={() => {
+                              carrierTouchedRef.current = true;
+                              setFormData(prev => ({ ...prev, shippingCarrier: carrierId }));
+                            }}
+                            className="text-emerald-500"
+                          />
+                          <div className="flex-grow">
+                            <div className="flex justify-between items-center">
+                              <span className="text-white font-medium">{carrierInfo?.label || carrierId}</span>
+                              <span className="text-emerald-400 font-medium">
+                                {computed
+                                  ? computed.result.ok
+                                    ? (computed.finalShippingCost === 0 ? '無料' : `¥${computed.finalShippingCost.toLocaleString()}`)
+                                    : '配送不可'
+                                  : '住所入力後に計算'}
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* 配送方法 */}
                 <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
                   <h2 className="text-xl font-medium text-white mb-6">配送方法</h2>
@@ -583,7 +639,7 @@ export default function CheckoutPage() {
                             <span className="text-white font-medium">{method.name}</span>
                             <span className="text-emerald-400 font-medium">
                               {formData.shippingAddress.state && cart.items.length > 0 ? (() => {
-                                const computed = computeCheckoutTotals(method.id);
+                                const computed = computeCheckoutTotals(method.id, formData.shippingCarrier);
                                 if (computed && computed.result.ok) {
                                   return computed.finalShippingCost === 0 ? '無料' : `¥${computed.finalShippingCost.toLocaleString()}`;
                                 }
@@ -594,7 +650,7 @@ export default function CheckoutPage() {
                           <p className="text-stone-400 text-sm">
                             {method.description}
                             {formData.shippingAddress.state && cart.items.length > 0 && (() => {
-                              const computed = computeCheckoutTotals(method.id);
+                              const computed = computeCheckoutTotals(method.id, formData.shippingCarrier);
                               if (computed && computed.result.ok) {
                                 return ` (サイズ${computed.result.size})`;
                               }
@@ -818,6 +874,7 @@ export default function CheckoutPage() {
                         shippingAddress: formData.shippingAddress,
                         billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
                         shippingMethod: formData.shippingMethod,
+                        shippingCarrier: formData.shippingCarrier,
                         paymentMethod: formData.paymentMethod,
                         sameAsShipping: formData.sameAsShipping,
                         terms: formData.terms,

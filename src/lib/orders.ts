@@ -55,6 +55,8 @@ export interface Order {
   paymentStatus: PaymentStatus;
   paymentMethod: string | null;
   shippingAddress: Address | null;
+  // 顧客が選択した配送業者（'yupack' | 'yamato'）。未選択/旧データはnull。
+  shippingCarrier: string | null;
   notes: string | null;
   trackingNumber: string | null;
   squareOrderId: string | null;
@@ -78,6 +80,7 @@ export interface CreateOrderInput {
   paymentStatus?: PaymentStatus;
   paymentMethod?: string | null;
   shippingAddress?: Address | null;
+  shippingCarrier?: string | null;
   notes?: string | null;
   squareOrderId?: string | null;
   squarePaymentId?: string | null;
@@ -115,6 +118,7 @@ interface OrderRow {
   payment_status: string;
   payment_method: string | null;
   shipping_address: Address | null;
+  shipping_carrier: string | null;
   notes: string | null;
   tracking_number: string | null;
   square_order_id: string | null;
@@ -140,6 +144,7 @@ function rowToOrder(row: OrderRow): Order {
     paymentStatus: (row.payment_status as PaymentStatus) || 'pending',
     paymentMethod: row.payment_method,
     shippingAddress: row.shipping_address,
+    shippingCarrier: row.shipping_carrier,
     notes: row.notes,
     trackingNumber: row.tracking_number,
     squareOrderId: row.square_order_id,
@@ -165,6 +170,7 @@ function inputToInsertRow(input: CreateOrderInput) {
     payment_status: input.paymentStatus ?? 'pending',
     payment_method: input.paymentMethod ?? null,
     shipping_address: input.shippingAddress ?? null,
+    shipping_carrier: input.shippingCarrier ?? null,
     notes: input.notes ?? null,
     square_order_id: input.squareOrderId ?? null,
     square_payment_id: input.squarePaymentId ?? null,

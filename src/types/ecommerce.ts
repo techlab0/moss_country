@@ -222,6 +222,8 @@ export interface CheckoutFormData {
   billingAddress: Address;
   sameAsShipping: boolean;
   shippingMethod: string;
+  // 顧客が選択した配送業者。既存データとの後方互換のためオプショナル（未指定時は管理者設定のデフォルト業者を使用）
+  shippingCarrier?: 'yupack' | 'yamato';
   paymentMethod: string;
   notes?: string;
   newsletter: boolean;

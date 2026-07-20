@@ -9,6 +9,12 @@
 
 export type CarrierId = 'yupack' | 'yamato';
 
+// クライアント（フォーム送信値等）から来た値が正当な CarrierId かどうかを検証する。
+// 送料表を持たない不正な業者IDが計算・保存に混入するのを防ぐために各所で使う。
+export function isCarrierId(value: unknown): value is CarrierId {
+  return value === 'yupack' || value === 'yamato';
+}
+
 export interface ShippingZone {
   id: string;
   name: string;
@@ -62,6 +68,8 @@ export interface PackageMetrics {
 export interface ShippingOptions {
   express?: boolean;
   hasFragile?: boolean;
+  // 顧客が選択した配送業者。未指定時は settings.carrier（管理者設定のデフォルト業者）を使う。
+  carrier?: CarrierId;
 }
 
 export interface ShippingResult {
@@ -166,7 +174,7 @@ export function resolveShippingFee(
     return { ...base, ok: true, fee: 0 };
   }
 
-  const table = settings.carriers[settings.carrier];
+  const table = settings.carriers[options.carrier ?? settings.carrier];
   if (!table) {
     return { ...base, error: '配送業者の料金表が設定されていません' };
   }

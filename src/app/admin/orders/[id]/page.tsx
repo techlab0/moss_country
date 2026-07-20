@@ -22,6 +22,7 @@ interface OrderDetail {
   shippingCost: number;
   tax: number;
   status: string;
+  shippingCarrier?: string | null;
   paymentMethod?: string;
   paymentStatus: string;
   trackingNumber?: string;
@@ -60,6 +61,11 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: "クレジットカード",
   bank_transfer: "銀行振込",
   cash_on_delivery: "代金引換",
+};
+
+const carrierLabels: Record<string, string> = {
+  yamato: "宅急便（ヤマト運輸）",
+  yupack: "ゆうパック（日本郵便）",
 };
 
 interface OrderDetailPageProps {
@@ -115,6 +121,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           shippingCost: o.shippingCost || 0,
           tax: o.tax || 0,
           status: o.status || "pending",
+          shippingCarrier: o.shippingCarrier,
           paymentMethod: o.paymentMethod,
           paymentStatus: o.paymentStatus || "pending",
           trackingNumber: o.trackingNumber,
@@ -461,6 +468,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <p className="font-medium">{order.shippingAddress.address1}</p>
               {order.shippingAddress.address2 && (
                 <p className="font-medium">{order.shippingAddress.address2}</p>
+              )}
+              {order.shippingCarrier && (
+                <p className="text-sm text-gray-600 mt-3">
+                  配送業者: <span className="font-medium text-gray-900">{carrierLabels[order.shippingCarrier] || order.shippingCarrier}</span>
+                </p>
               )}
             </div>
           </div>
