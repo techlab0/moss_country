@@ -89,6 +89,7 @@ interface ItemRow {
   payPay: MethodCell;
   card: MethodCell;
   qr: MethodCell;
+  ec: MethodCell;
   total: number;
 }
 
@@ -1277,6 +1278,7 @@ function SummaryTab({
                 <th className="text-right py-1 px-1">PayPay</th>
                 <th className="text-right py-1 px-1">カード</th>
                 <th className="text-right py-1 px-1">QR</th>
+                <th className="text-right py-1 px-1">EC</th>
                 <th className="text-right py-1 pl-1">合計</th>
               </tr>
             </thead>
@@ -1284,7 +1286,7 @@ function SummaryTab({
               {agg.itemRows.map(row => (
                 <tr key={row.key} className="border-b last:border-0">
                   <td className="py-1.5 pr-2 text-gray-900">{row.name}</td>
-                  {(['cash', 'payPay', 'card', 'qr'] as const).map(method => (
+                  {(['cash', 'payPay', 'card', 'qr', 'ec'] as const).map(method => (
                     <td key={method} className="text-right py-1.5 px-1 text-gray-600">
                       {row[method].amount > 0
                         ? (row[method].quantity > 0 ? `${row[method].quantity}個` : `¥${row[method].amount.toLocaleString()}`)

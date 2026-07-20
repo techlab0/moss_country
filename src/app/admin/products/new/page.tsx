@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
 import { suggestReadingFromName } from '@/lib/productSort';
+import { SalesItemPicker } from '@/components/admin/SalesItemPicker';
 
 interface SanityImageRef {
   _type: 'image';
@@ -36,6 +37,7 @@ interface ProductFormData {
   stockQuantity: number;
   lowStockThreshold: number;
   featured: boolean;
+  salesItemId: string | null;
 }
 
 const categories = PRODUCT_CATEGORIES;
@@ -59,6 +61,7 @@ const NewProductPage = () => {
     stockQuantity: 0,
     lowStockThreshold: 5,
     featured: false,
+    salesItemId: null,
   });
 
   const handleImageUpload = async (file: File) => {
@@ -293,6 +296,11 @@ const NewProductPage = () => {
               </select>
             </div>
           </div>
+
+          <SalesItemPicker
+            salesItemId={formData.salesItemId}
+            onChange={(salesItemId) => setFormData((prev) => ({ ...prev, salesItemId }))}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -34,7 +34,8 @@ export async function GET() {
         },
         featured,
         inStock,
-        "dimensions": size
+        "dimensions": size,
+        "salesItemId": salesItem._ref
       }`,
       {},
       { next: { revalidate: 60 } }

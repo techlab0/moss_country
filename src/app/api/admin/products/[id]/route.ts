@@ -42,6 +42,7 @@ export async function GET(
         weight,
         fragile,
         inStock,
+        "salesItemId": salesItem._ref,
         _createdAt,
         _updatedAt
       }`,
@@ -106,13 +107,21 @@ export async function PATCH(
       body.slug = { _type: 'slug' as const, current: slugCurrent };
     }
 
-    const product = await writeClient
-      .patch(id)
-      .set({
-        ...body,
-        _updatedAt: new Date().toISOString()
-      })
-      .commit();
+    // salesItem は body.salesItemId（文字列、または未選択時は空文字/null）で来る想定。
+    // ...body 経由で生の salesItem/salesItemId が二重に入らないよう除外し、明示的に反映する
+    const { salesItemId, salesItem: _rawSalesItem, ...restBody } = body;
+    let patch = writeClient.patch(id).set({
+      ...restBody,
+      _updatedAt: new Date().toISOString(),
+    });
+    if ('salesItemId' in body) {
+      if (salesItemId) {
+        patch = patch.set({ salesItem: { _type: 'reference', _ref: salesItemId } });
+      } else {
+        patch = patch.unset(['salesItem']);
+      }
+    }
+    const product = await patch.commit();
 
     return NextResponse.json(product);
   } catch (error) {

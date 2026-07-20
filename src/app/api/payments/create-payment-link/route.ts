@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           price: item.price,
           variant: item.variant?.name || null,
+          salesItemId: item.product.salesItemId ?? null,
         })),
         subtotal: totals.subtotal,
         shippingCost: totals.shippingCost,

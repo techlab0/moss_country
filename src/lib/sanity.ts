@@ -107,7 +107,8 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
         },
         featured,
         inStock,
-        dimensions
+        dimensions,
+        "salesItemId": salesItem._ref
       }`,
       { start: offset, end: offset + limit - 1 },
       {
@@ -161,7 +162,8 @@ const productBySlugProjection = `{
   inStock,
   "dimensions": size,
   weight,
-  fragile
+  fragile,
+  "salesItemId": salesItem._ref
 }`;
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {

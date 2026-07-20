@@ -59,6 +59,8 @@ export interface Product {
   reserved?: number
   // 在庫少と判定する閾値。管理画面の在庫ステータス判定に使用。
   lowStockThreshold?: number
+  // 売上集計（商品別明細）でこの商品を合算する売上項目のID。未設定の場合は商品名でそのまま表示される。
+  salesItemId?: string | null
 }
 
 export interface BlogPost {

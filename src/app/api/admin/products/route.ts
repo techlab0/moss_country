@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         weight,
         fragile,
         sortOrder,
+        "salesItemId": salesItem._ref,
         _createdAt,
         _updatedAt
       }
@@ -87,12 +88,15 @@ export async function POST(request: NextRequest) {
           }
         : undefined;
 
-    const { dimensions, slug: _s, ...rest } = body;
+    // salesItem は body.salesItemId（文字列）で来る想定。参照形式に変換して明示的に扱い、
+    // ...rest 経由で生の salesItem/salesItemId が二重に入らないよう除外する
+    const { dimensions, slug: _s, salesItem: _salesItem, salesItemId, ...rest } = body;
     const doc: Record<string, unknown> = {
       _type: 'product',
       ...rest,
       slug,
       ...(size && { size }),
+      ...(salesItemId ? { salesItem: { _type: 'reference', _ref: salesItemId } } : {}),
       inStock: (body.stockQuantity ?? 0) > 0,
       _createdAt: new Date().toISOString(),
       _updatedAt: new Date().toISOString(),

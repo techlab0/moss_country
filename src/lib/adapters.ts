@@ -51,7 +51,9 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
     materials: sanityProduct.materials || [],
     careInstructions: sanityProduct.careInstructions || '',
     variants: [],
-    shippingInfo: '通常配送対応'
+    shippingInfo: '通常配送対応',
+    // 売上集計で使うため、カート→注文スナップショットまで引き継ぐ
+    salesItemId: sanityProduct.salesItemId ?? null,
   };
 }
 

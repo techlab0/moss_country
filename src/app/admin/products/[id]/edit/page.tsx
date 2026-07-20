@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
 import { suggestReadingFromName } from '@/lib/productSort';
+import { SalesItemPicker } from '@/components/admin/SalesItemPicker';
 
 interface SanityImageRef {
   _type: 'image';
@@ -33,6 +34,7 @@ interface ProductFormData {
   stockQuantity: number;
   lowStockThreshold: number;
   featured: boolean;
+  salesItemId: string | null;
 }
 
 const categories = PRODUCT_CATEGORIES;
@@ -60,6 +62,7 @@ export default function EditProductPage() {
     stockQuantity: 0,
     lowStockThreshold: 5,
     featured: false,
+    salesItemId: null,
   });
 
   useEffect(() => {
@@ -104,6 +107,7 @@ export default function EditProductPage() {
           stockQuantity: Number(product.stockQuantity ?? 0),
           lowStockThreshold: Number(product.lowStockThreshold ?? 5),
           featured: Boolean(product.featured),
+          salesItemId: typeof product.salesItemId === 'string' ? product.salesItemId : null,
         });
         const imgs = product.images as (SanityImageRef & { url?: string })[] | undefined;
         setImages(
@@ -170,6 +174,7 @@ export default function EditProductPage() {
         featured: formData.featured,
         size: formData.dimensions,
         images: images.map(({ image }) => image),
+        salesItemId: formData.salesItemId ?? '',
       };
       if (formData.weight != null) payload.weight = formData.weight;
       payload.fragile = !!formData.fragile;
@@ -362,6 +367,11 @@ export default function EditProductPage() {
               </select>
             </div>
           </div>
+
+          <SalesItemPicker
+            salesItemId={formData.salesItemId}
+            onChange={(salesItemId) => setFormData((prev) => ({ ...prev, salesItemId }))}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">使用材料 (カンマ区切り)</label>
