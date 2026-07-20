@@ -36,6 +36,8 @@ export interface Product {
   weight?: number;
   shippingInfo?: string;
   featured?: boolean;
+  // 売上集計（商品別明細）でこの商品を合算する売上項目のID。未設定の場合は商品名でそのまま表示される。
+  salesItemId?: string | null;
 }
 
 export interface ProductVariant {

@@ -35,6 +35,8 @@ export interface OrderItemSnapshot {
   price: number;
   quantity: number;
   variant?: string | null;
+  // 売上集計（商品別明細）でこの購入を合算する売上項目のID。購入時点の商品設定をスナップショットする。
+  salesItemId?: string | null;
 }
 
 export interface Order {

@@ -39,6 +39,13 @@ export const product = defineType({
       validation: Rule => Rule.required().positive()
     }),
     defineField({
+      name: 'salesItem',
+      title: '売上明細の項目（集計での商品名）',
+      description: 'この商品がEC購入されたとき、売上集計の「商品別明細」でどの項目に合算するかを指定します。未設定の場合は商品名でそのまま表示されます。',
+      type: 'reference',
+      to: [{ type: 'salesItem' }],
+    }),
+    defineField({
       name: 'category',
       title: 'カテゴリー',
       type: 'string',

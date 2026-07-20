@@ -5,6 +5,7 @@ import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/sal
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
 import { taxBreakdown } from '@/lib/tax';
 import { getOrdersInDateRange } from '@/lib/orders';
+import type { OrderItemSnapshot } from '@/lib/orders';
 
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
 // dailySales ドキュメントはカウンタ（来店者数・購入組数）・調整・備考のみを保持する。
@@ -58,6 +59,9 @@ interface ItemRow {
   payPay: MethodCell;
   card: MethodCell;
   qr: MethodCell;
+  // EC（オンライン）購入分。現金/PayPay/カード/QRのどれでもないため専用セルに集計する
+  // （合計列には反映されるが、店舗の決済方法別セルには加算しない＝二重計上を避ける）
+  ec: MethodCell;
   total: number;
 }
 
@@ -68,7 +72,7 @@ function emptyCell(): MethodCell {
 function addToRow(
   rows: Map<string, ItemRow>,
   li: AggLineItem,
-  method: PaymentMethod | 'qr'
+  method: PaymentMethod | 'qr' | 'ec'
 ) {
   const key = li.salesItemId || `custom:${li.name || '不明'}`;
   let row = rows.get(key);
@@ -81,6 +85,7 @@ function addToRow(
       payPay: emptyCell(),
       card: emptyCell(),
       qr: emptyCell(),
+      ec: emptyCell(),
       total: 0,
     };
     rows.set(key, row);
@@ -112,7 +117,7 @@ export async function GET(
       { visitorCount?: number; purchaseGroupCount?: number; wordOfMouthDiscount?: number; adjustment?: number; notes?: string; updatedAt?: string } | null,
       TransactionDoc[],
       ChargeDoc[],
-      Array<{ total?: number }>,
+      Array<{ total?: number; items?: OrderItemSnapshot[] }>,
     ] = await Promise.all([
       writeClient.fetch(
         `*[_id == $id][0]{ visitorCount, purchaseGroupCount, wordOfMouthDiscount, adjustment, notes, updatedAt }`,
@@ -135,8 +140,11 @@ export async function GET(
         { start, end }
       ),
       // EC（オンライン）のその日の支払い済み注文（orderはPIIを含むためSupabaseから取得）
+      // 商品別明細に反映するため items のスナップショットも保持する
       getOrdersInDateRange(start, end).then(orders =>
-        orders.filter(order => order.paymentStatus === 'paid').map(order => ({ total: order.total ?? 0 }))
+        orders
+          .filter(order => order.paymentStatus === 'paid')
+          .map(order => ({ total: order.total ?? 0, items: order.items ?? [] }))
       ),
     ]);
 
@@ -165,6 +173,25 @@ export async function GET(
       discountTotal += charge.discountAmount || 0;
       for (const li of charge.lineItems || []) {
         addToRow(rows, li, 'qr');
+      }
+    }
+    // EC（オンライン）購入分を商品別明細に合流させる（表示用のitemRowsのみ）。
+    // grandTotal は下記の通り methodTotals（店舗）+ ecTotal（EC、注文のtotalから別集計）で
+    // 計算されており、itemsTotal はどこにも合算されないため、ここでitemRowsに加算しても
+    // グランド合計の二重計上にはならない。決済方法別セル（現金/PayPay/カード/QR）にも
+    // 加算しない（'ec'専用セルに集計し、合計列にのみ反映）。
+    for (const order of paidOrders) {
+      for (const item of order.items || []) {
+        addToRow(
+          rows,
+          {
+            name: item.name,
+            quantity: item.quantity,
+            amount: (item.price || 0) * (item.quantity || 0),
+            salesItemId: item.salesItemId || undefined,
+          },
+          'ec'
+        );
       }
     }
 
