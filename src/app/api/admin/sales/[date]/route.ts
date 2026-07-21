@@ -62,6 +62,9 @@ interface ItemRow {
   // EC（オンライン）購入分。現金/PayPay/カード/QRのどれでもないため専用セルに集計する
   // （合計列には反映されるが、店舗の決済方法別セルには加算しない＝二重計上を避ける）
   ec: MethodCell;
+  // EC分をさらに注文のpaymentMethod（credit_card/bank_transfer/cash_on_delivery等）別に内訳集計したもの。
+  // 表示用の補助データで、ecの合算値とは独立に加算する（二重計上ではなく同じ値を別軸で持つ）。
+  ecMethods?: Record<string, MethodCell>;
   total: number;
 }
 
@@ -72,7 +75,9 @@ function emptyCell(): MethodCell {
 function addToRow(
   rows: Map<string, ItemRow>,
   li: AggLineItem,
-  method: PaymentMethod | 'qr' | 'ec'
+  method: PaymentMethod | 'qr' | 'ec',
+  // EC分の内訳集計キー（注文のpaymentMethod）。method === 'ec' のときのみ使用する。
+  ecPaymentMethod?: string
 ) {
   const key = li.salesItemId || `custom:${li.name || '不明'}`;
   let row = rows.get(key);
@@ -86,6 +91,7 @@ function addToRow(
       card: emptyCell(),
       qr: emptyCell(),
       ec: emptyCell(),
+      ecMethods: {},
       total: 0,
     };
     rows.set(key, row);
@@ -93,6 +99,14 @@ function addToRow(
   row[method].quantity += li.quantity || 0;
   row[method].amount += li.amount || 0;
   row.total += li.amount || 0;
+
+  if (method === 'ec' && ecPaymentMethod) {
+    if (!row.ecMethods) row.ecMethods = {};
+    const cell = row.ecMethods[ecPaymentMethod] || emptyCell();
+    cell.quantity += li.quantity || 0;
+    cell.amount += li.amount || 0;
+    row.ecMethods[ecPaymentMethod] = cell;
+  }
 }
 
 export async function GET(
@@ -117,7 +131,7 @@ export async function GET(
       { visitorCount?: number; purchaseGroupCount?: number; wordOfMouthDiscount?: number; adjustment?: number; notes?: string; updatedAt?: string } | null,
       TransactionDoc[],
       ChargeDoc[],
-      Array<{ total?: number; items?: OrderItemSnapshot[] }>,
+      Array<{ total?: number; items?: OrderItemSnapshot[]; paymentMethod?: string }>,
     ] = await Promise.all([
       writeClient.fetch(
         `*[_id == $id][0]{ visitorCount, purchaseGroupCount, wordOfMouthDiscount, adjustment, notes, updatedAt }`,
@@ -144,7 +158,7 @@ export async function GET(
       getOrdersInDateRange(start, end).then(orders =>
         orders
           .filter(order => order.paymentStatus === 'paid')
-          .map(order => ({ total: order.total ?? 0, items: order.items ?? [] }))
+          .map(order => ({ total: order.total ?? 0, items: order.items ?? [], paymentMethod: order.paymentMethod || '不明' }))
       ),
     ]);
 
@@ -180,7 +194,14 @@ export async function GET(
     // 計算されており、itemsTotal はどこにも合算されないため、ここでitemRowsに加算しても
     // グランド合計の二重計上にはならない。決済方法別セル（現金/PayPay/カード/QR）にも
     // 加算しない（'ec'専用セルに集計し、合計列にのみ反映）。
+    // EC売上の決済方法別内訳（サマリ表示用）。注文単位の total を paymentMethod で集計する。
+    const ecMethodTotals = new Map<string, { amount: number; count: number }>();
     for (const order of paidOrders) {
+      const method = order.paymentMethod || '不明';
+      const agg = ecMethodTotals.get(method) || { amount: 0, count: 0 };
+      agg.amount += order.total || 0;
+      agg.count += 1;
+      ecMethodTotals.set(method, agg);
       for (const item of order.items || []) {
         addToRow(
           rows,
@@ -190,10 +211,14 @@ export async function GET(
             amount: (item.price || 0) * (item.quantity || 0),
             salesItemId: item.salesItemId || undefined,
           },
-          'ec'
+          'ec',
+          method
         );
       }
     }
+    const ecBreakdown = Array.from(ecMethodTotals.entries())
+      .map(([method, v]) => ({ method, amount: v.amount, count: v.count }))
+      .sort((a, b) => b.amount - a.amount);
 
     const itemRows = Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
     const itemsTotal = itemRows.reduce((sum, row) => sum + row.total, 0);
@@ -215,6 +240,7 @@ export async function GET(
         itemsTotal,
         storeTotal,
         ecTotal,
+        ecBreakdown,
         discountTotal,
         grandTotal,
         taxExcludedTotal: tax.excludedAmount,

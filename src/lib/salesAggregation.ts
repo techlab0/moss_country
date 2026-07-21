@@ -17,6 +17,21 @@ export function dailySalesDocId(dateStr: string): string {
 
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+// EC（オンライン）注文の決済方法ラベル。API（日別売上の内訳集計）とUI（表示）の双方から参照する。
+// 将来 paymentMethod の値が増えても（例: paypay）ここに追記するだけで両側に反映される。
+// 未知のキーは ecMethodLabel() 側でキーそのままフォールバック表示する。
+export const EC_METHOD_LABELS: Record<string, string> = {
+  credit_card: 'クレジット',
+  bank_transfer: '銀行振込',
+  cash_on_delivery: '代金引換',
+  paypay: 'PayPay',
+};
+
+/** EC決済方法のラベルを返す。未知のキーはそのままのキー文字列を返す。 */
+export function ecMethodLabel(method: string): string {
+  return EC_METHOD_LABELS[method] || method;
+}
+
 /** 今日の日付を日本時間基準の YYYY-MM-DD 文字列で返す */
 export function todayJst(): string {
   const now = new Date();
