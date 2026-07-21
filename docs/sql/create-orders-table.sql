@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS orders (
     -- Square決済連携用ID
     square_order_id TEXT,
     square_payment_id TEXT,
+    -- カードへ返金した場合のSquare返金ID
+    refund_id TEXT,
 
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL

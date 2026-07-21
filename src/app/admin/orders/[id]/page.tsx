@@ -25,6 +25,8 @@ interface OrderDetail {
   shippingCarrier?: string | null;
   paymentMethod?: string;
   paymentStatus: string;
+  squarePaymentId?: string | null;
+  refundId?: string | null;
   trackingNumber?: string;
   notes?: string;
   createdAt: string;
@@ -124,6 +126,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           shippingCarrier: o.shippingCarrier,
           paymentMethod: o.paymentMethod,
           paymentStatus: o.paymentStatus || "pending",
+          squarePaymentId: o.squarePaymentId,
+          refundId: o.refundId,
           trackingNumber: o.trackingNumber,
           notes: o.notes,
           createdAt: o.createdAt || new Date().toISOString(),
@@ -211,6 +215,35 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     }
   };
 
+  const handleRefund = async () => {
+    if (!orderId || !order) return;
+    if (
+      !window.confirm(
+        `お客様のカードに ¥${order.total.toLocaleString()} を返金します。\n` +
+        `この操作でSquare経由で実際に返金され、取り消せません。よろしいですか？`
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/refund`, { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "返金に失敗しました");
+      }
+      setOrder(prev => prev ? { ...prev, status: "refunded", paymentStatus: "refunded", refundId: data.refundId } : prev);
+      setStatusInput("refunded");
+      setPaymentStatusInput("refunded");
+      alert(`返金が完了しました（¥${(data.amount ?? order.total).toLocaleString()}）`);
+    } catch (err) {
+      console.error("Order refund error:", err);
+      alert(err instanceof Error ? err.message : "返金に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!orderId || !order) return;
     if (!window.confirm(`注文「${order.orderNumber}」を完全に削除しますか？この操作は取り消せません。`)) {
@@ -255,6 +288,13 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   }
 
   const isFinalStatus = order.status === "cancelled" || order.status === "refunded";
+  // カード決済で支払い済み・未返金の注文だけ「カードへ返金」を出す。
+  // Square Payment ID が無い注文（振込・代引など）はカード返金の対象外。
+  const isRefundable =
+    order.paymentStatus === "paid" &&
+    !!order.squarePaymentId &&
+    !order.refundId &&
+    order.status !== "refunded";
 
   return (
     <div className="space-y-6">
@@ -286,7 +326,15 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           >
             {(statusConfig[order.status] || { label: order.status }).label}
           </span>
-          {!isFinalStatus && (
+          {isRefundable ? (
+            <button
+              onClick={handleRefund}
+              disabled={saving}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 border border-orange-600 rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              カードへ返金する（¥{order.total.toLocaleString()}）
+            </button>
+          ) : !isFinalStatus ? (
             <button
               onClick={handleCancel}
               disabled={saving}
@@ -294,7 +342,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               注文をキャンセル
             </button>
-          )}
+          ) : null}
           <button
             onClick={handleDelete}
             className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
@@ -493,6 +541,18 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <p className="text-sm text-gray-600">支払状況</p>
                 <p className="font-medium">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</p>
               </div>
+              {order.refundId && (
+                <div>
+                  <p className="text-sm text-gray-600">返金</p>
+                  <p className="font-medium text-orange-700">カードへ返金済み</p>
+                  <p className="text-xs text-gray-400 break-all">Square返金ID: {order.refundId}</p>
+                </div>
+              )}
+              {isRefundable && (
+                <p className="text-xs text-gray-500 border-t pt-3">
+                  この注文はカード決済済みです。返金する場合は上部の「カードへ返金する」ボタンから行ってください（お客様のカードに実際に返金されます）。
+                </p>
+              )}
             </div>
           </div>
         </div>
