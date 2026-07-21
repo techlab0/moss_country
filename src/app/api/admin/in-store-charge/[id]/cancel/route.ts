@@ -3,11 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { refundPayment, deletePaymentLink } from '@/lib/square';
+import { cancelDynamicQr, getQrPaymentStatus, refundQrPayment } from '@/lib/paypay';
 import { adjustDailyCounters, jstDateOf } from '@/lib/storeSales';
 
-// 店頭QR決済のキャンセル。
-// - 未払い(pending): Square側の決済リンクを削除（ベストエフォート）して cancelled にし、購入組数を戻す
-// - 支払い済み(paid): Squareの返金APIで全額返金し refunded にする（お客様のカードに実際に返金される）
+// 店頭QR決済のキャンセル（Square QR/POS・PayPay動的QR共通）。
+// - 未払い(pending): 決済リンク/QRを削除（ベストエフォート）して cancelled にし、購入組数を戻す
+// - 支払い済み(paid): 各決済手段の返金APIで全額返金し refunded にする（お客様に実際に返金される）
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,11 +24,14 @@ export async function POST(
       _id: string;
       status: string;
       amount: number;
+      method?: string;
       squarePaymentId?: string;
       paymentLinkId?: string;
+      paypayCodeId?: string;
+      paypayMerchantPaymentId?: string;
       createdAt?: string;
     } | null = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && _id == $id][0]{ _id, status, amount, squarePaymentId, paymentLinkId, createdAt }`,
+      `*[_type == "inStoreCharge" && _id == $id][0]{ _id, status, amount, method, squarePaymentId, paymentLinkId, paypayCodeId, paypayMerchantPaymentId, createdAt }`,
       { id }
     );
     if (!charge) {
@@ -35,8 +39,17 @@ export async function POST(
     }
 
     if (charge.status === 'pending') {
-      // Square側のリンク削除は失敗しても続行する（リンクが残ってもお客様が支払わなければ実害はない）
-      if (charge.paymentLinkId) {
+      if (charge.method === 'paypay') {
+        // PayPay側のQRコード削除は失敗しても続行する（QRが残ってもお客様が支払わなければ実害はない）
+        if (charge.paypayCodeId) {
+          try {
+            await cancelDynamicQr(charge.paypayCodeId);
+          } catch (err) {
+            console.error('PayPay QRコード削除に失敗しました（キャンセル処理は続行します）:', err);
+          }
+        }
+      } else if (charge.paymentLinkId) {
+        // Square側のリンク削除は失敗しても続行する（リンクが残ってもお客様が支払わなければ実害はない）
         try {
           await deletePaymentLink(charge.paymentLinkId);
         } catch (err) {
@@ -53,6 +66,35 @@ export async function POST(
     }
 
     if (charge.status === 'paid') {
+      if (charge.method === 'paypay') {
+        if (!charge.paypayMerchantPaymentId) {
+          return NextResponse.json(
+            { error: 'PayPay決済情報が記録されていないため返金できません。PayPay for Businessから返金してください' },
+            { status: 400 }
+          );
+        }
+
+        // 返金にはPayPay側の paymentId（merchantPaymentIdとは別物）が必要なため、都度取得する
+        const status = await getQrPaymentStatus(charge.paypayMerchantPaymentId);
+        if (!status.paymentId) {
+          return NextResponse.json(
+            { error: 'PayPayの決済IDを取得できないため返金できません。PayPay for Businessから返金してください' },
+            { status: 400 }
+          );
+        }
+
+        const refund = await refundQrPayment({
+          merchantRefundId: uuidv4(),
+          paymentId: status.paymentId,
+          amountJpy: charge.amount,
+        });
+        const updated = await writeClient
+          .patch(id)
+          .set({ status: 'refunded', paypayRefundId: refund.refundId })
+          .commit();
+        return NextResponse.json({ charge: updated });
+      }
+
       if (!charge.squarePaymentId) {
         return NextResponse.json(
           { error: '決済IDが記録されていないため返金できません。Squareダッシュボードから返金してください' },

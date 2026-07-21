@@ -60,6 +60,7 @@ export const inStoreCharge = defineType({
         list: [
           { title: 'QR決済（お客様のスマホ）', value: 'qr' },
           { title: 'POSアプリ起動（店側iPhoneでタッチ決済等）', value: 'pos' },
+          { title: 'PayPay（金額付き動的QR）', value: 'paypay' },
         ],
       },
       initialValue: 'qr',
@@ -113,6 +114,23 @@ export const inStoreCharge = defineType({
     defineField({
       name: 'refundId',
       title: 'Square返金ID',
+      type: 'string',
+    }),
+    defineField({
+      name: 'paypayCodeId',
+      title: 'PayPay QRコードID（codeId）',
+      type: 'string',
+      description: '未払いキャンセル時にPayPay側のQRコードを削除するために保存',
+    }),
+    defineField({
+      name: 'paypayMerchantPaymentId',
+      title: 'PayPay 加盟店決済ID（merchantPaymentId）',
+      type: 'string',
+      description: '当システム側で発行した決済ID。inStoreChargeの_idを使用し、決済状況照会に使う',
+    }),
+    defineField({
+      name: 'paypayRefundId',
+      title: 'PayPay 返金ID（merchantRefundId）',
       type: 'string',
     }),
     defineField({ name: 'createdAt', title: '作成日時', type: 'datetime' }),

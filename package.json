@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.0",
+    "@paypayopa/paypayopa-sdk-node": "^2.2.0",
     "@portabletext/react": "^3.2.1",
     "@sanity/client": "^7.6.0",
     "@sanity/image-url": "^1.1.0",
