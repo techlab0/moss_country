@@ -1,32 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { InventoryService } from '@/lib/inventory';
-import { getOrderById, updateOrderStatus, deleteOrder, type Order, type OrderItemSnapshot } from '@/lib/orders';
+import { getOrderById, updateOrderStatus, deleteOrder, type Order } from '@/lib/orders';
+import { restoreOrderInventory } from '@/lib/orderInventory';
 
 const FINAL_STATUSES = ['cancelled', 'refunded'];
-
-/**
- * 注文をキャンセル/削除する際の在庫の扱い。
- * 決済確定済み（paymentStatus === 'paid'、在庫は既に実在庫から減算済み）なら実在庫を復元し、
- * それ以外（決済前で在庫は「予約」段階）なら予約を解放するだけにする。
- */
-async function restoreInventoryForCancelledOrder(
-  order: { paymentStatus?: string; items?: OrderItemSnapshot[] },
-  orderId: string
-) {
-  const items = (order.items || []).map(item => ({
-    productId: item.productId,
-    quantity: item.quantity,
-  }));
-
-  if (items.length === 0) return;
-
-  if (order.paymentStatus === 'paid') {
-    await InventoryService.restoreCartItems(items, orderId);
-  } else {
-    await InventoryService.releaseCartItems(items, orderId);
-  }
-}
 
 function toApiOrder(order: Order) {
   return {
@@ -34,6 +11,7 @@ function toApiOrder(order: Order) {
     orderNumber: order.orderNumber,
     squareOrderId: order.squareOrderId,
     squarePaymentId: order.squarePaymentId,
+    refundId: order.refundId,
     customer: {
       email: order.customerEmail,
       firstName: order.customerFirstName,
@@ -121,7 +99,7 @@ export async function PATCH(
       FINAL_STATUSES.includes(body.status) &&
       !FINAL_STATUSES.includes(current.status)
     ) {
-      await restoreInventoryForCancelledOrder(current, id);
+      await restoreOrderInventory(current, id);
     }
 
     await updateOrderStatus(id, patchFields);
@@ -156,7 +134,7 @@ export async function DELETE(
     }
 
     if (!FINAL_STATUSES.includes(current.status)) {
-      await restoreInventoryForCancelledOrder(current, id);
+      await restoreOrderInventory(current, id);
     }
 
     await deleteOrder(id);
