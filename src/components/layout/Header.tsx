@@ -54,33 +54,32 @@ export const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* Cart Icon */}
-          <div className="hidden md:flex items-center">
-            <Link href="/cart" className="relative p-2 text-gray-700 hover:text-moss-green transition-colors duration-200">
+          {/* Cart Icon + Mobile menu button（カートはスマホでもハンバーガーの左に常時表示する） */}
+          <div className="flex items-center">
+            <Link href="/cart" className="relative p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-700 hover:text-moss-green transition-colors duration-200">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 2.4M17 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
               </svg>
               {cart.itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                   {cart.itemCount > 99 ? '99+' : cart.itemCount}
                 </span>
               )}
             </Link>
-          </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-3 rounded-md text-gray-700 hover:text-moss-green hover:bg-gray-100 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+            <button
+              className="md:hidden p-3 rounded-md text-gray-700 hover:text-moss-green hover:bg-gray-100 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
