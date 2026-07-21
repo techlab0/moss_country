@@ -44,6 +44,8 @@ interface ChargeDoc {
   lineItems?: AggLineItem[];
   subtotal?: number;
   discountAmount?: number;
+  // 決済方法。'qr'/'pos'（Squareのカード決済）と 'paypay'（PayPay動的QR）を区別する
+  method?: string;
 }
 
 interface MethodCell {
@@ -165,7 +167,7 @@ export async function GET(
     // 集計対象のQR決済は「その日に支払われたもの」（発行日ではなく支払い日で金額を帰属させる）
     const paidChargesForAggregate: ChargeDoc[] = await writeClient.fetch(
       `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end] {
-        amount, discountAmount, lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
+        amount, discountAmount, method, lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,
       { start, end }
     );
@@ -183,10 +185,12 @@ export async function GET(
       }
     }
     for (const charge of paidChargesForAggregate) {
-      methodTotals.qr += charge.amount || 0;
+      // PayPay動的QRはPayPayの売上として集計する。それ以外（Square QR/POS）はクレジット(QR)。
+      const bucket: 'payPay' | 'qr' = charge.method === 'paypay' ? 'payPay' : 'qr';
+      methodTotals[bucket] += charge.amount || 0;
       discountTotal += charge.discountAmount || 0;
       for (const li of charge.lineItems || []) {
-        addToRow(rows, li, 'qr');
+        addToRow(rows, li, bucket);
       }
     }
     // EC（オンライン）購入分を商品別明細に合流させる（表示用のitemRowsのみ）。
@@ -317,7 +321,7 @@ async function syncToSheetBestEffort(
     const { start, end } = getJstDayBoundariesUtc(date);
     const [transactions, paidCharges, paidOrders]: [
       Array<{ paymentMethod?: PaymentMethod; total?: number; lineItems?: Array<{ amount?: number; category?: string }> }>,
-      Array<{ amount?: number; lineItems?: Array<{ amount?: number; category?: string }> }>,
+      Array<{ amount?: number; method?: string; lineItems?: Array<{ amount?: number; category?: string }> }>,
       Array<{ total?: number }>,
     ] = await Promise.all([
       writeClient.fetch(
@@ -328,7 +332,7 @@ async function syncToSheetBestEffort(
       ),
       writeClient.fetch(
         `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{
-          amount, lineItems[]{ amount, "category": salesItem->category }
+          amount, method, lineItems[]{ amount, "category": salesItem->category }
         }`,
         { start, end }
       ),
@@ -351,8 +355,14 @@ async function syncToSheetBestEffort(
         categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
       }
     }
-    const qrChargeTotal = paidCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
+    // PayPay動的QRはPayPay売上に加算し、店頭QR決済（Squareカード）とは分ける
+    let qrChargeTotal = 0;
     for (const charge of paidCharges) {
+      if (charge.method === 'paypay') {
+        payPayAmount += charge.amount || 0;
+      } else {
+        qrChargeTotal += charge.amount || 0;
+      }
       for (const li of charge.lineItems || []) {
         const category = li.category || 'other';
         categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);

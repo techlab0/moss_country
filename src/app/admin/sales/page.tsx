@@ -24,7 +24,7 @@ interface CustomItemRow {
 }
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
-type EntryMethod = PaymentMethod | 'qr' | 'pos';
+type EntryMethod = PaymentMethod | 'qr' | 'pos' | 'paypay';
 type DiscountType = 'amount' | 'percent';
 
 interface LineItemView {
@@ -126,7 +126,8 @@ interface QrFlowState {
   amount: number;
   subtotal?: number;
   discountAmount?: number;
-  qrCodeDataUrl?: string; // QR決済時のみ
+  method: 'qr' | 'pos' | 'paypay'; // 決済手段。ポーリング方式・表示文言の分岐に使う
+  qrCodeDataUrl?: string; // QR決済（Square/PayPayとも）時のみ
   posLaunchUrl?: string; // POSアプリ起動決済時のみ（square-commerce-v1://）
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   lineItems: LineItemView[];
@@ -172,6 +173,7 @@ const methodLabels: Record<EntryMethod, string> = {
   qr: 'クレジット(QR)',
   card: 'クレジット(手動)',
   pos: 'タッチ決済',
+  paypay: 'PayPay(QR)',
 };
 
 // Square POS API のディープリンクを組み立てる（iOS: square-commerce-v1://）。
@@ -504,11 +506,35 @@ function EntryTab({
           amount: data.charge.amount,
           subtotal: data.charge.subtotal,
           discountAmount: data.charge.discountAmount,
+          method: 'qr',
           qrCodeDataUrl: data.qrCodeDataUrl,
           status: 'pending',
           lineItems: data.charge.lineItems || [],
         });
         startPolling(data.charge._id);
+      } else if (paymentMethod === 'paypay' && lineItems.length > 0) {
+        // PayPay動的QR決済: PayPay APIでQRを発行してその場で表示、支払い完了まで明示ポーリング
+        const response = await fetch('/api/admin/in-store-charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'paypay', lineItems, visitorCount: visitors, discountType: discountType || undefined, discountValue: toNumber(discountValue), description: notes.trim() || undefined }),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'PayPay QRコードの発行に失敗しました');
+        }
+        const data = await response.json();
+        setQrFlow({
+          chargeId: data.charge._id,
+          amount: data.charge.amount,
+          subtotal: data.charge.subtotal,
+          discountAmount: data.charge.discountAmount,
+          method: 'paypay',
+          qrCodeDataUrl: data.qrCodeDataUrl,
+          status: 'pending',
+          lineItems: data.charge.lineItems || [],
+        });
+        startPaypayPolling(data.charge._id);
       } else if (paymentMethod === 'pos' && lineItems.length > 0) {
         // POSアプリ起動決済: 決済リンクは発行せず、会計IDを state に載せて
         // Square POSアプリ（iPhoneのタッチ決済等）を起動する。決済後は callback が確定する。
@@ -528,6 +554,7 @@ function EntryTab({
           amount: data.charge.amount,
           subtotal: data.charge.subtotal,
           discountAmount: data.charge.discountAmount,
+          method: 'pos',
           status: 'pending',
           lineItems: data.charge.lineItems || [],
           posLaunchUrl: launchUrl,
@@ -536,8 +563,9 @@ function EntryTab({
         // 端末のSquare POSアプリを起動（戻り先はこの画面。ポーリングで完了を検知）
         window.location.href = launchUrl;
       } else {
-        // qr/pos はそれぞれ専用分岐で処理済み。ここに来るのは現金・PayPay・手動カードのみ。
-        const method: PaymentMethod = paymentMethod === 'qr' || paymentMethod === 'pos' ? 'cash' : paymentMethod;
+        // qr/pos/paypay はそれぞれ専用分岐で処理済み。ここに来るのは現金・PayPay(手入力)・手動カードのみ。
+        const method: PaymentMethod =
+          paymentMethod === 'qr' || paymentMethod === 'pos' || paymentMethod === 'paypay' ? 'cash' : paymentMethod;
         const response = await fetch('/api/admin/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -568,6 +596,7 @@ function EntryTab({
     }
   };
 
+  // Square QR/POS決済: webhook/callbackがSanity側のstatusを更新するので、単純にドキュメントを読み直すだけでよい
   const startPolling = (chargeId: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -583,6 +612,34 @@ function EntryTab({
         // ポーリング中の一時的なエラーは無視して次回に再試行する
       }
     }, 3000);
+  };
+
+  // PayPay動的QR決済: webhookに相当する仕組みが無いため、このエンドポイントを叩くたびに
+  // サーバー側がPayPay APIへ問い合わせて状況を確定させる（呼び出しごとにPayPayへのAPIコールが発生する）
+  const startPaypayPolling = (chargeId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/admin/in-store-charge/${chargeId}/paypay-status`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.status === 'paid') {
+          setQrFlow(prev => (prev ? { ...prev, status: 'paid' } : prev));
+          if (pollRef.current) clearInterval(pollRef.current);
+        } else if (data.status === 'failed') {
+          // PayPay側で失敗・期限切れ等が確定した場合、Sanity側のchargeも正式にキャンセルして組数を戻す
+          if (pollRef.current) clearInterval(pollRef.current);
+          try {
+            await fetch(`/api/admin/in-store-charge/${chargeId}/cancel`, { method: 'POST' });
+          } catch {
+            // キャンセルAPIの失敗は握りつぶす（放置されても実害はない。手動でも取り消し可能）
+          }
+          setQrFlow(prev => (prev ? { ...prev, status: 'cancelled' } : prev));
+        }
+      } catch {
+        // ポーリング中の一時的なエラーは無視して次回に再試行する
+      }
+    }, 4000);
   };
 
   const handleQrAbort = async () => {
@@ -724,7 +781,11 @@ function EntryTab({
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
-                <p className="text-sm text-gray-500">お客様のスマホでQRコードを読み取ってお支払いください</p>
+                <p className="text-sm text-gray-500">
+                  {qrFlow.method === 'paypay'
+                    ? 'お客様のPayPayアプリでQRコードを読み取ってお支払いください'
+                    : 'お客様のスマホでQRコードを読み取ってお支払いください'}
+                </p>
               </>
             )}
             <p className="text-sm text-moss-green animate-pulse">支払い待ち...</p>
@@ -956,8 +1017,8 @@ function EntryTab({
                 <span className="text-2xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
               </div>
             </div>
-            <div className="grid grid-cols-5 gap-2">
-              {(['cash', 'payPay', 'qr', 'card', 'pos'] as EntryMethod[]).map(method => (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {(['cash', 'payPay', 'qr', 'paypay', 'card', 'pos'] as EntryMethod[]).map(method => (
                 <button
                   key={method}
                   onClick={() => setPaymentMethod(method)}
@@ -973,9 +1034,9 @@ function EntryTab({
             </div>
             <button
               onClick={() => {
-                // 商品ありの現金・PayPay・手動カードはレシート風の確認画面を挟む
-                // （QR・POSアプリ起動は決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
-                if (total > 0 && paymentMethod !== 'qr' && paymentMethod !== 'pos') {
+                // 商品ありの現金・PayPay(手入力)・手動カードはレシート風の確認画面を挟む
+                // （QR・PayPay(QR)・POSアプリ起動は決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
+                if (total > 0 && paymentMethod !== 'qr' && paymentMethod !== 'pos' && paymentMethod !== 'paypay') {
                   if (finalTotal <= 0) {
                     alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
                     return;
@@ -993,9 +1054,11 @@ function EntryTab({
                 : total > 0
                   ? (paymentMethod === 'qr'
                       ? 'QRコードを発行'
-                      : paymentMethod === 'pos'
-                        ? 'Square POSアプリで決済'
-                        : `${methodLabels[paymentMethod]}で確認`)
+                      : paymentMethod === 'paypay'
+                        ? 'PayPay QRコードを発行'
+                        : paymentMethod === 'pos'
+                          ? 'Square POSアプリで決済'
+                          : `${methodLabels[paymentMethod]}で確認`)
                   : '来店のみ登録'}
             </button>
           </div>

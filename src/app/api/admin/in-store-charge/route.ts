@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
+import { createDynamicQr } from '@/lib/paypay';
 import { todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 
@@ -19,8 +20,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    // mode: 'qr'（既定・お客様スマホでQR決済）/ 'pos'（店側iPhoneでSquare POSアプリ起動）
-    const mode: 'qr' | 'pos' = body.mode === 'pos' ? 'pos' : 'qr';
+    // mode: 'qr'（既定・お客様スマホでSquare QR決済）/ 'pos'（店側iPhoneでSquare POSアプリ起動）/ 'paypay'（お客様スマホでPayPay動的QR決済）
+    const mode: 'qr' | 'pos' | 'paypay' = body.mode === 'pos' ? 'pos' : body.mode === 'paypay' ? 'paypay' : 'qr';
     const lineItemsInput: StoreLineItemInput[] = Array.isArray(body.lineItems) ? body.lineItems : [];
     const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
     const visitorCount = Math.max(0, Number(body.visitorCount) || 0);
@@ -71,6 +72,37 @@ export async function POST(request: NextRequest) {
         mode: 'pos',
         amount,
         notes: description,
+      });
+    }
+
+    // PayPay動的QR決済モード: PayPay APIで金額付きQRコードを発行し、その場でQR画像を表示する。
+    // お客様のスマホで読み取って支払い、決済確定はレジ側の明示ポーリング（paypay-statusエンドポイント）で行う
+    // （Squareのwebhookに相当する仕組みがPayPayには無いため）。
+    if (mode === 'paypay') {
+      const qr = await createDynamicQr({
+        merchantPaymentId: charge._id,
+        amountJpy: amount,
+        orderDescription: description ? `MOSS COUNTRY 店頭会計: ${description}` : 'MOSS COUNTRY 店頭会計',
+      });
+
+      const updatedCharge = await writeClient
+        .patch(charge._id)
+        .set({
+          paypayCodeId: qr.codeId,
+          paypayMerchantPaymentId: charge._id,
+        })
+        .commit();
+
+      // 来店者数・購入組数は発行時点で加算する（未払いキャンセル時にcancel APIが組数を戻す）
+      await adjustDailyCounters(todayJst(), visitorCount, 1);
+
+      const QRCodePaypay = await import('qrcode');
+      const qrCodeDataUrl = await QRCodePaypay.toDataURL(qr.url, { width: 400 });
+
+      return NextResponse.json({
+        charge: updatedCharge,
+        paymentUrl: qr.url,
+        qrCodeDataUrl,
       });
     }
 
