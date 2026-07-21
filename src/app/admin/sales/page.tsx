@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { ecMethodLabel } from '@/lib/salesAggregation';
 
 // ========== 型 ==========
 
@@ -90,6 +91,7 @@ interface ItemRow {
   card: MethodCell;
   qr: MethodCell;
   ec: MethodCell;
+  ecMethods?: Record<string, MethodCell>;
   total: number;
 }
 
@@ -99,6 +101,7 @@ interface Aggregate {
   itemsTotal: number;
   storeTotal: number;
   ecTotal: number;
+  ecBreakdown?: Array<{ method: string; amount: number; count: number }>;
   discountTotal: number;
   grandTotal: number;
   taxExcludedTotal: number;
@@ -1246,6 +1249,12 @@ function SummaryTab({
           <span className="text-gray-600">EC（オンライン）売上</span>
           <span>¥{(agg?.ecTotal || 0).toLocaleString()}</span>
         </div>
+        {(agg?.ecBreakdown || []).map(b => (
+          <div key={b.method} className="flex justify-between text-xs text-gray-500 pl-4">
+            <span>うち {ecMethodLabel(b.method)}（{b.count}件）</span>
+            <span>¥{b.amount.toLocaleString()}</span>
+          </div>
+        ))}
         {(agg?.discountTotal || 0) > 0 && (
           <div className="flex justify-between text-sm text-orange-600">
             <span>割引合計</span>
@@ -1286,13 +1295,26 @@ function SummaryTab({
               {agg.itemRows.map(row => (
                 <tr key={row.key} className="border-b last:border-0">
                   <td className="py-1.5 pr-2 text-gray-900">{row.name}</td>
-                  {(['cash', 'payPay', 'card', 'qr', 'ec'] as const).map(method => (
+                  {(['cash', 'payPay', 'card', 'qr'] as const).map(method => (
                     <td key={method} className="text-right py-1.5 px-1 text-gray-600">
                       {row[method].amount > 0
                         ? (row[method].quantity > 0 ? `${row[method].quantity}個` : `¥${row[method].amount.toLocaleString()}`)
                         : ''}
                     </td>
                   ))}
+                  <td className="text-right py-1.5 px-1 text-gray-600">
+                    {row.ec.amount > 0
+                      ? (row.ec.quantity > 0 ? `${row.ec.quantity}個` : `¥${row.ec.amount.toLocaleString()}`)
+                      : ''}
+                    {row.ecMethods && Object.keys(row.ecMethods).length > 1 && (
+                      <div className="text-[10px] text-gray-400 leading-tight">
+                        {Object.entries(row.ecMethods)
+                          .filter(([, c]) => c.quantity > 0 || c.amount > 0)
+                          .map(([m, c]) => `${ecMethodLabel(m)}${c.quantity > 0 ? c.quantity : ''}`)
+                          .join('・')}
+                      </div>
+                    )}
+                  </td>
                   <td className="text-right py-1.5 pl-1 font-medium">¥{row.total.toLocaleString()}</td>
                 </tr>
               ))}
