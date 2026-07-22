@@ -344,20 +344,25 @@ export default function WorkshopPage() {
                 <h4 className="text-lg font-semibold text-moss-green mb-4">予約について</h4>
                 <p className="text-gray-700 mb-4">
                   ワークショップの参加には事前の予約を推奨しております。<br/>
-                  お問い合わせフォームより、ご希望の日時・参加人数・コース名をお知らせください。<br/>
-                  じゃらんでの予約も可能です。
+                  下のボタンからオンラインで空き状況を確認してご予約いただけます。<br/>
+                  お問い合わせフォームやじゃらんからのご予約も可能です。
                 </p>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600 mb-3">
-                    詳細はじゃらんのページをご確認ください
-                  </p>
+                <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="bg-moss-green text-white hover:bg-moss-green/80"
+                    onClick={() => window.location.href = '/workshop/booking'}
+                  >
+                    オンラインで予約する
+                  </Button>
                   <Button
                     variant="secondary"
-                    size="sm"
-                    className="bg-moss-green text-white hover:bg-moss-green/80"
+                    size="md"
+                    className="border border-moss-green text-moss-green hover:bg-light-green/40"
                     onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
                   >
-                    じゃらんで詳細確認
+                    じゃらんで予約
                   </Button>
                 </div>
               </div>
