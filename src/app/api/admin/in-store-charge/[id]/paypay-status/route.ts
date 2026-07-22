@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getQrPaymentStatus } from '@/lib/paypay';
+import { syncChargeToSheetById } from '@/lib/salesBackup';
 
 // PayPay動的QR決済の状況を確定させるための明示ポーリングエンドポイント。
 // Squareのwebhook（/api/webhooks/square）に相当する仕組みがPayPayには無いため、
@@ -46,6 +47,13 @@ export async function GET(
         .patch(id)
         .set({ status: 'paid', paidAt: new Date().toISOString() })
         .commit();
+      // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+      // 完了を待つ。失敗してもこの決済確定処理・レスポンスには一切影響させない）
+      try {
+        await syncChargeToSheetById(id);
+      } catch {
+        // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+      }
       return NextResponse.json({ status: 'paid' });
     }
 

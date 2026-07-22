@@ -182,6 +182,49 @@ function inputToInsertRow(input: CreateOrderInput) {
 }
 
 /**
+ * Googleスプレッドシート（取引明細タブ）へのバックアップ同期。createOrder専用。
+ *
+ * createOrderはEC決済のホットパス（チェックアウトでユーザーが応答を待っている）のため、
+ * ここだけはレイテンシに影響させないよう完全にfire-and-forget（呼び出し元はawaitしない・
+ * このPromiseは常にresolveする）にする。この直後の行がCronの保険なしでも取りこぼれないのは、
+ * Square決済確定後のSquare webhook → updateOrderStatus 側の同期（await-and-swallow、
+ * こちらは完了を待つ）が後追いで確実に反映するため。
+ *
+ * salesBackup.ts / googleSheets.ts はこのモジュール（orders.ts）を静的importしているため、
+ * ここで静的importすると orders.ts ⇄ salesBackup.ts の循環importになってしまう。
+ * それを避けるため、呼び出し時にdynamic importする。
+ */
+function syncOrderToSheetBestEffort(order: import('./salesBackup').OrderForRow): void {
+  import('./salesBackup')
+    .then(({ orderToTxRow }) =>
+      import('./googleSheets').then(({ upsertTransactionRow }) => upsertTransactionRow(orderToTxRow(order)))
+    )
+    .catch(() => {
+      // バックアップ同期の失敗は握りつぶす（注文処理・レスポンスには影響させない）
+    });
+}
+
+/**
+ * Googleスプレッドシート（取引明細タブ）へのバックアップ同期。updateOrderStatus専用。
+ *
+ * こちらはCronによる取りこぼし保険が無いため、await-and-swallow方式にする
+ * （呼び出し元がこの関数の完了を待ってから返る。サーバーレス環境では応答返却後に
+ * 処理が打ち切られることがあるため、書き込みを待たずに関数を抜けると欠落しうる）。
+ * ただし失敗しても例外は一切呼び出し元（updateOrderStatus）に伝播させない。
+ */
+async function syncOrderByIdToSheetAwaited(id: string): Promise<void> {
+  try {
+    const order = await getOrderById(id);
+    if (!order) return;
+    const { orderToTxRow } = await import('./salesBackup');
+    const { upsertTransactionRow } = await import('./googleSheets');
+    await upsertTransactionRow(orderToTxRow(order));
+  } catch (error) {
+    console.error(`注文のGoogleシート同期に失敗しました（注文更新自体は成功しています。id: ${id}）:`, error);
+  }
+}
+
+/**
  * 注文を新規作成する。
  * 呼び出し元（決済API群）は作成失敗時に確保済みの在庫予約を解放する前提のため、
  * 失敗時はログを残したうえで例外をthrowする（呼び出し元のcatchに委ねる）。
@@ -198,7 +241,26 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderNumbe
     throw new Error('Failed to create order in database');
   }
 
-  return { orderNumber: data.order_number, id: data.id };
+  const result = { orderNumber: data.order_number, id: data.id };
+
+  // Googleスプレッドシートへのバックアップ同期（fire-and-forget。awaitしない）
+  syncOrderToSheetBestEffort({
+    orderNumber: result.orderNumber,
+    customerEmail: input.customerEmail,
+    customerFirstName: input.customerFirstName,
+    customerLastName: input.customerLastName,
+    items: input.items,
+    subtotal: input.subtotal,
+    shippingCost: input.shippingCost,
+    tax: input.tax,
+    total: input.total,
+    status: input.status ?? 'pending',
+    paymentStatus: input.paymentStatus ?? 'pending',
+    paymentMethod: input.paymentMethod,
+    createdAt: new Date().toISOString(),
+  });
+
+  return result;
 }
 
 /**
@@ -346,6 +408,11 @@ export async function updateOrderStatus(id: string, patch: UpdateOrderStatusInpu
     console.error(`注文ステータスの更新に失敗しました (id: ${id}):`, error);
     throw error;
   }
+
+  // Googleスプレッドシートへのバックアップ同期（await-and-swallow。Cronの保険が無いため、
+  // 関数を抜ける前に書き込み完了を待つ。更新後の最新状態を反映するため、idから注文を
+  // 取り直してから行を組み立てる。失敗しても例外は外に伝播しない＝この関数の成功には影響しない）
+  await syncOrderByIdToSheetAwaited(id);
 }
 
 /**

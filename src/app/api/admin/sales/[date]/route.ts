@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
+import { computeDailySalesSheetRow } from '@/lib/salesBackup';
 import { taxBreakdown } from '@/lib/tax';
 import { getOrdersInDateRange } from '@/lib/orders';
 import type { OrderItemSnapshot } from '@/lib/orders';
@@ -291,8 +292,14 @@ export async function PUT(
 
     const saved = await writeClient.createOrReplace(doc);
 
-    // バックアップ用のGoogleスプレッドシート同期（ベストエフォート、失敗しても保存は成功のまま返す）
-    await syncToSheetBestEffort(date, doc);
+    // バックアップ用のGoogleスプレッドシート同期（ベストエフォート、失敗しても保存は成功のまま返す）。
+    // 集計ロジックはCron/バックフィルとも共通の computeDailySalesSheetRow を使う。
+    try {
+      const row = await computeDailySalesSheetRow(date);
+      await syncDailySalesToSheet(row);
+    } catch (error) {
+      console.error('売上サマリー計算またはシート同期に失敗しました（保存自体は成功しています）:', error);
+    }
 
     return NextResponse.json({ dailySales: saved });
   } catch (error) {
@@ -301,91 +308,5 @@ export async function PUT(
       { error: '日別売上の保存に失敗しました' },
       { status: 500 }
     );
-  }
-}
-
-/**
- * その日の取引＋支払い済みQR決済からサマリーを再計算し、バックアップ用Googleスプレッドシートへ同期する。
- * ここでの失敗は保存処理の成功に影響させない（ログのみ）。
- */
-async function syncToSheetBestEffort(
-  date: string,
-  doc: {
-    visitorCount: number;
-    purchaseGroupCount: number;
-    wordOfMouthDiscount: number;
-    adjustment: number;
-  }
-) {
-  try {
-    const { start, end } = getJstDayBoundariesUtc(date);
-    const [transactions, paidCharges, paidOrders]: [
-      Array<{ paymentMethod?: PaymentMethod; total?: number; lineItems?: Array<{ amount?: number; category?: string }> }>,
-      Array<{ amount?: number; method?: string; lineItems?: Array<{ amount?: number; category?: string }> }>,
-      Array<{ total?: number }>,
-    ] = await Promise.all([
-      writeClient.fetch(
-        `*[_type == "storeTransaction" && date == $date]{
-          paymentMethod, total, lineItems[]{ amount, "category": salesItem->category }
-        }`,
-        { date }
-      ),
-      writeClient.fetch(
-        `*[_type == "inStoreCharge" && status == "paid" && paidAt >= $start && paidAt < $end]{
-          amount, method, lineItems[]{ amount, "category": salesItem->category }
-        }`,
-        { start, end }
-      ),
-      // orderはPIIを含むためSupabaseから取得
-      getOrdersInDateRange(start, end).then(orders =>
-        orders.filter(order => order.paymentStatus === 'paid').map(order => ({ total: order.total ?? 0 }))
-      ),
-    ]);
-
-    const categorySubtotals: Record<string, number> = {};
-    let cashAmount = 0;
-    let payPayAmount = 0;
-    let manualCardAmount = 0;
-    for (const tx of transactions) {
-      if (tx.paymentMethod === 'payPay') payPayAmount += tx.total || 0;
-      else if (tx.paymentMethod === 'card') manualCardAmount += tx.total || 0;
-      else cashAmount += tx.total || 0;
-      for (const li of tx.lineItems || []) {
-        const category = li.category || 'other';
-        categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
-      }
-    }
-    // PayPay動的QRはPayPay売上に加算し、店頭QR決済（Squareカード）とは分ける
-    let qrChargeTotal = 0;
-    for (const charge of paidCharges) {
-      if (charge.method === 'paypay') {
-        payPayAmount += charge.amount || 0;
-      } else {
-        qrChargeTotal += charge.amount || 0;
-      }
-      for (const li of charge.lineItems || []) {
-        const category = li.category || 'other';
-        categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
-      }
-    }
-    const ecTotal = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-
-    const storeTotal = cashAmount + payPayAmount + manualCardAmount + qrChargeTotal;
-    const grandTotal = storeTotal + doc.adjustment - doc.wordOfMouthDiscount + ecTotal;
-
-    await syncDailySalesToSheet({
-      date,
-      visitorCount: doc.visitorCount,
-      purchaseGroupCount: doc.purchaseGroupCount,
-      categorySubtotals,
-      cashAmount,
-      payPayAmount,
-      manualCardAmount,
-      ecTotal,
-      qrChargeTotal,
-      grandTotal,
-    });
-  } catch (error) {
-    console.error('売上サマリー計算またはシート同期に失敗しました（保存自体は成功しています）:', error);
   }
 }

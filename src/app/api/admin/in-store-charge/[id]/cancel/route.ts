@@ -5,6 +5,7 @@ import { verifyAdminSession } from '@/lib/auth';
 import { refundPayment, deletePaymentLink } from '@/lib/square';
 import { cancelDynamicQr, getQrPaymentStatus, refundQrPayment } from '@/lib/paypay';
 import { adjustDailyCounters, jstDateOf } from '@/lib/storeSales';
+import { syncChargeToSheetById } from '@/lib/salesBackup';
 
 // 店頭QR決済のキャンセル（Square QR/POS・PayPay動的QR共通）。
 // - 未払い(pending): 決済リンク/QRを削除（ベストエフォート）して cancelled にし、購入組数を戻す
@@ -62,6 +63,13 @@ export async function POST(
       if (charge.createdAt) {
         await adjustDailyCounters(jstDateOf(charge.createdAt), 0, -1);
       }
+      // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+      // 完了を待つ。失敗してもこのキャンセル処理・レスポンスには一切影響させない）
+      try {
+        await syncChargeToSheetById(id);
+      } catch {
+        // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+      }
       return NextResponse.json({ charge: updated });
     }
 
@@ -92,6 +100,13 @@ export async function POST(
           .patch(id)
           .set({ status: 'refunded', paypayRefundId: refund.refundId })
           .commit();
+        // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+        // 完了を待つ。失敗してもこの返金処理・レスポンスには一切影響させない）
+        try {
+          await syncChargeToSheetById(id);
+        } catch {
+          // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+        }
         return NextResponse.json({ charge: updated });
       }
 
@@ -107,6 +122,13 @@ export async function POST(
         .patch(id)
         .set({ status: 'refunded', refundId: refund.id })
         .commit();
+      // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+      // 完了を待つ。失敗してもこの返金処理・レスポンスには一切影響させない）
+      try {
+        await syncChargeToSheetById(id);
+      } catch {
+        // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+      }
       return NextResponse.json({ charge: updated });
     }
 

@@ -251,6 +251,7 @@ export default function SalesPage() {
   const [salesItems, setSalesItems] = useState<SalesItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [message, setMessage] = useState('');
+  const [backfilling, setBackfilling] = useState(false);
   const messageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showMessage = useCallback((text: string) => {
@@ -258,6 +259,29 @@ export default function SalesPage() {
     if (messageTimer.current) clearTimeout(messageTimer.current);
     messageTimer.current = setTimeout(() => setMessage(''), 4000);
   }, []);
+
+  const handleBackfill = async () => {
+    if (!confirm('過去分の全取引をGoogleスプレッドシートへ一括バックアップします。件数によっては数分かかることがあります。実行しますか？')) {
+      return;
+    }
+    setBackfilling(true);
+    try {
+      const response = await fetch('/api/admin/sheets/backfill', { method: 'POST' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || '一括バックアップに失敗しました');
+      }
+      alert(
+        `一括バックアップが完了しました。\n取引明細: ${data.transactionCount}件\n日別サマリー: ${data.dailySummarySyncedCount}/${data.dateCount}日${
+          data.failedDates?.length ? `\n失敗した日付: ${data.failedDates.join(', ')}` : ''
+        }`
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '一括バックアップに失敗しました');
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   // タブが切り替わったら、フッターなどが見えたままになっていないよう画面上部に戻す
   useEffect(() => {
@@ -293,6 +317,13 @@ export default function SalesPage() {
           <Link href="/admin/sales/items" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
             項目カタログ
           </Link>
+          <button
+            onClick={handleBackfill}
+            disabled={backfilling}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            {backfilling ? 'バックアップ中...' : '過去分を一括バックアップ'}
+          </button>
         </div>
       </div>
 
