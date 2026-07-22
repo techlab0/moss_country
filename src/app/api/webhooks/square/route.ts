@@ -5,6 +5,7 @@ import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
 import { sendMail } from '@/lib/mailer'
 import { getOrderBySquareId, updateOrderStatus, type Order } from '@/lib/orders'
+import { syncChargeToSheetById } from '@/lib/salesBackup'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -153,6 +154,13 @@ async function handleInStoreChargeUpdate(payment: { status: string; id: string; 
         })
         .commit()
       console.log(`In-store charge ${charge._id} marked as paid`)
+      // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+      // 完了を待つ。失敗してもこのwebhook処理には一切影響させない）
+      try {
+        await syncChargeToSheetById(charge._id)
+      } catch {
+        // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+      }
     } else if (payment.status === 'FAILED' || payment.status === 'CANCELED') {
       await client
         .patch(charge._id)

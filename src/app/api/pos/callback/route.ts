@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { getPaymentByPosTransactionId, convertToSquareAmount } from '@/lib/square';
+import { syncChargeToSheetById } from '@/lib/salesBackup';
 
 // Square POS API（square-commerce-v1:// ディープリンク）の callback_url。
 // 決済後、Square POSアプリがこのURLを開いて結果（transaction_id, status, state）を返す。
@@ -111,6 +112,14 @@ async function handle(request: NextRequest): Promise<NextResponse> {
         paidAt: new Date().toISOString(),
       })
       .commit();
+
+    // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+    // 完了を待つ。失敗してもこの決済確定処理・リダイレクトには一切影響させない）
+    try {
+      await syncChargeToSheetById(chargeId);
+    } catch {
+      // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
+    }
 
     return resultRedirect(chargeId);
   } catch (error) {

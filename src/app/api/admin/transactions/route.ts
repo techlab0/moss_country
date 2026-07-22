@@ -3,6 +3,8 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { DATE_PATTERN, todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
+import { storeTransactionToTxRow } from '@/lib/salesBackup';
+import { upsertTransactionRow } from '@/lib/googleSheets';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
@@ -60,6 +62,14 @@ export async function POST(request: NextRequest) {
     // 取引作成のたびに加算すると二重加算になってしまう。そのためカウンタ加算はスキップする。
     if (!isHistorical) {
       await adjustDailyCounters(date, visitorCount, lineItems.length > 0 ? 1 : 0);
+    }
+
+    // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
+    // 完了を待つ。失敗してもこの取引登録・レスポンスには一切影響させない）
+    try {
+      await upsertTransactionRow(storeTransactionToTxRow(transaction));
+    } catch {
+      // upsertTransactionRow内部で既にログ済みのため、ここでは握りつぶすのみ
     }
 
     return NextResponse.json({ transaction });
