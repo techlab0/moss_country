@@ -35,12 +35,35 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
         _id,
         title,
         description,
-        price
+        price,
+        duration
       }
     `)
   } catch (error) {
     console.warn('Failed to fetch workshops from Sanity:', error)
     return []
+  }
+}
+
+// 予約作成API・空き枠APIがプラン単体の価格・所要時間を再検証するために使う。
+// 一覧取得(getSimpleWorkshops)と同じCDNキャッシュ付きclientを使う（価格改ざん対策の
+// 再計算は「Sanityの正規データ」を参照できれば十分で、注文の在庫確認のような即時性は不要なため）。
+export async function getSimpleWorkshopById(id: string): Promise<SimpleWorkshop | null> {
+  try {
+    const workshop = await client.fetch(
+      `*[_type == "simpleWorkshop" && _id == $id && !(_id in path("drafts.**"))][0]{
+        _id,
+        title,
+        description,
+        price,
+        duration
+      }`,
+      { id }
+    )
+    return workshop || null
+  } catch (error) {
+    console.warn(`Failed to fetch workshop from Sanity (id: ${id}):`, error)
+    return null
   }
 }
 
