@@ -11,12 +11,12 @@
 import { supabaseAdmin } from './supabase';
 import { getBusyIntervals } from './googleCalendar';
 import { getBookingsInDateRange } from './workshopBookings';
+import { getOverridesInRange } from './workshopSlotOverrides';
 import {
-  SLOT_START_TIMES,
+  WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
   jstDateTimeToIso,
   addMinutesToIso,
-  addMinutesToTimeString,
   isBookableWeekday,
   isWithinLeadTime,
   listDatesInRange,
@@ -61,30 +61,28 @@ export async function getClosedDates(fromDate: string, toDate: string): Promise<
 }
 
 /**
- * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で、指定した所要時間(分)における
- * 予約可能な枠一覧を計算する。
+ * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で予約可能な枠一覧を計算する。
+ * 枠の時間帯はWORKSHOP_SLOTSの固定window（プランのdurationには依存しない）。
  *
- * 依存データ（休業日 / 既存予約 / Googleカレンダーのbusy時間帯）のいずれかが取得できない場合は
- * CalendarUnavailableError を投げる（呼び出し元で503等に倒すこと）。
+ * 依存データ（休業日 / 既存予約 / Googleカレンダーのbusy時間帯 / 枠ON-OFFオーバーライド）の
+ * いずれかが取得できない場合は CalendarUnavailableError を投げる（呼び出し元で503等に倒すこと）。
  */
-export async function computeAvailableSlots(
-  fromDate: string,
-  toDate: string,
-  durationMin: number
-): Promise<AvailableSlot[]> {
+export async function computeAvailableSlots(fromDate: string, toDate: string): Promise<AvailableSlot[]> {
   if (fromDate > toDate) return [];
 
   let closedDates: Set<string>;
   let existingBookings: Awaited<ReturnType<typeof getBookingsInDateRange>>;
   let busyIntervals: Awaited<ReturnType<typeof getBusyIntervals>>;
+  let overrides: Awaited<ReturnType<typeof getOverridesInRange>>;
 
   try {
     const rangeStartIso = jstDateTimeToIso(fromDate, '00:00');
     const rangeEndIso = addMinutesToIso(jstDateTimeToIso(toDate, '00:00'), 24 * 60);
-    [closedDates, existingBookings, busyIntervals] = await Promise.all([
+    [closedDates, existingBookings, busyIntervals, overrides] = await Promise.all([
       getClosedDates(fromDate, toDate),
       getBookingsInDateRange(fromDate, toDate),
       getBusyIntervals(rangeStartIso, rangeEndIso),
+      getOverridesInRange(fromDate, toDate),
     ]);
   } catch (error) {
     if (error instanceof CalendarUnavailableError) throw error;
@@ -99,6 +97,11 @@ export async function computeAvailableSlots(
     partySizeBySlot.set(key, (partySizeBySlot.get(key) || 0) + booking.partySize);
   }
 
+  // 管理画面で明示的に閉鎖された枠（is_open=false）のみを除外対象とする
+  const closedSlotKeys = new Set(
+    overrides.filter(o => !o.isOpen).map(o => `${o.date}|${o.startTime}`)
+  );
+
   const dates = listDatesInRange(fromDate, toDate);
   const available: AvailableSlot[] = [];
 
@@ -106,23 +109,25 @@ export async function computeAvailableSlots(
     if (!isBookableWeekday(date)) continue;
     if (closedDates.has(date)) continue;
 
-    for (const slotStart of SLOT_START_TIMES) {
-      const slotStartIso = jstDateTimeToIso(date, slotStart);
-      const slotEndIso = addMinutesToIso(slotStartIso, durationMin);
+    for (const slot of WORKSHOP_SLOTS) {
+      if (closedSlotKeys.has(`${date}|${slot.start}`)) continue;
+
+      const slotStartIso = jstDateTimeToIso(date, slot.start);
+      const slotEndIso = jstDateTimeToIso(date, slot.end);
 
       if (!isWithinLeadTime(slotStartIso)) continue;
 
       const overlapsBusy = busyIntervals.some(b => intervalsOverlap(slotStartIso, slotEndIso, b.start, b.end));
       if (overlapsBusy) continue;
 
-      const booked = partySizeBySlot.get(`${date}|${slotStart}`) || 0;
+      const booked = partySizeBySlot.get(`${date}|${slot.start}`) || 0;
       const remaining = CAPACITY_PER_SLOT - booked;
       if (remaining <= 0) continue;
 
       available.push({
         date,
-        startTime: slotStart,
-        endTime: addMinutesToTimeString(slotStart, durationMin),
+        startTime: slot.start,
+        endTime: slot.end,
         remaining,
       });
     }
@@ -138,14 +143,13 @@ export async function computeAvailableSlots(
 export async function isSlotStillAvailable(
   date: string,
   startTime: string,
-  durationMin: number,
   partySize: number
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const slots = await computeAvailableSlots(date, date, durationMin);
+  const slots = await computeAvailableSlots(date, date);
   const slot = slots.find(s => s.startTime === startTime);
 
   if (!slot) {
-    return { ok: false, reason: 'この枠は現在予約できません（休業日・満枠・受付時間外・開始時刻不正のいずれかです）' };
+    return { ok: false, reason: 'この枠は現在予約できません（休業日・満枠・受付時間外・開始時刻不正・枠停止のいずれかです）' };
   }
   if (slot.remaining < partySize) {
     return { ok: false, reason: `この枠の残り受け入れ可能人数は${slot.remaining}名です` };

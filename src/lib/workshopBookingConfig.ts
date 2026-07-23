@@ -9,8 +9,17 @@ import type { SimpleWorkshop } from '@/types/sanity';
 
 export const TIME_ZONE = 'Asia/Tokyo';
 
-/** 1日あたりの予約開始時刻候補（JST、24時間表記）。将来的に管理画面から変更できるようにする想定 */
-export const SLOT_START_TIMES: readonly string[] = ['10:00', '13:00', '15:00'];
+/**
+ * 受付枠（JST、24時間表記）。じゃらん掲載の2枠と同一。
+ * 予約はプランの所要時間に関わらず枠全体（start〜end）を占有する
+ * （＝枠の空き判定はプランのdurationではなくこの固定windowで行う）。
+ * 枠ごとのON/OFFは管理画面（受付枠設定）から workshop_slot_overrides テーブル経由で変更する
+ * （src/lib/workshopSlotOverrides.ts 参照）。
+ */
+export const WORKSHOP_SLOTS: ReadonlyArray<{ start: string; end: string }> = [
+  { start: '11:30', end: '13:30' },
+  { start: '15:00', end: '17:00' },
+];
 
 /** 1枠あたりの最大受け入れ人数（同一日・同一開始時刻の予約party_size合計がこれ以上なら満枠扱い） */
 export const CAPACITY_PER_SLOT = 4;
@@ -39,6 +48,9 @@ const JST_OFFSET_MINUTES = 9 * 60;
  * durationがどんな書式で入力されているか（あるいはそもそも運用されていないか）は
  * 実データを確認できていない。ここでは代表的な表記パターンのみに対応し、
  * パースできない・未設定の場合は安全側で DEFAULT_DURATION_MIN にフォールバックする。
+ *
+ * 注意: 受付枠がWORKSHOP_SLOTSの固定windowになったため、空き枠計算（予約可否判定）では
+ * この関数の戻り値は使わない。表示用（プラン一覧のおおよその所要時間表示等）にのみ残している。
  */
 export function resolveWorkshopDurationMinutes(plan?: Pick<SimpleWorkshop, 'duration'> | null): number {
   const raw = plan?.duration?.trim();

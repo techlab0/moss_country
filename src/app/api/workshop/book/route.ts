@@ -13,12 +13,9 @@ import {
 } from '@/lib/workshopBookings';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import {
-  SLOT_START_TIMES,
+  WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
-  resolveWorkshopDurationMinutes,
   jstDateTimeToIso,
-  addMinutesToIso,
-  addMinutesToTimeString,
   todayJstDateStr,
   maxBookableDateStr,
 } from '@/lib/workshopBookingConfig';
@@ -183,7 +180,8 @@ export async function POST(request: NextRequest) {
     if (!date || !DATE_RE.test(date)) {
       return NextResponse.json({ error: 'dateの形式が不正です（YYYY-MM-DD）' }, { status: 400 });
     }
-    if (!startTime || !SLOT_START_TIMES.includes(startTime)) {
+    const matchedSlot = WORKSHOP_SLOTS.find(s => s.start === startTime);
+    if (!startTime || !matchedSlot) {
       return NextResponse.json({ error: '指定された開始時刻は受け付けていません' }, { status: 400 });
     }
     if (!Number.isInteger(partySize) || (partySize as number) <= 0) {
@@ -214,12 +212,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'このプランは現在予約を受け付けていません（価格未設定）' }, { status: 400 });
     }
 
-    const durationMin = resolveWorkshopDurationMinutes(plan);
     const total = plan.price * (partySize as number);
 
     // ---- 空き枠の再検証（一覧表示と同じロジック。表示後に他の予約が入っている可能性があるため必須） ----
     try {
-      const slotCheck = await isSlotStillAvailable(date, startTime, durationMin, partySize as number);
+      const slotCheck = await isSlotStillAvailable(date, startTime, partySize as number);
       if (!slotCheck.ok) {
         return NextResponse.json({ error: slotCheck.reason }, { status: 409 });
       }
@@ -234,9 +231,10 @@ export async function POST(request: NextRequest) {
     }
 
     const bookingNumber = generateBookingNumber();
+    // 枠全体（start〜end）を占有する。プランの所要時間は使わない（予約可否バリデーションで既にWORKSHOP_SLOTSのstartと一致確認済み）
     const startISO = jstDateTimeToIso(date, startTime);
-    const endISO = addMinutesToIso(startISO, durationMin);
-    const endTime = addMinutesToTimeString(startTime, durationMin);
+    const endTime = matchedSlot.end;
+    const endISO = jstDateTimeToIso(date, endTime);
 
     // ---- Googleカレンダーへイベント作成。失敗したら予約を確定させずここで終了する ----
     try {
