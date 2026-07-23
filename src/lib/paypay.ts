@@ -111,12 +111,24 @@ export async function createDynamicQr({
   merchantPaymentId,
   amountJpy,
   orderDescription,
+  orderItems,
 }: {
   merchantPaymentId: string;
   amountJpy: number;
   orderDescription?: string;
+  // 明細（商品名・数量・単価）。指定するとお客様のPayPayアプリの支払い明細に商品名が表示される。
+  orderItems?: Array<{ name: string; quantity: number; unitPriceJpy: number }>;
 }): Promise<{ codeId: string; url: string; deeplink: string; expiryDate?: number }> {
   ensureConfigured();
+
+  // PayPayの orderItems 形式に変換（数量×単価が amount と一致する必要があるため単価は四捨五入）
+  const mappedOrderItems = orderItems && orderItems.length > 0
+    ? orderItems.map(item => ({
+        name: item.name.slice(0, 30), // PayPayの品名は長すぎると弾かれるため丸める
+        quantity: item.quantity,
+        unitPrice: { amount: Math.round(item.unitPriceJpy), currency: 'JPY' as const },
+      }))
+    : undefined;
 
   const response = (await PAYPAY.QRCodeCreate({
     merchantPaymentId,
@@ -126,6 +138,7 @@ export async function createDynamicQr({
     },
     codeType: 'ORDER_QR',
     orderDescription,
+    ...(mappedOrderItems ? { orderItems: mappedOrderItems } : {}),
     isAuthorization: false,
   })) as PayPaySdkResponse<PayPayQrCodeCreateData>;
 
