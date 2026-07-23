@@ -6,7 +6,7 @@ import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
 import { SquarePaymentForm } from '@/components/ui/SquarePaymentForm';
 import { getSimpleWorkshops } from '@/lib/sanity';
-import { SLOT_START_TIMES, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import { CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import type { SimpleWorkshop } from '@/types/sanity';
 
 // 既存のワークショップページ（src/app/workshop/page.tsx）と同じ問い合わせ導線を流用する

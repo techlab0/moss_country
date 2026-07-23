@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSimpleWorkshopById } from '@/lib/sanity';
 import { computeAvailableSlots, CalendarUnavailableError } from '@/lib/workshopAvailability';
-import {
-  resolveWorkshopDurationMinutes,
-  todayJstDateStr,
-  maxBookableDateStr,
-} from '@/lib/workshopBookingConfig';
+import { todayJstDateStr, maxBookableDateStr } from '@/lib/workshopBookingConfig';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -31,17 +27,16 @@ export async function GET(request: NextRequest) {
     const fromDate = fromParam && fromParam > today ? fromParam : today;
     const toDate = toParam && toParam < maxDate ? toParam : maxDate;
 
-    // プラン指定があれば所要時間をSanityの正規データから解決する（クライアント申告は信用しない）
-    let durationMin = resolveWorkshopDurationMinutes(null);
+    // プラン指定があれば実在確認のみ行う（枠の時間帯はWORKSHOP_SLOTSの固定windowでプランに依存しないため、
+    // durationの解決は不要。ただし存在しないplanIdでの呼び出しは弾く）
     if (planId) {
       const plan = await getSimpleWorkshopById(planId);
       if (!plan) {
         return NextResponse.json({ error: '指定されたワークショッププランが見つかりません' }, { status: 400 });
       }
-      durationMin = resolveWorkshopDurationMinutes(plan);
     }
 
-    const available = await computeAvailableSlots(fromDate, toDate, durationMin);
+    const available = await computeAvailableSlots(fromDate, toDate);
     return NextResponse.json({ available });
   } catch (error) {
     if (error instanceof CalendarUnavailableError) {
