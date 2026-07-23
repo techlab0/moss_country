@@ -89,7 +89,12 @@ export default function CheckoutPage() {
   const paymentMethods = [
     { id: 'credit_card', name: 'クレジットカード', description: 'Visa, MasterCard, JCB, AMEX' },
     { id: 'bank_transfer', name: '銀行振込', description: '振込手数料はお客様負担' },
-    { id: 'cash_on_delivery', name: '代金引換', description: '手数料 ¥300' }
+    { id: 'cash_on_delivery', name: '代金引換', description: '手数料 ¥300' },
+    // removable設計: 承認前・無効化したい場合は NEXT_PUBLIC_PAYPAY_ENABLED を false/未設定にするだけで
+    // この選択肢自体が表示されなくなる（他の支払い方法には影響しない）
+    ...(process.env.NEXT_PUBLIC_PAYPAY_ENABLED === 'true'
+      ? [{ id: 'paypay', name: 'PayPay', description: 'PayPayアプリでお支払い' }]
+      : [])
   ];
 
   // 送料設定をサーバーから取得（管理画面での編集を反映）。失敗時はデフォルト設定のまま。
@@ -268,7 +273,11 @@ export default function CheckoutPage() {
 
     try {
       // 支払い方法による分岐（クレジットカード決済の場合はSquareCheckoutコンポーネント側で処理）
-      if (formData.paymentMethod !== 'credit_card') {
+      if (formData.paymentMethod === 'paypay') {
+        // PayPayの場合：決済URLを発行し、PayPayアプリの支払い画面へリダイレクトする
+        // （成功時はページ遷移するため、以降のsetOrderComplete等には到達しない）
+        await processPayPayPayment();
+      } else if (formData.paymentMethod !== 'credit_card') {
         // 銀行振込・代金引換の場合：注文を確定する
         await processNonCardPayment();
 
@@ -322,6 +331,52 @@ export default function CheckoutPage() {
       throw new Error(result.error || '注文の作成に失敗しました');
     }
   };
+
+  // PayPayウェブ決済の処理: サーバー側で注文をpending保存のうえ決済URLを発行し、
+  // PayPayアプリの支払い画面へリダイレクトする。決済結果の反映は戻りページ
+  // （/payment/paypay/return）が /api/payments/paypay/verify を呼んで行う。
+  const processPayPayPayment = async () => {
+    const cartPayload: Cart = {
+      items: cart.items,
+      subtotal: cart.subtotal,
+      shippingCost: shippingCalculation.finalShippingCost,
+      baseShippingCost: shippingCalculation.baseShippingCost,
+      shippingDiscount: shippingCalculation.shippingDiscount,
+      tax: shippingCalculation.tax,
+      total: shippingCalculation.total,
+      itemCount: cart.itemCount,
+    };
+
+    const response = await fetch('/api/payments/paypay/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cart: cartPayload,
+        customerData: formData.customer,
+        orderData: {
+          shippingAddress: formData.shippingAddress,
+          billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+          shippingMethod: formData.shippingMethod,
+          shippingCarrier: formData.shippingCarrier,
+          paymentMethod: formData.paymentMethod,
+          sameAsShipping: formData.sameAsShipping,
+          terms: formData.terms,
+          newsletter: formData.newsletter,
+          notes: formData.notes,
+        },
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data?.paymentUrl) {
+      throw new Error(result.error || 'PayPay決済の開始に失敗しました');
+    }
+
+    // 注文はサーバー側で既にpending保存済みのため、カートを空にしてからPayPayの支払い画面へ遷移する
+    clearCart();
+    window.location.href = result.data.paymentUrl;
+  };
+
   // 注文完了画面
   if (orderComplete) {
     return (
@@ -894,8 +949,10 @@ export default function CheckoutPage() {
                       {isProcessing ? (
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          注文処理中...
+                          {formData.paymentMethod === 'paypay' ? 'PayPayへ移動中...' : '注文処理中...'}
                         </div>
+                      ) : formData.paymentMethod === 'paypay' ? (
+                        `PayPayで支払う - ¥${shippingCalculation.total.toLocaleString()}`
                       ) : (
                         `注文を確定する - ¥${shippingCalculation.total.toLocaleString()}`
                       )}

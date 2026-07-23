@@ -61,3 +61,6 @@ public/images/background/*.mov
 # Server logs (may contain customer emails / payment metadata)
 server.log
 *.log
+
+# PayPay ウェブ決済 Xserver中継スクリプトの認証情報（APIキー・共有シークレットを含む）
+xserver-relay/config.php
