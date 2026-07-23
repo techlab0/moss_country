@@ -29,6 +29,7 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: 'クレジットカード',
   bank_transfer: '銀行振込',
   cash_on_delivery: '代金引換',
+  paypay: 'PayPay',
 };
 
 const AdminOrdersPage = () => {
