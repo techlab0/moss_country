@@ -27,6 +27,20 @@ export const maintenanceSettings = defineType({
       initialValue: '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。',
     },
     {
+      name: 'purchaseLocked',
+      title: '購入をロック（閲覧可・注文/決済を停止）',
+      type: 'boolean',
+      description: 'サイトの閲覧・カート追加はできるが、注文/決済の確定のみを停止する',
+      initialValue: false,
+    },
+    {
+      name: 'purchaseLockedMessage',
+      title: '購入ロック時の表示メッセージ',
+      type: 'text',
+      description: '購入ロック中にチェックアウト画面などで表示するメッセージ',
+      initialValue: 'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。',
+    },
+    {
       name: 'updatedAt',
       title: '更新日時',
       type: 'datetime',

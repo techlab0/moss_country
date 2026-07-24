@@ -5,6 +5,7 @@ import { createOrder, updateOrderStatus } from '@/lib/orders';
 import { isCarrierId } from '@/lib/shipping';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { createWebPayment, isPaypayConfigured } from '@/lib/paypayWebClient';
+import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 /**
@@ -28,6 +29,12 @@ export async function POST(request: NextRequest) {
         { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
         { status: 429 }
       );
+    }
+
+    // 購入ロック中は決済URLの発行を行わない（閲覧・カート追加は制限しない管理者トグル）
+    const purchaseLock = await assertPurchaseAllowed();
+    if (purchaseLock.locked) {
+      return NextResponse.json({ error: purchaseLock.message }, { status: 403 });
     }
 
     // PayPayウェブ決済が未設定（承認前・無効化中）の場合は503のみを返す。

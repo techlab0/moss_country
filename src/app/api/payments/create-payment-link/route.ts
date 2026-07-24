@@ -5,10 +5,17 @@ import { recalculateCartTotals, InvalidCartError } from '@/lib/orderPricing'
 import { InventoryService } from '@/lib/inventory'
 import { createOrder, updateOrderStatus } from '@/lib/orders'
 import { isCarrierId } from '@/lib/shipping'
+import { assertPurchaseAllowed } from '@/lib/purchaseLock'
 import type { Cart, CheckoutFormData } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
   try {
+    // 購入ロック中は決済を確定させない（閲覧・カート追加は制限しない管理者トグル）
+    const purchaseLock = await assertPurchaseAllowed()
+    if (purchaseLock.locked) {
+      return NextResponse.json({ error: purchaseLock.message }, { status: 403 })
+    }
+
     const body = await request.json()
     const { cart, customerData, orderData } = body as {
       cart: Cart

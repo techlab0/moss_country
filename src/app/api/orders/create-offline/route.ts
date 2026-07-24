@@ -5,6 +5,7 @@ import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { createOrder } from '@/lib/orders';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { isCarrierId } from '@/lib/shipping';
+import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
@@ -31,6 +32,12 @@ export async function POST(request: NextRequest) {
         { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
         { status: 429 }
       );
+    }
+
+    // 購入ロック中は注文を確定させない（閲覧・カート追加は制限しない管理者トグル）
+    const purchaseLock = await assertPurchaseAllowed();
+    if (purchaseLock.locked) {
+      return NextResponse.json({ error: purchaseLock.message }, { status: 403 });
     }
 
     const body = await request.json();

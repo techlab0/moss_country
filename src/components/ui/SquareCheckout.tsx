@@ -13,6 +13,9 @@ interface SquareCheckoutProps {
   orderData: Omit<CheckoutFormData, 'customer'>;
   mode?: 'embedded' | 'redirect'; // embedded = Web Payments SDK, redirect = Payment Link
   className?: string;
+  // 管理者トグルによる購入ロック中はtrue。閲覧・フォーム入力は妨げず、決済の確定のみを止める。
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
@@ -20,7 +23,9 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
   customerData,
   orderData,
   mode = 'embedded',
-  className = ''
+  className = '',
+  disabled = false,
+  disabledMessage,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +63,7 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
 
   // Handle embedded payment (Web Payments SDK)
   const handleEmbeddedPayment = async (paymentResult: { token: string; details: object }) => {
+    if (disabled) return;
     setIsProcessing(true);
     setError(null);
 
@@ -99,6 +105,7 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
 
   // Handle redirect payment (Payment Link)
   const handleRedirectPayment = async () => {
+    if (disabled) return;
     setIsProcessing(true);
     setError(null);
 
@@ -147,9 +154,14 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
   if (mode === 'redirect') {
     return (
       <div className={`w-full ${className}`}>
+        {disabled && disabledMessage && (
+          <div className="mb-3 p-3 bg-amber-50 border border-amber-300 rounded-md">
+            <p className="text-sm text-amber-800">{disabledMessage}</p>
+          </div>
+        )}
         <Button
           onClick={handleRedirectPayment}
-          disabled={isProcessing}
+          disabled={isProcessing || disabled}
           className="w-full"
           size="lg"
         >
@@ -162,7 +174,7 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
             'お支払いに進む'
           )}
         </Button>
-        
+
         {error && (
           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-600">{error}</p>
@@ -175,6 +187,12 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
   // Embedded mode (Web Payments SDK) - 直接決済フォームを表示
   return (
     <div className={`w-full space-y-4 ${className}`}>
+      {disabled && disabledMessage && (
+        <div className="p-3 bg-amber-50 border border-amber-300 rounded-md">
+          <p className="text-sm text-amber-800">{disabledMessage}</p>
+        </div>
+      )}
+
       {/* Square Payment Form */}
       <SquarePaymentForm
         applicationId={squareApplicationId}
@@ -182,7 +200,7 @@ export const SquareCheckout: React.FC<SquareCheckoutProps> = ({
         amount={cart.total}
         onPaymentSuccess={handleEmbeddedPayment}
         onPaymentError={handlePaymentError}
-        disabled={isProcessing}
+        disabled={isProcessing || disabled}
       />
 
       {error && (

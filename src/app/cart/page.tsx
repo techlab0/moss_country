@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -144,11 +144,33 @@ function CartItemRow({
 }
 
 export default function CartPage() {
-  const { 
-    cart, 
-    updateQuantity, 
+  const {
+    cart,
+    updateQuantity,
     removeFromCart
   } = useCart();
+
+  // 購入ロック（管理者トグル）: カート追加はできるが、レジへは進めなくする
+  const [purchaseLocked, setPurchaseLocked] = useState(false);
+  const [purchaseLockedMessage, setPurchaseLockedMessage] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/maintenance/status')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data) {
+          setPurchaseLocked(data.purchaseLocked === true);
+          setPurchaseLockedMessage(data.purchaseLockedMessage || '');
+        }
+      })
+      .catch(() => {
+        /* 取得失敗時はロックなし（既存動作）のまま継続 */
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (cart.items.length === 0) {
     return (
@@ -237,16 +259,36 @@ export default function CartPage() {
                   </div>
                 </div>
 
+                {/* 購入ロック中の通知 */}
+                {purchaseLocked && (
+                  <div className="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-lg">
+                    <p className="text-amber-900 text-sm font-medium">
+                      {purchaseLockedMessage || 'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。'}
+                    </p>
+                  </div>
+                )}
+
                 {/* チェックアウトボタン */}
-                <Link href="/checkout">
-                  <Button 
-                    variant="primary" 
-                    size="lg" 
+                {purchaseLocked ? (
+                  <Button
+                    variant="primary"
+                    size="lg"
                     className="w-full py-4 text-lg font-medium"
+                    disabled
                   >
                     レジに進む
                   </Button>
-                </Link>
+                ) : (
+                  <Link href="/checkout">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="w-full py-4 text-lg font-medium"
+                    >
+                      レジに進む
+                    </Button>
+                  </Link>
+                )}
 
                 {/* 続けて買い物 */}
                 <Link href="/shop">

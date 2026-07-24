@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMaintenanceSettings, updateMaintenanceSettings } from '@/lib/sanity';
 import { getAppSetting, setAppSetting, MAINTENANCE_PASSWORD_KEY } from '@/lib/appSettings';
 import { verifyAdminSession } from '@/lib/auth';
+import { DEFAULT_PURCHASE_LOCKED_MESSAGE } from '@/lib/purchaseLock';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
   password: string;
   message?: string;
+  purchaseLocked?: boolean;
+  purchaseLockedMessage?: string;
 };
 
 // GET: 現在の設定を取得
@@ -26,13 +29,16 @@ export async function GET(request: NextRequest) {
     // デフォルト値を設定
     const defaultSettings = {
       isEnabled: false,
-      message: '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。'
+      message: '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。',
+      purchaseLocked: false,
+      purchaseLockedMessage: DEFAULT_PURCHASE_LOCKED_MESSAGE,
     };
 
     return NextResponse.json({
       success: true,
       settings: {
-        ...(settings || defaultSettings),
+        ...defaultSettings,
+        ...(settings || {}),
         password: password || '',
       }
     });
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { isEnabled, password, message } = await request.json();
+    const { isEnabled, password, message, purchaseLocked, purchaseLockedMessage } = await request.json();
 
     // 入力検証
     if (typeof isEnabled !== 'boolean') {
@@ -72,11 +78,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (purchaseLocked !== undefined && typeof purchaseLocked !== 'boolean') {
+      return NextResponse.json(
+        { error: '無効な購入ロック設定です' },
+        { status: 400 }
+      );
+    }
+
     const trimmedPassword = password.trim();
     const resolvedMessage = message || '現在、サイトのメンテナンスを行っております。\nご不便をおかけして申し訳ございません。';
+    const resolvedPurchaseLocked = purchaseLocked === true;
+    const resolvedPurchaseLockedMessage = purchaseLockedMessage || DEFAULT_PURCHASE_LOCKED_MESSAGE;
 
-    // Sanityにはpasswordを含めずisEnabled/messageのみ保存
-    await updateMaintenanceSettings({ isEnabled, message: resolvedMessage });
+    // Sanityにはpasswordを含めずisEnabled/message/purchaseLocked/purchaseLockedMessageのみ保存
+    await updateMaintenanceSettings({
+      isEnabled,
+      message: resolvedMessage,
+      purchaseLocked: resolvedPurchaseLocked,
+      purchaseLockedMessage: resolvedPurchaseLockedMessage,
+    });
 
     // passwordはSupabase(app_settings)へ保存
     await setAppSetting(MAINTENANCE_PASSWORD_KEY, trimmedPassword);
@@ -85,6 +105,8 @@ export async function POST(request: NextRequest) {
       isEnabled,
       password: trimmedPassword,
       message: resolvedMessage,
+      purchaseLocked: resolvedPurchaseLocked,
+      purchaseLockedMessage: resolvedPurchaseLockedMessage,
     };
 
     return NextResponse.json({
