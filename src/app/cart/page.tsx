@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -150,28 +150,6 @@ export default function CartPage() {
     removeFromCart
   } = useCart();
 
-  // 購入ロック（管理者トグル）: カート追加はできるが、レジへは進めなくする
-  const [purchaseLocked, setPurchaseLocked] = useState(false);
-  const [purchaseLockedMessage, setPurchaseLockedMessage] = useState('');
-
-  useEffect(() => {
-    let mounted = true;
-    fetch('/api/maintenance/status')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (mounted && data) {
-          setPurchaseLocked(data.purchaseLocked === true);
-          setPurchaseLockedMessage(data.purchaseLockedMessage || '');
-        }
-      })
-      .catch(() => {
-        /* 取得失敗時はロックなし（既存動作）のまま継続 */
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   if (cart.items.length === 0) {
     return (
       <div className="bg-stone-950 min-h-screen pt-20">
@@ -253,42 +231,19 @@ export default function CartPage() {
                     <p className="mb-2">💡 配送料は次のステップで計算されます</p>
                     <p className="text-xs">札幌から商品サイズ・重量・お届け先により正確な配送料を計算します。<br />
                     商品代金が10,000円以上の場合、配送料から500円割引いたします。</p>
-                    <div className="mt-2 text-xs text-stone-500">
-                      <p>ゆうパック料金表に基づく正確な送料（60サイズ: 道内810円〜 / 東京1,180円〜）</p>
-                    </div>
                   </div>
                 </div>
 
-                {/* 購入ロック中の通知 */}
-                {purchaseLocked && (
-                  <div className="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-lg">
-                    <p className="text-amber-900 text-sm font-medium">
-                      {purchaseLockedMessage || 'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。'}
-                    </p>
-                  </div>
-                )}
-
                 {/* チェックアウトボタン */}
-                {purchaseLocked ? (
+                <Link href="/checkout">
                   <Button
                     variant="primary"
                     size="lg"
                     className="w-full py-4 text-lg font-medium"
-                    disabled
                   >
                     レジに進む
                   </Button>
-                ) : (
-                  <Link href="/checkout">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full py-4 text-lg font-medium"
-                    >
-                      レジに進む
-                    </Button>
-                  </Link>
-                )}
+                </Link>
 
                 {/* 続けて買い物 */}
                 <Link href="/shop">

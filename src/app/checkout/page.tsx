@@ -34,9 +34,6 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [isPostalCodeLoading, setIsPostalCodeLoading] = useState(false);
-  // 購入ロック（管理者トグル）: 閲覧・フォーム入力はできるが、注文/決済の確定のみ止める
-  const [purchaseLocked, setPurchaseLocked] = useState(false);
-  const [purchaseLockedMessage, setPurchaseLockedMessage] = useState('');
   const [shippingCalculation, setShippingCalculation] = useState<ShippingCalculationResult>({
     baseShippingCost: 0,
     finalShippingCost: 0,
@@ -99,25 +96,6 @@ export default function CheckoutPage() {
       ? [{ id: 'paypay', name: 'PayPay', description: 'PayPayアプリでお支払い' }]
       : [])
   ];
-
-  // 購入ロックの状態をサーバーから取得（管理画面での切り替えを反映）。取得失敗時はロックなし扱いのまま。
-  useEffect(() => {
-    let mounted = true;
-    fetch('/api/maintenance/status')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (mounted && data) {
-          setPurchaseLocked(data.purchaseLocked === true);
-          setPurchaseLockedMessage(data.purchaseLockedMessage || '');
-        }
-      })
-      .catch(() => {
-        /* 取得失敗時はロックなし（既存動作）のまま継続 */
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   // 送料設定をサーバーから取得（管理画面での編集を反映）。失敗時はデフォルト設定のまま。
   useEffect(() => {
@@ -291,10 +269,6 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (purchaseLocked) {
-      alert(purchaseLockedMessage || 'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。');
-      return;
-    }
     setIsProcessing(true);
 
     try {
@@ -488,16 +462,6 @@ export default function CheckoutPage() {
             </h1>
           </div>
 
-          {purchaseLocked && (
-            <div className="mb-8 p-4 bg-amber-50 border border-amber-300 rounded-xl">
-              <p className="text-amber-900 font-medium">
-                {purchaseLockedMessage || 'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。'}
-              </p>
-              <p className="text-amber-800 text-sm mt-1">
-                商品の閲覧・カートへの追加はできますが、注文の確定は現在停止しています。
-              </p>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -974,8 +938,6 @@ export default function CheckoutPage() {
                         notes: formData.notes
                       }}
                       mode="embedded"
-                      disabled={purchaseLocked}
-                      disabledMessage={purchaseLockedMessage}
                     />
                   ) : (
                     <Button
@@ -983,7 +945,7 @@ export default function CheckoutPage() {
                       variant="primary"
                       size="lg"
                       className="w-full py-4 text-lg font-medium"
-                      disabled={isProcessing || !formData.terms || purchaseLocked}
+                      disabled={isProcessing || !formData.terms}
                     >
                       {isProcessing ? (
                         <div className="flex items-center justify-center gap-2">

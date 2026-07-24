@@ -17,8 +17,9 @@ type MaintenanceSettings = {
   purchaseLockedMessage?: string;
 };
 
+// 購入ロック中、実際に決済しようとしたお客様にだけ表示される文言（事前バナーは出さない）。
 const DEFAULT_PURCHASE_LOCKED_MESSAGE =
-  'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。';
+  '申し訳ございませんが、ただいまオンラインでのご注文を承ることができません。お手数ですが、お問い合わせよりご連絡ください。';
 
 type Tab = 'maintenance' | 'navigation' | 'shipping';
 
