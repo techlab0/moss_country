@@ -522,6 +522,8 @@ export async function getFeaturedMossSpecies(): Promise<MossSpecies[]> {
 export async function getMaintenanceSettings(): Promise<{
   isEnabled: boolean;
   message?: string;
+  purchaseLocked?: boolean;
+  purchaseLockedMessage?: string;
 } | null> {
   try {
     // ミドルウェアが毎リクエスト参照するため、CDNキャッシュ(client)ではなく
@@ -529,7 +531,9 @@ export async function getMaintenanceSettings(): Promise<{
     const settings = await writeClient.fetch(`
       *[_type == "maintenanceSettings"][0] {
         isEnabled,
-        message
+        message,
+        purchaseLocked,
+        purchaseLockedMessage
       }
     `);
 
@@ -543,6 +547,8 @@ export async function getMaintenanceSettings(): Promise<{
 export async function updateMaintenanceSettings(data: {
   isEnabled: boolean;
   message?: string;
+  purchaseLocked?: boolean;
+  purchaseLockedMessage?: string;
 }): Promise<void> {
   try {
     // 既存の設定を検索

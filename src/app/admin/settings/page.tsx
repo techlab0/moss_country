@@ -13,7 +13,12 @@ type MaintenanceSettings = {
   isEnabled: boolean;
   password: string;
   message?: string;
+  purchaseLocked?: boolean;
+  purchaseLockedMessage?: string;
 };
+
+const DEFAULT_PURCHASE_LOCKED_MESSAGE =
+  'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。';
 
 type Tab = 'maintenance' | 'navigation' | 'shipping';
 
@@ -25,6 +30,8 @@ export default function SettingsPage() {
     isEnabled: false,
     password: '',
     message: '',
+    purchaseLocked: false,
+    purchaseLockedMessage: DEFAULT_PURCHASE_LOCKED_MESSAGE,
   });
   const [siteSettings, setSiteSettings] = useState<SiteSettingsData | null>(null);
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
@@ -294,6 +301,56 @@ export default function SettingsPage() {
                 <div className={`w-3 h-3 rounded-full ${maintenanceSettings.isEnabled ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                 <span className="text-sm text-gray-700">
                   現在: {maintenanceSettings.isEnabled ? 'メンテナンス中（一般ユーザーはアクセス不可）' : '公開中'}
+                </span>
+              </div>
+            </div>
+
+            {/* 購入ロック（閲覧・カート追加は可、注文/決済の確定のみ停止） */}
+            <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">購入ロック</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  サイトの閲覧・カートへの追加はそのままでき、注文/決済の確定だけを止めます。
+                  公開中や決済手段の審査中など、実際の注文・決済事故を防ぎたいときに使用してください。
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
+                <div>
+                  <h4 className="font-medium text-gray-900">購入をロック</h4>
+                  <p className="text-sm text-gray-600">
+                    有効にすると、注文/決済の確定APIが停止されます（閲覧・カート追加には影響しません）
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                  <input
+                    type="checkbox"
+                    checked={maintenanceSettings.purchaseLocked ?? false}
+                    onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, purchaseLocked: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+                </label>
+              </div>
+
+              <div>
+                <label htmlFor="purchase-locked-message" className="block text-sm font-medium text-gray-700 mb-2">
+                  購入ロック時の表示メッセージ
+                </label>
+                <textarea
+                  id="purchase-locked-message"
+                  value={maintenanceSettings.purchaseLockedMessage ?? ''}
+                  onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, purchaseLockedMessage: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  placeholder={DEFAULT_PURCHASE_LOCKED_MESSAGE}
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${maintenanceSettings.purchaseLocked ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                <span className="text-sm text-gray-700">
+                  現在: {maintenanceSettings.purchaseLocked ? '購入ロック中（閲覧・カート追加は可、注文/決済は停止）' : '購入可能'}
                 </span>
               </div>
             </div>

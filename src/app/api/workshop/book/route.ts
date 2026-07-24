@@ -12,6 +12,7 @@ import {
   type WorkshopBookingPaymentMethod,
 } from '@/lib/workshopBookings';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import {
   WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
@@ -157,6 +158,12 @@ export async function POST(request: NextRequest) {
         { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
         { status: 429 }
       );
+    }
+
+    // 購入ロック中は予約（決済含む）を確定させない（閲覧は制限しない管理者トグル）
+    const purchaseLock = await assertPurchaseAllowed();
+    if (purchaseLock.locked) {
+      return NextResponse.json({ error: purchaseLock.message }, { status: 403 });
     }
 
     const body = (await request.json()) as BookRequestBody;
