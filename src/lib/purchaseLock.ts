@@ -2,8 +2,10 @@ import { getMaintenanceSettings } from '@/lib/sanity';
 
 // 管理画面でメッセージが未設定の場合のフォールバック文言。
 // sanity/schemas/maintenanceSettings.ts の purchaseLockedMessage の initialValue と揃えている。
+// 購入ロック中に「実際に決済しようとした」お客様にだけ表示される文言。
+// 事前バナー等は出さない方針のため、公開準備中であることは明示せず、中立な案内にする。
 export const DEFAULT_PURCHASE_LOCKED_MESSAGE =
-  'ただいまオンライン販売の準備中です。まもなく開始しますので、今しばらくお待ちください。';
+  '申し訳ございませんが、ただいまオンラインでのご注文を承ることができません。お手数ですが、お問い合わせよりご連絡ください。';
 
 export type PurchaseLockStatus = {
   locked: boolean;
