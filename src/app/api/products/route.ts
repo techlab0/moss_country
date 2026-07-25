@@ -15,6 +15,7 @@ export async function GET() {
         description,
         stockQuantity,
         reserved,
+        lowStockThreshold,
         images[] {
           _type,
           _key,

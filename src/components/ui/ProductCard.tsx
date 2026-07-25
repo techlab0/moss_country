@@ -18,7 +18,9 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock, hasData: inventoryHasData, loading: inventoryLoading } = useSanityInventory(product._id);
+  // 一覧では商品データ(product)に stockQuantity/reserved/lowStockThreshold が含まれるため、
+  // それを preloaded として渡し、カードごとの在庫APIコールを完全に無くす（CPU/API消費削減）。
+  const { isInStock: hasInventory, isOutOfStock, isLowStock, availableStock, hasData: inventoryHasData, loading: inventoryLoading } = useSanityInventory(product._id, undefined, product);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -149,7 +151,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
           <span className="bg-moss-green text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs leading-tight">
             {product.category}
           </span>
-          <InventoryBadge productId={product._id} />
+          <InventoryBadge productId={product._id} product={product} />
         </div>
 
         <Link href={`/shop/${getProductSlug(product)}`}>
@@ -216,8 +218,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
               <Button variant="primary" className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base" disabled>
                 {inventoryHasData ? '在庫切れ' : '在庫確認中...'}
               </Button>
-              <InventoryAlert 
+              <InventoryAlert
                 productId={product._id}
+                product={product}
                 className="mt-2"
               />
             </>

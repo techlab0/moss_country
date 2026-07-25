@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
+import type { ProductStockFields } from '@/lib/sanityInventory';
 
 interface InventoryStatusProps {
   productId: string;
@@ -9,6 +10,8 @@ interface InventoryStatusProps {
   showQuantity?: boolean;
   showThreshold?: boolean;
   className?: string;
+  // 渡すと在庫APIを叩かず商品データから在庫を計算する（一覧の大量コール防止）
+  product?: ProductStockFields | null;
 }
 
 export const InventoryStatus: React.FC<InventoryStatusProps> = ({
@@ -16,9 +19,10 @@ export const InventoryStatus: React.FC<InventoryStatusProps> = ({
   variantKey,
   showQuantity = true,
   showThreshold = true,
-  className = ''
+  className = '',
+  product
 }) => {
-  const { availableStock, isInStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey);
+  const { availableStock, isInStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey, product);
 
   if (loading || !hasData) {
     return (
@@ -68,15 +72,18 @@ interface InventoryBadgeProps {
   variantKey?: string;
   variant?: 'default' | 'compact' | 'detailed';
   className?: string;
+  // 渡すと在庫APIを叩かず商品データから在庫を計算する（一覧の大量コール防止）
+  product?: ProductStockFields | null;
 }
 
 export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
   productId,
   variantKey,
   variant = 'default',
-  className = ''
+  className = '',
+  product
 }) => {
-  const { availableStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey);
+  const { availableStock, isLowStock, isOutOfStock, hasData, loading } = useSanityInventory(productId, variantKey, product);
 
   if (loading || !hasData) {
     return (
@@ -127,11 +134,12 @@ export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
               ></div>
             </div>
           </div>
-          <InventoryStatus 
-            productId={productId} 
-            variantKey={variantKey} 
+          <InventoryStatus
+            productId={productId}
+            variantKey={variantKey}
             showQuantity={false}
             className="justify-center"
+            product={product}
           />
         </div>
       </div>
@@ -164,15 +172,18 @@ interface InventoryAlertProps {
   onRestock?: () => void;
   onNotifyWhenAvailable?: () => void;
   className?: string;
+  // 渡すと在庫APIを叩かず商品データから在庫を計算する（一覧の大量コール防止）
+  product?: ProductStockFields | null;
 }
 
 export const InventoryAlert: React.FC<InventoryAlertProps> = ({
   productId,
   variantKey,
   onNotifyWhenAvailable,
-  className = ''
+  className = '',
+  product
 }) => {
-  const { isOutOfStock, isLowStock } = useSanityInventory(productId, variantKey);
+  const { isOutOfStock, isLowStock } = useSanityInventory(productId, variantKey, product);
 
   if (isOutOfStock) {
     return (
