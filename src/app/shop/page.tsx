@@ -44,6 +44,7 @@ export default function ProductsPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'priceAsc' | 'priceDesc'>('recommended');
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['products'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['products'].src);
@@ -307,6 +308,37 @@ export default function ProductsPage() {
             <>
               {/* 検索・在庫フィルタ・並び替えツールバー */}
               <div className="bg-stone-950/60 backdrop-blur-md rounded-xl p-4 sm:p-6 mb-12 flex flex-wrap items-center gap-4">
+                {/* カテゴリ絞り込み */}
+                <div className="w-full flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('all')}
+                    aria-pressed={selectedCategory === 'all'}
+                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-sm font-medium border transition-colors ${
+                      selectedCategory === 'all'
+                        ? 'bg-moss-green text-white border-moss-green'
+                        : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
+                    }`}
+                  >
+                    すべて
+                  </button>
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      aria-pressed={selectedCategory === category}
+                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-sm font-medium border transition-colors ${
+                        selectedCategory === category
+                          ? 'bg-moss-green text-white border-moss-green'
+                          : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex-1 min-w-[200px]">
                   <input
                     type="text"
@@ -345,12 +377,14 @@ export default function ProductsPage() {
               </div>
 
               {(() => {
-                const categorySections = PRODUCT_CATEGORIES.map((category) => {
-                  const categoryProducts = products.filter(
-                    (p) => resolveCategory(p.category) === category
-                  );
-                  return { category, filtered: filterAndSortProducts(categoryProducts) };
-                }).filter((section) => section.filtered.length > 0);
+                const categorySections = PRODUCT_CATEGORIES
+                  .filter((category) => selectedCategory === 'all' || selectedCategory === category)
+                  .map((category) => {
+                    const categoryProducts = products.filter(
+                      (p) => resolveCategory(p.category) === category
+                    );
+                    return { category, filtered: filterAndSortProducts(categoryProducts) };
+                  }).filter((section) => section.filtered.length > 0);
 
                 if (categorySections.length === 0) {
                   return (

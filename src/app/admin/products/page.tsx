@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '@/lib/adapters';
 import { compareByReading } from '@/lib/productSort';
+import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 
 interface ProductWithInventory extends Product {
@@ -13,12 +14,31 @@ interface ProductWithInventory extends Product {
   status?: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
+interface QuickEditData {
+  slug: string;
+  nameReading: string;
+  category: string;
+  isVisible: boolean;
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [repairing, setRepairing] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'priceAsc' | 'priceDesc' | 'stockAsc'>('default');
+  const [nameQuery, setNameQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [quickEditData, setQuickEditData] = useState<QuickEditData>({
+    slug: '',
+    nameReading: '',
+    category: PRODUCT_CATEGORIES[0],
+    isVisible: true,
+  });
+  const [savingQuickEdit, setSavingQuickEdit] = useState(false);
+  const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -99,6 +119,77 @@ export default function AdminProductsPage() {
     }
   };
 
+  const openQuickEdit = (product: ProductWithInventory) => {
+    setEditingId(product._id);
+    setQuickEditData({
+      slug: getProductSlug(product),
+      nameReading: product.nameReading || '',
+      category: resolveCategory(product.category),
+      isVisible: product.isVisible !== false,
+    });
+  };
+
+  const cancelQuickEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleQuickEditSave = async (productId: string) => {
+    const trimmedSlug = quickEditData.slug.trim();
+    if (!trimmedSlug || trimmedSlug === '-') {
+      alert('スラッグ（URL用）を入力してください。');
+      return;
+    }
+
+    setSavingQuickEdit(true);
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: { _type: 'slug', current: trimmedSlug },
+          nameReading: quickEditData.nameReading,
+          category: quickEditData.category,
+          isVisible: quickEditData.isVisible,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('更新に失敗しました');
+      }
+
+      setEditingId(null);
+      fetchProducts();
+    } catch (error) {
+      console.error('クイック編集の保存エラー:', error);
+      alert('保存に失敗しました');
+    } finally {
+      setSavingQuickEdit(false);
+    }
+  };
+
+  const handleToggleVisibility = async (product: ProductWithInventory) => {
+    const nextVisible = !(product.isVisible !== false);
+    setTogglingVisibilityId(product._id);
+    try {
+      const response = await fetch(`/api/admin/products/${product._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isVisible: nextVisible }),
+      });
+
+      if (!response.ok) {
+        throw new Error('表示状態の更新に失敗しました');
+      }
+
+      fetchProducts();
+    } catch (error) {
+      console.error('表示状態の更新エラー:', error);
+      alert('表示状態の更新に失敗しました');
+    } finally {
+      setTogglingVisibilityId(null);
+    }
+  };
+
   const handleRepairSlugs = async () => {
     if (!confirm('スラッグ（URL用）が未設定の商品を自動修復します。よろしいですか？')) {
       return;
@@ -139,8 +230,22 @@ export default function AdminProductsPage() {
   };
 
   const filteredProducts = products.filter(product => {
-    if (filter === 'all') return true;
-    return product.status === filter;
+    if (filter !== 'all' && product.status !== filter) return false;
+
+    if (categoryFilter !== 'all' && resolveCategory(product.category) !== categoryFilter) {
+      return false;
+    }
+
+    const isVisible = product.isVisible !== false;
+    if (visibilityFilter === 'visible' && !isVisible) return false;
+    if (visibilityFilter === 'hidden' && isVisible) return false;
+
+    const query = nameQuery.trim().toLowerCase();
+    if (query && !(product.name || '').toLowerCase().includes(query)) {
+      return false;
+    }
+
+    return true;
   });
 
   // 元配列（filteredProducts）は壊さずコピーしてソート
@@ -194,6 +299,56 @@ export default function AdminProductsPage() {
           >
             データ更新
           </button>
+        </div>
+      </div>
+
+      {/* 検索・カテゴリ・表示状態の絞り込み */}
+      <div className="bg-white shadow rounded-lg p-4 flex flex-wrap items-end gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <label htmlFor="admin-product-search" className="block text-xs font-medium text-gray-500 mb-1">
+            商品名検索
+          </label>
+          <input
+            id="admin-product-search"
+            type="text"
+            value={nameQuery}
+            onChange={(e) => setNameQuery(e.target.value)}
+            placeholder="商品名で検索"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label htmlFor="admin-product-category-filter" className="block text-xs font-medium text-gray-500 mb-1">
+            カテゴリ絞り込み
+          </label>
+          <select
+            id="admin-product-category-filter"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+          >
+            <option value="all">すべてのカテゴリ</option>
+            {PRODUCT_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="admin-product-visibility-filter" className="block text-xs font-medium text-gray-500 mb-1">
+            表示状態
+          </label>
+          <select
+            id="admin-product-visibility-filter"
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+          >
+            <option value="all">すべて</option>
+            <option value="visible">公開のみ</option>
+            <option value="hidden">非表示のみ</option>
+          </select>
         </div>
       </div>
 
@@ -290,73 +445,185 @@ export default function AdminProductsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedProducts.map((product) => {
                 const statusConfig = getStatusConfig(product.status || 'in_stock');
-                
+                const isVisible = product.isVisible !== false;
+                const isEditingRow = editingId === product._id;
+
                 return (
-                  <tr key={product._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                            🌱
+                  <Fragment key={product._id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-12 w-12">
+                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                              🌱
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </span>
+                              {!isVisible && (
+                                <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-gray-800 text-white">
+                                  非表示
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {getProductSlug(product)}
+                            </div>
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {getProductSlug(product)}
-                          </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.category || '未分類'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ¥{product.price.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <input
+                          type="number"
+                          min="0"
+                          value={product.currentStock || 0}
+                          onChange={(e) => {
+                            const newStock = parseInt(e.target.value) || 0;
+                            handleStockUpdate(product._id, newStock);
+                          }}
+                          className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
+                          {statusConfig.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end items-center space-x-2">
+                          <button
+                            onClick={() => handleToggleVisibility(product)}
+                            disabled={togglingVisibilityId === product._id}
+                            className={`px-2 py-1 text-xs rounded border disabled:opacity-50 ${
+                              isVisible
+                                ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                : 'border-gray-800 bg-gray-800 text-white hover:bg-gray-700'
+                            }`}
+                          >
+                            {togglingVisibilityId === product._id ? '更新中...' : isVisible ? '非表示にする' : '表示にする'}
+                          </button>
+                          <button
+                            onClick={() => (isEditingRow ? cancelQuickEdit() : openQuickEdit(product))}
+                            className="text-gray-700 hover:text-gray-900"
+                          >
+                            クイック編集
+                          </button>
+                          <Link
+                            href={`/shop/${getProductSlug(product)}`}
+                            target="_blank"
+                            className="text-moss-green hover:text-moss-green/80"
+                          >
+                            確認
+                          </Link>
+                          <Link
+                            href={`/admin/products/${product._id}/edit`}
+                            className="text-blue-600 hover:text-blue-500"
+                          >
+                            編集
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteProduct(product._id, product.name)}
+                            className="text-red-600 hover:text-red-500"
+                          >
+                            削除
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.category || '未分類'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{product.price.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <input
-                        type="number"
-                        min="0"
-                        value={product.currentStock || 0}
-                        onChange={(e) => {
-                          const newStock = parseInt(e.target.value) || 0;
-                          handleStockUpdate(product._id, newStock);
-                        }}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-moss-green focus:border-transparent"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
-                        {statusConfig.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link
-                          href={`/shop/${getProductSlug(product)}`}
-                          target="_blank"
-                          className="text-moss-green hover:text-moss-green/80"
-                        >
-                          確認
-                        </Link>
-                        <Link
-                          href={`/admin/products/${product._id}/edit`}
-                          className="text-blue-600 hover:text-blue-500"
-                        >
-                          編集
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteProduct(product._id, product.name)}
-                          className="text-red-600 hover:text-red-500"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {isEditingRow && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={6} className="px-6 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                スラッグ (URL用)
+                              </label>
+                              <input
+                                type="text"
+                                value={quickEditData.slug}
+                                onChange={(e) =>
+                                  setQuickEditData((prev) => ({ ...prev, slug: e.target.value }))
+                                }
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                ふりがな（ひらがな）
+                              </label>
+                              <input
+                                type="text"
+                                value={quickEditData.nameReading}
+                                onChange={(e) =>
+                                  setQuickEditData((prev) => ({ ...prev, nameReading: e.target.value }))
+                                }
+                                placeholder="こけだま"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                カテゴリ
+                              </label>
+                              <select
+                                value={quickEditData.category}
+                                onChange={(e) =>
+                                  setQuickEditData((prev) => ({ ...prev, category: e.target.value }))
+                                }
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                              >
+                                {PRODUCT_CATEGORIES.map((category) => (
+                                  <option key={category} value={category}>
+                                    {category}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id={`quick-edit-visible-${product._id}`}
+                                checked={quickEditData.isVisible}
+                                onChange={(e) =>
+                                  setQuickEditData((prev) => ({ ...prev, isVisible: e.target.checked }))
+                                }
+                                className="h-4 w-4 text-moss-green focus:ring-moss-green border-gray-300 rounded"
+                              />
+                              <label htmlFor={`quick-edit-visible-${product._id}`} className="text-sm text-gray-900">
+                                公開する（表示）
+                              </label>
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-3 mt-4">
+                            <button
+                              type="button"
+                              onClick={cancelQuickEdit}
+                              className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                            >
+                              キャンセル
+                            </button>
+                            <button
+                              type="button"
+                              disabled={savingQuickEdit}
+                              onClick={() => handleQuickEditSave(product._id)}
+                              className="px-4 py-2 text-sm bg-moss-green text-white rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+                            >
+                              {savingQuickEdit ? '保存中...' : '保存'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

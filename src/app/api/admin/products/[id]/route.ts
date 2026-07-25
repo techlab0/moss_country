@@ -42,6 +42,7 @@ export async function GET(
         weight,
         fragile,
         inStock,
+        isVisible,
         "salesItemId": salesItem._ref,
         _createdAt,
         _updatedAt
@@ -83,6 +84,11 @@ export async function PATCH(
     // 在庫数に基づいてinStockを自動更新
     if (typeof body.stockQuantity === 'number') {
       body.inStock = body.stockQuantity > 0;
+    }
+
+    // 表示/非表示フラグ（明示的にtrue/booleanへ変換して保存。未指定なら変更しない）
+    if ('isVisible' in body) {
+      body.isVisible = body.isVisible !== false;
     }
 
     // slugが送られてきた場合、空・「-」など無効な値なら安全網としてフォールバック生成し、

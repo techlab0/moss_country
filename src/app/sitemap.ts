@@ -112,7 +112,7 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
   // Get products with individual error handling
   try {
     const products = await client.fetch(`
-      *[_type == "product" && defined(slug.current)] {
+      *[_type == "product" && defined(slug.current) && isVisible != false] {
         slug,
         _updatedAt
       }
