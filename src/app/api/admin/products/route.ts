@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         weight,
         fragile,
         sortOrder,
+        isVisible,
         "salesItemId": salesItem._ref,
         _createdAt,
         _updatedAt
@@ -98,6 +99,8 @@ export async function POST(request: NextRequest) {
       ...(size && { size }),
       ...(salesItemId ? { salesItem: { _type: 'reference', _ref: salesItemId } } : {}),
       inStock: (body.stockQuantity ?? 0) > 0,
+      // 未指定時は既定で公開（表示）とする
+      isVisible: body.isVisible !== false,
       _createdAt: new Date().toISOString(),
       _updatedAt: new Date().toISOString(),
     };

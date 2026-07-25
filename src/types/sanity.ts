@@ -61,6 +61,9 @@ export interface Product {
   lowStockThreshold?: number
   // 売上集計（商品別明細）でこの商品を合算する売上項目のID。未設定の場合は商品名でそのまま表示される。
   salesItemId?: string | null
+  // 公開/非表示フラグ。未設定（undefined）は表示扱い（既存商品の後方互換デフォルト）。
+  // false の場合はストアフロントの一覧・詳細・sitemapから完全に除外される。
+  isVisible?: boolean
 }
 
 export interface BlogPost {

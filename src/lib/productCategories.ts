@@ -7,6 +7,8 @@ export const PRODUCT_CATEGORIES = [
   'テラリウム作品',
   '苔・植物',
   'ツール・容器・照明',
+  'フィギュア',
+  '流木',
   'その他',
 ] as const;
 

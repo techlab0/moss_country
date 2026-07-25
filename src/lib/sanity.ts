@@ -115,7 +115,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
   try {
     const products = await client.fetch(
-      `*[_type == "product"] | order(sortOrder asc) [$start...$end] {
+      `*[_type == "product" && isVisible != false] | order(sortOrder asc) [$start...$end] {
         _id,
         name,
         slug,
@@ -193,8 +193,9 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
     // writeClient (useCdn: false) で取得し、登録直後の商品も詳細ページで表示できるようにする
     // slug がオブジェクト { current } と文字列の両方に対応（昔のデータは文字列のことがある）
+    // 非表示商品(isVisible == false)はストアフロントの詳細取得から除外する（未設定は表示扱い）
     let product = await writeClient.fetch(
-      `*[_type == "product" && (slug.current == $slug || slug == $slug)][0] ${productBySlugProjection}`,
+      `*[_type == "product" && isVisible != false && (slug.current == $slug || slug == $slug)][0] ${productBySlugProjection}`,
       { slug },
       { next: { revalidate: 60 } }
     );
@@ -202,7 +203,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     // スラッグで見つからない場合、商品名で検索（日本語スラッグや slug 未設定の古いデータ用）
     if (!product && slug) {
       product = await writeClient.fetch(
-        `*[_type == "product" && name == $slug][0] ${productBySlugProjection}`,
+        `*[_type == "product" && isVisible != false && name == $slug][0] ${productBySlugProjection}`,
         { slug },
         { next: { revalidate: 60 } }
       );

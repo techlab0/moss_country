@@ -5,7 +5,7 @@ import { writeClient } from '@/lib/sanity';
 export async function GET() {
   try {
     const products = await writeClient.fetch(
-      `*[_type == "product"] | order(sortOrder asc) {
+      `*[_type == "product" && isVisible != false] | order(sortOrder asc) {
         _id,
         name,
         nameReading,

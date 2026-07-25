@@ -169,6 +169,13 @@ export const product = defineType({
       type: 'number',
       description: '数字が小さいほど上位に表示されます',
     }),
+    defineField({
+      name: 'isVisible',
+      title: '公開する（表示）',
+      type: 'boolean',
+      initialValue: true,
+      description: '非表示にすると公開ページ・検索・カートから完全に除外されます',
+    }),
   ],
   orderings: [
     {
@@ -192,13 +199,15 @@ export const product = defineType({
       title: 'name',
       category: 'category',
       price: 'price',
+      isVisible: 'isVisible',
       media: 'images.0',
     },
     prepare(selection) {
-      const { title, category, price } = selection
+      const { title, category, price, isVisible } = selection
+      const hiddenLabel = isVisible === false ? '【非表示】 ' : ''
       return {
         title,
-        subtitle: `${category} - ¥${price?.toLocaleString()}`,
+        subtitle: `${hiddenLabel}${category} - ¥${price?.toLocaleString()}`,
       }
     },
   },

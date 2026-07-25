@@ -38,6 +38,8 @@ export interface Product {
   featured?: boolean;
   // 売上集計（商品別明細）でこの商品を合算する売上項目のID。未設定の場合は商品名でそのまま表示される。
   salesItemId?: string | null;
+  // 公開/非表示フラグ。ストアフロント取得クエリの時点でフィルタ済みのため、通常は true 相当のもののみがここに届く。
+  isVisible?: boolean;
 }
 
 export interface ProductVariant {
