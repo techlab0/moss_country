@@ -11,6 +11,39 @@ export interface SanityInventoryItem {
   trackingEnabled: boolean
 }
 
+// 商品ドキュメントが既に持つ在庫フィールド。一覧APIがこれらを返すため、
+// ストアフロントの一覧では個別の在庫API(/api/products/[id]/inventory)を叩かず、
+// このデータから在庫状態を計算できる（在庫APIコールの爆発を防ぎ、CPU/API消費を大幅削減）。
+export interface ProductStockFields {
+  stockQuantity?: number
+  reserved?: number
+  lowStockThreshold?: number
+}
+
+/**
+ * 商品の stockQuantity/reserved/lowStockThreshold から在庫状態を計算する純粋関数。
+ * getSanityInventory のバリアント無しブランチと同じ計算式を共有し、
+ * サーバー(API)とクライアント(一覧カード)で挙動を一致させる。
+ */
+export function inventoryFromProductStock(
+  productId: string,
+  fields: ProductStockFields
+): SanityInventoryItem {
+  const quantity = fields.stockQuantity ?? 0
+  const reserved = fields.reserved ?? 0
+  const reorderLevel = fields.lowStockThreshold ?? 5
+  const available = Math.max(0, quantity - reserved)
+  return {
+    _id: `inventory_product_${productId}`,
+    productId,
+    quantity,
+    reserved,
+    available,
+    reorderLevel,
+    trackingEnabled: true,
+  }
+}
+
 /**
  * Get inventory from Sanity CMS
  */
@@ -35,20 +68,7 @@ export async function getSanityInventory(productId: string, variant?: string): P
 
       if (!productStock) return null
 
-      const quantity = productStock.stockQuantity ?? 0
-      const reserved = productStock.reserved ?? 0
-      const reorderLevel = productStock.lowStockThreshold ?? 5
-      const available = Math.max(0, quantity - reserved)
-
-      return {
-        _id: `inventory_product_${productId}`,
-        productId,
-        quantity,
-        reserved,
-        available,
-        reorderLevel,
-        trackingEnabled: true,
-      }
+      return inventoryFromProductStock(productId, productStock)
     }
 
     const query = `

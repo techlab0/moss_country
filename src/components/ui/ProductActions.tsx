@@ -14,7 +14,9 @@ interface ProductActionsProps {
 
 export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
-  const { availableStock, isInStock, isOutOfStock } = useSanityInventory(product._id);
+  // 詳細ページの product には在庫フィールド(stockQuantity/reserved/lowStockThreshold)が
+  // 含まれるため、それを preloaded として渡し、在庫APIコールを無くす。
+  const { availableStock, isInStock, isOutOfStock } = useSanityInventory(product._id, undefined, product);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
