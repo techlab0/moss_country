@@ -15,8 +15,13 @@ export async function GET() {
   try {
     const [settings, siteSettings] = await Promise.all([
       getMaintenanceSettings(),
+      // ミドルウェアが毎リクエスト参照するため、Nextデータキャッシュ(revalidate:60 + tags:['maintenance'])
+      // に載せてSanityの非CDN API Requests消費を抑える。準備中ページの変更は
+      // 管理画面の保存時に revalidateTag('maintenance') で即座に反映される。
       writeClient.fetch<{ maintenancePages?: string[] } | null>(
-        `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages }`
+        `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages }`,
+        {},
+        { next: { revalidate: 60, tags: ['maintenance'] } }
       ),
     ]);
     const isEnabled = settings?.isEnabled === true;

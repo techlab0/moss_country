@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { mergeSiteSettings, SiteSettingsData, NavLink, SnsLink } from '@/lib/siteSettingsDefaults';
@@ -80,6 +81,10 @@ export async function PUT(request: NextRequest) {
       allowIndexing: body.allowIndexing === true,
       updatedAt: new Date().toISOString(),
     });
+
+    // 準備中ページ(maintenancePages)はミドルウェアの状態キャッシュにも載るため、
+    // 保存時に 'maintenance' タグを破棄して準備中の切り替えを即時反映する
+    revalidateTag('maintenance');
 
     return NextResponse.json({ settings: mergeSiteSettings(saved as Partial<SiteSettingsData>) });
   } catch (error) {
