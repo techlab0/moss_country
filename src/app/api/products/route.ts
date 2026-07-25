@@ -38,7 +38,9 @@ export async function GET() {
         "salesItemId": salesItem._ref
       }`,
       {},
-      { next: { revalidate: 60 } }
+      // tags: ['products'] を付け、管理画面の商品更新時に revalidateTag('products') で
+      // 即座にこのキャッシュを破棄できるようにする（revalidate:60 は保険のフォールバック）
+      { next: { revalidate: 60, tags: ['products'] } }
     );
 
     return NextResponse.json(products ?? []);

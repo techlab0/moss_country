@@ -141,6 +141,20 @@ export default function AdminProductsPage() {
     }
 
     setSavingQuickEdit(true);
+    // 楽観更新：保存中でも編集内容を即座に一覧へ反映する。失敗したら再取得で戻す。
+    setProducts((prev) =>
+      prev.map((p) =>
+        p._id === productId
+          ? {
+              ...p,
+              slug: { _type: 'slug', current: trimmedSlug },
+              nameReading: quickEditData.nameReading,
+              category: quickEditData.category,
+              isVisible: quickEditData.isVisible,
+            }
+          : p
+      )
+    );
     try {
       const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'PATCH',
@@ -158,10 +172,11 @@ export default function AdminProductsPage() {
       }
 
       setEditingId(null);
-      fetchProducts();
     } catch (error) {
       console.error('クイック編集の保存エラー:', error);
       alert('保存に失敗しました');
+      // 失敗時はサーバーの正データで戻す
+      fetchProducts();
     } finally {
       setSavingQuickEdit(false);
     }
@@ -169,6 +184,11 @@ export default function AdminProductsPage() {
 
   const handleToggleVisibility = async (product: ProductWithInventory) => {
     const nextVisible = !(product.isVisible !== false);
+    // 楽観更新：Sanityの書き込み反映を待たず、管理画面のUIを即座に切り替える。
+    // 失敗したら元の状態に戻す。
+    setProducts((prev) =>
+      prev.map((p) => (p._id === product._id ? { ...p, isVisible: nextVisible } : p))
+    );
     setTogglingVisibilityId(product._id);
     try {
       const response = await fetch(`/api/admin/products/${product._id}`, {
@@ -180,11 +200,13 @@ export default function AdminProductsPage() {
       if (!response.ok) {
         throw new Error('表示状態の更新に失敗しました');
       }
-
-      fetchProducts();
     } catch (error) {
       console.error('表示状態の更新エラー:', error);
       alert('表示状態の更新に失敗しました');
+      // 失敗時のみ元に戻す
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? { ...p, isVisible: !nextVisible } : p))
+      );
     } finally {
       setTogglingVisibilityId(null);
     }

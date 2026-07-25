@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
@@ -106,6 +107,9 @@ export async function POST(request: NextRequest) {
     };
 
     const product = await writeClient.create(doc);
+
+    // 新商品を公開側（/shop 一覧・詳細）へ即時反映する
+    revalidateTag('products');
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

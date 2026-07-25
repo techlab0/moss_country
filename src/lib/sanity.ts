@@ -194,10 +194,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     // writeClient (useCdn: false) で取得し、登録直後の商品も詳細ページで表示できるようにする
     // slug がオブジェクト { current } と文字列の両方に対応（昔のデータは文字列のことがある）
     // 非表示商品(isVisible == false)はストアフロントの詳細取得から除外する（未設定は表示扱い）
+    // tags: ['products'] を付け、管理画面の商品更新時に revalidateTag('products') で
+    // 即座にこのキャッシュを破棄できるようにする（revalidate:60 は保険のフォールバック）
     let product = await writeClient.fetch(
       `*[_type == "product" && isVisible != false && (slug.current == $slug || slug == $slug)][0] ${productBySlugProjection}`,
       { slug },
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60, tags: ['products'] } }
     );
 
     // スラッグで見つからない場合、商品名で検索（日本語スラッグや slug 未設定の古いデータ用）
@@ -205,7 +207,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       product = await writeClient.fetch(
         `*[_type == "product" && isVisible != false && name == $slug][0] ${productBySlugProjection}`,
         { slug },
-        { next: { revalidate: 60 } }
+        { next: { revalidate: 60, tags: ['products'] } }
       );
     }
 

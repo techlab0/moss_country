@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { client, writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
@@ -129,6 +130,10 @@ export async function PATCH(
     }
     const product = await patch.commit();
 
+    // 公開側（/shop 一覧・/shop/[slug] 詳細）のキャッシュを即時破棄し、
+    // 表示/非表示やスラッグ変更などをほぼ即座に反映させる
+    revalidateTag('products');
+
     return NextResponse.json(product);
   } catch (error) {
     console.error('商品更新エラー:', error);
@@ -152,7 +157,10 @@ export async function DELETE(
 
     const { id } = await params;
     await client.delete(id);
-    
+
+    // 削除も公開側キャッシュへ即時反映する
+    revalidateTag('products');
+
     return NextResponse.json(
       { message: '商品を削除しました' },
       { status: 200 }
