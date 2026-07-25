@@ -529,16 +529,22 @@ export async function getMaintenanceSettings(): Promise<{
   purchaseLockedMessage?: string;
 } | null> {
   try {
-    // ミドルウェアが毎リクエスト参照するため、CDNキャッシュ(client)ではなく
-    // 常に最新を返すwriteClientを使う（管理画面で切り替えた直後に反映されないと困るため）
-    const settings = await writeClient.fetch(`
-      *[_type == "maintenanceSettings"][0] {
+    // ミドルウェアが毎リクエスト参照するため、無防備に呼ぶとSanityの非CDN API Requests枠を
+    // 大量消費する（月25万回制限に対し逼迫の主因だった）。Nextデータキャッシュに
+    // revalidate:60 + tags:['maintenance'] で載せて呼び出しを大幅に削減しつつ、
+    // 管理画面での保存時に revalidateTag('maintenance') で即座に破棄して、
+    // メンテ/購入ロックの切り替え直後の反映も維持する。
+    // 取得元は useCdn:false の writeClient のままにし、キャッシュ破棄後は確実に最新を読む。
+    const settings = await writeClient.fetch(
+      `*[_type == "maintenanceSettings"][0] {
         isEnabled,
         message,
         purchaseLocked,
         purchaseLockedMessage
-      }
-    `);
+      }`,
+      {},
+      { next: { revalidate: 60, tags: ['maintenance'] } }
+    );
 
     return settings || null;
   } catch (error) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { getMaintenanceSettings, updateMaintenanceSettings } from '@/lib/sanity';
 import { getAppSetting, setAppSetting, MAINTENANCE_PASSWORD_KEY } from '@/lib/appSettings';
 import { verifyAdminSession } from '@/lib/auth';
@@ -100,6 +101,9 @@ export async function POST(request: NextRequest) {
 
     // passwordはSupabase(app_settings)へ保存
     await setAppSetting(MAINTENANCE_PASSWORD_KEY, trimmedPassword);
+
+    // メンテ/購入ロックの状態キャッシュを即破棄し、切り替えを即時反映する
+    revalidateTag('maintenance');
 
     const newSettings: MaintenanceSettings = {
       isEnabled,
