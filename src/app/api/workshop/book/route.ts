@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
+import { consumeDistributedRateLimit } from '@/lib/distributedRateLimit';
 import { getSimpleWorkshopById } from '@/lib/sanity';
 import { convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 import { createBookingEvent, deleteBookingEvent } from '@/lib/googleCalendar';
 import { isSlotStillAvailable, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import {
-  createBooking,
+  reserveBookingSlot,
   deleteBooking,
+  cancelBooking,
+  updateBookingGoogleEvent,
   updateBookingPayment,
+  WorkshopSlotCapacityError,
+  type WorkshopBooking,
   type WorkshopBookingPaymentMethod,
 } from '@/lib/workshopBookings';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
@@ -20,6 +24,13 @@ import {
   todayJstDateStr,
   maxBookableDateStr,
 } from '@/lib/workshopBookingConfig';
+import {
+  buildGoogleBookingEventId,
+  buildSquareIdempotencyKey,
+  buildWorkshopBookingNumber,
+  isValidWorkshopIdempotencyKey,
+  validateWorkshopCustomerInput,
+} from '@/lib/workshopBookingSafety';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PAYMENT_METHODS: WorkshopBookingPaymentMethod[] = ['credit_card', 'on_site', 'paypay'];
@@ -33,6 +44,7 @@ interface BookRequestBody {
   paymentMethod?: string;
   notes?: string;
   paymentToken?: { token?: string };
+  idempotencyKey?: string;
 }
 
 /**
@@ -46,12 +58,14 @@ async function chargeSquareCard({
   amount,
   referenceId,
   customerEmail,
+  idempotencyKey,
 }: {
   token: string;
   amount: number;
   referenceId: string;
   customerEmail?: string | null;
-}): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+  idempotencyKey: string;
+}): Promise<{ success: boolean; paymentId?: string; error?: string; indeterminate?: boolean }> {
   try {
     if (!token || typeof token !== 'string' || token.length < 10) {
       return { success: false, error: 'Invalid payment token format' };
@@ -65,7 +79,7 @@ async function chargeSquareCard({
 
     const requestBody = {
       source_id: token,
-      idempotency_key: uuidv4(),
+      idempotency_key: buildSquareIdempotencyKey(idempotencyKey),
       amount_money: {
         amount: convertToSquareAmount(amount),
         currency: SQUARE_CONFIG.currency,
@@ -93,18 +107,55 @@ async function chargeSquareCard({
       console.error('🚨 ワークショップ予約のSquare決済に失敗しました:', { status: response.status, result });
       const firstError = result.errors?.[0];
       const errorMessage = firstError?.detail || firstError?.code || `HTTP ${response.status}: Payment processing failed`;
-      return { success: false, error: errorMessage };
+      return {
+        success: false,
+        error: errorMessage,
+        indeterminate: response.status >= 500 || firstError?.code === 'TEMPORARY_ERROR',
+      };
     }
 
     return { success: true, paymentId: result.payment?.id };
   } catch (error) {
     console.error('ワークショップ予約のSquare決済処理中にエラーが発生しました:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown payment error' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown payment error',
+      indeterminate: true,
+    };
   }
 }
 
-function generateBookingNumber(): string {
-  return `WS-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+/**
+ * CreatePaymentの応答を受け取れず成否不明になった場合、Square公式の
+ * CancelPaymentByIdempotencyKeyで未確定・承認済み決済を取り消してから再試行可能にする。
+ */
+async function cancelSquarePaymentByIdempotencyKey(idempotencyKey: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${SQUARE_CONFIG.apiBaseUrl}/v2/payments/cancel`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-06-04',
+      },
+      body: JSON.stringify({
+        idempotency_key: buildSquareIdempotencyKey(idempotencyKey),
+      }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      console.error('Square決済の成否不明状態を解消できませんでした:', {
+        status: response.status,
+        errors: result?.errors?.map((item: { code?: string }) => item.code),
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Square決済の成否不明状態を解消中に通信エラーが発生しました:', error);
+    return false;
+  }
 }
 
 function buildConfirmationEmailBody(params: {
@@ -144,11 +195,68 @@ function buildConfirmationEmailBody(params: {
   ].join('\n');
 }
 
+function bookingMatchesRequest(
+  booking: WorkshopBooking,
+  input: {
+    planId: string;
+    date: string;
+    startTime: string;
+    partySize: number;
+    customerEmail: string;
+    paymentMethod: WorkshopBookingPaymentMethod;
+    total: number;
+  }
+): boolean {
+  return (
+    booking.workshopPlanId === input.planId &&
+    booking.date === input.date &&
+    booking.startTime === input.startTime &&
+    booking.partySize === input.partySize &&
+    booking.customerEmail === input.customerEmail &&
+    booking.paymentMethod === input.paymentMethod &&
+    booking.total === input.total
+  );
+}
+
+function successPayload(booking: WorkshopBooking, paymentStatus = booking.paymentStatus) {
+  return {
+    success: true,
+    bookingNumber: booking.bookingNumber,
+    date: booking.date,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    partySize: booking.partySize,
+    total: booking.total,
+    paymentMethod: booking.paymentMethod,
+    paymentStatus,
+  };
+}
+
+async function rollbackReservation(bookingId: string, googleEventId: string | null): Promise<void> {
+  let calendarRemoved = !googleEventId;
+  if (googleEventId) {
+    try {
+      await deleteBookingEvent(googleEventId);
+      calendarRemoved = true;
+    } catch (error) {
+      // Google側のIDを失わないよう、DB行は削除せずcancelledで保持して管理者が再試行できるようにする。
+      console.error('予約ロールバック時にGoogleイベントを削除できませんでした:', {
+        bookingId,
+        googleEventId,
+        error,
+      });
+    }
+  }
+
+  if (calendarRemoved) {
+    await deleteBooking(bookingId);
+  } else {
+    await cancelBooking(bookingId);
+  }
+}
+
 // 公開API（予約作成）。認証不要。
 export async function POST(request: NextRequest) {
-  let createdEventId: string | null = null;
-  let createdBookingId: string | null = null;
-
   try {
     // 公開エンドポイントのため、スパム予約（Googleカレンダーを埋める・現地払いはトークン不要）を
     // 防ぐレート制限をかける
@@ -157,6 +265,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
         { status: 429 }
+      );
+    }
+    try {
+      const allowed = await consumeDistributedRateLimit(`workshop-book:${ip}`, 5, 10 * 60);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
+          { status: 429 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: '予約受付の安全確認に接続できません。しばらくしてから再度お試しください。' },
+        { status: 503 }
       );
     }
 
@@ -179,6 +301,7 @@ export async function POST(request: NextRequest) {
     const customerPhone = body.customer?.phone?.trim();
     const paymentMethod = body.paymentMethod as WorkshopBookingPaymentMethod | undefined;
     const notes = body.notes?.trim();
+    const idempotencyKey = body.idempotencyKey;
 
     // ---- 入力バリデーション ----
     if (!planId || typeof planId !== 'string') {
@@ -199,6 +322,18 @@ export async function POST(request: NextRequest) {
     }
     if (!customerName || !customerEmail) {
       return NextResponse.json({ error: '氏名・メールアドレスは必須です' }, { status: 400 });
+    }
+    const customerInputError = validateWorkshopCustomerInput({
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+      notes,
+    });
+    if (customerInputError) {
+      return NextResponse.json({ error: customerInputError }, { status: 400 });
+    }
+    if (!isValidWorkshopIdempotencyKey(idempotencyKey)) {
+      return NextResponse.json({ error: '予約操作IDの形式が不正です' }, { status: 400 });
     }
     if (!paymentMethod || !PAYMENT_METHODS.includes(paymentMethod)) {
       return NextResponse.json({ error: '支払い方法が不正です' }, { status: 400 });
@@ -237,15 +372,94 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    const bookingNumber = generateBookingNumber();
+    const bookingNumber = buildWorkshopBookingNumber(idempotencyKey);
     // 枠全体（start〜end）を占有する。プランの所要時間は使わない（予約可否バリデーションで既にWORKSHOP_SLOTSのstartと一致確認済み）
     const startISO = jstDateTimeToIso(date, startTime);
     const endTime = matchedSlot.end;
     const endISO = jstDateTimeToIso(date, endTime);
 
-    // ---- Googleカレンダーへイベント作成。失敗したら予約を確定させずここで終了する ----
+    // ---- DBで枠を原子的に確保。最終的な定員判定はDBトリガーを正とする ----
+    let reservation;
+    try {
+      reservation = await reserveBookingSlot({
+        bookingNumber,
+        workshopPlanId: plan._id,
+        workshopPlanName: plan.title,
+        date,
+        startTime,
+        endTime,
+        partySize: partySize as number,
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || null,
+        paymentMethod,
+        paymentStatus: 'pending',
+        total,
+        googleEventId: null,
+        notes: notes || null,
+        idempotencyKey,
+      });
+    } catch (error) {
+      if (error instanceof WorkshopSlotCapacityError) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+      console.error('ワークショップ予約枠の確保に失敗しました:', error);
+      return NextResponse.json(
+        { error: '予約枠を確保できませんでした。時間をおいて再度お試しください。' },
+        { status: 503 }
+      );
+    }
+
+    const booking = reservation.booking;
+    if (!reservation.created) {
+      if (
+        !bookingMatchesRequest(booking, {
+          planId: plan._id,
+          date,
+          startTime,
+          partySize: partySize as number,
+          customerEmail,
+          paymentMethod,
+          total,
+        })
+      ) {
+        return NextResponse.json(
+          { error: '同じ予約操作IDが別の内容で使用されています', code: 'IDEMPOTENCY_CONFLICT' },
+          { status: 409 }
+        );
+      }
+      if (booking.status === 'cancelled') {
+        return NextResponse.json(
+          { error: 'この予約操作は既にキャンセルされています', code: 'IDEMPOTENCY_CONFLICT' },
+          { status: 409 }
+        );
+      }
+
+      const completed =
+        booking.paymentMethod === 'credit_card'
+          ? booking.paymentStatus === 'paid'
+          : Boolean(booking.googleEventId);
+      if (completed) {
+        return NextResponse.json(successPayload(booking));
+      }
+
+      // 同時に届いた同じリクエストは、先行処理へ任せる。通信断後の再開は2分後から許可する。
+      const createdAtMs = new Date(booking.createdAt).getTime();
+      if (Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 2 * 60 * 1000) {
+        return NextResponse.json(
+          { error: '同じ予約を処理中です。少し待ってから再度ご確認ください。', code: 'BOOKING_IN_PROGRESS' },
+          { status: 409 }
+        );
+      }
+    }
+
+    // ---- Googleカレンダーへ決定的IDで登録。再送時の409は同じイベントとして扱う ----
+    const requestedEventId = buildGoogleBookingEventId(idempotencyKey);
+    let eventCreatedNow = false;
     try {
       const event = await createBookingEvent({
+        eventId: requestedEventId,
+        idempotencyKey,
         summary: `WS予約: ${plan.title} / ${customerName} / ${partySize}名`,
         description: [
           `予約番号: ${bookingNumber}`,
@@ -262,71 +476,91 @@ export async function POST(request: NextRequest) {
         startISO,
         endISO,
       });
-      createdEventId = event.eventId;
+      eventCreatedNow = event.created;
+      if (booking.googleEventId !== event.eventId) {
+        await updateBookingGoogleEvent(booking.id, event.eventId);
+        booking.googleEventId = event.eventId;
+      }
     } catch (error) {
       console.error('ワークショップ予約: Googleカレンダーへのイベント作成に失敗しました:', error);
+      if (eventCreatedNow) {
+        try {
+          await deleteBookingEvent(requestedEventId);
+        } catch (deleteError) {
+          console.error('Googleイベント作成後のロールバックにも失敗しました:', deleteError);
+        }
+      }
+      if (reservation.created) {
+        try {
+          await deleteBooking(booking.id);
+        } catch (deleteError) {
+          console.error('カレンダー登録失敗後の予約枠解放にも失敗しました:', deleteError);
+        }
+      }
       return NextResponse.json(
         { error: 'カレンダーへの登録に失敗したため予約を確定できませんでした。時間をおいて再度お試しください。' },
         { status: 503 }
       );
     }
 
-    // ---- Supabaseへ保存（pending状態でまず作成） ----
-    let booking;
-    try {
-      booking = await createBooking({
-        bookingNumber,
-        workshopPlanId: plan._id,
-        workshopPlanName: plan.title,
-        date,
-        startTime,
-        endTime,
-        partySize: partySize as number,
-        customerName,
-        customerEmail,
-        customerPhone: customerPhone || null,
-        paymentMethod,
-        paymentStatus: 'pending',
-        total,
-        googleEventId: createdEventId,
-        notes: notes || null,
-      });
-      createdBookingId = booking.id;
-    } catch (error) {
-      console.error('ワークショップ予約: Supabaseへの保存に失敗しました。Googleカレンダーイベントをロールバックします:', error);
-      if (createdEventId) await deleteBookingEvent(createdEventId);
-      return NextResponse.json({ error: '予約の保存に失敗しました' }, { status: 500 });
-    }
-
     // ---- 決済分岐 ----
-    let paymentStatus: 'pending' | 'paid' = 'pending';
+    let paymentStatus: 'pending' | 'paid' =
+      booking.paymentStatus === 'paid' ? 'paid' : 'pending';
 
-    if (paymentMethod === 'credit_card') {
+    if (paymentMethod === 'credit_card' && paymentStatus !== 'paid') {
+      if (!reservation.created) {
+        // 前回が決済応答受信前に中断した可能性を先に解消する。
+        const previousPaymentCleared = await cancelSquarePaymentByIdempotencyKey(idempotencyKey);
+        if (!previousPaymentCleared) {
+          return NextResponse.json(
+            {
+              error: '決済状況を確認中です。店舗へお問い合わせください。',
+              code: 'PAYMENT_STATUS_UNKNOWN',
+            },
+            { status: 503 }
+          );
+        }
+      }
+
       const chargeResult = await chargeSquareCard({
         token: body.paymentToken!.token!,
         amount: total,
         referenceId: bookingNumber,
         customerEmail,
+        idempotencyKey,
       });
 
       if (!chargeResult.success) {
+        if (chargeResult.indeterminate) {
+          const cancelled = await cancelSquarePaymentByIdempotencyKey(idempotencyKey);
+          if (!cancelled) {
+            // 支払い済みの可能性があるため、予約枠・イベント・冪等キーを保持して手動確認可能にする。
+            return NextResponse.json(
+              {
+                error: '決済結果を確認できません。再度決済せず、店舗へお問い合わせください。',
+                code: 'PAYMENT_STATUS_UNKNOWN',
+              },
+              { status: 503 }
+            );
+          }
+        }
+
         // 決済失敗: カレンダーイベント削除＋予約削除でロールバック（在庫予約解放と同様の考え方）
         console.error('ワークショップ予約: 決済失敗のためロールバックします:', {
           bookingNumber,
           error: chargeResult.error,
         });
-        if (createdEventId) await deleteBookingEvent(createdEventId);
         try {
-          if (createdBookingId) await deleteBooking(createdBookingId);
+          await rollbackReservation(booking.id, booking.googleEventId);
         } catch (rollbackError) {
-          console.error('ワークショップ予約: 決済失敗後の予約削除にも失敗しました。手動確認が必要です:', {
-            bookingId: createdBookingId,
+          console.error('ワークショップ予約: 決済失敗後のロールバックに失敗しました。手動確認が必要です:', {
+            bookingId: booking.id,
             bookingNumber,
             rollbackError,
           });
         }
         return NextResponse.json(
-          { error: '決済に失敗しました', message: chargeResult.error || 'Unknown payment error' },
+          { error: '決済に失敗しました。カード情報を確認して再度お試しください。' },
           { status: 400 }
         );
       }
@@ -334,6 +568,8 @@ export async function POST(request: NextRequest) {
       paymentStatus = 'paid';
       try {
         await updateBookingPayment(booking.id, { paymentStatus: 'paid', squarePaymentId: chargeResult.paymentId });
+        booking.paymentStatus = 'paid';
+        booking.squarePaymentId = chargeResult.paymentId || null;
       } catch (updateError) {
         // 決済は既に成立しているため、DB更新失敗は要手動確認としてログに残し処理は継続する
         // （create-payment/route.tsの既存注文フローと同じ方針: 二重課金を避けるため成功レスポンスは返す）
@@ -412,7 +648,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('ワークショップ予約作成エラー:', error);
     return NextResponse.json(
-      { error: '予約処理に失敗しました', message: error instanceof Error ? error.message : 'unknown' },
+      { error: '予約処理に失敗しました。時間をおいて再度お試しください。' },
       { status: 500 }
     );
   }

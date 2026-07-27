@@ -4,7 +4,7 @@
 // service_roleキーでのみアクセスできるSupabaseに保存する（docs/sql/create-workshop-bookings-table.sql参照）。
 // 方針は src/lib/orders.ts に合わせている。
 //
-// 書き込み系（createBooking / cancelBooking / updateBookingPayment）は失敗時に例外をthrowする。
+// 書き込み系（reserveBookingSlot / cancelBooking / updateBookingPayment）は失敗時に例外をthrowする。
 // 呼び出し元（予約作成API・管理画面キャンセルAPI）はロールバック（Googleカレンダーイベント削除等）を
 // 行う前提のため、ここで例外を握りつぶすとその処理が動かなくなる。
 //
@@ -37,6 +37,7 @@ export interface WorkshopBooking {
   googleEventId: string | null;
   status: WorkshopBookingStatus;
   notes: string | null;
+  idempotencyKey: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +59,7 @@ export interface CreateWorkshopBookingInput {
   squarePaymentId?: string | null;
   googleEventId?: string | null;
   notes?: string | null;
+  idempotencyKey: string;
 }
 
 export interface UpdateWorkshopBookingPaymentInput {
@@ -91,6 +93,7 @@ interface WorkshopBookingRow {
   google_event_id: string | null;
   status: string;
   notes: string | null;
+  idempotency_key: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +118,7 @@ function rowToBooking(row: WorkshopBookingRow): WorkshopBooking {
     googleEventId: row.google_event_id,
     status: (row.status as WorkshopBookingStatus) || 'confirmed',
     notes: row.notes,
+    idempotencyKey: row.idempotency_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -138,15 +142,24 @@ function inputToInsertRow(input: CreateWorkshopBookingInput) {
     square_payment_id: input.squarePaymentId ?? null,
     google_event_id: input.googleEventId ?? null,
     notes: input.notes ?? null,
+    idempotency_key: input.idempotencyKey,
   };
 }
 
+export class WorkshopSlotCapacityError extends Error {}
+
+export interface ReserveBookingSlotResult {
+  booking: WorkshopBooking;
+  created: boolean;
+}
+
 /**
- * 予約を新規作成する。
- * 失敗時はログを残したうえで例外をthrowする（呼び出し元＝予約作成APIのcatchに委ねる。
- * 既にGoogleカレンダーへイベント作成済みなら、そのロールバック（イベント削除）が必要なため）。
+ * 予約枠を新規確保する。DBトリガーが同一枠の処理を直列化し、定員を最終保証する。
+ * 同じidempotency_keyの再送なら既存予約を返し、後続処理を安全に再開できるようにする。
  */
-export async function createBooking(input: CreateWorkshopBookingInput): Promise<WorkshopBooking> {
+export async function reserveBookingSlot(
+  input: CreateWorkshopBookingInput
+): Promise<ReserveBookingSlotResult> {
   const { data, error } = await supabaseAdmin
     .from('workshop_bookings')
     .insert([inputToInsertRow(input)])
@@ -154,11 +167,55 @@ export async function createBooking(input: CreateWorkshopBookingInput): Promise<
     .single();
 
   if (error || !data) {
+    if (error?.message?.includes('WORKSHOP_SLOT_CAPACITY_EXCEEDED')) {
+      throw new WorkshopSlotCapacityError('この枠は指定人数分の空きがありません');
+    }
+    // 同じ操作の再送。DBのUNIQUE制約を正として、既存予約を返して後続処理を冪等に再開する。
+    if (error?.code === '23505') {
+      const existing = await getBookingByIdempotencyKey(input.idempotencyKey);
+      if (existing) {
+        return { booking: existing, created: false };
+      }
+    }
     console.error('ワークショップ予約の作成に失敗しました:', error);
     throw new Error('Failed to create workshop booking in database');
   }
 
-  return rowToBooking(data);
+  return { booking: rowToBooking(data), created: true };
+}
+
+export async function getBookingByIdempotencyKey(
+  idempotencyKey: string
+): Promise<WorkshopBooking | null> {
+  const { data, error } = await supabaseAdmin
+    .from('workshop_bookings')
+    .select('*')
+    .eq('idempotency_key', idempotencyKey)
+    .maybeSingle();
+
+  if (error) {
+    console.error('冪等キーによるワークショップ予約取得に失敗しました:', {
+      code: error.code,
+      message: error.message,
+    });
+    throw error;
+  }
+  return data ? rowToBooking(data) : null;
+}
+
+export async function updateBookingGoogleEvent(
+  id: string,
+  googleEventId: string
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('workshop_bookings')
+    .update({ google_event_id: googleEventId })
+    .eq('id', id);
+
+  if (error) {
+    console.error(`GoogleイベントIDの保存に失敗しました (id: ${id}):`, error);
+    throw error;
+  }
 }
 
 /**
