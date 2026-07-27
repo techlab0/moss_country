@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -172,6 +172,8 @@ export default function WorkshopBookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitUnavailable, setSubmitUnavailable] = useState(false);
+  // 通信再送では同じ値を使い、サーバー・Google・Square側で二重処理を防ぐ。
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   // ---- 完了 ----
   const [result, setResult] = useState<BookingResult | null>(null);
@@ -212,6 +214,9 @@ export default function WorkshopBookingPage() {
     setSubmitting(true);
     setSubmitError(null);
     setSubmitUnavailable(false);
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = window.crypto.randomUUID();
+    }
 
     try {
       const res = await fetch('/api/workshop/book', {
@@ -228,6 +233,7 @@ export default function WorkshopBookingPage() {
             phone: customerPhone.trim(),
           },
           paymentMethod,
+          idempotencyKey: idempotencyKeyRef.current,
           notes: notes.trim() || undefined,
           ...(paymentToken ? { paymentToken } : {}),
         }),
@@ -241,11 +247,17 @@ export default function WorkshopBookingPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        // 5xx/通信断/処理中はサーバー側で処理済みの可能性があるため同じキーで再確認する。
+        // 明確な入力・決済エラーや内容衝突では次の操作用に新しいキーへ切り替える。
+        if (res.status < 500 && data.code !== 'BOOKING_IN_PROGRESS') {
+          idempotencyKeyRef.current = null;
+        }
         setSubmitError(data.error || data.message || '予約処理に失敗しました');
         return;
       }
 
       setResult(data as BookingResult);
+      idempotencyKeyRef.current = null;
     } catch {
       setSubmitError('通信エラーが発生しました。しばらくしてから再度お試しください。');
     } finally {

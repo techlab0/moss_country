@@ -2,12 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSimpleWorkshopById } from '@/lib/sanity';
 import { computeAvailableSlots, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import { todayJstDateStr, maxBookableDateStr } from '@/lib/workshopBookingConfig';
+import { consumeDistributedRateLimit } from '@/lib/distributedRateLimit';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // 公開API（予約ページ用の空き枠一覧）。認証不要（返す内容は公開情報のみ）。
 export async function GET(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    try {
+      const allowed = await consumeDistributedRateLimit(`workshop-availability:${ip}`, 60, 60);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'リクエストが多すぎます。しばらくしてから再度お試しください。' },
+          { status: 429 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: '予約カレンダーの安全確認に接続できません。しばらくしてから再度お試しください。' },
+        { status: 503 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');

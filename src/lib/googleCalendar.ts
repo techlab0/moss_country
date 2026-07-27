@@ -16,12 +16,35 @@ export interface BusyInterval {
 }
 
 export interface CreateBookingEventInput {
+  /** 再送時にも同じGoogleイベントを指す決定的なID */
+  eventId: string;
+  idempotencyKey: string;
   summary: string;
   description?: string;
   /** RFC3339形式（例: 2026-08-01T10:00:00+09:00） */
   startISO: string;
   /** RFC3339形式（例: 2026-08-01T12:00:00+09:00） */
   endISO: string;
+}
+
+export function buildBookingEventRequest(input: CreateBookingEventInput) {
+  return {
+    id: input.eventId,
+    summary: input.summary,
+    description: input.description,
+    start: { dateTime: input.startISO, timeZone: TIME_ZONE },
+    end: { dateTime: input.endISO, timeZone: TIME_ZONE },
+    // 予約人数はSupabaseで管理する。予約自身をfreebusyへ含めると、
+    // 1人目の予約だけで定員4名の枠全体が閉じてしまうため「予定なし」にする。
+    transparency: 'transparent',
+    visibility: 'private',
+    extendedProperties: {
+      private: {
+        mossCountryType: 'workshopBooking',
+        idempotencyKey: input.idempotencyKey,
+      },
+    },
+  };
 }
 
 /**
@@ -106,7 +129,9 @@ export async function getBusyIntervals(startISO: string, endISO: string): Promis
  * イベント作成に失敗した場合は例外を投げる（呼び出し側は予約を確定させないこと。
  * カレンダーに載らない予約はダブルブッキングの元になるため）。
  */
-export async function createBookingEvent(input: CreateBookingEventInput): Promise<{ eventId: string }> {
+export async function createBookingEvent(
+  input: CreateBookingEventInput
+): Promise<{ eventId: string; created: boolean }> {
   if (!isCalendarConfigured()) {
     throw new Error(
       'Googleカレンダーが設定されていません（GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY / GOOGLE_CALENDAR_ID を確認してください）'
@@ -119,20 +144,21 @@ export async function createBookingEvent(input: CreateBookingEventInput): Promis
     const calendar = await getCalendarClient();
     const response = await calendar.events.insert({
       calendarId,
-      requestBody: {
-        summary: input.summary,
-        description: input.description,
-        start: { dateTime: input.startISO, timeZone: TIME_ZONE },
-        end: { dateTime: input.endISO, timeZone: TIME_ZONE },
-      },
+      requestBody: buildBookingEventRequest(input),
     });
 
     const eventId = response.data?.id;
     if (!eventId) {
       throw new Error('Googleカレンダーへのイベント作成でイベントIDが返却されませんでした');
     }
-    return { eventId };
+    return { eventId, created: true };
   } catch (error) {
+    // 決定的なevent.idを使うため、再送時の409は既に同じイベントがある正常系。
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = (error as any)?.code ?? (error as any)?.response?.status;
+    if (status === 409) {
+      return { eventId: input.eventId, created: false };
+    }
     console.error('Googleカレンダーへのイベント作成に失敗しました:', error);
     throw error instanceof Error ? error : new Error('Googleカレンダーへのイベント作成に失敗しました');
   }
@@ -141,15 +167,12 @@ export async function createBookingEvent(input: CreateBookingEventInput): Promis
 /**
  * ワークショップ予約のGoogleカレンダーイベントを削除する（キャンセル用）。
  * 既に削除済み・存在しない（404/410）場合は握りつぶす。
- * それ以外の失敗はログに残すのみで、呼び出し元（予約キャンセル処理）を止めない
- * ベストエフォート方針とする（キャンセル自体を失敗させると管理側の操作感が悪化するため。
- * カレンダー側にイベントが残っても、Supabase側で status='cancelled' になっていれば
- * 予約枠の空き計算では confirmed のみを見るため実害は限定的）。
+ * それ以外の失敗は例外を投げる。呼び出し側がDBのgoogle_event_idを保持したまま
+ * 再試行できるようにし、Google側だけに孤立イベントが残る状態を防ぐ。
  */
 export async function deleteBookingEvent(eventId: string): Promise<void> {
   if (!isCalendarConfigured()) {
-    console.warn('Googleカレンダーが未設定のため、イベント削除をスキップしました。', { eventId });
-    return;
+    throw new Error('Googleカレンダーが未設定のため、イベントを削除できません');
   }
 
   const calendarId = requireCalendarId();
@@ -163,6 +186,7 @@ export async function deleteBookingEvent(eventId: string): Promise<void> {
     if (status === 404 || status === 410) {
       return;
     }
-    console.error('Googleカレンダーイベントの削除に失敗しました（キャンセル処理自体は継続します）:', { eventId, error });
+    console.error('Googleカレンダーイベントの削除に失敗しました:', { eventId, error });
+    throw error;
   }
 }

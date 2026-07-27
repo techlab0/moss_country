@@ -4,6 +4,8 @@
 CREATE TABLE IF NOT EXISTS workshop_bookings (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     booking_number TEXT UNIQUE NOT NULL,
+    -- ブラウザで生成する操作ID。同じ送信の再試行による二重予約・二重決済を防ぐ
+    idempotency_key TEXT,
 
     -- 予約対象プラン（Sanity simpleWorkshop）のスナップショット
     -- プラン名・料金は予約時点の内容を保持し、後からプラン側が変更されても過去の予約表示に影響しないようにする
@@ -42,6 +44,9 @@ CREATE TABLE IF NOT EXISTS workshop_bookings (
 CREATE INDEX IF NOT EXISTS idx_workshop_bookings_date ON workshop_bookings(date);
 CREATE INDEX IF NOT EXISTS idx_workshop_bookings_booking_number ON workshop_bookings(booking_number);
 CREATE INDEX IF NOT EXISTS idx_workshop_bookings_status ON workshop_bookings(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workshop_bookings_idempotency_key
+    ON workshop_bookings(idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
 
 -- RLS (Row Level Security) を有効化
 ALTER TABLE workshop_bookings ENABLE ROW LEVEL SECURITY;
@@ -71,3 +76,7 @@ COMMENT ON TABLE workshop_bookings IS 'ワークショップ予約情報（顧�
 COMMENT ON COLUMN workshop_bookings.workshop_plan_id IS 'Sanity simpleWorkshopの_id（予約時点のスナップショット。プランが削除されても予約自体は残す）';
 COMMENT ON COLUMN workshop_bookings.payment_method IS 'credit_card=その場カード決済 / on_site=現地払い / paypay=現時点ではon_site同様の現地/別途扱い（TODO: オンラインPayPay決済は次フェーズ）';
 COMMENT ON COLUMN workshop_bookings.google_event_id IS 'Googleカレンダー側のイベントID。キャンセル時にこのIDでイベントを削除する';
+COMMENT ON COLUMN workshop_bookings.idempotency_key IS '同じ予約操作の再送を識別するUUID。NULL以外は一意';
+
+-- 既存環境への列追加、定員の原子的保証、分散レート制限RPCは
+-- docs/sql/migrate-workshop-booking-safety.sql を続けて実行すること。
