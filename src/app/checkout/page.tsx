@@ -885,7 +885,7 @@ export default function CheckoutPage() {
                         </div>
                         {shippingCalculation.shippingDiscount > 0 && (
                           <div className="flex justify-between text-emerald-400 text-sm">
-                            <span>🎉 送料割引（1万円以上）</span>
+                            <span>🎉 送料割引（{shippingSettings.freeShippingThreshold.toLocaleString()}円以上）</span>
                             <span>-¥{shippingCalculation.shippingDiscount.toLocaleString()}</span>
                           </div>
                         )}

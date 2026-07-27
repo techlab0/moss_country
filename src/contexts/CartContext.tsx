@@ -9,14 +9,16 @@ const SHIPPING_METHODS: ShippingMethod[] = [
   {
     id: 'standard',
     name: '通常配送',
-    description: '札幌から5-7営業日でお届け（10,000円以上で500円引き）',
+    // 送料割引の条件は管理画面の送料設定に依存するため、ここには固定の金額を書かない
+    // （割引の案内・適用はカート/チェックアウトの金額欄で動的に表示する）
+    description: '札幌から5-7営業日でお届け',
     price: 0, // 実際の料金は商品サイズ・配送先で計算
     estimatedDays: 7
   },
   {
     id: 'express',
     name: '速達配送',
-    description: '札幌から2-3営業日でお届け（10,000円以上で500円引き）',
+    description: '札幌から2-3営業日でお届け',
     price: 0, // 実際の料金は商品サイズ・配送先で計算（+300円）
     estimatedDays: 3
   }

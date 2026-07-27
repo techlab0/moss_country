@@ -8,6 +8,7 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { useCart } from '@/contexts/CartContext';
 import { getEcommerceImageUrl, getProductSlug } from '@/lib/adapters';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
+import { formatShippingDiscountNote, type ShippingSettings } from '@/lib/shipping';
 import type { CartItem } from '@/types/ecommerce';
 
 // 在庫はSanity（product.stockQuantity/reserved）を正とし、API経由でリアルタイム取得する
@@ -150,6 +151,25 @@ export default function CartPage() {
     removeFromCart
   } = useCart();
 
+  // 送料割引の案内文は管理画面の送料設定から取得して表示（固定文言にしない）
+  const [shippingNote, setShippingNote] = React.useState('');
+  React.useEffect(() => {
+    let mounted = true;
+    fetch('/api/shipping/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data?.settings) {
+          setShippingNote(formatShippingDiscountNote(data.settings as ShippingSettings));
+        }
+      })
+      .catch(() => {
+        /* 取得失敗時は案内文を出さない（送料計算自体はチェックアウトで行う） */
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   if (cart.items.length === 0) {
     return (
       <div className="bg-stone-950 min-h-screen pt-20">
@@ -229,8 +249,8 @@ export default function CartPage() {
                   </div>
                   <div className="text-stone-400 text-sm mt-4 p-3 bg-stone-800/50 rounded-lg">
                     <p className="mb-2">💡 配送料は次のステップで計算されます</p>
-                    <p className="text-xs">札幌から商品サイズ・重量・お届け先により正確な配送料を計算します。<br />
-                    商品代金が10,000円以上の場合、配送料から500円割引いたします。</p>
+                    <p className="text-xs">札幌から商品サイズ・重量・お届け先により正確な配送料を計算します。
+                    {shippingNote && (<><br />{shippingNote}。</>)}</p>
                   </div>
                 </div>
 

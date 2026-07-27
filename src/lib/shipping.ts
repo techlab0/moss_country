@@ -52,6 +52,25 @@ export interface ShippingSettings {
   packagingWeightG: number; // 梱包材の重量（g）
 }
 
+/**
+ * 管理画面の送料設定から、顧客向けの送料割引案内文を生成する。
+ * 表示（商品詳細・カート・チェックアウト）で共通利用し、固定文言による設定との不一致を防ぐ。
+ * - 送料無料モード: 「全国送料無料」
+ * - しきい値＋割引額あり: 「◯◯円以上のご購入で送料◯◯円引き」
+ * - 割引なし: 空文字（呼び出し側は何も表示しない）
+ */
+export function formatShippingDiscountNote(
+  settings: Pick<ShippingSettings, 'freeShippingMode' | 'freeShippingThreshold' | 'shippingDiscount'>
+): string {
+  if (settings.freeShippingMode) {
+    return '全国送料無料';
+  }
+  if (settings.shippingDiscount > 0 && settings.freeShippingThreshold > 0) {
+    return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料${settings.shippingDiscount.toLocaleString()}円引き`;
+  }
+  return '';
+}
+
 // 送料計算に必要な商品情報の最小形（Cart/Order どちらの item からも組み立てられる）
 export interface ShippingItem {
   dimensions?: { width?: number | null; height?: number | null; depth?: number | null } | null;
