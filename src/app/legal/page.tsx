@@ -1,11 +1,16 @@
 import { Metadata } from 'next'
+import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 
 export const metadata: Metadata = {
   title: '特定商取引法に基づく表記 | MOSS COUNTRY',
   description: 'MOSS COUNTRYの特定商取引法に基づく表記、事業者情報、販売条件について',
 }
 
-export default function LegalPage() {
+export default async function LegalPage() {
+  // 支払い方法・送料割引は実際の運用（チェックアウトの選択肢／管理画面の送料設定）に合わせて表示する
+  const paypayEnabled = process.env.NEXT_PUBLIC_PAYPAY_ENABLED === 'true'
+  const shippingNote = formatShippingDiscountNote(await getShippingSettings())
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 site-page-tone">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,13 +65,22 @@ export default function LegalPage() {
                   <div>
                     <dt className="font-medium text-gray-700">支払い方法</dt>
                     <dd className="text-gray-900">
-                      クレジットカード決済（Square決済システム）
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>クレジットカード決済（Square決済システム / Visa・Mastercard・JCB・AMEX）</li>
+                        <li>銀行振込（振込手数料はお客様のご負担となります）</li>
+                        <li>代金引換（代引手数料 ¥300）</li>
+                        {paypayEnabled && <li>PayPay</li>}
+                      </ul>
                     </dd>
                   </div>
                   <div>
                     <dt className="font-medium text-gray-700">支払い期限</dt>
                     <dd className="text-gray-900">
-                      決済完了時点
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>クレジットカード{paypayEnabled ? '・PayPay' : ''}：ご注文時（決済完了時点）</li>
+                        <li>銀行振込：ご注文後3日以内にお振込みください</li>
+                        <li>代金引換：商品お受け取り時にお支払い</li>
+                      </ul>
                     </dd>
                   </div>
                 </div>
@@ -81,8 +95,9 @@ export default function LegalPage() {
                   <div>
                     <dt className="font-medium text-gray-700">配送料</dt>
                     <dd className="text-gray-900">
-                      商品の重量・サイズに応じて配送料が決定されます。<br />
+                      商品の重量・サイズ・お届け先に応じて配送料が決定されます。<br />
                       配送料は注文確認画面でご確認いただけます。
+                      {shippingNote && (<><br />{shippingNote}。</>)}
                     </dd>
                   </div>
                   <div>

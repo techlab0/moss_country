@@ -1,4 +1,5 @@
 import { getProductBySlug } from '@/lib/sanity'
+import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
@@ -29,6 +30,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const price = Number(product?.price) ?? 0
   const name = String(product?.name ?? '')
   const category = String(product?.category ?? '')
+
+  // 送料割引の案内文は管理画面の送料設定から生成する（固定文言にせず設定と常に一致させる）。
+  // getShippingSettings は内部で短時間キャッシュされるため、詳細ページ表示ごとの負荷は小さい。
+  const shippingNote = formatShippingDiscountNote(await getShippingSettings())
 
   // 画像URLは getSafeImageUrl 内で try/catch しているが、念のためここでも try で囲む。
   // 有効なasset（url/_id/_refのいずれかを持つ）だけを抽出してギャラリー用配列を構築する
@@ -178,6 +183,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 category,
                 slug: typeof product.slug === 'string' ? { current: product.slug, _type: 'slug' } : (product.slug ?? { current: getProductSlug(product), _type: 'slug' }),
               }}
+              shippingNote={shippingNote}
             />
           </div>
         </div>
