@@ -3,9 +3,9 @@ import { cache } from 'react'
 
 // メモリキャッシュの実装
 class MemoryCache {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>()
+  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>()
 
-  set(key: string, data: any, ttl = 300000): void { // デフォルト5分
+  set(key: string, data: unknown, ttl = 300000): void { // デフォルト5分
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -13,7 +13,7 @@ class MemoryCache {
     })
   }
 
-  get(key: string): any | null {
+  get<T = unknown>(key: string): T | null {
     const entry = this.cache.get(key)
     if (!entry) return null
 
@@ -23,7 +23,7 @@ class MemoryCache {
       return null
     }
 
-    return entry.data
+    return entry.data as T
   }
 
   has(key: string): boolean {
@@ -67,7 +67,7 @@ export const cachedFetch = cache(async <T>(
   const cacheKey = `fetch:${url}:${JSON.stringify(options || {})}`
   
   // メモリキャッシュから確認
-  const cached = memoryCache.get(cacheKey)
+  const cached = memoryCache.get<T>(cacheKey)
   if (cached) {
     return cached
   }

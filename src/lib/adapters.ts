@@ -3,7 +3,7 @@
  * SanityとECサイト型の安全な相互変換を提供
  */
 
-import type { Product as SanityProduct } from '@/types/sanity';
+import type { Product as SanityProduct, SanityImageAsset } from '@/types/sanity';
 
 /** 商品画像がない・エラー時のフォールバック（ロゴ） */
 export const PRODUCT_IMAGE_FALLBACK_LOGO = '/images/mosscountry_logo.svg';
@@ -33,7 +33,7 @@ export function sanityToEcommerceProduct(sanityProduct: SanityProduct): Ecommerc
       title: String(sanityProduct?.category ?? '')
     },
     images: sanityProduct.images?.map(img => {
-      const asset = img?.asset as any;
+      const asset = img?.asset as SanityImageAsset;
       return {
         asset: {
           _ref: asset?._ref || asset?._id || '',
@@ -67,7 +67,7 @@ export function getSafeImageUrl(image: NonNullable<SanityProduct['images']>[0] |
       return PRODUCT_IMAGE_FALLBACK_LOGO;
     }
 
-    const asset = image.asset as any;
+    const asset = image.asset as SanityImageAsset;
 
     // 展開形式（url が存在する）の場合
     if (asset.url) {

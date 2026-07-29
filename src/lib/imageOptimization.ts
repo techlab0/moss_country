@@ -1,5 +1,5 @@
 import { urlFor } from '@/lib/sanity'
-import type { SanityImage } from '@/types/sanity'
+import type { SanityImage, SanityImageAsset } from '@/types/sanity'
 
 // 画像最適化のヘルパー関数
 export interface OptimizedImageProps {
@@ -43,7 +43,7 @@ export function optimizeSanityImage(
       }
     }
 
-    const asset = image.asset as any
+    const asset = image.asset as SanityImageAsset
 
     // 展開形式（url が存在する）の場合
     if (asset.url) {
@@ -152,7 +152,7 @@ export function generateSrcSet(
       return ''
     }
 
-    const asset = image.asset as any
+    const asset = image.asset as SanityImageAsset
 
     // 展開形式（url が存在する）の場合
     if (asset.url) {

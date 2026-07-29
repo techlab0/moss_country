@@ -74,24 +74,27 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+
     console.error('User creation error:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error message:', error.message);
-    
-    if (error.message?.includes('既に使用されています')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    console.error('Error stack:', stack);
+    console.error('Error message:', message);
+
+    if (message.includes('既に使用されています')) {
+      return NextResponse.json({ error: message }, { status: 400 });
     }
-    
+
     // より詳細なエラーメッセージを返す（開発環境のみ）
     const isDevelopment = process.env.NODE_ENV === 'development';
-    const errorMessage = isDevelopment 
-      ? `ユーザーの作成に失敗しました: ${error.message}`
+    const errorMessage = isDevelopment
+      ? `ユーザーの作成に失敗しました: ${message}`
       : 'ユーザーの作成に失敗しました';
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       error: errorMessage,
-      ...(isDevelopment && { details: error.stack })
+      ...(isDevelopment && { details: stack })
     }, { status: 500 });
   }
 }

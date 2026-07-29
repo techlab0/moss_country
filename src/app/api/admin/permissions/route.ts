@@ -189,11 +189,12 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: '無効なタイプです' }, { status: 400 });
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Permission update error:', error);
-    
-    if (error.message?.includes('システム定義')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('システム定義')) {
+      return NextResponse.json({ error: message }, { status: 400 });
     }
     
     return NextResponse.json({ error: '権限更新に失敗しました' }, { status: 500 });

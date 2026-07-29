@@ -1,3 +1,17 @@
+// ブラウザ実装依存でlib.domに型が無いエントリを最小限で表現する。
+// layout-shift は仕様上 PerformanceEntry を拡張した形で届く。
+interface LayoutShiftEntry extends PerformanceEntry {
+  value: number;
+  hadRecentInput: boolean;
+}
+
+// performance.memory はChrome系のみの非標準API
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
 /**
  * パフォーマンス監視ユーティリティ
  */
@@ -48,7 +62,7 @@ export const performanceMonitor = {
       });
       
       fid.forEach(entry => {
-        console.log(`⚡ FID (First Input Delay): ${(entry as any).processingStart - entry.startTime}ms`);
+        console.log(`⚡ FID (First Input Delay): ${(entry as PerformanceEventTiming).processingStart - entry.startTime}ms`);
       });
     }
   },
@@ -74,7 +88,7 @@ export const performanceMonitor = {
         // FID (First Input Delay) の監視
         const fidObserver = new PerformanceObserver((entryList) => {
           for (const entry of entryList.getEntries()) {
-            console.log(`⚡ FID: ${(entry as any).processingStart - entry.startTime}ms`);
+            console.log(`⚡ FID: ${(entry as PerformanceEventTiming).processingStart - entry.startTime}ms`);
           }
         });
         fidObserver.observe({ entryTypes: ['first-input'] });
@@ -82,8 +96,9 @@ export const performanceMonitor = {
         // CLS (Cumulative Layout Shift) の監視
         const clsObserver = new PerformanceObserver((entryList) => {
           for (const entry of entryList.getEntries()) {
-            if (!(entry as any).hadRecentInput) {
-              console.log(`📐 CLS: ${(entry as any).value.toFixed(4)}`);
+            const shift = entry as LayoutShiftEntry;
+            if (!shift.hadRecentInput) {
+              console.log(`📐 CLS: ${shift.value.toFixed(4)}`);
             }
           }
         });
@@ -125,7 +140,7 @@ export const performanceMonitor = {
       return;
     }
 
-    const memory = (performance as any).memory;
+    const memory = (performance as Performance & { memory?: PerformanceMemory }).memory;
     if (memory) {
       const formatBytes = (bytes: number) => {
         return (bytes / 1024 / 1024).toFixed(2) + ' MB';
@@ -139,31 +154,6 @@ export const performanceMonitor = {
     }
   }
 };
-
-/**
- * パフォーマンス計測用デコレーター
- */
-export function measurePerformance(name: string) {
-  return function <T extends (...args: any[]) => any>(
-    target: any,
-    propertyName: string,
-    descriptor: TypedPropertyDescriptor<T>
-  ) {
-    const method = descriptor.value!;
-
-    descriptor.value = (async function (this: any, ...args: any[]) {
-      performanceMonitor.markStart(name);
-      try {
-        const result = await method.apply(this, args);
-        return result;
-      } finally {
-        performanceMonitor.markEnd(name);
-      }
-    }) as any;
-
-    return descriptor;
-  };
-}
 
 /**
  * 開発環境でのパフォーマンス監視初期化

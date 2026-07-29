@@ -33,7 +33,7 @@ export interface SecurityAlert {
   type: SecurityAlertRule['type'];
   severity: SecurityAlertRule['severity'];
   message: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   affectedUsers: string[];
   affectedIPs: string[];
   count: number;

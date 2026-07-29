@@ -50,7 +50,7 @@ export interface UserProfile {
   avatar?: string;
   timezone: string;
   language: string;
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
 }
 
 export interface UserActivity {
@@ -59,7 +59,7 @@ export interface UserActivity {
   userEmail: string;
   action: string;
   resource: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   timestamp: Date;
@@ -324,7 +324,7 @@ export function recordUserActivity(
   userEmail: string,
   action: string,
   resource: string,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   options: {
     ipAddress?: string;
     userAgent?: string;

@@ -114,9 +114,16 @@ export interface FAQ {
   order?: number
 }
 
+/**
+ * Sanityの画像アセット。
+ * GROQで参照のまま取得すると { _ref, _type: 'reference' }、`asset->` で展開すると
+ * { _id, url } が返る。呼び出し側はどちらも受け取りうるため両方を表現する。
+ */
 export interface SanityImageAsset {
-  _ref: string
-  _type: 'reference'
+  _ref?: string
+  _type?: 'reference' | 'sanity.imageAsset'
+  _id?: string
+  url?: string
 }
 
 export interface SanityImage {

@@ -27,7 +27,7 @@ export interface AdminUser {
   role: 'admin' | 'editor'
   two_factor_enabled: boolean
   totp_secret?: string | null
-  webauthn_credentials?: any[] | null
+  webauthn_credentials?: unknown[] | null
   last_login?: Date | null
   created_at: Date
   updated_at: Date
@@ -39,7 +39,7 @@ export interface AuditLog {
   user_email: string
   action: string
   category: string
-  details: Record<string, any>
+  details: Record<string, unknown>
   resource_id?: string | null
   ip_address?: string | null
   user_agent?: string | null

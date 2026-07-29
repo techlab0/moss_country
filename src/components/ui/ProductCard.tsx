@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
+import type { SanityImageAsset } from '@/types/sanity';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/contexts/CartContext';
 import { getProductSlug, sanityToEcommerceProduct, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters';
@@ -55,7 +56,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
       <Link href={`/shop/${getProductSlug(product)}`}>
         <div className="h-40 sm:h-56 md:h-64 overflow-hidden relative bg-stone-50 p-2 sm:p-3">
           {(() => {
-            const asset = product.images?.[0]?.asset as any;
+            const asset = product.images?.[0]?.asset as SanityImageAsset | undefined;
             const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
 
             return hasValidAsset ? (
