@@ -24,7 +24,7 @@ export interface AuditLog {
   action: AuditAction;
   resource: string;
   resourceId?: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   timestamp: Date;
@@ -69,7 +69,7 @@ interface DBAuditLog {
   user_email: string;
   action: string;
   category: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   resource_id?: string | null;
   ip_address?: string | null;
   user_agent?: string | null;
@@ -102,7 +102,7 @@ export async function logAuditEvent(
   userEmail: string,
   action: AuditAction,
   resource: string,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   options: {
     resourceId?: string;
     ipAddress?: string;
@@ -179,7 +179,7 @@ export function logAuditEventSync(
   userEmail: string,
   action: AuditAction,
   resource: string,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   options: {
     resourceId?: string;
     ipAddress?: string;

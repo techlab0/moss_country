@@ -93,7 +93,11 @@ export async function PUT(
     }
 
     // 更新対象のフィールドを準備
-    const updateData: any = {
+    const updateData: {
+      updated_at: string;
+      status?: string;
+      priority?: string;
+    } = {
       updated_at: new Date().toISOString()
     };
 
