@@ -95,13 +95,14 @@ export async function POST(request: NextRequest) {
       // データベース保存失敗でもフォーム送信は継続
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mosscountry.com';
-
     // メール送信はDB保存の成否と切り離す。
     // DBに入らなかった問い合わせは管理画面に出てこないため、ここで通知しないと
     // お客様には「受け付けました」と表示されたまま問い合わせが完全に消える。
     const [notifyResult, confirmResult] = await Promise.all([
-      // 店舗宛のお問い合わせ通知メール
+      // 店舗宛のお問い合わせ通知メール。
+      // この通知はお客様へそのまま返信できるようReply-Toを設定してあるため、
+      // 多くのメールソフトが返信時に本文を引用してお客様に送ってしまう。
+      // 管理画面のURLなど、お客様に見せる必要のない情報はここに書かないこと。
       sendMail({
         to: STORE_EMAIL,
         // 受信箱でそのまま返信すればお客様に届くようにする
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
         subject: `【MOSS COUNTRY】新しいお問い合わせ: ${validatedData.subject}`,
         text: [
           'お問い合わせフォームより新しいお問い合わせがありました。',
+          'このメールにそのまま返信すると、お客様宛に届きます。',
           '',
           `お名前: ${validatedData.name}`,
           `メールアドレス: ${validatedData.email}`,
@@ -118,10 +120,9 @@ export async function POST(request: NextRequest) {
           '',
           'お問い合わせ内容:',
           validatedData.message,
-          '',
-          dbSaveFailed
-            ? '※ データベースへの保存に失敗したため、この問い合わせは管理画面に表示されません。このメールから直接ご対応ください。'
-            : `管理画面: ${siteUrl}/admin/contacts`,
+          ...(dbSaveFailed
+            ? ['', '※ この問い合わせは記録に失敗したため、管理画面には残っていません。このメールから直接ご対応ください。']
+            : []),
         ].join('\n'),
       }),
 
