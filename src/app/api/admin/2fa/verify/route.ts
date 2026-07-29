@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
           userId = payload.userId as string;
           userEmail = payload.email as string;
         }
-      } catch (error) {
+      } catch {
         console.log('Temp token verification failed, using default admin');
       }
     }

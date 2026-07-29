@@ -30,7 +30,7 @@ export function MaintenancePage() {
         const data = await response.json();
         setError(data.error || 'パスワードが正しくありません');
       }
-    } catch (error) {
+    } catch {
       setError('認証に失敗しました');
     } finally {
       setIsLoading(false);

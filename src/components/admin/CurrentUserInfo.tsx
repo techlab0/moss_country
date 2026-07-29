@@ -28,7 +28,7 @@ export function CurrentUserInfo() {
       } else {
         setError('ユーザー情報の取得に失敗しました');
       }
-    } catch (err) {
+    } catch {
       setError('ネットワークエラーが発生しました');
     } finally {
       setLoading(false);

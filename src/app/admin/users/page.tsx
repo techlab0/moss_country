@@ -35,7 +35,7 @@ export default function UsersPage() {
         const data = await response.json();
         setUsers(data.users);
       }
-    } catch (err) {
+    } catch {
       setError('ユーザー情報の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -63,7 +63,7 @@ export default function UsersPage() {
         const data = await response.json();
         setError(data.error);
       }
-    } catch (err) {
+    } catch {
       setError('ユーザーの作成に失敗しました');
     }
   };
@@ -81,7 +81,7 @@ export default function UsersPage() {
       } else {
         setError('ユーザーの削除に失敗しました');
       }
-    } catch (err) {
+    } catch {
       setError('ユーザーの削除に失敗しました');
     }
   };

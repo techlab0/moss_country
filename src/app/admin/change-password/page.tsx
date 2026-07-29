@@ -94,7 +94,7 @@ export default function ChangePasswordPage() {
       } else {
         setError(data.error || "パスワードの変更に失敗しました");
       }
-    } catch (err) {
+    } catch {
       setError("ネットワークエラーが発生しました");
     } finally {
       setIsLoading(false);

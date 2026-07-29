@@ -23,7 +23,7 @@ async function checkAuth(request: NextRequest) {
     }
 
     return { userId: user.id, email: user.email };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

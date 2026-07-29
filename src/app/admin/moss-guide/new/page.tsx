@@ -385,7 +385,7 @@ export default function NewMossSpeciesPage() {
                 for (const file of files) {
                   try {
                     await handleImageUpload(file);
-                  } catch (error) {
+                  } catch {
                     break; // エラーが発生したら停止
                   }
                 }

@@ -90,7 +90,7 @@ export default function DatabaseOptimizationPage() {
       } else {
         setError("データベース情報の取得に失敗しました");
       }
-    } catch (err) {
+    } catch {
       setError("データベース情報の取得中にエラーが発生しました");
     } finally {
       setIsLoading(false);
@@ -115,7 +115,7 @@ export default function DatabaseOptimizationPage() {
       } else {
         setError(result.message || "メンテナンスに失敗しました");
       }
-    } catch (err) {
+    } catch {
       setError("メンテナンス実行中にエラーが発生しました");
     } finally {
       setMaintenanceRunning(false);
@@ -147,7 +147,7 @@ export default function DatabaseOptimizationPage() {
       } else {
         setError(result.error || "クエリ分析に失敗しました");
       }
-    } catch (err) {
+    } catch {
       setError("クエリ分析中にエラーが発生しました");
     } finally {
       setQueryAnalyzing(false);

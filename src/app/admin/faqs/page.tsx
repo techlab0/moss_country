@@ -82,7 +82,7 @@ export default function FAQManagePage() {
       } else {
         throw new Error('保存に失敗しました');
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: '保存中にエラーが発生しました' });
     }
 
@@ -106,7 +106,7 @@ export default function FAQManagePage() {
       } else {
         throw new Error('削除に失敗しました');
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: '削除中にエラーが発生しました' });
     }
 
@@ -129,7 +129,7 @@ export default function FAQManagePage() {
       } else {
         setMessage({ type: 'error', text: data.error || 'セットアップに失敗しました' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'セットアップ中にエラーが発生しました' });
     } finally {
       setIsSetupLoading(false);

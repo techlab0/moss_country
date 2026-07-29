@@ -36,7 +36,7 @@ export default function CustomersPage() {
       } else {
         setError('顧客データの取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       setError('顧客データの取得に失敗しました');
     } finally {
       setIsLoading(false);
