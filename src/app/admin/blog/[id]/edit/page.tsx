@@ -6,6 +6,12 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BlogPost } from '@/types/sanity';
 
+/** Sanityのブロックコンテンツ。プレーンテキスト化に必要な部分だけを表現する */
+interface PortableTextBlock {
+  _type: string;
+  children?: { text?: string }[];
+}
+
 interface BlogFormData {
   title: string;
   slug: string;
@@ -70,10 +76,10 @@ export default function EditBlogPostPage() {
       let contentText = '';
       if (post.content && Array.isArray(post.content)) {
         contentText = post.content
-          .filter((block: any) => block._type === 'block')
-          .map((block: any) => 
+          .filter((block: PortableTextBlock) => block._type === 'block')
+          .map((block: PortableTextBlock) =>
             block.children
-              ?.map((child: any) => child.text || '')
+              ?.map((child) => child.text || '')
               .join('')
           )
           .join('\n\n') || '';

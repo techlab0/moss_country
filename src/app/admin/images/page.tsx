@@ -67,10 +67,24 @@ const pageInfo: Record<PageType, PageInfo> = {
   },
 };
 
+/**
+ * ページIDごとの画像設定。ヒーローは image、背景は image / imageMobile を持つ。
+ * APIが返す追加項目をそのまま保持できるよう、既知のキー以外も許容する。
+ */
+interface PageImageSettings {
+  image?: SanityImage;
+  imageMobile?: SanityImage;
+  /** 代替テキスト（SEO用） */
+  alt?: string;
+  [key: string]: unknown;
+}
+
+type ImageSettingsMap = Record<string, PageImageSettings | undefined>;
+
 export default function ImageManagePage() {
   const [activeTab, setActiveTab] = useState<ImageType>('hero');
-  const [heroSettings, setHeroSettings] = useState<any>(null);
-  const [backgroundSettings, setBackgroundSettings] = useState<any>(null);
+  const [heroSettings, setHeroSettings] = useState<ImageSettingsMap | null>(null);
+  const [backgroundSettings, setBackgroundSettings] = useState<ImageSettingsMap | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
@@ -137,7 +151,7 @@ export default function ImageManagePage() {
           body: formData,
         });
 
-        let uploadResult: { image?: unknown; error?: string; details?: string } = {};
+        let uploadResult: { image?: SanityImage; error?: string; details?: string } = {};
         try {
           uploadResult = await uploadRes.json();
         } catch {
@@ -148,6 +162,9 @@ export default function ImageManagePage() {
           throw new Error(typeof msg === 'string' ? msg : '画像のアップロードに失敗しました');
         }
         const imageObject = uploadResult.image;
+        if (!imageObject) {
+          throw new Error('アップロード結果に画像が含まれていませんでした');
+        }
 
         // 設定を更新
         if (imageType === 'hero') {
@@ -169,7 +186,7 @@ export default function ImageManagePage() {
     input.click();
   };
 
-  const updateHeroImage = async (page: PageType, image: any) => {
+  const updateHeroImage = async (page: PageType, image: SanityImage) => {
     setSaving(true);
     try {
       const currentSettings = heroSettings || {};
@@ -203,7 +220,7 @@ export default function ImageManagePage() {
     }
   };
 
-  const updateBackgroundImage = async (page: PageType, image: any, isMobile: boolean) => {
+  const updateBackgroundImage = async (page: PageType, image: SanityImage, isMobile: boolean) => {
     setSaving(true);
     try {
       const currentSettings = backgroundSettings || {};
@@ -298,7 +315,7 @@ export default function ImageManagePage() {
     }
   };
 
-  const getImageUrl = (image: any): string | null => {
+  const getImageUrl = (image: SanityImage | null | undefined): string | null => {
     if (!image?.asset?._ref) return null;
     try {
       return urlFor(image as SanityImage).url();

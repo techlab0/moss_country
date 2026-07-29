@@ -1,5 +1,5 @@
 import { AdminUser, getUsers, findUserById, updateUser } from './userManager';
-import { logAuditEvent } from './auditLog';
+import { AUDIT_ACTIONS, logAuditEvent, parseAuditEnum } from './auditLog';
 
 // 詳細権限システム
 export interface Permission {
@@ -350,7 +350,10 @@ export function recordUserActivity(
   }
   
   // 監査ログにも記録
-  logAuditEvent(userId, userEmail, action as any, resource, details, {
+  // ユーザー活動のactionは監査ログの語彙と一致しないものもあるため、
+  // 一致するものだけ監査ログに流し、それ以外は admin.access として記録する。
+  const auditAction = parseAuditEnum(action, AUDIT_ACTIONS) ?? 'admin.access';
+  logAuditEvent(userId, userEmail, auditAction, resource, details, {
     ipAddress: options.ipAddress,
     userAgent: options.userAgent
   });

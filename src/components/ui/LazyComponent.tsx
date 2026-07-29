@@ -4,6 +4,9 @@ import { lazy, Suspense, ComponentType, ReactNode } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // 動的インポート用のヘルパー関数
+// 任意のpropsを持つコンポーネントを受け取るための制約。ここを unknown にすると
+// 呼び出し側で props の型推論が効かなくなるため any のままにしている。
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createLazyComponent<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
   fallback?: ReactNode

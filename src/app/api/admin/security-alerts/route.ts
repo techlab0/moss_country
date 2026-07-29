@@ -7,7 +7,7 @@ import {
 } from '@/lib/securityAlerts';
 import { findUserById } from '@/lib/userManager';
 import { verifyJWT } from '@/lib/auth';
-import { logAuditEvent } from '@/lib/auditLog';
+import { AUDIT_SEVERITIES, logAuditEvent, parseAuditEnum } from '@/lib/auditLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,8 +29,12 @@ export async function GET(request: NextRequest) {
 
     // クエリパラメータを取得
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') as any;
-    const severity = searchParams.get('severity') as any;
+    // 外部入力なので、許可された値だけを通す（不正な値は「指定なし」扱い）
+    const status = parseAuditEnum(
+      searchParams.get('status'),
+      ['active', 'acknowledged', 'resolved', 'false_positive'] as const
+    );
+    const severity = parseAuditEnum(searchParams.get('severity'), AUDIT_SEVERITIES);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const action = searchParams.get('action');

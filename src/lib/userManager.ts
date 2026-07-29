@@ -9,7 +9,7 @@ export interface AdminUser {
   twoFactorEnabled: boolean;
   twoFactorMethod?: 'totp' | 'webauthn' | 'sms' | 'device' | null;
   totpSecret?: string;
-  webauthnCredentials?: any[];
+  webauthnCredentials?: unknown[];
   // SMS 2FA用の電話番号
   phoneNumber?: string;
   // 端末認証（device）用のワンタイムコードと失効時刻
@@ -164,7 +164,7 @@ interface DBAdminUser {
   role: 'admin' | 'editor';
   two_factor_enabled: boolean;
   totp_secret?: string | null;
-  webauthn_credentials?: any[] | null;
+  webauthn_credentials?: unknown[] | null;
   last_login?: Date | null;
   created_at: Date;
   updated_at: Date;

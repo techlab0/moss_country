@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuditLogs } from '@/lib/auditLog';
+import {
+  AUDIT_ACTIONS,
+  AUDIT_SEVERITIES,
+  getAuditLogs,
+  parseAuditEnum,
+  type AuditLog,
+} from '@/lib/auditLog';
 import { findUserById } from '@/lib/userManager';
 import { verifyJWT } from '@/lib/auth';
 
+// 監査ログはDB由来（スネークケース）とメモリ由来（キャメルケース）の両方が来るため、
+// CSV出力ではどちらのキーも受け取れるようにしている。
+type ExportableAuditLog = Partial<AuditLog> & {
+  created_at?: string | Date;
+  user_email?: string;
+  category?: string;
+  resource_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+};
+
 // CSV生成関数
-function generateCSV(logs: any[]): string {
+function generateCSV(logs: ExportableAuditLog[]): string {
   const headers = [
     'Timestamp',
     'User Email',
@@ -20,7 +37,7 @@ function generateCSV(logs: any[]): string {
   const csvRows = [
     headers.join(','),
     ...logs.map(log => [
-      `"${new Date(log.created_at || log.timestamp).toISOString()}"`,
+      `"${new Date(log.created_at ?? log.timestamp ?? Date.now()).toISOString()}"`,
       `"${log.user_email || log.userEmail || ''}"`,
       `"${log.action || ''}"`,
       `"${log.category || log.resource || ''}"`,
@@ -57,8 +74,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
-    const severity = searchParams.get('severity') || undefined;
-    const action = searchParams.get('action') || undefined;
+    // 外部入力なので、許可された値だけを通す（不正な値は「指定なし」扱い）
+    const severity = parseAuditEnum(searchParams.get('severity'), AUDIT_SEVERITIES);
+    const action = parseAuditEnum(searchParams.get('action'), AUDIT_ACTIONS);
     const userId = searchParams.get('userId') || undefined;
     const userEmail = searchParams.get('userEmail') || undefined;
     const startDate = searchParams.get('startDate') || undefined;
@@ -66,8 +84,10 @@ export async function GET(request: NextRequest) {
     const ipAddress = searchParams.get('ipAddress') || undefined;
     const resource = searchParams.get('resource') || undefined;
     const searchText = searchParams.get('search') || undefined;
-    const sortBy = searchParams.get('sortBy') || 'timestamp';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const sortBy =
+      parseAuditEnum(searchParams.get('sortBy'), ['timestamp', 'action', 'severity', 'userEmail'] as const) ??
+      'timestamp';
+    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
     const export_format = searchParams.get('export') || undefined;
 
     // エクスポート形式の場合は全件取得
@@ -78,8 +98,8 @@ export async function GET(request: NextRequest) {
     const logs = await getAuditLogs({
       limit: effectiveLimit,
       offset: effectiveOffset,
-      severity: severity as any,
-      action: action as any,
+      severity,
+      action,
       userId,
       userEmail,
       startDate,
@@ -87,8 +107,8 @@ export async function GET(request: NextRequest) {
       ipAddress,
       resource,
       searchText,
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as 'asc' | 'desc',
+      sortBy,
+      sortOrder,
     });
 
     // エクスポート形式の場合は適切な形式で返す

@@ -34,30 +34,45 @@ export interface AuditLog {
 // 環境変数でデータベース使用を制御
 const USE_DATABASE = process.env.USE_SUPABASE === 'true';
 
-export type AuditAction = 
+// 配列を正として型を導出する。こうしておくと、外部入力（クエリパラメータなど）が
+// 正しいアクション名かを実行時に検証できる。
+export const AUDIT_ACTIONS = [
   // 認証関連
-  | 'login.success'
-  | 'login.failed'
-  | 'logout'
-  | '2fa.setup'
-  | '2fa.verify.success'
-  | '2fa.verify.failed'
-  | 'password.changed'
+  'login.success',
+  'login.failed',
+  'logout',
+  '2fa.setup',
+  '2fa.verify.success',
+  '2fa.verify.failed',
+  'password.changed',
   // ユーザー管理
-  | 'user.created'
-  | 'user.updated'
-  | 'user.deleted'
+  'user.created',
+  'user.updated',
+  'user.deleted',
   // システム操作
-  | 'admin.access'
-  | 'settings.changed'
+  'admin.access',
+  'settings.changed',
   // お問い合わせ対応
-  | 'contact.list_viewed'
-  | 'contact.viewed'
-  | 'contact.updated'
-  | 'contact.replied'
+  'contact.list_viewed',
+  'contact.viewed',
+  'contact.updated',
+  'contact.replied',
   // セキュリティ
-  | 'security.breach_attempt'
-  | 'security.suspicious_activity';
+  'security.breach_attempt',
+  'security.suspicious_activity',
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const AUDIT_SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
+
+/** 外部入力が許可された値かを確かめる。違えば undefined を返して「指定なし」として扱う。 */
+export function parseAuditEnum<T extends string>(
+  value: string | null | undefined,
+  allowed: readonly T[]
+): T | undefined {
+  return value && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
+}
 
 // メモリベースの監査ログストレージ
 let auditLogs: AuditLog[] = [];

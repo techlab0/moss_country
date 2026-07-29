@@ -255,15 +255,15 @@ export default function DatabaseOptimizationPage() {
       {/* タブナビゲーション */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {[
+          {([
             { key: "overview", label: "概要", icon: "📊" },
             { key: "performance", label: "パフォーマンス", icon: "⚡" },
             { key: "maintenance", label: "メンテナンス", icon: "🔧" },
             { key: "query-analyzer", label: "クエリ分析", icon: "🔍" },
-          ].map((tab) => (
+          ] as const).map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key)}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.key
                   ? "border-blue-500 text-blue-600"
