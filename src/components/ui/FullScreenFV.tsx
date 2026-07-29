@@ -10,6 +10,8 @@ interface FVSlide {
   title: string;
   subtitle: string;
   description: string;
+  /** 画像の代替テキスト。未指定なら title を使う */
+  alt?: string;
 }
 
 interface FullScreenFVProps {
@@ -71,7 +73,7 @@ export const FullScreenFV: React.FC<FullScreenFVProps> = ({
           ) : (
             <ImagePlaceholder
               src={slide.image!}
-              alt={slide.title}
+              alt={slide.alt || slide.title}
               width={1920}
               height={1080}
               className="w-full h-full object-cover scale-105"

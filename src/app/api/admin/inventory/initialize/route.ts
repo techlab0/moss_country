@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
 
 // 開発環境でのみ利用可能な在庫初期化API
-export async function POST(request: NextRequest) {
+export async function POST() {
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json(
       { error: 'This endpoint is only available in development' },

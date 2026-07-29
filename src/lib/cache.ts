@@ -90,24 +90,6 @@ export const cachedFetch = cache(async <T>(
   }
 })
 
-// Sanityクエリ用のキャッシュラッパー
-export const cachedSanityQuery = cache(async <T>(
-  query: string,
-  params?: Record<string, any>,
-  ttl = 300000
-): Promise<T> => {
-  const cacheKey = `sanity:${query}:${JSON.stringify(params || {})}`
-  
-  const cached = memoryCache.get(cacheKey)
-  if (cached) {
-    return cached
-  }
-
-  // 実際のSanityクエリは別途実装
-  // ここでは型安全性のためのプレースホルダー
-  throw new Error('Sanity query implementation needed')
-})
-
 // キャッシュ無効化のユーティリティ
 export const invalidateCache = (pattern: string): void => {
   const keys = Array.from(memoryCache['cache'].keys())
@@ -142,7 +124,7 @@ export const getCacheStats = () => {
   let validEntries = 0
   let expiredEntries = 0
   
-  for (const [key, entry] of cache.entries()) {
+  for (const [, entry] of cache.entries()) {
     if (now - entry.timestamp > entry.ttl) {
       expiredEntries++
     } else {

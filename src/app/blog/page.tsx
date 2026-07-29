@@ -3,7 +3,7 @@
 import { getBlogPosts, urlFor } from '@/lib/sanity'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { InlineLoading } from '@/components/ui/LoadingScreen'
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils'

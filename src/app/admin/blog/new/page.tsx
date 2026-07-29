@@ -3,7 +3,6 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 
 interface BlogFormData {
   title: string;

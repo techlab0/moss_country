@@ -3,9 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { getSimpleWorkshops } from '@/lib/sanity';
-import { workshopImages, defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import type { SimpleWorkshop } from '@/types/sanity';
 import { usePageContent } from '@/hooks/usePageContent';
 

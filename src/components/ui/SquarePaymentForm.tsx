@@ -33,7 +33,6 @@ export const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   applicationId,
   locationId,
   amount,
-  currency = 'JPY',
   onPaymentSuccess,
   onPaymentError,
   disabled = false,

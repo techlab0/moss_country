@@ -36,6 +36,8 @@ export const Hero: React.FC<HeroProps> = ({ heroImageUrl, heroImageAlt }) => {
     {
       id: '1',
       image: imageUrl,
+      // CMS側で設定した代替テキストを実際に反映させる
+      alt: imageAlt,
       title: 'MOSS COUNTRY',
       subtitle: '苔のある生活をあなたに。\n生活に『癒し』と『和み』を。',
       description: '苔の緑に心をゆだねて、穏やかなひとときを。\nMoss Countryが癒しの空間をお届けします。'

@@ -1,4 +1,4 @@
-import { getAuditLogs, AuditLog } from './auditLog';
+import { getAuditLogs } from './auditLog';
 
 // セキュリティアラート設定
 export interface SecurityAlertRule {

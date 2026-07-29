@@ -1,4 +1,3 @@
-import { supabaseAdmin } from './supabase';
 import { logAuditEvent } from './auditLog';
 
 // セキュリティ設定の型定義
@@ -319,38 +318,13 @@ export async function checkLoginAttempts(email: string, ipAddress: string): Prom
 /**
  * IPアドレスがブロックされているかチェック（簡易版）
  */
-export function checkIPRestrictions(ipAddress: string): {
+export function checkIPRestrictions(_ipAddress: string): {
   isAllowed: boolean;
   reason?: string;
   restriction?: IPRestriction;
 } {
   // IP制限機能は無効化
   return { isAllowed: true };
-}
-
-/**
- * IPアドレスマッチング（CIDR対応）
- */
-function isIPMatch(clientIP: string, targetIP: string, cidr?: string): boolean {
-  if (cidr) {
-    // CIDR記法での判定（簡易実装）
-    const [network, mask] = cidr.split('/');
-    if (network === targetIP) {
-      // 簡易的な実装：同一ネットワーク判定
-      const clientParts = clientIP.split('.');
-      const networkParts = network.split('.');
-      const maskBits = parseInt(mask);
-      
-      // IPv4の簡易マスク判定（完全な実装ではありません）
-      if (maskBits >= 24) {
-        return clientParts.slice(0, 3).join('.') === networkParts.slice(0, 3).join('.');
-      } else if (maskBits >= 16) {
-        return clientParts.slice(0, 2).join('.') === networkParts.slice(0, 2).join('.');
-      }
-    }
-  }
-  
-  return clientIP === targetIP;
 }
 
 /**
@@ -361,7 +335,7 @@ export function addIPRestriction(
   ipAddress: string,
   description: string,
   createdBy: string,
-  options: {
+  _options: {
     cidrNotation?: string;
     expiresAt?: Date;
   } = {}
@@ -373,7 +347,7 @@ export function addIPRestriction(
 /**
  * IP制限を削除（無効化）
  */
-export function removeIPRestriction(restrictionId: string, removedBy: string): boolean {
+export function removeIPRestriction(_restrictionId: string, _removedBy: string): boolean {
   // IP制限機能は無効化されています
   return false;
 }

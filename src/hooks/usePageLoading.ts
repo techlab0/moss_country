@@ -17,7 +17,6 @@ export const useCustomPageLoading = (options: UsePageLoadingOptions = {}) => {
   const {
     customMinTime = 1000,
     customMaxTime = 8000,
-    customMessage,
     waitForImages = true,
     waitForFonts = false
   } = options;

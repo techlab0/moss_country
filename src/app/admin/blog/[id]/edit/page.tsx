@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BlogPost } from '@/types/sanity';
-import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 
 interface BlogFormData {
   title: string;

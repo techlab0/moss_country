@@ -3,7 +3,7 @@ import { updateProductInventory } from '@/lib/sanity';
 
 export async function POST(request: NextRequest) {
   try {
-    const { productId, stockQuantity, reserved = 0, note } = await request.json();
+    const { productId, stockQuantity, reserved = 0 } = await request.json();
 
     if (!productId || typeof stockQuantity !== 'number') {
       return NextResponse.json(

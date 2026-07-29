@@ -3,11 +3,6 @@
 import { lazy, Suspense, ComponentType, ReactNode } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
-interface LazyComponentProps {
-  fallback?: ReactNode
-  errorFallback?: ReactNode
-}
-
 // 動的インポート用のヘルパー関数
 export function createLazyComponent<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,

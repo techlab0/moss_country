@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/layout/Container';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
-import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';

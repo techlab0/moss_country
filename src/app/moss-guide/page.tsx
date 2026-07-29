@@ -3,7 +3,7 @@
 import { getMossSpecies, urlFor } from '@/lib/sanity'
 import type { MossSpecies } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
-import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils'
 import Link from 'next/link'

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useCart } from '@/contexts/CartContext';
-import { getSafeImageUrl, getSafeStock, getProductSlug, sanityToEcommerceProduct, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters';
+import { getProductSlug, sanityToEcommerceProduct, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters';
 import { InventoryBadge, InventoryAlert } from '@/components/ui/InventoryStatus';
 import { useSanityInventory } from '@/hooks/useSanityInventory';
 import { getNextImageProps } from '@/lib/imageOptimization';
