@@ -86,7 +86,7 @@ export default function NewMossSpeciesPage() {
         throw new Error('Failed to create moss species');
       }
 
-      const newSpecies = await response.json();
+      await response.json();
       router.push('/admin/moss-guide');
     } catch (error) {
       console.error('苔データの作成に失敗:', error);

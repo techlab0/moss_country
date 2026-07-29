@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // salesItem は body.salesItemId（文字列）で来る想定。参照形式に変換して明示的に扱い、
     // ...rest 経由で生の salesItem/salesItemId が二重に入らないよう除外する
-    const { dimensions, slug: _s, salesItem: _salesItem, salesItemId, ...rest } = body;
+    const { dimensions: _dimensions, slug: _s, salesItem: _salesItem, salesItemId, ...rest } = body;
     const doc: Record<string, unknown> = {
       _type: 'product',
       ...rest,

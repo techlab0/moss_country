@@ -129,7 +129,7 @@ export default function AdminInventoryPage() {
         throw new Error('Failed to update inventory');
       }
 
-      const result = await response.json();
+      await response.json();
 
       // UI更新
       const updatedItem = {

@@ -3,9 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { getSimpleWorkshops } from '@/lib/sanity';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
-import type { SimpleWorkshop } from '@/types/sanity';
 import { usePageContent } from '@/hooks/usePageContent';
 
 const planMeta = [
@@ -40,8 +38,6 @@ export default function WorkshopPage() {
     title: t(`step${i}Title`),
     description: t(`step${i}Desc`),
   }));
-  const [workshops, setWorkshops] = useState<SimpleWorkshop[]>([]);
-  const [, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['workshop'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['workshop'].src);
@@ -102,20 +98,6 @@ export default function WorkshopPage() {
       });
   }, []);
 
-  useEffect(() => {
-    async function fetchWorkshops() {
-      try {
-        const data = await getSimpleWorkshops();
-        setWorkshops(data);
-      } catch (error) {
-        console.error('Failed to fetch workshops:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchWorkshops();
-  }, []);
   return (
     <div
       className="min-h-screen relative site-page-tone"

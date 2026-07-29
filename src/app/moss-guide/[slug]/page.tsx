@@ -117,17 +117,6 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
     }
   }
 
-  // 季節の日本語表示
-  const getSeasonName = (season: string) => {
-    switch (season) {
-      case 'spring': return '春（3-5月）'
-      case 'summer': return '夏（6-8月）'
-      case 'autumn': return '秋（9-11月）'
-      case 'winter': return '冬（12-2月）'
-      default: return season
-    }
-  }
-
   return (
     <div 
       className="min-h-screen relative site-page-tone"

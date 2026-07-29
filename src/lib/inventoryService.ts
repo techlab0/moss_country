@@ -47,7 +47,6 @@ class InventoryService {
   constructor() {
     // 開発環境では在庫をリセットするオプション
     if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
       // いつでもリセットするモードでテスト
       console.log('🔄 在庫データをリセットします');
       localStorage.removeItem(this.persistenceKey);

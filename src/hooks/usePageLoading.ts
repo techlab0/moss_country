@@ -36,7 +36,7 @@ export const useCustomPageLoading = (options: UsePageLoadingOptions = {}) => {
       
       // フォントの読み込み待機
       if (waitForFonts) {
-        promises.push(waitForFonts());
+        promises.push(waitForFontsReady());
       }
       
       // 最小時間の待機
@@ -103,7 +103,7 @@ const waitForAllImages = (): Promise<void> => {
   });
 };
 
-const waitForFonts = (): Promise<void> => {
+const waitForFontsReady = (): Promise<void> => {
   return new Promise((resolve) => {
     if ('fonts' in document) {
       document.fonts.ready.then(() => resolve());

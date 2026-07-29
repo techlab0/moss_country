@@ -16,7 +16,6 @@ export default function MossGuidePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
-  const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['mossGuide'].src)
@@ -94,11 +93,6 @@ export default function MossGuidePage() {
         if (cancelled) return
         setMossSpecies(fetchedSpecies ?? [])
         setFilteredSpecies(fetchedSpecies ?? [])
-        const list = fetchedSpecies ?? []
-        const uniqueCategories = Array.from(
-          new Set(list.map(species => species.category).filter(Boolean))
-        )
-        setCategories(uniqueCategories)
       } catch (error) {
         if (cancelled) return
         console.error('苔図鑑データの取得に失敗しました:', error)

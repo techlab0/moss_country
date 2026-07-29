@@ -152,7 +152,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         throw new Error('Failed to update moss species');
       }
 
-      const updatedSpecies = await response.json();
+      await response.json();
       router.push('/admin/moss-guide');
     } catch (error) {
       console.error('苔データの更新に失敗:', error);

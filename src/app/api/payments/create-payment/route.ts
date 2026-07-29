@@ -213,7 +213,6 @@ async function processSquarePayment({
   amount,
   orderNumber,
   customerEmail,
-  orderId,
 }: {
   token: string;
   amount: number;

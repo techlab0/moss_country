@@ -2,9 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    // lintエラーは0件にしたので、以後は増えたらビルドで止める。
+    // 警告（react-hooks/exhaustive-deps など）はビルドを止めない。
+    ignoreDuringBuilds: false,
   },
   typescript: {
+    // 型エラーはまだ99件残っているため、これを外すとビルドが通らない。
+    // 解消できたら false にすること。
     ignoreBuildErrors: true,
   },
   images: {
