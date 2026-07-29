@@ -50,6 +50,8 @@ export type AuditAction =
   // システム操作
   | 'admin.access'
   | 'settings.changed'
+  // お問い合わせ対応
+  | 'contact.replied'
   // セキュリティ
   | 'security.breach_attempt'
   | 'security.suspicious_activity';
@@ -688,6 +690,8 @@ function getSeverityForAction(action: AuditAction): AuditLog['severity'] {
     'user.updated': 'medium',
     'settings.changed': 'medium',
     '2fa.setup': 'medium',
+    // お客様宛にメールが飛ぶ操作なので、閲覧系より上に置く
+    'contact.replied': 'medium',
     
     // 高重要度
     'login.failed': 'high',

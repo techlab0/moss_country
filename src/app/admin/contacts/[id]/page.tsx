@@ -17,7 +17,22 @@ interface ContactInquiry {
   user_agent?: string;
   created_at: string;
   updated_at: string;
+  replied_at?: string | null;
+  reply_message?: string | null;
+  replied_by?: string | null;
 }
+
+const STATUS_LABELS: Record<ContactInquiry["status"], string> = {
+  pending: "未対応",
+  replied: "返信済み",
+  resolved: "解決済み",
+};
+
+const STATUS_STYLES: Record<ContactInquiry["status"], string> = {
+  pending: "bg-yellow-100 text-yellow-800",
+  replied: "bg-blue-100 text-blue-800",
+  resolved: "bg-green-100 text-green-800",
+};
 
 
 const INQUIRY_TYPE_LABELS = {
@@ -35,6 +50,10 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [contact, setContact] = useState<ContactInquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [replyResult, setReplyResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchContact = async () => {
     try {
@@ -61,6 +80,58 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   useEffect(() => {
     fetchContact();
   }, [resolvedParams.id]);
+
+  // 返信メールを送る。送信に成功したときだけサーバー側で「返信済み」として記録される。
+  const handleSendReply = async () => {
+    if (!replyMessage.trim() || sendingReply) return;
+
+    setSendingReply(true);
+    setReplyResult(null);
+    try {
+      const response = await fetch(`/api/admin/contacts/${resolvedParams.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: replyMessage }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setReplyResult({ ok: false, text: data.error || "返信の送信に失敗しました" });
+        return;
+      }
+
+      setReplyResult({
+        ok: true,
+        text: data.recorded
+          ? "返信を送信しました。控えが店舗のメールボックスにも届きます。"
+          : data.message,
+      });
+      setReplyMessage("");
+      await fetchContact();
+    } catch {
+      setReplyResult({ ok: false, text: "通信エラーが発生しました" });
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  const handleStatusChange = async (status: ContactInquiry["status"]) => {
+    if (updatingStatus) return;
+
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/admin/contacts/${resolvedParams.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (response.ok) {
+        await fetchContact();
+      }
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("ja-JP", {
@@ -232,6 +303,71 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
 
+          {/* 返信 */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">返信</h3>
+            </div>
+            <div className="px-6 py-4">
+              {contact.replied_at ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-500">
+                    {formatDate(contact.replied_at)} に送信
+                    {contact.replied_by ? `（${contact.replied_by}）` : ""}
+                  </p>
+                  <div className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-4 rounded-md">
+                    {contact.reply_message}
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    追加のやりとりは、店舗のメールボックスに届いている控えから続けてください。
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    {contact.email} 宛に返信を送ります。控えは店舗のメールボックスにも届きます。
+                  </p>
+                  <textarea
+                    value={replyMessage}
+                    onChange={(e) => setReplyMessage(e.target.value)}
+                    rows={8}
+                    maxLength={5000}
+                    disabled={sendingReply}
+                    placeholder="お問い合わせいただきありがとうございます。..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green disabled:bg-gray-100"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">
+                      {replyMessage.length}/5000文字
+                    </span>
+                    <button
+                      onClick={handleSendReply}
+                      disabled={sendingReply || replyMessage.trim().length === 0}
+                      className="bg-moss-green text-white px-4 py-2 rounded-md text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {sendingReply ? "送信中..." : "返信を送信"}
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    宛名（「{contact.name} 様」）と署名、お問い合わせ内容の引用は自動で付きます。
+                  </p>
+                </div>
+              )}
+
+              {replyResult && (
+                <div
+                  className={`mt-4 p-3 rounded-md text-sm ${
+                    replyResult.ok
+                      ? "bg-green-50 text-green-800"
+                      : "bg-red-50 text-red-800"
+                  }`}
+                >
+                  {replyResult.text}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 技術情報 */}
           {(contact.ip_address || contact.user_agent) && (
             <div className="bg-white shadow rounded-lg">
@@ -269,6 +405,33 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
         {/* サイドバー */}
         <div className="space-y-6">
+
+          {/* ステータス */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">ステータス</h3>
+            </div>
+            <div className="px-6 py-4">
+              <span
+                className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${STATUS_STYLES[contact.status]}`}
+              >
+                {STATUS_LABELS[contact.status]}
+              </span>
+
+              <div className="mt-4 space-y-2">
+                {(Object.keys(STATUS_LABELS) as ContactInquiry["status"][]).map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => handleStatusChange(value)}
+                    disabled={updatingStatus || contact.status === value}
+                    className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {STATUS_LABELS[value]}にする
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* 更新履歴 */}
           <div className="bg-white shadow rounded-lg">

@@ -25,6 +25,11 @@ export interface SendMailParams {
    * 受信箱でそのまま返信するだけでお客様に届く（既定では送信元のinfo@に返ってしまう）。
    */
   replyTo?: string;
+  /**
+   * 控えの送信先。管理画面から送った返信を店舗の受信箱にも残すために使う。
+   * 受信者（to）には表示されない。
+   */
+  bcc?: string | string[];
 }
 
 export type SendMailResult =
@@ -115,7 +120,7 @@ function getSesConfigurationSet(): string | undefined {
  * メールを送信する。送信基盤未設定・送信失敗時は console.warn して
  * { sent: false, reason } を返す（throwしない）。
  */
-export async function sendMail({ to, subject, text, html, replyTo }: SendMailParams): Promise<SendMailResult> {
+export async function sendMail({ to, subject, text, html, replyTo, bcc }: SendMailParams): Promise<SendMailResult> {
   const config = resolveMailerConfig();
   if (!config) {
     console.warn('[mailer] SMTP設定（SMTP_* もしくは GMAIL_*）が未設定のため、メール送信をスキップしました。', { subject });
@@ -128,6 +133,7 @@ export async function sendMail({ to, subject, text, html, replyTo }: SendMailPar
     return { sent: false, reason: 'no-recipient' };
   }
 
+  const bccList = (Array.isArray(bcc) ? bcc : bcc ? [bcc] : []).filter(Boolean);
   const configurationSet = getSesConfigurationSet();
 
   try {
@@ -139,6 +145,7 @@ export async function sendMail({ to, subject, text, html, replyTo }: SendMailPar
       text,
       ...(html ? { html } : {}),
       ...(replyTo ? { replyTo } : {}),
+      ...(bccList.length > 0 ? { bcc: bccList.join(', ') } : {}),
       ...(configurationSet
         ? { headers: { 'X-SES-CONFIGURATION-SET': configurationSet } }
         : {}),
