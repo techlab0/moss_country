@@ -60,6 +60,10 @@ export const AUDIT_ACTIONS = [
   // セキュリティ
   'security.breach_attempt',
   'security.suspicious_activity',
+  'security.settings_update',
+  'security.report_generated',
+  // データベース運用
+  'database.maintenance',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -711,6 +715,9 @@ function getSeverityForAction(action: AuditAction): AuditLog['severity'] {
     'settings.changed': 'medium',
     '2fa.setup': 'medium',
     'contact.updated': 'medium',
+    'security.settings_update': 'medium',
+    'security.report_generated': 'medium',
+    'database.maintenance': 'medium',
     // お客様宛にメールが飛ぶ操作なので、閲覧系より上に置く
     'contact.replied': 'medium',
     

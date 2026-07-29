@@ -126,11 +126,23 @@ export interface SanityImageAsset {
   _type?: 'reference' | 'sanity.imageAsset'
   _id?: string
   url?: string
+  /** asset-> で展開したときにだけ含まれる */
+  metadata?: {
+    dimensions?: {
+      width: number
+      height: number
+      aspectRatio: number
+    }
+    /** ぼかしプレースホルダ用のBase64画像 */
+    lqip?: string
+  }
 }
 
 export interface SanityImage {
   _type: 'image'
   asset: SanityImageAsset
+  /** 代替テキスト。Sanity側で画像ごとに設定できる */
+  alt?: string
   hotspot?: {
     x: number
     y: number

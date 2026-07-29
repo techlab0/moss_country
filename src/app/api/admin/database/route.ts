@@ -47,11 +47,13 @@ interface Recommendation {
 async function getBasicDatabaseStats(): Promise<DatabaseStats> {
   try {
     // 基本的なテーブル統計を取得
-    const { data: adminUsers, error: userError } = await supabaseAdmin
+    // head: true のとき data は null で、件数は count に返る。
+    // data.count を読んでいたため、行数が常に0として表示されていた。
+    const { count: adminUserCount, error: userError } = await supabaseAdmin
       .from('admin_users')
       .select('*', { count: 'exact', head: true });
 
-    const { data: auditLogs, error: logError } = await supabaseAdmin
+    const { count: auditLogCount, error: logError } = await supabaseAdmin
       .from('audit_logs')
       .select('*', { count: 'exact', head: true });
 
@@ -63,16 +65,16 @@ async function getBasicDatabaseStats(): Promise<DatabaseStats> {
       tables: [
         {
           name: 'admin_users',
-          rowCount: adminUsers?.count || 0,
+          rowCount: adminUserCount || 0,
           sizeFormatted: '< 1MB',
           sizeBytes: 1024,
           indexSize: '< 1MB'
         },
         {
           name: 'audit_logs',
-          rowCount: auditLogs?.count || 0,
-          sizeFormatted: `${Math.ceil((auditLogs?.count || 0) * 0.5 / 1024)}MB`,
-          sizeBytes: (auditLogs?.count || 0) * 512,
+          rowCount: auditLogCount || 0,
+          sizeFormatted: `${Math.ceil((auditLogCount || 0) * 0.5 / 1024)}MB`,
+          sizeBytes: (auditLogCount || 0) * 512,
           indexSize: '< 1MB'
         }
       ],
@@ -81,15 +83,15 @@ async function getBasicDatabaseStats(): Promise<DatabaseStats> {
           tableName: 'admin_users',
           indexName: 'admin_users_pkey',
           scans: 1000,
-          tuplesRead: adminUsers?.count || 0,
-          tuplesFetched: adminUsers?.count || 0,
+          tuplesRead: adminUserCount || 0,
+          tuplesFetched: adminUserCount || 0,
           sizeFormatted: '< 1MB'
         },
         {
           tableName: 'audit_logs',
           indexName: 'audit_logs_pkey',
           scans: 500,
-          tuplesRead: auditLogs?.count || 0,
+          tuplesRead: auditLogCount || 0,
           tuplesFetched: 100,
           sizeFormatted: '< 1MB'
         }

@@ -8,7 +8,7 @@ export interface OptimizedImageProps {
   width?: number
   height?: number
   quality?: number
-  format?: 'webp' | 'avif' | 'jpg' | 'png'
+  format?: 'webp' | 'jpg' | 'png'
   placeholder?: 'blur' | 'empty'
   blurDataURL?: string
 }
@@ -20,7 +20,7 @@ export function optimizeSanityImage(
     width?: number
     height?: number
     quality?: number
-    format?: 'webp' | 'avif' | 'jpg' | 'png'
+    format?: 'webp' | 'jpg' | 'png'
   } = {}
 ): OptimizedImageProps {
   const {
@@ -145,7 +145,7 @@ export function optimizeSanityImage(
 export function generateSrcSet(
   image: SanityImage,
   widths: number[] = [320, 480, 640, 768, 1024, 1280, 1600],
-  format: 'webp' | 'avif' | 'jpg' | 'png' = 'webp'
+  format: 'webp' | 'jpg' | 'png' = 'webp'
 ): string {
   try {
     if (!image?.asset) {
