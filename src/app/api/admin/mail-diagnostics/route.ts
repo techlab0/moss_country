@@ -16,15 +16,16 @@ import { describeMailerConfig, sendMail, verifyMailerConnection, STORE_EMAIL } f
  * SESのSMTPパスワードは「シークレットアクセスキーをリージョン込みで変換した値」であり、
  * IAMのシークレットアクセスキーとは別物。両者は見た目が似ているうえ、SMTPユーザー名は
  * どちらも AKIA で始まるため取り違えやすい。長さで判別できる:
- *   - SESのSMTPパスワード: 44文字・末尾が "="（33バイトのBase64）
- *   - IAMのシークレットアクセスキー: 40文字・"=" なし
+ *   - SESのSMTPパスワード: 44文字（バージョンバイト1 + HMAC-SHA256の32 = 33バイトのBase64。
+ *     33は3で割り切れるためパディングの "=" は付かない）
+ *   - IAMのシークレットアクセスキー: 40文字
  */
 function inspectCredentials() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  const looksLikeIamSecret = !!pass && pass.length === 40 && !pass.endsWith('=');
-  const looksLikeSmtpPassword = !!pass && pass.length === 44 && pass.endsWith('=');
+  const looksLikeIamSecret = !!pass && pass.length === 40;
+  const looksLikeSmtpPassword = !!pass && pass.length === 44;
 
   return {
     userLength: user?.length ?? 0,
@@ -51,21 +52,28 @@ export async function GET(request: NextRequest) {
   if (!connection.ok) {
     if (credentials.looksLikeIamSecret) {
       hints.push(
-        'SMTP_PASS が40文字でIAMのシークレットアクセスキーの形式です。SESのSMTPパスワード（44文字・末尾"="）ではありません。SESコンソールの「SMTP設定」→「SMTP認証情報の作成」で発行し直してください。'
+        'SMTP_PASS が40文字でIAMのシークレットアクセスキーの形式です。SESのSMTPパスワード（44文字）ではありません。SESコンソールの「SMTP設定」→「SMTP認証情報の作成」で発行し直してください。'
       );
     } else if (credentials.passLength > 0 && !credentials.looksLikeSmtpPassword) {
       hints.push(
-        `SMTP_PASS が${credentials.passLength}文字で、SESのSMTPパスワード（44文字・末尾"="）の形式と一致しません。値が途中で切れていないか確認してください。`
+        `SMTP_PASS が${credentials.passLength}文字で、SESのSMTPパスワード（44文字）の長さと一致しません。値が途中で切れていないか確認してください。`
       );
     }
     if (credentials.userHasSurroundingWhitespace || credentials.passHasSurroundingWhitespace) {
       hints.push('SMTP_USER または SMTP_PASS の前後に空白・改行が混ざっています。貼り付け直してください。');
     }
     if (connection.error?.includes('535')) {
-      hints.push(
-        'SESのSMTP認証情報はリージョンごとに別物です。別リージョンで発行したものは、このエンドポイント（' +
-          `${config.host}）では必ず535になります。同じリージョンで発行し直してください。`
-      );
+      if (credentials.looksLikeSmtpPassword) {
+        // 形式が正しいのに535なら、残る原因は「発行リージョン違い」か「IAM権限不足」の2つ。
+        // AWSは ses:SendRawEmail が無いIAMユーザーにも同じ535を返す。
+        hints.push(
+          `認証情報の形式は正しいため、原因は次の2つに絞られます。(1) この認証情報が ${config.host} と別のリージョンで発行されている。SESのSMTPパスワードはリージョンごとに異なる値になるため、シドニー以外で発行したものは必ず535になります。(2) 対応するIAMユーザーに ses:SendRawEmail の許可が無い。AWSは権限不足のときも同じ535を返します。`
+        );
+      } else {
+        hints.push(
+          `SESのSMTP認証情報はリージョンごとに別物です。別リージョンで発行したものは、このエンドポイント（${config.host}）では必ず535になります。同じリージョンで発行し直してください。`
+        );
+      }
     }
     if (connection.error?.includes('ETIMEDOUT') || connection.error?.includes('ENOTFOUND')) {
       hints.push('SMTPホスト名かポートに到達できません。SMTP_HOST と SMTP_PORT を確認してください。');
