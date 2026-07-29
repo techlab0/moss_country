@@ -4,12 +4,29 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
+import type { SanityImage } from '@/types/sanity';
+
+/**
+ * ネストした文字列配列（practicalAdvice.difficultyPoints など）を差し替える。
+ * formDataは文字列・真偽値・オブジェクトが混在するため、境界で一度 unknown を経由し、
+ * 配列でなかった場合は空配列として扱って落ちないようにする。
+ */
+function replaceNestedList(
+  parent: unknown,
+  subField: string,
+  update: (list: string[]) => string[]
+): Record<string, unknown> {
+  const obj = (parent ?? {}) as Record<string, unknown>;
+  const current = obj[subField];
+  const list = Array.isArray(current) ? (current as string[]) : [];
+  return { ...obj, [subField]: update(list) };
+}
 
 export default function NewMossSpeciesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [images, setImages] = useState<any[]>([]);
+  const [images, setImages] = useState<SanityImage[]>([]);
   const [slugError, setSlugError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -142,10 +159,7 @@ export default function NewMossSpeciesPage() {
     if (subField) {
       setFormData(prev => ({
         ...prev,
-        [field]: {
-          ...prev[field as keyof typeof prev],
-          [subField]: [...(prev[field as keyof typeof prev] as any)[subField], '']
-        }
+        [field]: replaceNestedList(prev[field as keyof typeof prev], subField, list => [...list, ''])
       }));
     } else {
       setFormData(prev => ({
@@ -159,10 +173,9 @@ export default function NewMossSpeciesPage() {
     if (subField) {
       setFormData(prev => ({
         ...prev,
-        [field]: {
-          ...prev[field as keyof typeof prev],
-          [subField]: (prev[field as keyof typeof prev] as any)[subField].filter((_: any, i: number) => i !== index)
-        }
+        [field]: replaceNestedList(prev[field as keyof typeof prev], subField, list =>
+          list.filter((_, i) => i !== index)
+        )
       }));
     } else {
       setFormData(prev => ({
@@ -176,12 +189,9 @@ export default function NewMossSpeciesPage() {
     if (subField) {
       setFormData(prev => ({
         ...prev,
-        [field]: {
-          ...prev[field as keyof typeof prev],
-          [subField]: (prev[field as keyof typeof prev] as any)[subField].map((item: string, i: number) => 
-            i === index ? value : item
-          )
-        }
+        [field]: replaceNestedList(prev[field as keyof typeof prev], subField, list =>
+          list.map((item, i) => (i === index ? value : item))
+        )
       }));
     } else {
       setFormData(prev => ({
@@ -281,7 +291,7 @@ export default function NewMossSpeciesPage() {
               </label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as any }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="moss">蘚類</option>
@@ -435,7 +445,7 @@ export default function NewMossSpeciesPage() {
                 value={formData.characteristics.beginnerFriendly}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
-                  characteristics: { ...prev.characteristics, beginnerFriendly: parseInt(e.target.value) as any }
+                  characteristics: { ...prev.characteristics, beginnerFriendly: parseInt(e.target.value) }
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
@@ -454,7 +464,7 @@ export default function NewMossSpeciesPage() {
                 value={formData.characteristics.waterRequirement}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
-                  characteristics: { ...prev.characteristics, waterRequirement: e.target.value as any }
+                  characteristics: { ...prev.characteristics, waterRequirement: e.target.value }
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
@@ -471,7 +481,7 @@ export default function NewMossSpeciesPage() {
                 value={formData.characteristics.lightRequirement}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
-                  characteristics: { ...prev.characteristics, lightRequirement: e.target.value as any }
+                  characteristics: { ...prev.characteristics, lightRequirement: e.target.value }
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
@@ -488,7 +498,7 @@ export default function NewMossSpeciesPage() {
                 value={formData.characteristics.growthSpeed}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
-                  characteristics: { ...prev.characteristics, growthSpeed: e.target.value as any }
+                  characteristics: { ...prev.characteristics, growthSpeed: e.target.value }
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
