@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderByNumber, updateOrderStatus } from '@/lib/orders';
 import { InventoryService } from '@/lib/inventory';
-import { sendMail } from '@/lib/mailer';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { getPaymentStatus, isPaypayConfigured } from '@/lib/paypayWebClient';
 
@@ -90,6 +90,8 @@ async function verifyPaypayOrder(orderNumber: string): Promise<{ httpStatus: num
           const customerName = [order.customerLastName, order.customerFirstName].filter(Boolean).join(' ');
           await sendMail({
             to: order.customerEmail,
+            // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+            replyTo: STORE_EMAIL,
             subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${order.orderNumber})`,
             text: [
               customerName ? `${customerName} 様` : 'お客様',

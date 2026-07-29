@@ -46,13 +46,15 @@ export async function POST(request: NextRequest) {
     const validatedData = contactSchema.parse(body);
     
     // Get client IP and user agent
-    const ip = request.ip || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    // Next.js 15 の NextRequest には ip プロパティが無い。Vercel ではプロキシが付ける
+    // x-forwarded-for（先頭がクライアントIP）を見る。
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
     
     let contactId: string | null = null;
-    // サーバーサイドのメール送信結果（未設定・失敗でもレスポンスには含めるがエラー扱いはしない）
-    let storeNotified = false;
-    let customerConfirmed = false;
+    let dbSaveFailed = false;
 
     // Try to save to database (with timeout)
     try {
@@ -74,62 +76,85 @@ export async function POST(request: NextRequest) {
           priority: 'medium'
         })
         .select()
+        .abortSignal(controller.signal)
         .single();
 
       clearTimeout(timeoutId);
 
       if (dbError) {
         console.error('Database error:', dbError);
+        dbSaveFailed = true;
         // データベースエラーでもフォーム送信自体は成功として扱う
       } else {
         contactId = contactData?.id || null;
         console.log('Contact inquiry saved to database successfully:', contactId);
-
-        // 店舗宛のお問い合わせ通知メール
-        const notifyResult = await sendMail({
-          to: STORE_EMAIL,
-          subject: `【MOSS COUNTRY】新しいお問い合わせ: ${validatedData.subject}`,
-          text: [
-            'お問い合わせフォームより新しいお問い合わせがありました。',
-            '',
-            `お名前: ${validatedData.name}`,
-            `メールアドレス: ${validatedData.email}`,
-            `電話番号: ${validatedData.phone || '未入力'}`,
-            `お問い合わせ種類: ${validatedData.inquiryType}`,
-            `件名: ${validatedData.subject}`,
-            '',
-            'お問い合わせ内容:',
-            validatedData.message,
-          ].join('\n'),
-        });
-        storeNotified = notifyResult.sent;
-
-        // 送信者（お客様）宛の受付確認メール
-        const confirmResult = await sendMail({
-          to: validatedData.email,
-          subject: 'お問い合わせありがとうございます - MOSS COUNTRY',
-          text: [
-            `${validatedData.name} 様`,
-            '',
-            'この度はMOSS COUNTRYへお問い合わせいただき、誠にありがとうございます。',
-            '以下の内容でお問い合わせを受け付けました。24時間以内にご返信させていただきます。',
-            '',
-            `件名: ${validatedData.subject}`,
-            `お問い合わせ種類: ${validatedData.inquiryType}`,
-            '',
-            'お問い合わせ内容:',
-            validatedData.message,
-            '',
-            '----',
-            'MOSS COUNTRY',
-          ].join('\n'),
-        });
-        customerConfirmed = confirmResult.sent;
       }
     } catch (dbSaveError) {
       console.error('Database save failed:', dbSaveError);
+      dbSaveFailed = true;
       // データベース保存失敗でもフォーム送信は継続
     }
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mosscountry.com';
+
+    // メール送信はDB保存の成否と切り離す。
+    // DBに入らなかった問い合わせは管理画面に出てこないため、ここで通知しないと
+    // お客様には「受け付けました」と表示されたまま問い合わせが完全に消える。
+    const [notifyResult, confirmResult] = await Promise.all([
+      // 店舗宛のお問い合わせ通知メール
+      sendMail({
+        to: STORE_EMAIL,
+        // 受信箱でそのまま返信すればお客様に届くようにする
+        replyTo: validatedData.email,
+        subject: `【MOSS COUNTRY】新しいお問い合わせ: ${validatedData.subject}`,
+        text: [
+          'お問い合わせフォームより新しいお問い合わせがありました。',
+          '',
+          `お名前: ${validatedData.name}`,
+          `メールアドレス: ${validatedData.email}`,
+          `電話番号: ${validatedData.phone || '未入力'}`,
+          `お問い合わせ種類: ${validatedData.inquiryType}`,
+          `件名: ${validatedData.subject}`,
+          '',
+          'お問い合わせ内容:',
+          validatedData.message,
+          '',
+          dbSaveFailed
+            ? '※ データベースへの保存に失敗したため、この問い合わせは管理画面に表示されません。このメールから直接ご対応ください。'
+            : `管理画面: ${siteUrl}/admin/contacts`,
+        ].join('\n'),
+      }),
+
+      // 送信者（お客様）宛の受付確認メール
+      sendMail({
+        to: validatedData.email,
+        // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+        replyTo: STORE_EMAIL,
+        subject: 'お問い合わせありがとうございます - MOSS COUNTRY',
+        text: [
+          `${validatedData.name} 様`,
+          '',
+          'この度はMOSS COUNTRYへお問い合わせいただき、誠にありがとうございます。',
+          '以下の内容でお問い合わせを受け付けました。24時間以内にご返信させていただきます。',
+          '',
+          `件名: ${validatedData.subject}`,
+          `お問い合わせ種類: ${validatedData.inquiryType}`,
+          '',
+          'お問い合わせ内容:',
+          validatedData.message,
+          '',
+          '※ このメールは自動送信です。ご返信いただければ担当者に届きます。',
+          '',
+          '----',
+          'MOSS COUNTRY',
+          STORE_EMAIL,
+        ].join('\n'),
+      }),
+    ]);
+
+    // サーバーサイドのメール送信結果（未設定・失敗でもレスポンスには含めるがエラー扱いはしない）
+    const storeNotified = notifyResult.sent;
+    const customerConfirmed = confirmResult.sent;
 
     return NextResponse.json(
       {

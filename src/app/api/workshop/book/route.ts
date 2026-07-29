@@ -598,16 +598,22 @@ export async function POST(request: NextRequest) {
       paymentStatus,
       customerName,
     });
-    await sendMail({
-      to: customerEmail,
-      subject: `【MOSS COUNTRY】ワークショップご予約確認（${bookingNumber}）`,
-      text: emailBody,
-    });
-    await sendMail({
-      to: STORE_EMAIL,
-      subject: `【新規予約】ワークショップ ${date} ${startTime} (${bookingNumber})`,
-      text: emailBody,
-    });
+    await Promise.all([
+      sendMail({
+        to: customerEmail,
+        // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+        replyTo: STORE_EMAIL,
+        subject: `【MOSS COUNTRY】ワークショップご予約確認（${bookingNumber}）`,
+        text: emailBody,
+      }),
+      sendMail({
+        to: STORE_EMAIL,
+        // 受信箱でそのまま返信すればお客様に届くようにする
+        replyTo: customerEmail,
+        subject: `【新規予約】ワークショップ ${date} ${startTime} (${bookingNumber})`,
+        text: emailBody,
+      }),
+    ]);
 
     // ---- 取引明細シートへの同期（任意・fire-and-forget。失敗しても予約処理には影響させない） ----
     void (async () => {

@@ -20,6 +20,11 @@ export interface SendMailParams {
   subject: string;
   text: string;
   html?: string;
+  /**
+   * 返信先。店舗宛の通知メールにお客様のアドレスを入れておくと、
+   * 受信箱でそのまま返信するだけでお客様に届く（既定では送信元のinfo@に返ってしまう）。
+   */
+  replyTo?: string;
 }
 
 export type SendMailResult =
@@ -86,16 +91,31 @@ function getTransporter(config: MailerConfig) {
       port: config.port,
       secure: config.secure,
       auth: { user: config.user, pass: config.pass },
+      // SESのリージョンが海外（ap-southeast-2 等）だと1往復あたりの遅延が大きい。
+      // タイムアウトを明示しないと、SMTPが応答しないときにサーバーレス関数の上限まで
+      // 待たされて呼び出し元（問い合わせ送信・注文確定）ごと巻き込まれる。
+      connectionTimeout: 8_000,
+      greetingTimeout: 8_000,
+      socketTimeout: 15_000,
     });
   }
   return cachedTransporter;
 }
 
 /**
+ * SESの設定セット名。設定するとメールに X-SES-CONFIGURATION-SET ヘッダーが付き、
+ * バウンス・苦情・開封をSES側で集計できる。バウンス率が5%を超えると
+ * SESの送信権限が停止されるため、本番では設定しておくことを強く推奨する。
+ */
+function getSesConfigurationSet(): string | undefined {
+  return process.env.SES_CONFIGURATION_SET || undefined;
+}
+
+/**
  * メールを送信する。送信基盤未設定・送信失敗時は console.warn して
  * { sent: false, reason } を返す（throwしない）。
  */
-export async function sendMail({ to, subject, text, html }: SendMailParams): Promise<SendMailResult> {
+export async function sendMail({ to, subject, text, html, replyTo }: SendMailParams): Promise<SendMailResult> {
   const config = resolveMailerConfig();
   if (!config) {
     console.warn('[mailer] SMTP設定（SMTP_* もしくは GMAIL_*）が未設定のため、メール送信をスキップしました。', { subject });
@@ -108,6 +128,8 @@ export async function sendMail({ to, subject, text, html }: SendMailParams): Pro
     return { sent: false, reason: 'no-recipient' };
   }
 
+  const configurationSet = getSesConfigurationSet();
+
   try {
     const transporter = getTransporter(config);
     await transporter.sendMail({
@@ -116,11 +138,73 @@ export async function sendMail({ to, subject, text, html }: SendMailParams): Pro
       subject,
       text,
       ...(html ? { html } : {}),
+      ...(replyTo ? { replyTo } : {}),
+      ...(configurationSet
+        ? { headers: { 'X-SES-CONFIGURATION-SET': configurationSet } }
+        : {}),
     });
 
     return { sent: true };
   } catch (error) {
     console.warn('[mailer] メール送信中に例外が発生しました。', { subject, error });
-    return { sent: false, reason: 'exception' };
+    // SESの設定ミスは「535 Authentication Credentials Invalid（認証情報が別リージョン）」
+    // 「Email address is not verified（送信元未検証）」のようにSMTPの応答文で切り分けられる。
+    // 呼び出し元の診断のため、原因をつぶさずに残す。
+    const detail = error instanceof Error ? error.message : String(error);
+    return { sent: false, reason: `exception: ${detail}` };
+  }
+}
+
+/**
+ * 現在有効な送信基盤の概要を返す（診断用。パスワードなどの機密値は含めない）。
+ */
+export function describeMailerConfig(): {
+  configured: boolean;
+  provider: 'smtp' | 'gmail' | 'none';
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  from?: string;
+  storeEmail: string;
+  configurationSet: string | null;
+} {
+  const config = resolveMailerConfig();
+  if (!config) {
+    return {
+      configured: false,
+      provider: 'none',
+      storeEmail: STORE_EMAIL,
+      configurationSet: getSesConfigurationSet() || null,
+    };
+  }
+
+  return {
+    configured: true,
+    provider: process.env.SMTP_HOST ? 'smtp' : 'gmail',
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    from: config.from,
+    storeEmail: STORE_EMAIL,
+    configurationSet: getSesConfigurationSet() || null,
+  };
+}
+
+/**
+ * SMTPサーバーへの接続と認証だけを試す（メールは送らない）。
+ * SES切替直後に「認証情報が正しいか」「リージョンのエンドポイントが合っているか」を
+ * 実メール送信なしで確かめるために使う。
+ */
+export async function verifyMailerConnection(): Promise<{ ok: boolean; error?: string }> {
+  const config = resolveMailerConfig();
+  if (!config) {
+    return { ok: false, error: 'SMTP設定（SMTP_* もしくは GMAIL_*）が未設定です。' };
+  }
+
+  try {
+    await getTransporter(config).verify();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

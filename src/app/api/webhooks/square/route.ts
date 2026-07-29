@@ -3,7 +3,7 @@ import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
 // 店頭QR決済（inStoreCharge）はPIIを含まずSanity据え置きのため、この検索のみwriteClientを使う
 import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
-import { sendMail } from '@/lib/mailer'
+import { sendMail, STORE_EMAIL } from '@/lib/mailer'
 import { getOrderBySquareId, updateOrderStatus, type Order } from '@/lib/orders'
 import { syncChargeToSheetById } from '@/lib/salesBackup'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
@@ -248,6 +248,8 @@ async function processSuccessfulPayment(order: Order, payment: { id: string; rec
         const customerName = [order.customerLastName, order.customerFirstName].filter(Boolean).join(' ')
         await sendMail({
           to: order.customerEmail,
+          // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+          replyTo: STORE_EMAIL,
           subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${order.orderNumber})`,
           text: [
             customerName ? `${customerName} 様` : 'お客様',

@@ -151,6 +151,8 @@ export async function POST(request: NextRequest) {
     try {
       const customerResult = await sendMail({
         to: customerData.email,
+        // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+        replyTo: STORE_EMAIL,
         subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${orderNumber})`,
         text: [
           `${customerData.lastName} ${customerData.firstName} 様`,
@@ -182,6 +184,8 @@ export async function POST(request: NextRequest) {
 
       const storeResult = await sendMail({
         to: STORE_EMAIL,
+        // 受信箱でそのまま返信すればお客様に届くようにする
+        replyTo: customerData.email,
         subject: `【MOSS COUNTRY】新規注文（オフライン決済）: ${orderNumber}`,
         text: [
           'オフライン決済（銀行振込・代金引換）の新規注文がありました。',
