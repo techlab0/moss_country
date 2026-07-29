@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import type { SquareCreatePaymentLinkRequest, SquarePaymentLink, SquarePayment, SquareOrder } from '@/types/ecommerce'
 
 // Square APIが返す決済リンク（snake_case）。当システム内では camelCase の SquarePaymentLink に変換して扱う
@@ -243,8 +244,6 @@ export function verifyWebhookSignature(
     
     // Square webhook signature verification
     // https://developer.squareup.com/docs/webhooks/step3verify
-    const crypto = require('crypto')
-    
     // Concatenate url + body for Square's signature verification
     const stringToSign = (url || '') + payload
     

@@ -85,7 +85,7 @@ export interface IPRestriction {
 // メモリベースストレージ（開発・テスト用、およびDB未設定時のフォールバック）
 let securitySettings: SecuritySettings | null = null;
 let loginAttempts: LoginAttempt[] = [];
-let ipRestrictions: IPRestriction[] = [];
+const ipRestrictions: IPRestriction[] = [];
 let securityReports: SecurityReport[] = [];
 
 // 環境変数でデータベース使用を制御（login_attemptsテーブル未作成の環境ではメモリにフォールバック）

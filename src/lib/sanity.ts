@@ -318,7 +318,7 @@ export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promi
     console.log('Sanity updateBlogPost:', id, data);
     
     // スラッグの更新処理
-    let updateData = { ...data };
+    const updateData = { ...data };
     if (data.slug) {
       // スラッグが提供されている場合はそのまま使用
       if (typeof data.slug === 'string') {

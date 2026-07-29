@@ -324,7 +324,6 @@ function SlotSettingsTab() {
     // 月を切り替えたら未保存の変更は破棄する（別の月のデータに紐づく変更を持ち越さない）
     setPending(new Map());
     fetchMonth(monthParam);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthParam, fetchMonth]);
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 2, 1));

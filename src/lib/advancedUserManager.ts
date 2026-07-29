@@ -157,9 +157,9 @@ const SYSTEM_ROLES: Omit<UserRole, 'createdAt' | 'updatedAt'>[] = [
 ];
 
 // メモリベースのストレージ
-let permissions: Permission[] = SYSTEM_PERMISSIONS;
+const permissions: Permission[] = SYSTEM_PERMISSIONS;
 let roles: UserRole[] = [];
-let groups: UserGroup[] = [];
+const groups: UserGroup[] = [];
 let userActivities: UserActivity[] = [];
 
 /**
