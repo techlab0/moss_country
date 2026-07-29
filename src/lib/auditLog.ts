@@ -51,6 +51,9 @@ export type AuditAction =
   | 'admin.access'
   | 'settings.changed'
   // お問い合わせ対応
+  | 'contact.list_viewed'
+  | 'contact.viewed'
+  | 'contact.updated'
   | 'contact.replied'
   // セキュリティ
   | 'security.breach_attempt'
@@ -685,11 +688,14 @@ function getSeverityForAction(action: AuditAction): AuditLog['severity'] {
     'logout': 'low',
     'admin.access': 'low',
     '2fa.verify.success': 'low',
+    'contact.list_viewed': 'low',
+    'contact.viewed': 'low',
     
     // 中重要度
     'user.updated': 'medium',
     'settings.changed': 'medium',
     '2fa.setup': 'medium',
+    'contact.updated': 'medium',
     // お客様宛にメールが飛ぶ操作なので、閲覧系より上に置く
     'contact.replied': 'medium',
     

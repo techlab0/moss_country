@@ -77,19 +77,19 @@ export async function GET(request: NextRequest) {
     // 監査ログ記録（データベース接続成功時のみ）
     if (dbConnected) {
       try {
-        await logAuditEvent({
-          userId: session.userId,
-          userEmail: session.email,
-          action: 'CONTACTS_LIST_VIEW',
-          category: 'contact_management',
-          details: {
+        await logAuditEvent(
+          session.userId,
+          session.email,
+          'contact.list_viewed',
+          'contact_management',
+          {
             page,
             limit,
             search: search || null,
             filters: { status, priority, inquiryType }
           },
-          severity: 'low'
-        });
+          { severity: 'low' }
+        );
       } catch (auditError) {
         console.error('Audit log error:', auditError);
         // 監査ログエラーは無視して続行

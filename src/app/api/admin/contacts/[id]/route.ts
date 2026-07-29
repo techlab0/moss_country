@@ -36,19 +36,18 @@ export async function GET(
     }
 
     // 監査ログ記録
-    await logAuditEvent({
-      userId: session.userId,
-      userEmail: session.email,
-      action: 'CONTACT_DETAIL_VIEW',
-      category: 'contact_management',
-      details: {
+    await logAuditEvent(
+      session.userId,
+      session.email,
+      'contact.viewed',
+      'contact_management',
+      {
         contactId: id,
         contactEmail: data.email,
         contactName: data.name
       },
-      resourceId: id,
-      severity: 'low'
-    });
+      { resourceId: id, severity: 'low' }
+    );
 
     return NextResponse.json({ contact: data });
 
@@ -123,21 +122,19 @@ export async function PUT(
     }
 
     // 監査ログ記録
-    await logAuditEvent({
-      userId: session.userId,
-      userEmail: session.email,
-      action: 'CONTACT_STATUS_UPDATE',
-      category: 'contact_management',
-      details: {
+    await logAuditEvent(
+      session.userId,
+      session.email,
+      'contact.updated',
+      'contact_management',
+      {
         contactId: id,
         contactEmail: data.email,
         contactName: data.name,
-        changes: { status, priority },
-        previousValues: {} // 必要に応じて更新前の値を記録
+        changes: { status, priority }
       },
-      resourceId: id,
-      severity: 'medium'
-    });
+      { resourceId: id, severity: 'medium' }
+    );
 
     return NextResponse.json({
       message: 'お問い合わせが更新されました',
