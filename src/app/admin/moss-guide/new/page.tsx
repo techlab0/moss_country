@@ -135,7 +135,8 @@ export default function NewMossSpeciesPage() {
       return result.image;
     } catch (error) {
       console.error('画像アップロードに失敗:', error);
-      alert(`画像のアップロードに失敗しました: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      alert(`画像のアップロードに失敗しました: ${message}`);
       throw error;
     } finally {
       setUploadingImage(false);

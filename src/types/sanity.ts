@@ -102,7 +102,9 @@ export interface BlogPost {
   }
   category?: string
   tags?: string[]
-  published: boolean
+  // Sanityスキーマ・GROQクエリ・書き込み処理はすべて isPublished を使っている。
+  // ここだけ published になっており、管理画面の公開状態の判定が型と噛み合っていなかった。
+  isPublished: boolean
 }
 
 export interface FAQ {

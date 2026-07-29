@@ -310,7 +310,8 @@ export async function createBlogPost(data: Partial<BlogPost>): Promise<BlogPost>
     author: data.author || 'MOSS COUNTRY'
   };
   
-  return await writeClient.create(doc);
+  // Sanityのcreateは汎用ドキュメント型を返すため、書き込んだ形として扱う
+  return (await writeClient.create(doc)) as unknown as BlogPost;
 }
 
 export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promise<BlogPost> {

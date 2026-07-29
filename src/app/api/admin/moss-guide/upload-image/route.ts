@@ -94,7 +94,8 @@ export async function POST(request: NextRequest) {
       filename: file.name,
     });
     
-    const timeoutPromise = new Promise((_, reject) => {
+    // タイムアウト側は解決しないので never。こうしないと race の結果が unknown になる
+    const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Upload timeout after 30 seconds')), 30000);
     });
     
@@ -137,15 +138,15 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const detail = error instanceof Error
+      ? { message: error.message, stack: error.stack, name: error.name }
+      : { message: String(error), stack: undefined, name: 'UnknownError' };
+
     console.error('❌ 画像アップロードエラー:', error);
-    console.error('エラー詳細:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    
+    console.error('エラー詳細:', detail);
+
     return NextResponse.json(
-      { error: 'Failed to upload image', details: error.message },
+      { error: 'Failed to upload image', details: detail.message },
       { status: 500 }
     );
   }

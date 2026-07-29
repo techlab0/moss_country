@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
       filename: file.name,
     });
     
-    const timeoutPromise = new Promise((_, reject) => {
+    // タイムアウト側は解決しないので never。こうしないと race の結果が unknown になる
+    const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Upload timeout after 30 seconds')), 30000);
     });
     
