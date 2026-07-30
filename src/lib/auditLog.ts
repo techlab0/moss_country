@@ -17,6 +17,36 @@ async function getSupabaseAuditFunctions() {
   }
 }
 
+/**
+ * 監査ログの保存先を調べる。
+ *
+ * USE_SUPABASE が 'true' でない場合、ログはこのモジュール内の配列にしか残らない。
+ * Vercelのサーバーレスではリクエストごとにメモリが破棄されるため、
+ * 記録しているつもりでも監査ログ画面には何も出てこない。
+ * どちらに書かれているかを画面から確認できるようにするために使う。
+ */
+export async function getAuditLogStorage(): Promise<{
+  mode: 'database' | 'memory';
+  reason?: string;
+}> {
+  if (process.env.USE_SUPABASE !== 'true') {
+    return {
+      mode: 'memory',
+      reason: 'USE_SUPABASE が true ではないため、監査ログはメモリにのみ記録されます。サーバーレス環境では保存されません。',
+    };
+  }
+
+  const supabaseFunctions = await getSupabaseAuditFunctions();
+  if (!supabaseFunctions) {
+    return {
+      mode: 'memory',
+      reason: 'Supabaseモジュールの読み込みに失敗したため、メモリに記録されています。',
+    };
+  }
+
+  return { mode: 'database' };
+}
+
 export interface AuditLog {
   id: string;
   userId: string;

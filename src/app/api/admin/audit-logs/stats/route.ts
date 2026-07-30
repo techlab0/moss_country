@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuditLogStats } from '@/lib/auditLog';
+import { getAuditLogStats, getAuditLogStorage } from '@/lib/auditLog';
 import { findUserById } from '@/lib/userManager';
 import { verifyJWT } from '@/lib/auth';
 
@@ -23,8 +23,11 @@ export async function GET(request: NextRequest) {
 
     // 監査ログ統計を取得
     const stats = await getAuditLogStats();
+    // 0件だったときに「記録されていない」のか「本当に操作が無い」のかを
+    // 画面側で区別できるよう、保存先も返す
+    const storage = await getAuditLogStorage();
 
-    return NextResponse.json({ stats });
+    return NextResponse.json({ stats, storage });
 
   } catch (error) {
     console.error('Audit log stats fetch error:', error);

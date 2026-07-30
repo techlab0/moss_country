@@ -53,6 +53,7 @@ export default function AuditLogsPage(): JSX.Element {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [storage, setStorage] = useState<{ mode: 'database' | 'memory'; reason?: string } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // 入力中の値は下書きとして保持し、「検索」を押したときだけ filter に反映する。
   // filter を直接更新すると1文字打つごとにAPIを叩いてしまうため。
@@ -91,6 +92,7 @@ export default function AuditLogsPage(): JSX.Element {
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData.stats);
+        setStorage(statsData.storage ?? null);
       }
 
       // セキュリティアラートを取得
@@ -264,6 +266,17 @@ export default function AuditLogsPage(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {storage?.mode === 'memory' && (
+        <div className="p-4 rounded-md border bg-yellow-50 border-yellow-200 text-yellow-800">
+          <p className="font-medium">監査ログが保存されていません</p>
+          <p className="text-sm mt-1">{storage.reason}</p>
+          <p className="text-sm mt-1">
+            Vercelの環境変数に <code className="font-mono">USE_SUPABASE=true</code> を設定し、
+            <code className="font-mono">docs/sql/supabase-setup.sql</code> の audit_logs テーブルが作成済みか確認してください。
+          </p>
+        </div>
+      )}
 
       {/* セキュリティアラート */}
       {alerts.length > 0 && (

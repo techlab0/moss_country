@@ -4,30 +4,33 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
+// 日々の運用でよく開く順に並べる。
+// 上から「売上・注文まわり」→「商品・在庫」→「顧客対応」→「予約」→
+// 「コンテンツ編集」→「その他の管理」→「システム・セキュリティ」。
 const navigation = [
   { name: 'ダッシュボード', href: '/admin/dashboard', icon: '📊' },
-  { name: '注文管理', href: '/admin/orders', icon: '📦' },
-  { name: 'ワークショップ予約', href: '/admin/workshop-bookings', icon: '🗓️' },
   { name: '売上管理', href: '/admin/sales', icon: '💰' },
-  { name: '在庫管理', href: '/admin/inventory', icon: '📋' },
+  { name: '注文管理', href: '/admin/orders', icon: '📦' },
   { name: '商品管理', href: '/admin/products', icon: '🌱' },
-  { name: 'ページ編集', href: '/admin/pages', icon: '📄' },
-  { name: 'ブログ・ニュース管理', href: '/admin/blog', icon: '📝' },
+  { name: '在庫管理', href: '/admin/inventory', icon: '📋' },
+  { name: 'お問い合わせ管理', href: '/admin/contacts', icon: '📧' },
   { name: 'カレンダー管理', href: '/admin/calendar', icon: '📅' },
+  { name: 'ワークショップ予約', href: '/admin/workshop-bookings', icon: '🗓️' },
+  { name: 'ブログ・ニュース管理', href: '/admin/blog', icon: '📝' },
+  { name: 'ページ編集', href: '/admin/pages', icon: '📄' },
+  { name: 'サイト設定', href: '/admin/settings', icon: '⚙️' },
   { name: 'FAQ管理', href: '/admin/faqs', icon: '❓' },
   { name: '苔図鑑管理', href: '/admin/moss-guide', icon: '🍃' },
   { name: '画像管理', href: '/admin/images', icon: '🖼️' },
-  { name: 'お問い合わせ管理', href: '/admin/contacts', icon: '📧' },
   { name: '顧客管理', href: '/admin/customers', icon: '👥' },
   { name: 'ユーザー管理', href: '/admin/users', icon: '👤' },
   { name: '高度なユーザー管理', href: '/admin/users-advanced', icon: '👥' },
+  { name: '詳細CMS', href: '/admin/cms', icon: '🧩' },
   { name: 'セキュリティアラート', href: '/admin/security-alerts', icon: '🚨' },
   { name: '高度なセキュリティ', href: '/admin/security-advanced', icon: '🛡️' },
+  { name: '2FA設定', href: '/admin/setup-2fa', icon: '🔐' },
   { name: '監査ログ', href: '/admin/audit-logs', icon: '🔍' },
   { name: 'データベース最適化', href: '/admin/database', icon: '🗄️' },
-  { name: '詳細CMS', href: '/admin/cms', icon: '⚙️' },
-  { name: '2FA設定', href: '/admin/setup-2fa', icon: '🔐' },
-  { name: 'サイト設定', href: '/admin/settings', icon: '⚙️' },
 ];
 
 // 管理画面ではサイト用ヘッダーを表示しないため、サイト内ページへはこのメニューから移動する
