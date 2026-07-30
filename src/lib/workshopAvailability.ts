@@ -4,7 +4,7 @@
 // （予約直前の再検証用）の両方から使う。ロジックを1箇所に集約することで、
 // 「一覧では空き扱いだったのに予約時の再検証だけ判定がズレる」事故を防ぐ。
 //
-// 安全側の設計: 休業日データ・既存予約・Googleカレンダーのbusy時間帯のいずれかが
+// 安全側の設計: 営業日データ・既存予約・Googleカレンダーのbusy時間帯のいずれかが
 // 取得できない場合、空配列を返さずに CalendarUnavailableError を投げる。
 // 「確認できない＝空いている」という誤判定を避けるため。
 
@@ -12,6 +12,11 @@ import { supabaseAdmin } from './supabase';
 import { getBusyIntervals } from './googleCalendar';
 import { getBookingsInDateRange } from './workshopBookings';
 import { getOverridesInRange } from './workshopSlotOverrides';
+import {
+  buildWorkshopCalendarPolicy,
+  isWorkshopBusinessDate,
+  type WorkshopCalendarPolicy,
+} from './workshopCalendarPolicy';
 import {
   WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
@@ -29,7 +34,7 @@ export interface AvailableSlot {
   remaining: number;
 }
 
-/** 休業日・既存予約・Googleカレンダーのいずれかが確認できない場合に投げる例外。呼び出し元は503相当として扱うこと。 */
+/** 営業日・既存予約・Googleカレンダーのいずれかが確認できない場合に投げる例外。呼び出し元は503相当として扱うこと。 */
 export class CalendarUnavailableError extends Error {}
 
 function intervalsOverlap(aStartIso: string, aEndIso: string, bStartIso: string, bEndIso: string): boolean {
@@ -41,36 +46,38 @@ function intervalsOverlap(aStartIso: string, aEndIso: string, bStartIso: string,
 }
 
 /**
- * 指定期間内の 'closed'（休業日）日付一覧を取得する。
+ * 指定期間内のカレンダー項目を取得し、営業日・休業日の判定情報を返す。
  * 取得に失敗した場合は CalendarUnavailableError を投げる。
  */
-export async function getClosedDates(fromDate: string, toDate: string): Promise<Set<string>> {
+export async function getWorkshopCalendarPolicy(
+  fromDate: string,
+  toDate: string
+): Promise<WorkshopCalendarPolicy> {
   const { data, error } = await supabaseAdmin
     .from('calendar_events')
-    .select('date')
-    .eq('type', 'closed')
+    .select('date, type')
     .gte('date', fromDate)
     .lte('date', toDate);
 
   if (error) {
-    console.error('休業日カレンダーの取得に失敗しました:', error);
-    throw new CalendarUnavailableError('休業日カレンダーを確認できません');
+    console.error('営業日カレンダーの取得に失敗しました:', error);
+    throw new CalendarUnavailableError('営業日カレンダーを確認できません');
   }
 
-  return new Set((data || []).map((row: { date: string }) => row.date));
+  return buildWorkshopCalendarPolicy(data || []);
 }
 
 /**
  * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で予約可能な枠一覧を計算する。
  * 枠の時間帯はWORKSHOP_SLOTSの固定window（プランのdurationには依存しない）。
  *
- * 依存データ（休業日 / 既存予約 / Googleカレンダーのbusy時間帯 / 枠ON-OFFオーバーライド）の
+ * 依存データ（営業日 / 既存予約 / Googleカレンダーのbusy時間帯 / 枠ON-OFFオーバーライド）の
  * いずれかが取得できない場合は CalendarUnavailableError を投げる（呼び出し元で503等に倒すこと）。
  */
 export async function computeAvailableSlots(fromDate: string, toDate: string): Promise<AvailableSlot[]> {
   if (fromDate > toDate) return [];
 
-  let closedDates: Set<string>;
+  let calendarPolicy: WorkshopCalendarPolicy;
   let existingBookings: Awaited<ReturnType<typeof getBookingsInDateRange>>;
   let busyIntervals: Awaited<ReturnType<typeof getBusyIntervals>>;
   let overrides: Awaited<ReturnType<typeof getOverridesInRange>>;
@@ -78,8 +85,8 @@ export async function computeAvailableSlots(fromDate: string, toDate: string): P
   try {
     const rangeStartIso = jstDateTimeToIso(fromDate, '00:00');
     const rangeEndIso = addMinutesToIso(jstDateTimeToIso(toDate, '00:00'), 24 * 60);
-    [closedDates, existingBookings, busyIntervals, overrides] = await Promise.all([
-      getClosedDates(fromDate, toDate),
+    [calendarPolicy, existingBookings, busyIntervals, overrides] = await Promise.all([
+      getWorkshopCalendarPolicy(fromDate, toDate),
       getBookingsInDateRange(fromDate, toDate),
       getBusyIntervals(rangeStartIso, rangeEndIso),
       getOverridesInRange(fromDate, toDate),
@@ -107,7 +114,7 @@ export async function computeAvailableSlots(fromDate: string, toDate: string): P
 
   for (const date of dates) {
     if (!isBookableWeekday(date)) continue;
-    if (closedDates.has(date)) continue;
+    if (!isWorkshopBusinessDate(calendarPolicy, date)) continue;
 
     for (const slot of WORKSHOP_SLOTS) {
       if (closedSlotKeys.has(`${date}|${slot.start}`)) continue;
@@ -149,7 +156,7 @@ export async function isSlotStillAvailable(
   const slot = slots.find(s => s.startTime === startTime);
 
   if (!slot) {
-    return { ok: false, reason: 'この枠は現在予約できません（休業日・満枠・受付時間外・開始時刻不正・枠停止のいずれかです）' };
+    return { ok: false, reason: 'この枠は現在予約できません（営業日未登録・休業日・満枠・受付時間外・開始時刻不正・枠停止のいずれかです）' };
   }
   if (slot.remaining < partySize) {
     return { ok: false, reason: `この枠の残り受け入れ可能人数は${slot.remaining}名です` };

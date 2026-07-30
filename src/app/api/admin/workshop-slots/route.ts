@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { getClosedDates, CalendarUnavailableError } from '@/lib/workshopAvailability';
+import { getWorkshopCalendarPolicy, CalendarUnavailableError } from '@/lib/workshopAvailability';
+import { isWorkshopBusinessDate } from '@/lib/workshopCalendarPolicy';
 import { getOverridesInRange, setOverride } from '@/lib/workshopSlotOverrides';
 import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 
@@ -9,6 +10,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface DaySlots {
   date: string;
+  businessDay: boolean;
   closed: boolean;
   slots: Array<{ start: string; end: string; isOpen: boolean }>;
 }
@@ -40,17 +42,17 @@ export async function GET(request: NextRequest) {
     const fromDate = `${monthParam}-01`;
     const toDate = `${monthParam}-${String(lastDay).padStart(2, '0')}`;
 
-    let closedDates: Set<string>;
+    let calendarPolicy: Awaited<ReturnType<typeof getWorkshopCalendarPolicy>>;
     let overrides: Awaited<ReturnType<typeof getOverridesInRange>>;
     try {
-      [closedDates, overrides] = await Promise.all([
-        getClosedDates(fromDate, toDate),
+      [calendarPolicy, overrides] = await Promise.all([
+        getWorkshopCalendarPolicy(fromDate, toDate),
         getOverridesInRange(fromDate, toDate),
       ]);
     } catch (error) {
       if (error instanceof CalendarUnavailableError) {
         return NextResponse.json(
-          { error: '休業日カレンダーを確認できません。しばらくしてから再度お試しください。' },
+          { error: '営業日カレンダーを確認できません。しばらくしてから再度お試しください。' },
           { status: 503 }
         );
       }
@@ -67,14 +69,16 @@ export async function GET(request: NextRequest) {
     const days: DaySlots[] = [];
     for (let day = 1; day <= lastDay; day++) {
       const date = `${monthParam}-${String(day).padStart(2, '0')}`;
+      const businessDay = isWorkshopBusinessDate(calendarPolicy, date);
       days.push({
         date,
-        closed: closedDates.has(date),
+        businessDay,
+        closed: calendarPolicy.closedDates.has(date),
         slots: WORKSHOP_SLOTS.map(slot => ({
           start: slot.start,
           end: slot.end,
-          // オーバーライドが無ければ既定でOPEN
-          isOpen: overrideMap.get(`${date}|${slot.start}`) ?? true,
+          // 営業日登録が前提。営業日の枠だけ、オーバーライドが無ければ既定でOPEN
+          isOpen: businessDay && (overrideMap.get(`${date}|${slot.start}`) ?? true),
         })),
       });
     }

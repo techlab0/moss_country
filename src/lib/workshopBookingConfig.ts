@@ -27,7 +27,7 @@ export const CAPACITY_PER_SLOT = 4;
 /** simpleWorkshop側にduration指定が無い/パースできない場合のデフォルト所要時間（分） */
 export const DEFAULT_DURATION_MIN = 120;
 
-/** 予約受付曜日（0=日, 1=月, ..., 6=土）。既定は全曜日を対象にし、休業日はSupabase calendar_events(type='closed')側で制御する */
+/** 予約受付曜日（0=日, 1=月, ..., 6=土）。既定は全曜日を対象にし、営業日はSupabase calendar_events(type='open')側で制御する */
 export const BOOKABLE_WEEKDAYS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
 
 /** 何日先まで予約可能か */

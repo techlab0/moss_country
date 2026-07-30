@@ -1,6 +1,6 @@
 // ワークショップ受付枠のON/OFFオーバーライド管理（Supabase / service role専用）。
 //
-// 既定は「営業日（休業日でない）なら枠OPEN」。workshop_slot_overrides テーブルには
+// 既定は「カレンダー管理で営業日登録された日なら枠OPEN」。workshop_slot_overrides テーブルには
 // 管理者が明示的に変更した枠だけが入る（is_open=false で閉鎖、trueで再開）。
 // 再開は行削除でも表現できるが、実装はシンプルにupsertへ統一する
 // （is_open=trueの行が残っても「既定と同じ＝影響なし」なので害はない）。

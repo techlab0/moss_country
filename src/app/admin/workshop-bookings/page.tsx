@@ -5,7 +5,7 @@ import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
-// （休業日データは受付枠設定タブでグレーアウト表示に使うのみ）。
+// （営業日データは受付枠の受付可否を決める前提条件として参照する）。
 
 export default function WorkshopBookingsPage() {
   const [activeTab, setActiveTab] = useState<'bookings' | 'slots'>('bookings');
@@ -258,6 +258,7 @@ interface SlotInfo {
 
 interface DaySlots {
   date: string;
+  businessDay: boolean;
   closed: boolean;
   slots: SlotInfo[];
 }
@@ -333,16 +334,16 @@ function SlotSettingsTab() {
     const key = `${date}|${start}`;
     if (pending.has(key)) return pending.get(key)!;
     const slot = days.get(date)?.slots.find(s => s.start === start);
-    return slot?.isOpen ?? true;
+    return slot?.isOpen ?? false;
   };
 
   const toggleSlot = (date: string, start: string) => {
     const day = days.get(date);
-    if (day?.closed) return; // 休業日は操作不可
+    if (!day?.businessDay || day.closed) return; // 営業日未登録・休業日は操作不可
 
     const key = `${date}|${start}`;
     const currentValue = effectiveIsOpen(date, start);
-    const originalValue = day?.slots.find(s => s.start === start)?.isOpen ?? true;
+    const originalValue = day.slots.find(s => s.start === start)?.isOpen ?? false;
     const newValue = !currentValue;
 
     setPending(prev => {
@@ -401,7 +402,8 @@ function SlotSettingsTab() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
         各日のチップ（{SLOT_STARTS.join(' / ')}）をクリックしてON/OFFを切り替え、
         <b>「まとめて保存」</b>ボタンで確定します（クリック時点ではまだ保存されません）。
-        休業日（カレンダー管理で設定済みの日）はグレーアウトされ操作できません。
+        カレンダー管理で<b>営業日を登録した日だけ</b>受付できます。営業日未登録・休業日は
+        停止中となり操作できません。
       </div>
 
       {message && (
@@ -440,6 +442,7 @@ function SlotSettingsTab() {
         <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-600">
           <div className="flex items-center"><div className="w-3 h-3 bg-emerald-100 border border-emerald-300 rounded mr-1.5"></div>受付中（OFF切替可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded mr-1.5"></div>停止中（ON切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded mr-1.5"></div>営業日未登録（停止・操作不可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-1.5"></div>休業日（操作不可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-white border-2 border-amber-400 rounded mr-1.5"></div>未保存の変更あり</div>
         </div>
@@ -467,18 +470,26 @@ function SlotSettingsTab() {
           {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
             const dateStr = formatDate(year, month, day);
             const dayData = days.get(dateStr);
+            const businessDay = dayData?.businessDay ?? false;
             const closed = dayData?.closed ?? false;
 
             return (
               <div
                 key={dateStr}
                 className={`p-2 min-h-[92px] border rounded-lg text-sm overflow-hidden min-w-0 ${
-                  closed ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-200'
+                  closed
+                    ? 'bg-gray-50 border-gray-200 text-gray-400'
+                    : businessDay
+                      ? 'bg-white border-gray-200'
+                      : 'bg-slate-50 border-slate-200 text-gray-500'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold">{day}</span>
                   {closed && <span className="text-[10px] px-1 py-0.5 bg-gray-200 rounded">休業</span>}
+                  {!closed && !businessDay && (
+                    <span className="text-[10px] px-1 py-0.5 bg-slate-200 rounded">未登録</span>
+                  )}
                 </div>
                 {!closed && (
                   <div className="space-y-1">
@@ -490,11 +501,20 @@ function SlotSettingsTab() {
                           key={start}
                           type="button"
                           onClick={() => toggleSlot(dateStr, start)}
-                          title={isOpen ? `${start}: 受付中（クリックで停止）` : `${start}: 停止中（クリックで再開）`}
+                          disabled={!businessDay}
+                          title={
+                            !businessDay
+                              ? `${start}: 営業日未登録のため停止中`
+                              : isOpen
+                                ? `${start}: 受付中（クリックで停止）`
+                                : `${start}: 停止中（クリックで再開）`
+                          }
                           className={`w-full text-[11px] px-1.5 py-1 rounded transition-colors ${
                             isOpen
                               ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              : 'bg-gray-200 text-gray-500 line-through hover:bg-gray-300'
+                              : businessDay
+                                ? 'bg-gray-200 text-gray-500 line-through hover:bg-gray-300'
+                                : 'bg-gray-200 text-gray-400 line-through cursor-not-allowed'
                           } ${dirty ? 'ring-2 ring-amber-400' : ''}`}
                         >
                           {start}
