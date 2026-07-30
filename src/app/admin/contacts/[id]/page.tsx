@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 
 interface ContactInquiry {
@@ -55,7 +55,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [replyResult, setReplyResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchContact = async () => {
+  const fetchContact = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/admin/contacts/${resolvedParams.id}`);
@@ -74,12 +74,11 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [resolvedParams.id]);
 
   useEffect(() => {
     fetchContact();
-  }, [resolvedParams.id]);
+  }, [fetchContact]);
 
   // 返信メールを送る。送信に成功したときだけサーバー側で「返信済み」として記録される。
   const handleSendReply = async () => {

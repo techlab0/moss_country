@@ -32,13 +32,16 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
       { threshold }
     );
 
-    if (ref.current) {
-      observer.observe(ref.current);
+    // cleanup時には ref.current が別の要素に変わっている可能性があるため、
+    // 監視を始めた要素をこの時点で控えておく
+    const target = ref.current;
+    if (target) {
+      observer.observe(target);
     }
 
     return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
+      if (target) {
+        observer.unobserve(target);
       }
     };
   }, [delay, threshold]);

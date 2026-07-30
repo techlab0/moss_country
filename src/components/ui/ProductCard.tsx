@@ -61,6 +61,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
             const hasValidAsset = Boolean(asset && (asset.url || asset._id || asset._ref));
 
             return firstImage && hasValidAsset ? (
+              // alt は getNextImageProps の戻り値に含まれてスプレッドで渡している。
+              // linterがスプレッド越しに追えないだけなので、ここだけ抑制する。
+              // eslint-disable-next-line jsx-a11y/alt-text
               <Image
                 {...getNextImageProps(firstImage, {
                   width: 400,

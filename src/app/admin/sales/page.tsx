@@ -745,7 +745,6 @@ function EntryTab({
 
         {paymentMethod === 'payPay' && payPayQrUrl && (
           <div className="text-center border-t pt-3 space-y-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={payPayQrUrl} alt="PayPay 店舗用QRコード" className="mx-auto w-56 h-56 object-contain" />
             <p className="text-sm text-gray-500">
               お客様にPayPayでこのQRコードを読み取ってもらい、合計金額 ¥{finalTotal.toLocaleString()} を入力してもらってください
@@ -810,7 +809,6 @@ function EntryTab({
               </>
             ) : (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
                 <p className="text-sm text-gray-500">
                   {qrFlow.method === 'paypay'

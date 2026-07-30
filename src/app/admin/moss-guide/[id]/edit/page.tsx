@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, FormEvent } from 'react';
+import { useState, useEffect, useCallback, use, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -66,11 +66,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
   });
 
   // 苔データを取得
-  useEffect(() => {
-    fetchMossSpecies();
-  }, [resolvedParams.id]);
-
-  const fetchMossSpecies = async () => {
+  const fetchMossSpecies = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/moss-guide/${resolvedParams.id}`);
       if (!response.ok) {
@@ -116,7 +112,11 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedParams.id]);
+
+  useEffect(() => {
+    fetchMossSpecies();
+  }, [fetchMossSpecies]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { getPageLoadingConfig, LOADING_CONFIG } from '@/config/loading';
@@ -41,7 +41,8 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
   const pathname = usePathname();
   
   // ページ設定を取得
-  const pageConfig = getPageLoadingConfig(pathname);
+  // 依存配列に入れても再実行が増えないよう、pathname が変わったときだけ作り直す
+  const pageConfig = useMemo(() => getPageLoadingConfig(pathname), [pathname]);
   const actualMaxTime = pageConfig?.maxTime || maxLoadingTime;
   const actualMinTime = pageConfig?.minTime || minLoadingTime;
 
@@ -57,7 +58,7 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     setProgress(0);
     setImagesLoaded(false);
     setMinTimeElapsed(false);
-  }, [pathname]);
+  }, [pathname, pageConfig]);
 
   // 最小時間タイマー
   useEffect(() => {
@@ -115,7 +116,7 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     return () => {
       document.removeEventListener('DOMContentLoaded', checkImagesLoaded);
     };
-  }, [pathname]);
+  }, [pathname, pageConfig]);
 
   // ローディング終了条件
   useEffect(() => {
@@ -154,7 +155,7 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     }, 100);
 
     return () => clearInterval(progressTimer);
-  }, [isLoading, pathname]);
+  }, [isLoading, pathname, pageConfig]);
 
   const forceShow = () => setIsLoading(true);
   const forceHide = () => setIsLoading(false);

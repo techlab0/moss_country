@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
 // Square Web Payments SDK types
@@ -46,6 +46,49 @@ export const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   const scriptLoadedRef = useRef(false);
 
   // Square Web Payments SDK script loading
+  // 依存配列は描画時に評価されるため、effect より前に定義する。
+  // useCallback で包まないと毎描画で別関数になり、依存に入れた瞬間に再初期化が繰り返される。
+  const initializePaymentForm = useCallback(async () => {
+    try {
+      if (!window.Square) {
+        throw new Error('Square SDK not loaded');
+      }
+
+      // 金額はここに出さない。依存に加えると金額が変わるたびにカード入力欄が
+      // 作り直されてしまうため（金額は画面にも表示されている）。
+      console.log('🔧 Square SDK初期化:', { applicationId, locationId });
+
+      const payments = await window.Square.payments(applicationId, locationId);
+      const card = await payments.card({
+        style: {
+          '.input-container': {
+            borderColor: '#d1d5db',
+            borderRadius: '8px'
+          },
+          '.input-container.is-focus': {
+            borderColor: '#10b981'
+          },
+          '.input-container.is-error': {
+            borderColor: '#ef4444'
+          }
+        },
+        // 日本向け設定：シンプルなカードフォーム
+        includeInputLabels: true
+        // postalCodeフィールドはデフォルトで表示されるが、日本でも使える
+      });
+      
+      await card.attach('#square-card-container');
+      cardRef.current = card;
+      
+      setIsLoading(false);
+      setError(null);
+    } catch (err) {
+      console.error('Error initializing Square payment form:', err);
+      setError('Failed to initialize payment form');
+      setIsLoading(false);
+    }
+  }, [applicationId, locationId]);
+
   useEffect(() => {
     if (scriptLoadedRef.current) return;
 
@@ -85,50 +128,8 @@ export const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         cardRef.current.destroy();
       }
     };
-  }, [applicationId, locationId]);
+  }, [applicationId, locationId, initializePaymentForm]);
 
-  const initializePaymentForm = async () => {
-    try {
-      if (!window.Square) {
-        throw new Error('Square SDK not loaded');
-      }
-
-      console.log('🔧 Square SDK初期化:', {
-        applicationId,
-        locationId,
-        amount: `¥${amount.toLocaleString()}`
-      });
-
-      const payments = await window.Square.payments(applicationId, locationId);
-      const card = await payments.card({
-        style: {
-          '.input-container': {
-            borderColor: '#d1d5db',
-            borderRadius: '8px'
-          },
-          '.input-container.is-focus': {
-            borderColor: '#10b981'
-          },
-          '.input-container.is-error': {
-            borderColor: '#ef4444'
-          }
-        },
-        // 日本向け設定：シンプルなカードフォーム
-        includeInputLabels: true
-        // postalCodeフィールドはデフォルトで表示されるが、日本でも使える
-      });
-      
-      await card.attach('#square-card-container');
-      cardRef.current = card;
-      
-      setIsLoading(false);
-      setError(null);
-    } catch (err) {
-      console.error('Error initializing Square payment form:', err);
-      setError('Failed to initialize payment form');
-      setIsLoading(false);
-    }
-  };
 
   const handlePayment = async () => {
     if (!cardRef.current) {

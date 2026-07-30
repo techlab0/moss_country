@@ -225,7 +225,6 @@ export default function AdminPagesPage() {
                 )}
                 {field.type === 'image' && (
                   <div className="flex items-center gap-4 flex-wrap">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imageOverrides[field.key]?.previewUrl || savedImagePreviews[field.key] || field.default}
                       alt={field.label}

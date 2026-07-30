@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '@/lib/adapters';
 import { compareByReading } from '@/lib/productSort';
@@ -21,6 +21,14 @@ interface QuickEditData {
   isVisible: boolean;
 }
 
+// 状態に依存しない純粋関数。コンポーネント内に置くと毎描画で
+// 別の関数になり、useCallbackの依存に入れられなくなるため外に出す。
+const getStockStatus = (stock: number, threshold: number): 'in_stock' | 'low_stock' | 'out_of_stock' => {
+  if (stock === 0) return 'out_of_stock';
+  if (stock <= threshold) return 'low_stock';
+  return 'in_stock';
+};
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +48,7 @@ export default function AdminProductsPage() {
   const [savingQuickEdit, setSavingQuickEdit] = useState(false);
   const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       // API経由で取得（useCdn: false で登録直後の商品も即時反映）
       const res = await fetch('/api/admin/products');
@@ -66,13 +70,11 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getStockStatus = (stock: number, threshold: number): 'in_stock' | 'low_stock' | 'out_of_stock' => {
-    if (stock === 0) return 'out_of_stock';
-    if (stock <= threshold) return 'low_stock';
-    return 'in_stock';
-  };
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
     if (!confirm(`「${productName}」を削除してもよろしいですか？この操作は取り消せません。`)) {

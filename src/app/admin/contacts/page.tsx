@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ContactInquiry {
   id: string;
@@ -69,7 +69,7 @@ function ContactsPage() {
     inquiry_type: ''
   });
 
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -115,11 +115,13 @@ function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  };
+    // pagination オブジェクト全体を依存にすると、取得後の setPagination で
+    // 参照が変わって取得が繰り返される。実際に使う値だけを依存にする。
+  }, [pagination.page, pagination.limit, filters]);
 
   useEffect(() => {
     fetchContacts();
-  }, [pagination.page, filters]);
+  }, [fetchContacts]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));

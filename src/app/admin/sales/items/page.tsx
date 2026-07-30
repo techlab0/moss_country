@@ -214,7 +214,6 @@ export default function SalesItemsPage() {
           PayPay for Businessの店舗掲示用QRコード画像を設定すると、売上入力でPayPayを選んだ際の確認画面に表示されます。
         </p>
         {payPayQrUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={payPayQrUrl} alt="PayPay 店舗用QRコード" className="w-40 h-40 object-contain border rounded-md" />
         )}
         <div className="flex items-center gap-3 flex-wrap">

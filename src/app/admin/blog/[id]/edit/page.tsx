@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, useCallback, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -53,11 +53,7 @@ export default function EditBlogPostPage() {
     { value: 'other', label: 'その他' },
   ];
 
-  useEffect(() => {
-    fetchPost();
-  }, [postId]);
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/blog');
       if (!response.ok) {
@@ -100,7 +96,11 @@ export default function EditBlogPostPage() {
       setError(err instanceof Error ? err.message : 'エラーが発生しました');
       setLoading(false);
     }
-  };
+  }, [postId]);
+
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

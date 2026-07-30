@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getProductsWithInventory } from '@/lib/sanity';
 
 interface InventoryItem {
@@ -29,6 +29,14 @@ interface InventoryLog {
   timestamp: Date;
 }
 
+// 状態に依存しない純粋関数。コンポーネント内に置くと毎描画で
+// 別の関数になり、useCallbackの依存に入れられなくなるため外に出す。
+const getStockStatus = (current: number, min: number): InventoryItem['status'] => {
+  if (current === 0) return 'out_of_stock';
+  if (current <= min) return 'low_stock';
+  return 'in_stock';
+};
+
 export default function AdminInventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [logs, setLogs] = useState<InventoryLog[]>([]);
@@ -37,11 +45,7 @@ export default function AdminInventoryPage() {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{[key: string]: number}>({});
 
-  useEffect(() => {
-    fetchInventoryData();
-  }, []);
-
-  const fetchInventoryData = async () => {
+  const fetchInventoryData = useCallback(async () => {
     try {
       // Sanityから実際の商品・在庫データを取得
       const products = await getProductsWithInventory();
@@ -104,7 +108,11 @@ export default function AdminInventoryPage() {
       console.error('Failed to fetch inventory data:', error);
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, [fetchInventoryData]);
 
   const updateStock = async (itemId: string, newStock: number, note: string) => {
     const item = inventory.find(i => i.id === itemId);
@@ -166,12 +174,6 @@ export default function AdminInventoryPage() {
       console.error('Failed to update stock:', error);
       alert('在庫更新に失敗しました。もう一度お試しください。');
     }
-  };
-
-  const getStockStatus = (current: number, min: number): InventoryItem['status'] => {
-    if (current === 0) return 'out_of_stock';
-    if (current <= min) return 'low_stock';
-    return 'in_stock';
   };
 
   const getStatusConfig = (status: InventoryItem['status']) => {

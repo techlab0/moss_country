@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 
 interface AuditLog {
   id: string;
@@ -58,11 +58,9 @@ export default function AuditLogsPage(): JSX.Element {
   // filter を直接更新すると1文字打つごとにAPIを叩いてしまうため。
   const [draft, setDraft] = useState(filter);
 
-  useEffect(() => {
-    fetchData();
-  }, [filter, sortBy, sortOrder, currentPage]);
-
-  const fetchData = async () => {
+  // 依存配列は描画時に評価されるため、fetchData は useEffect より前に定義する。
+  // useCallback で包まないと毎描画で別関数になり、依存に入れた瞬間に取得が無限に走る。
+  const fetchData = useCallback(async () => {
     try {
       // 監査ログを取得
       const params = new URLSearchParams({
@@ -106,7 +104,11 @@ export default function AuditLogsPage(): JSX.Element {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filter, sortBy, sortOrder, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const exportData = async (format: 'csv' | 'json') => {
     setIsExporting(true);
