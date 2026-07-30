@@ -69,15 +69,6 @@ export async function GET(request: NextRequest) {
 
     const mossSpecies = await client.fetch(query);
 
-    await logAuditEvent(
-      user.userId,
-      user.email,
-      'admin.access',
-      'moss_guide_list_viewed',
-      { count: mossSpecies.length },
-      { severity: 'low' }
-    );
-
     return NextResponse.json(mossSpecies);
   } catch (error) {
     console.error('Error fetching moss species:', error);

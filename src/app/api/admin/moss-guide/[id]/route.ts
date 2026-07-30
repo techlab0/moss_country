@@ -71,15 +71,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Moss species not found' }, { status: 404 });
     }
 
-    await logAuditEvent(
-      user.userId,
-      user.email,
-      'admin.access',
-      'moss_species_viewed',
-      { id: resolvedParams.id, name: mossSpecies.name },
-      { severity: 'low' }
-    );
-
     return NextResponse.json(mossSpecies);
   } catch (error) {
     console.error('Error fetching moss species:', error);
