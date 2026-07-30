@@ -84,10 +84,12 @@ export async function getSanityInventory(productId: string, variant?: string): P
       }
     `
     
-    const inventory = await inventoryClient.fetch(query, { 
-      productId, 
-      ...(variant && { variant })
-    })
+    // QueryParams は undefined を含む値を受け付けないため、
+    // variant が指定されたときだけキーを足す
+    const params: Record<string, string> = { productId }
+    if (variant) params.variant = variant
+
+    const inventory = await inventoryClient.fetch(query, params)
     
     if (!inventory) {
       console.log(`No Sanity inventory found for product variant: ${productId} (${variant})`)

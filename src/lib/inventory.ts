@@ -73,7 +73,7 @@ export class InventoryService {
         }
       `, { productIds });
 
-      return products.map((product: { _id: string; reserved?: number; stockQuantity?: number; lowStockThreshold?: number }) => {
+      return products.map((product: { _id: string; reserved?: number; stockQuantity?: number; lowStockThreshold?: number; _updatedAt?: string }) => {
         const reserved = product.reserved || 0;
         const totalStock = product.stockQuantity || 0;
         const availableStock = Math.max(0, totalStock - reserved);

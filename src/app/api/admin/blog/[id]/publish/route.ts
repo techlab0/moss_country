@@ -4,7 +4,7 @@ import { verifyAdminSession } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await verifyAdminSession(request);
@@ -12,7 +12,7 @@ export async function POST(
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { action } = await request.json();
     
     let updatedPost;

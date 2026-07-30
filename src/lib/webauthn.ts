@@ -45,7 +45,8 @@ export async function generateWebAuthnRegistrationOptions(userId: string, userEm
     const options: GenerateRegistrationOptionsOpts = {
       rpName: RP_NAME,
       rpID: RP_ID,
-      userID: userId,
+      // @simplewebauthn/server v13 の userID は Uint8Array（文字列は受け付けない）
+      userID: new TextEncoder().encode(userId),
       userName: userEmail,
       userDisplayName: userEmail,
       attestationType: 'none',
@@ -192,7 +193,9 @@ export async function verifyWebAuthnAuthentication(
       expectedRPID: RP_ID,
       credential: {
         id: credential.id,
-        publicKey: credential.publicKey,
+        // TS5.7以降 Uint8Array はバッファ種別でジェネリックになっており、
+        // ArrayBuffer 実体を持つビューとして渡す必要がある
+        publicKey: new Uint8Array(credential.publicKey),
         counter: credential.counter,
       },
     });

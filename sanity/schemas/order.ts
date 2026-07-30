@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity'
+import { defineType, defineField, defineArrayMember } from 'sanity'
 
 export const order = defineType({
   name: 'order',
@@ -58,7 +58,7 @@ export const order = defineType({
       title: 'Order Items',
       type: 'array',
       of: [
-        defineType({
+        defineArrayMember({
           type: 'object',
           fields: [
             defineField({

@@ -8,7 +8,8 @@ declare global {
   interface Window {
     Square?: {
       payments: (appId: string, locationId: string) => Promise<{
-        card: () => Promise<{
+        // 実際のSDKは表示スタイルなどのオプションを受け取る
+        card: (options?: Record<string, unknown>) => Promise<{
           attach: (selector: string) => Promise<void>;
           tokenize: () => Promise<{ token: string; details: object }>;
           destroy: () => void;

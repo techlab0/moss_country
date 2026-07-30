@@ -503,7 +503,7 @@ export default function DatabaseOptimizationPage() {
                     検出された問題
                   </h4>
                   <ul className="list-disc list-inside text-sm text-yellow-800 space-y-1">
-                    {health.issues.map((issue, index) => (
+                    {health?.issues?.map((issue, index) => (
                       <li key={index}>{issue}</li>
                     ))}
                   </ul>

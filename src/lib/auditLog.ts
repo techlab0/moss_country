@@ -556,6 +556,15 @@ export function getAuditLogStatsSync(): {
   };
 }
 
+/** 監査ログから検出するセキュリティアラート */
+interface DetectedSecurityAlert {
+  type: 'failed_logins' | 'suspicious_activity' | 'privilege_escalation';
+  severity: 'medium' | 'high' | 'critical';
+  message: string;
+  count: number;
+  users: string[];
+}
+
 /**
  * セキュリティアラートを検出（データベース優先、フォールバックでメモリベース）
  */
@@ -568,7 +577,7 @@ export async function detectSecurityAlerts(): Promise<{
     users: string[];
   }>;
 }> {
-  const alerts = [];
+  const alerts: DetectedSecurityAlert[] = [];
   const now = new Date();
   const oneHour = new Date(now.getTime() - 60 * 60 * 1000);
 
@@ -646,7 +655,7 @@ export function detectSecurityAlertsSync(): {
     users: string[];
   }>;
 } {
-  const alerts = [];
+  const alerts: DetectedSecurityAlert[] = [];
   const now = new Date();
   const oneHour = new Date(now.getTime() - 60 * 60 * 1000);
 

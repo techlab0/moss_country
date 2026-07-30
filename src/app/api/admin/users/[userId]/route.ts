@@ -4,7 +4,7 @@ import { verifyJWT } from '@/lib/auth';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     // セッションから管理者認証を確認
@@ -23,7 +23,7 @@ export async function DELETE(
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // 自分自身を削除することを防ぐ
     if (currentUser.id === userId) {

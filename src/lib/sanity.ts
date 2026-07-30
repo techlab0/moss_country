@@ -343,7 +343,8 @@ export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promi
       .commit();
       
     console.log('Update result:', result);
-    return result;
+    // Sanityのcommitは汎用ドキュメント型を返すため、書き込んだ形として扱う
+    return result as unknown as BlogPost;
   } catch (error) {
     console.error('Sanity updateBlogPost error:', error);
     throw error;

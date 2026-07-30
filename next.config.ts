@@ -7,9 +7,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
   typescript: {
-    // 型エラーはまだ99件残っているため、これを外すとビルドが通らない。
-    // 解消できたら false にすること。
-    ignoreBuildErrors: true,
+    // 型エラーも0件にしたので、以後は増えたらビルドで止める。
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
