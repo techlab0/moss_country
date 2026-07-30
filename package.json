@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:shipping": "node --experimental-strip-types --test tests/shipping-note.test.mjs",
     "test:workshop": "node --experimental-strip-types --test tests/workshop-booking-safety.test.mjs tests/workshop-calendar-policy.test.mjs",
+    "test:admin-ui": "node --test tests/admin-ui-order.test.mjs",
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs"
   },
   "dependencies": {

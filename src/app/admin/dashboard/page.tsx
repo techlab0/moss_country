@@ -26,6 +26,9 @@ export default function AdminDashboardPage() {
 
         {/* 統計情報 */}
         <DashboardStats />
+
+        {/* ブログ・コンテンツ管理 */}
+        <ContentManagementCards />
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* セキュリティアラート */}
@@ -42,8 +45,12 @@ export default function AdminDashboardPage() {
           {/* 在庫アラート */}
           <InventoryAlerts />
         </div>
+    </div>
+  );
+}
 
-        {/* ブログ・コンテンツ管理セクション */}
+function ContentManagementCards() {
+  return (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* ブログ管理 */}
           <Card className="hover:shadow-lg transition-shadow">
@@ -225,6 +232,5 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
         </div>
-    </div>
   );
 }
