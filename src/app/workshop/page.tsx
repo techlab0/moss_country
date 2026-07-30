@@ -490,7 +490,7 @@ export default function WorkshopPage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'mailto:info@mosscountry.jp?subject=ワークショップについてのお問い合わせ'}
+                onClick={() => window.location.href = 'mailto:info@mosscountry.com?subject=ワークショップについてのお問い合わせ'}
               >
                 お問い合わせフォーム
               </Button>

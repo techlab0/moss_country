@@ -497,7 +497,7 @@ export default function DatabaseOptimizationPage() {
                 </div>
               )}
 
-              {health?.issues.length > 0 && (
+              {(health?.issues?.length ?? 0) > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <h4 className="font-medium text-yellow-900 mb-2">
                     検出された問題

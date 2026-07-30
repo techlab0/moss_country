@@ -29,7 +29,7 @@ export default async function Head({ params }: HeadProps) {
       <meta property="og:title" content={seoData.title} />
       <meta property="og:description" content={seoData.description} />
       <meta property="og:type" content="article" />
-      <meta property="og:url" content={`https://mosscountry.jp/blog/${params.slug}`} />
+      <meta property="og:url" content={`https://mosscountry.com/blog/${params.slug}`} />
       {post.featuredImage && (
         <meta property="og:image" content={post.featuredImage.asset?.url} />
       )}
@@ -41,7 +41,7 @@ export default async function Head({ params }: HeadProps) {
       {post.tags?.map((tag, index) => (
         <meta key={index} property="article:tag" content={tag} />
       ))}
-      <link rel="canonical" href={`https://mosscountry.jp/blog/${params.slug}`} />
+      <link rel="canonical" href={`https://mosscountry.com/blog/${params.slug}`} />
     </>
   )
 }

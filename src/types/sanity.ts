@@ -83,10 +83,7 @@ export interface BlogPost {
   }> // Portable Text
   featuredImage?: {
     _type: 'image'
-    asset: {
-      _ref: string
-      _type: 'reference'
-    }
+    asset: SanityImageAsset
     hotspot?: {
       x: number
       y: number

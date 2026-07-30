@@ -95,7 +95,7 @@ export default async function FAQPage() {
                 お問い合わせフォーム
               </a>
               <a
-                href="mailto:info@mosscountry.jp"
+                href="mailto:info@mosscountry.com"
                 className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-moss-green transition-colors"
               >
                 メールでお問い合わせ

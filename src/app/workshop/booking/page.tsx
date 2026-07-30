@@ -12,7 +12,7 @@ import type { SimpleWorkshop } from '@/types/sanity';
 // 既存のワークショップページ（src/app/workshop/page.tsx）と同じ問い合わせ導線を流用する
 const JALAN_URL =
   'https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6';
-const CONTACT_MAILTO = 'mailto:info@mosscountry.jp?subject=ワークショップ予約について';
+const CONTACT_MAILTO = 'mailto:info@mosscountry.com?subject=ワークショップ予約について';
 
 interface AvailableSlot {
   date: string;

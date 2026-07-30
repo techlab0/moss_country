@@ -56,12 +56,13 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
       <Link href={`/shop/${getProductSlug(product)}`}>
         <div className="h-40 sm:h-56 md:h-64 overflow-hidden relative bg-stone-50 p-2 sm:p-3">
           {(() => {
-            const asset = product.images?.[0]?.asset as SanityImageAsset | undefined;
-            const hasValidAsset = asset && (asset.url || asset._id || asset._ref);
+            const firstImage = product.images?.[0];
+            const asset = firstImage?.asset as SanityImageAsset | undefined;
+            const hasValidAsset = Boolean(asset && (asset.url || asset._id || asset._ref));
 
-            return hasValidAsset ? (
+            return firstImage && hasValidAsset ? (
               <Image
-                {...getNextImageProps(product.images[0], {
+                {...getNextImageProps(firstImage, {
                   width: 400,
                   height: 300,
                   quality: 85,

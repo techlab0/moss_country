@@ -467,7 +467,7 @@ export default function ProductsPage() {
                 カートを見る
               </a>
               <a
-                href="mailto:info@mosscountry.jp"
+                href="mailto:info@mosscountry.com"
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 font-semibold px-8 py-3 rounded-lg inline-block"
               >
                 お問い合わせ
