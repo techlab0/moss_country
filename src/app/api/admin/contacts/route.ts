@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+// 管理者専用APIなのでサービスロールで読む。anonクライアントだと
+// RLSのポリシー次第でエラーにならないまま0件になる。
+import { supabaseAdmin } from '@/lib/supabase';
 import { logAuditEvent } from '@/lib/auditLog';
 import { verifyAdminSession } from '@/lib/auth';
 
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
         setTimeout(() => reject(new Error('Database timeout')), 5000);
       });
 
-      let query = supabase
+      let query = supabaseAdmin
         .from('contact_inquiries')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });

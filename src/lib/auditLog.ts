@@ -44,7 +44,19 @@ export async function getAuditLogStorage(): Promise<{
     };
   }
 
-  return { mode: 'database' };
+  // モジュールが読めただけでは不十分。テーブルが無い・権限が足りない場合も
+  // 書き込みは警告を出してメモリに退避するだけなので、実際に読めるかを確かめる。
+  try {
+    await supabaseFunctions.getAuditLogsFromDB(1, 0);
+    return { mode: 'database' };
+  } catch (error) {
+    return {
+      mode: 'memory',
+      reason: `audit_logs テーブルを読めませんでした（${
+        error instanceof Error ? error.message : String(error)
+      }）。テーブルが作成済みか確認してください。`,
+    };
+  }
 }
 
 export interface AuditLog {

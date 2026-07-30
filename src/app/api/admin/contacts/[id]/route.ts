@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+// 管理者専用APIなのでサービスロールで読む。anonクライアントだと
+// RLSのポリシー次第でエラーにならないまま0件になる。
+import { supabaseAdmin } from '@/lib/supabase';
 import { logAuditEvent } from '@/lib/auditLog';
 import { verifyAdminSession } from '@/lib/auth';
 
@@ -15,7 +17,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('contact_inquiries')
       .select('*')
       .eq('id', id)
@@ -104,7 +106,7 @@ export async function PUT(
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('contact_inquiries')
       .update(updateData)
       .eq('id', id)

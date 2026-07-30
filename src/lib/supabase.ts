@@ -127,8 +127,11 @@ export async function logAuditEventToDB(auditData: Omit<AuditLog, 'id' | 'create
   return data
 }
 
+// 監査ログの読み取りは管理者専用のサーバー処理からしか呼ばれない。
+// anonキーのクライアントで読むとRLSのSELECTポリシー（authenticated限定）に
+// 一致せず、エラーにならないまま0件が返るため supabaseAdmin を使う。
 export async function getAuditLogsFromDB(limit = 100, offset = 0): Promise<AuditLog[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('audit_logs')
     .select('*')
     .order('created_at', { ascending: false })
@@ -139,7 +142,7 @@ export async function getAuditLogsFromDB(limit = 100, offset = 0): Promise<Audit
 }
 
 export async function getAuditLogsByUserFromDB(userId: string, limit = 50): Promise<AuditLog[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('audit_logs')
     .select('*')
     .eq('user_id', userId)
