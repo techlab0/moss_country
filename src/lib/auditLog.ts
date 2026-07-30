@@ -9,7 +9,8 @@ async function getSupabaseAuditFunctions() {
     const supabaseModule = await import('./supabase');
     return {
       logAuditEventToDB: supabaseModule.logAuditEventToDB,
-      getAuditLogsFromDB: supabaseModule.getAuditLogsFromDB
+      getAuditLogsFromDB: supabaseModule.getAuditLogsFromDB,
+      countAuditLogsFromDB: supabaseModule.countAuditLogsFromDB
     };
   } catch (error) {
     console.warn('Supabase監査ログモジュールの読み込みに失敗:', error);
@@ -519,8 +520,27 @@ export async function getAuditLogStats(): Promise<{
     const supabaseFunctions = await getSupabaseAuditFunctions();
     if (supabaseFunctions) {
       try {
-        const dbLogs = await supabaseFunctions.getAuditLogsFromDB(1000, 0); // 統計用に多めに取得
-        logs = dbLogs.map(convertDBAuditLogToAuditLog);
+        // 以前は統計のために1000行を読み込み、その件数を総数としていたため、
+        // 1000件を超えると総数が常に1,000で頭打ちになっていた。
+        // 行を取得せずカウントだけを問い合わせる。
+        const [total, todayCount, weekCount, low, medium, high, critical] = await Promise.all([
+          supabaseFunctions.countAuditLogsFromDB(),
+          supabaseFunctions.countAuditLogsFromDB({ since: today }),
+          supabaseFunctions.countAuditLogsFromDB({ since: thisWeek }),
+          supabaseFunctions.countAuditLogsFromDB({ severity: 'low' }),
+          supabaseFunctions.countAuditLogsFromDB({ severity: 'medium' }),
+          supabaseFunctions.countAuditLogsFromDB({ severity: 'high' }),
+          supabaseFunctions.countAuditLogsFromDB({ severity: 'critical' }),
+        ]);
+
+        return {
+          total,
+          today: todayCount,
+          thisWeek: weekCount,
+          bySeverity: { low, medium, high, critical },
+          // 操作別の集計は表示に使っていないため、件数取得のコストをかけない
+          byAction: {},
+        };
       } catch (error) {
         console.warn('データベース監査ログ統計取得に失敗、メモリベースにフォールバック:', error);
         logs = auditLogs;

@@ -152,3 +152,27 @@ export async function getAuditLogsByUserFromDB(userId: string, limit = 50): Prom
   if (error) throw error
   return data || []
 }
+/**
+ * 監査ログの件数を数える。行を取得せずカウントだけを返すため、
+ * 統計表示のために1000行を読み込む必要がなくなる。
+ * severity や期間で絞り込める。
+ */
+export async function countAuditLogsFromDB(options: {
+  since?: Date
+  severity?: string
+} = {}): Promise<number> {
+  let query = supabaseAdmin
+    .from('audit_logs')
+    .select('*', { count: 'exact', head: true })
+
+  if (options.since) {
+    query = query.gte('created_at', options.since.toISOString())
+  }
+  if (options.severity) {
+    query = query.eq('severity', options.severity)
+  }
+
+  const { count, error } = await query
+  if (error) throw error
+  return count ?? 0
+}

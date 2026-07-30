@@ -68,6 +68,10 @@ function ContactsPage() {
     priority: '',
     inquiry_type: ''
   });
+  // キーワードは入力のたびに filters を更新すると1文字ごとにAPIを叩き、
+  // その都度お問い合わせ一覧表示として監査ログにも記録されてしまう。
+  // 下書きに溜めて「検索」または Enter のときだけ反映する。
+  const [searchDraft, setSearchDraft] = useState('');
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -224,13 +228,23 @@ function ContactsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               検索
             </label>
-            <input
-              type="text"
-              placeholder="名前、メール、件名で検索"
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="名前、メール、件名で検索"
+                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green"
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFilterChange('search', searchDraft)}
+              />
+              <button
+                type="button"
+                onClick={() => handleFilterChange('search', searchDraft)}
+                className="px-4 py-2 bg-moss-green text-white rounded-md text-sm whitespace-nowrap hover:opacity-90"
+              >
+                検索
+              </button>
+            </div>
           </div>
 
 
