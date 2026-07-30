@@ -88,7 +88,7 @@ export default function BlogPage() {
         
         // カテゴリー一覧を作成
         const uniqueCategories = Array.from(
-          new Set(fetchedPosts.map(post => post.category).filter(Boolean))
+          new Set(fetchedPosts.map(post => post.category).filter((c): c is string => Boolean(c)))
         )
         setCategories(uniqueCategories)
       } catch (error) {

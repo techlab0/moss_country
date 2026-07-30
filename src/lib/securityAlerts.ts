@@ -244,7 +244,7 @@ export async function detectAdvancedSecurityAlerts(): Promise<SecurityAlert[]> {
     if (relevantLogs.length >= rule.threshold) {
       // アラートを生成
       const affectedUsers = [...new Set(relevantLogs.map(log => log.userEmail))];
-      const affectedIPs = [...new Set(relevantLogs.map(log => log.ipAddress).filter(ip => ip))];
+      const affectedIPs = [...new Set(relevantLogs.map(log => log.ipAddress).filter((ip): ip is string => Boolean(ip)))];
       
       // 既存の同じタイプのアクティブアラートをチェック
       const existingAlert = securityAlerts.find(alert => 

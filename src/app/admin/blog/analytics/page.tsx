@@ -36,7 +36,7 @@ export default function BlogAnalyticsPage() {
     }
   };
 
-  const getCategoryConfig = (category: string) => {
+  const getCategoryConfig = (category: string | undefined) => {
     switch (category) {
       case 'news':
         return { label: 'お知らせ', color: 'bg-green-100 text-green-800' };

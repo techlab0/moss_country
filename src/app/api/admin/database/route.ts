@@ -118,20 +118,20 @@ async function runBasicHealthCheck(): Promise<HealthCheck> {
   
   try {
     // 基本的な接続テスト
-    const { data: userCount } = await supabaseAdmin
+    const { count: userCount } = await supabaseAdmin
       .from('admin_users')
       .select('*', { count: 'exact', head: true });
     
-    const { data: auditCount } = await supabaseAdmin
+    const { count: auditCount } = await supabaseAdmin
       .from('audit_logs')
       .select('*', { count: 'exact', head: true });
 
-    if (userCount?.count === 0) {
+    if (userCount === 0) {
       issues.push('管理者ユーザーが存在しません');
     }
 
     // 監査ログのサイズチェック
-    if (auditCount?.count && auditCount.count > 50000) {
+    if (auditCount && auditCount > 50000) {
       issues.push('監査ログが大量になっています（50,000件以上）');
       recommendations.push('古いログのアーカイブまたは削除を検討してください');
     }

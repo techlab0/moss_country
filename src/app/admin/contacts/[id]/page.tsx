@@ -35,7 +35,7 @@ const STATUS_STYLES: Record<ContactInquiry["status"], string> = {
 };
 
 
-const INQUIRY_TYPE_LABELS = {
+const INQUIRY_TYPE_LABELS: Record<string, string> = {
   general: "一般的なお問い合わせ",
   workshop: "ワークショップについて",
   product: "商品について",

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
 }
@@ -19,6 +19,9 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'bg-moss-green text-white hover:bg-moss-green/90 active:bg-moss-green/95',
     secondary: 'border-2 border-moss-green text-moss-green hover:bg-moss-green hover:text-white',
     ghost: 'text-moss-green hover:bg-moss-green/10 active:bg-moss-green/20',
+    // 管理画面の副次操作向けの中立的な枠線ボタン。
+    // 型に無いまま各画面で使われており、クラスが当たらず素の見た目になっていた。
+    outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100',
   };
   
   const sizeClasses = {
