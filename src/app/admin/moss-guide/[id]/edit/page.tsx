@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { urlFor } from '@/lib/sanity';
-import type { SanityImage } from '@/types/sanity';
+import type { MossSpeciesImage } from '@/types/sanity';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 
 interface EditMossSpeciesPageProps {
@@ -36,7 +36,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [images, setImages] = useState<SanityImage[]>([]);
+  const [images, setImages] = useState<MossSpeciesImage[]>([]);
   const [slugError, setSlugError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -134,10 +134,10 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
           difficultyPoints: (formData.practicalAdvice?.difficultyPoints || []).filter(point => point.trim() !== ''),
           successTips: (formData.practicalAdvice?.successTips || []).filter(tip => tip.trim() !== '')
         },
-        supplementaryInfo: {
-          ...formData.supplementaryInfo,
-          collectionSeason: (formData.supplementaryInfo?.collectionSeason || []).filter(season => season !== '')
-        }
+        // supplementaryInfo はテキストエリアで編集する文字列。
+        // 以前はここでオブジェクトに包んでいたため、文字列を展開して
+        // 文字ごとにインデックスの付いた壊れた値を保存していた。
+        supplementaryInfo: formData.supplementaryInfo
       };
 
       const response = await fetch(`/api/admin/moss-guide/${resolvedParams.id}`, {

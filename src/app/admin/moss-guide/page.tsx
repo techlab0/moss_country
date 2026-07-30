@@ -117,7 +117,7 @@ export default function AdminMossGuidePage() {
     if (filter === 'visible') return s.isVisible;
     if (filter === 'hidden') return !s.isVisible;
     if (filter === 'featured') return s.featured;
-    if (filter === 'workshop') return s.practicalInfo?.workshopUsage;
+    if (filter === 'workshop') return (s.practicalAdvice?.workshopUsage ?? s.practicalInfo?.workshopUsage);
     return s.category === filter;
   });
 
@@ -126,7 +126,7 @@ export default function AdminMossGuidePage() {
     visible: species.filter(s => s.isVisible).length,
     hidden: species.filter(s => !s.isVisible).length,
     featured: species.filter(s => s.featured).length,
-    workshop: species.filter(s => s.practicalInfo?.workshopUsage).length,
+    workshop: species.filter(s => (s.practicalAdvice?.workshopUsage ?? s.practicalInfo?.workshopUsage)).length,
   };
 
   if (loading) {
@@ -383,7 +383,7 @@ export default function AdminMossGuidePage() {
                                 おすすめ
                               </span>
                             )}
-                            {s.practicalInfo?.workshopUsage && (
+                            {(s.practicalAdvice?.workshopUsage ?? s.practicalInfo?.workshopUsage) && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 WS使用
                               </span>

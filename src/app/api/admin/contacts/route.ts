@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
 
     try {
       // 5秒タイムアウトでSupabaseクエリを実行
-      const timeoutPromise = new Promise((_, reject) => {
+      // タイムアウト側は解決しないので never。こうしないと race の結果が unknown になる
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Database timeout')), 5000);
       });
 

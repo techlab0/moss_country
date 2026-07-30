@@ -162,6 +162,11 @@ export interface SanitySlug {
   current: string
 }
 
+/** 苔図鑑の画像。Sanity側でキャプションを設定できる */
+export type MossSpeciesImage = SanityImage & {
+  caption?: string
+}
+
 export interface MossSpecies {
   _id: string
   _type: 'mossSpecies'
@@ -172,9 +177,7 @@ export interface MossSpecies {
     _type: string
     [key: string]: unknown
   }> // Portable Text
-  images: (SanityImage & {
-    caption?: string
-  })[]
+  images: MossSpeciesImage[]
   characteristics: {
     beginnerFriendly: 1 | 2 | 3 | 4 | 5
     waterRequirement: 'low' | 'medium' | 'high'
@@ -183,12 +186,17 @@ export interface MossSpecies {
     growthSpeed?: 'slow' | 'normal' | 'fast'
     growthDescription?: string
   }
-  basicInfo?: {
+  /**
+   * 管理画面はテキストエリアで文字列として保存し、公開ページも文字列としてのみ描画する。
+   * Sanity Studio経由で作られた古いドキュメントはオブジェクトのことがあるため両方を許す。
+   */
+  basicInfo?: string | {
     habitat?: string
     appearance?: string
     characteristics?: string
   }
-  supplementaryInfo?: {
+  /** basicInfo と同じ経緯で文字列とオブジェクトの両方がありうる */
+  supplementaryInfo?: string | {
     distribution?: string
     collectionSeason?: ('spring' | 'summer' | 'autumn' | 'winter')[]
     winterCare?: string
@@ -196,6 +204,17 @@ export interface MossSpecies {
   }
   practicalAdvice?: {
     workshopUsage: boolean
+    difficultyPoints?: string[]
+    successTips?: string[]
+    careInstructions?: string
+  }
+  /**
+   * practicalAdvice に改名される前の旧フィールド。
+   * 改名前に作られたドキュメントにだけ残っており、GROQでも互換のため取得している。
+   * 新規に書き込むことはない。
+   */
+  practicalInfo?: {
+    workshopUsage?: boolean
     difficultyPoints?: string[]
     successTips?: string[]
     careInstructions?: string

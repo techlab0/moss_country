@@ -4,7 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
-import type { SanityImage } from '@/types/sanity';
+import type { MossSpeciesImage } from '@/types/sanity';
 
 /**
  * ネストした文字列配列（practicalAdvice.difficultyPoints など）を差し替える。
@@ -26,7 +26,7 @@ export default function NewMossSpeciesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [images, setImages] = useState<SanityImage[]>([]);
+  const [images, setImages] = useState<MossSpeciesImage[]>([]);
   const [slugError, setSlugError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
