@@ -260,22 +260,6 @@ export async function getProductsWithInventory(): Promise<Product[]> {
   }
 }
 
-export async function updateProductInventory(productId: string, stockQuantity: number, reserved: number = 0): Promise<void> {
-  try {
-    await writeClient
-      .patch(productId)
-      .set({
-        stockQuantity,
-        reserved,
-        inStock: stockQuantity > 0,
-      })
-      .commit();
-  } catch (error) {
-    console.error('Failed to update product inventory:', error);
-    throw error;
-  }
-}
-
 // Admin Blog queries (for management dashboard)
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
   try {

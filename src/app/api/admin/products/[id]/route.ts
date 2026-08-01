@@ -82,9 +82,12 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // 在庫数に基づいてinStockを自動更新
-    if (typeof body.stockQuantity === 'number') {
-      body.inStock = body.stockQuantity > 0;
+    // 在庫変更は履歴を必ず残すため、在庫管理APIだけに集約する
+    if ('stockQuantity' in body || 'reserved' in body || 'inStock' in body) {
+      return NextResponse.json(
+        { error: '在庫数は在庫管理画面から変更してください' },
+        { status: 400 }
+      );
     }
 
     // 表示/非表示フラグ（明示的にtrue/booleanへ変換して保存。未指定なら変更しない）

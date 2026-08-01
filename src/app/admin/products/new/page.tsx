@@ -34,7 +34,6 @@ interface ProductFormData {
   };
   weight?: number;
   fragile?: boolean;
-  stockQuantity: number;
   lowStockThreshold: number;
   featured: boolean;
   salesItemId: string | null;
@@ -58,7 +57,6 @@ const NewProductPage = () => {
     careInstructions: '',
     dimensions: {},
     fragile: false,
-    stockQuantity: 0,
     lowStockThreshold: 5,
     featured: false,
     salesItemId: null,
@@ -328,25 +326,14 @@ const NewProductPage = () => {
             />
           </div>
 
-          {/* 在庫・管理設定 */}
+          {/* 管理設定 */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">在庫・管理設定</h3>
+            <h3 className="text-lg font-medium text-gray-900">管理設定</h3>
+            <p className="text-sm text-gray-600">
+              商品は在庫0個で登録されます。登録後の入荷・調整は在庫管理画面で行ってください。
+            </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  初期在庫数量
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.stockQuantity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   低在庫しきい値

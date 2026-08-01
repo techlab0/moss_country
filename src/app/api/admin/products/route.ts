@@ -92,14 +92,25 @@ export async function POST(request: NextRequest) {
 
     // salesItem は body.salesItemId（文字列）で来る想定。参照形式に変換して明示的に扱い、
     // ...rest 経由で生の salesItem/salesItemId が二重に入らないよう除外する
-    const { dimensions: _dimensions, slug: _s, salesItem: _salesItem, salesItemId, ...rest } = body;
+    const {
+      dimensions: _dimensions,
+      slug: _s,
+      salesItem: _salesItem,
+      salesItemId,
+      stockQuantity: _stockQuantity,
+      reserved: _reserved,
+      inStock: _inStock,
+      ...rest
+    } = body;
     const doc: Record<string, unknown> = {
       _type: 'product',
       ...rest,
       slug,
       ...(size && { size }),
       ...(salesItemId ? { salesItem: { _type: 'reference', _ref: salesItemId } } : {}),
-      inStock: (body.stockQuantity ?? 0) > 0,
+      stockQuantity: 0,
+      reserved: 0,
+      inStock: false,
       // 未指定時は既定で公開（表示）とする
       isVisible: body.isVisible !== false,
       _createdAt: new Date().toISOString(),

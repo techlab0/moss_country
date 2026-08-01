@@ -31,7 +31,6 @@ interface ProductFormData {
   dimensions: { width?: number; height?: number; depth?: number };
   weight?: number;
   fragile?: boolean;
-  stockQuantity: number;
   lowStockThreshold: number;
   featured: boolean;
   salesItemId: string | null;
@@ -59,7 +58,6 @@ export default function EditProductPage() {
     materials: [],
     careInstructions: '',
     dimensions: {},
-    stockQuantity: 0,
     lowStockThreshold: 5,
     featured: false,
     salesItemId: null,
@@ -104,7 +102,6 @@ export default function EditProductPage() {
           weight:
             typeof product.weight === 'number' ? product.weight : undefined,
           fragile: Boolean(product.fragile),
-          stockQuantity: Number(product.stockQuantity ?? 0),
           lowStockThreshold: Number(product.lowStockThreshold ?? 5),
           featured: Boolean(product.featured),
           salesItemId: typeof product.salesItemId === 'string' ? product.salesItemId : null,
@@ -169,7 +166,6 @@ export default function EditProductPage() {
         category: formData.category,
         materials: formData.materials,
         careInstructions: formData.careInstructions,
-        stockQuantity: formData.stockQuantity,
         lowStockThreshold: formData.lowStockThreshold,
         featured: formData.featured,
         size: formData.dimensions,
@@ -396,21 +392,11 @@ export default function EditProductPage() {
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">在庫・管理設定</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">在庫数量</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={formData.stockQuantity}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
+            <h3 className="text-lg font-medium text-gray-900">管理設定</h3>
+            <p className="text-sm text-gray-600">
+              在庫数の変更は、変更理由と履歴を残すため在庫管理画面で行ってください。
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">低在庫しきい値</label>
                 <input

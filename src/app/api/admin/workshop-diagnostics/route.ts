@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { isCalendarConfigured, getBusyIntervals } from '@/lib/googleCalendar';
+import { isCalendarConfigured, getBusyIntervals, getCalendarAccessRole } from '@/lib/googleCalendar';
 
 // ワークショップ予約のGoogleカレンダー接続を診断する管理者用エンドポイント。
 // 空き枠APIが503になる原因（環境変数未設定 / Calendar API未有効 / 共有ミス / カレンダーID誤り）を
@@ -38,5 +38,29 @@ export async function GET(request: NextRequest) {
     busyTest = { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 
-  return NextResponse.json({ env, busyTest });
+  // 空き枠の取得は読み取り権限だけでも通るため、書き込み権限の有無を別に確認する。
+  // 閲覧権限のみで共有されていると、空き表示は正常なのに予約時のカレンダー
+  // 書き込みだけ失敗する状態になり、気付きにくい。
+  let accessTest: {
+    ok: boolean;
+    accessRole?: string;
+    canWrite?: boolean;
+    summary?: string;
+    error?: string;
+    hint?: string;
+  } = { ok: false };
+  try {
+    const access = await getCalendarAccessRole();
+    accessTest = {
+      ok: true,
+      ...access,
+      hint: access.canWrite
+        ? undefined
+        : `権限が ${access.accessRole} のため予約イベントを作成できません。Googleカレンダーの共有設定でサービスアカウントに「予定の変更権限」を付与してください。`,
+    };
+  } catch (error) {
+    accessTest = { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+
+  return NextResponse.json({ env, busyTest, accessTest });
 }

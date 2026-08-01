@@ -190,3 +190,35 @@ export async function deleteBookingEvent(eventId: string): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * サービスアカウントが対象カレンダーに持つ権限を調べる。
+ *
+ * 空き枠の取得（getBusyIntervals）は読み取り権限だけでも成功するため、
+ * 「空き表示は動くのに予約時のカレンダー書き込みだけ失敗する」状態を見逃しやすい。
+ * 実際に書き込まずに権限だけを確認できるよう、calendarList から accessRole を読む。
+ *
+ * accessRole は 'owner' | 'writer' | 'reader' | 'freeBusyReader' のいずれか。
+ * 予約イベントの作成・削除には writer 以上が必要。
+ */
+export async function getCalendarAccessRole(): Promise<{
+  accessRole: string;
+  canWrite: boolean;
+  summary?: string;
+}> {
+  if (!isCalendarConfigured()) {
+    throw new Error(
+      'Googleカレンダーが設定されていません（GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY / GOOGLE_CALENDAR_ID を確認してください）'
+    );
+  }
+
+  const calendar = await getCalendarClient();
+  const response = await calendar.calendarList.get({ calendarId: requireCalendarId() });
+  const accessRole: string = response.data?.accessRole ?? 'unknown';
+
+  return {
+    accessRole,
+    canWrite: accessRole === 'owner' || accessRole === 'writer',
+    summary: response.data?.summary,
+  };
+}

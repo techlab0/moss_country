@@ -56,13 +56,18 @@ export default function AdminProductsPage() {
       const sanityProducts: Product[] = await res.json();
 
       // 在庫ステータスを計算
-      const productsWithInventory: ProductWithInventory[] = sanityProducts.map(product => ({
-        ...product,
-        currentStock: product.stockQuantity || 0,
-        reservedStock: product.reserved || 0,
-        availableStock: (product.stockQuantity || 0) - (product.reserved || 0),
-        status: getStockStatus(product.stockQuantity || 0, product.lowStockThreshold || 5),
-      }));
+      const productsWithInventory: ProductWithInventory[] = sanityProducts.map((product) => {
+        const currentStock = product.stockQuantity || 0;
+        const reservedStock = product.reserved || 0;
+        const availableStock = Math.max(0, currentStock - reservedStock);
+        return {
+          ...product,
+          currentStock,
+          reservedStock,
+          availableStock,
+          status: getStockStatus(availableStock, product.lowStockThreshold || 5),
+        };
+      });
 
       setProducts(productsWithInventory);
     } catch (error) {
@@ -95,29 +100,6 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error('削除エラー:', error);
       alert('商品の削除に失敗しました');
-    }
-  };
-
-  const handleStockUpdate = async (productId: string, newStock: number) => {
-    try {
-      const response = await fetch(`/api/admin/products/${productId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          stockQuantity: newStock
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('在庫更新に失敗しました');
-      }
-
-      fetchProducts(); // 商品一覧を再取得
-    } catch (error) {
-      console.error('在庫更新エラー:', error);
-      alert('在庫の更新に失敗しました');
     }
   };
 
@@ -302,7 +284,7 @@ export default function AdminProductsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">商品管理</h1>
-          <p className="text-gray-600 mt-2">商品の登録・編集・在庫管理</p>
+          <p className="text-gray-600 mt-2">商品の登録・編集・公開設定</p>
         </div>
         <div className="flex space-x-3">
           <Link
@@ -506,16 +488,16 @@ export default function AdminProductsPage() {
                         ¥{product.price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <input
-                          type="number"
-                          min="0"
-                          value={product.currentStock || 0}
-                          onChange={(e) => {
-                            const newStock = parseInt(e.target.value) || 0;
-                            handleStockUpdate(product._id, newStock);
-                          }}
-                          className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-moss-green focus:border-transparent"
-                        />
+                        <div className="font-medium">{product.currentStock || 0}個</div>
+                        <div className="text-xs text-gray-500">
+                          予約 {product.reservedStock || 0} / 利用可能 {product.availableStock || 0}
+                        </div>
+                        <Link
+                          href="/admin/inventory"
+                          className="inline-block mt-1 text-xs text-moss-green hover:underline"
+                        >
+                          在庫管理で調整
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
