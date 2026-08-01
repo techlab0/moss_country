@@ -218,7 +218,10 @@ export async function probeCalendarWriteAccess(): Promise<{
   probeStart.setFullYear(probeStart.getFullYear() + 10);
   probeStart.setHours(3, 0, 0, 0);
   const probeEnd = new Date(probeStart.getTime() + 60 * 1000);
-  const eventId = `writeprobe${Date.now().toString(36)}`;
+  // GoogleカレンダーのイベントIDは base32hex（0-9 と a-v）しか使えない。
+  // toString(36) は w-z を含み、'writeprobe' の w も範囲外で
+  // 「Invalid resource id value.」になるため、radix 32 と a-v の文字だけで作る。
+  const eventId = `probe${Date.now().toString(32)}${Math.random().toString(32).slice(2, 8)}`;
 
   let createdEventId: string;
   try {

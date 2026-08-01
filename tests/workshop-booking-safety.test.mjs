@@ -121,3 +121,22 @@ test('SQLが同時予約・冪等性・分散レート制限をDB側で保証す
   assert.match(sql, /WORKSHOP_SLOT_CAPACITY_EXCEEDED/);
   assert.match(sql, /consume_api_rate_limit/i);
 });
+
+test('GoogleイベントIDはbase32hex（0-9とa-v）の5文字以上に収まる', async () => {
+  const { buildGoogleBookingEventId } = await import(
+    moduleUrl('src/lib/workshopBookingSafety.ts')
+  );
+
+  // Google Calendar のイベントIDは base32hex しか受け付けず、
+  // w-z のような範囲外の文字が混ざると「Invalid resource id value.」で
+  // 登録に失敗する。予約がカレンダーに入らなくなるため、文字種を固定する。
+  for (const key of [
+    'a1b2c3d4-0000-0000-0000-000000000000',
+    'zzzz-wwww-yyyy-xxxx',
+    '予約-2026-08-31-1130',
+    '',
+  ]) {
+    const id = buildGoogleBookingEventId(key);
+    assert.match(id, /^[a-v0-9]{5,1024}$/, `使用できない文字が含まれている: ${id}`);
+  }
+});
