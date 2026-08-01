@@ -192,33 +192,57 @@ export async function deleteBookingEvent(eventId: string): Promise<void> {
 }
 
 /**
- * サービスアカウントが対象カレンダーに持つ権限を調べる。
+ * サービスアカウントが対象カレンダーに書き込めるかを実際に試す。
  *
  * 空き枠の取得（getBusyIntervals）は読み取り権限だけでも成功するため、
- * 「空き表示は動くのに予約時のカレンダー書き込みだけ失敗する」状態を見逃しやすい。
- * 実際に書き込まずに権限だけを確認できるよう、calendarList から accessRole を読む。
+ * 「予定の閲覧権限」だけで共有されていると、空き表示は正常なのに
+ * 予約時のカレンダー書き込みだけが失敗する。これを事前に検知するために使う。
  *
- * accessRole は 'owner' | 'writer' | 'reader' | 'freeBusyReader' のいずれか。
- * 予約イベントの作成・削除には writer 以上が必要。
+ * calendarList.get では判定できない。calendarList はサービスアカウント自身が
+ * 一覧に追加したカレンダーしか返さず、共有されただけのカレンダーは
+ * 権限があっても Not Found になるため。
+ *
+ * 実際に予定を作って即座に削除する。実運用の予約と衝突しないよう十分先の
+ * 日時を使う。削除に失敗した場合はイベントIDを返し、手動で消せるようにする。
  */
-export async function getCalendarAccessRole(): Promise<{
-  accessRole: string;
+export async function probeCalendarWriteAccess(): Promise<{
   canWrite: boolean;
-  summary?: string;
+  error?: string;
+  leftoverEventId?: string;
 }> {
   if (!isCalendarConfigured()) {
-    throw new Error(
-      'Googleカレンダーが設定されていません（GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY / GOOGLE_CALENDAR_ID を確認してください）'
-    );
+    return { canWrite: false, error: 'Googleカレンダーが設定されていません' };
   }
 
-  const calendar = await getCalendarClient();
-  const response = await calendar.calendarList.get({ calendarId: requireCalendarId() });
-  const accessRole: string = response.data?.accessRole ?? 'unknown';
+  const probeStart = new Date();
+  probeStart.setFullYear(probeStart.getFullYear() + 10);
+  probeStart.setHours(3, 0, 0, 0);
+  const probeEnd = new Date(probeStart.getTime() + 60 * 1000);
+  const eventId = `writeprobe${Date.now().toString(36)}`;
 
-  return {
-    accessRole,
-    canWrite: accessRole === 'owner' || accessRole === 'writer',
-    summary: response.data?.summary,
-  };
+  let createdEventId: string;
+  try {
+    const result = await createBookingEvent({
+      eventId,
+      idempotencyKey: eventId,
+      summary: '[書き込み確認] このイベントは自動で削除されます',
+      description: '管理画面の診断機能が作成した一時的なイベントです。残っていた場合は削除して構いません。',
+      startISO: probeStart.toISOString(),
+      endISO: probeEnd.toISOString(),
+    });
+    createdEventId = result.eventId;
+  } catch (error) {
+    return {
+      canWrite: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  try {
+    await deleteBookingEvent(createdEventId);
+    return { canWrite: true };
+  } catch {
+    // 作成できた時点で書き込み権限はある。削除だけ失敗した場合は手動削除用にIDを返す
+    return { canWrite: true, leftoverEventId: createdEventId };
+  }
 }

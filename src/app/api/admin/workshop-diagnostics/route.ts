@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { isCalendarConfigured, getBusyIntervals, getCalendarAccessRole } from '@/lib/googleCalendar';
+import { isCalendarConfigured, getBusyIntervals, probeCalendarWriteAccess } from '@/lib/googleCalendar';
 
 // ワークショップ予約のGoogleカレンダー接続を診断する管理者用エンドポイント。
 // 空き枠APIが503になる原因（環境変数未設定 / Calendar API未有効 / 共有ミス / カレンダーID誤り）を
@@ -38,29 +38,41 @@ export async function GET(request: NextRequest) {
     busyTest = { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 
-  // 空き枠の取得は読み取り権限だけでも通るため、書き込み権限の有無を別に確認する。
-  // 閲覧権限のみで共有されていると、空き表示は正常なのに予約時のカレンダー
-  // 書き込みだけ失敗する状態になり、気付きにくい。
-  let accessTest: {
-    ok: boolean;
-    accessRole?: string;
-    canWrite?: boolean;
-    summary?: string;
-    error?: string;
-    hint?: string;
-  } = { ok: false };
-  try {
-    const access = await getCalendarAccessRole();
-    accessTest = {
-      ok: true,
-      ...access,
-      hint: access.canWrite
-        ? undefined
-        : `権限が ${access.accessRole} のため予約イベントを作成できません。Googleカレンダーの共有設定でサービスアカウントに「予定の変更権限」を付与してください。`,
-    };
-  } catch (error) {
-    accessTest = { ok: false, error: error instanceof Error ? error.message : String(error) };
+  return NextResponse.json({
+    env,
+    busyTest,
+    // 書き込み権限は実際に予定を作って確かめる必要があるため、
+    // 副作用のないGETでは行わない。POSTで実行すること。
+    writeTest: 'このエンドポイントにPOSTすると、書き込み権限を確認できます',
+  });
+}
+
+/**
+ * カレンダーへの書き込み権限を確認する。
+ *
+ * 空き枠の取得は読み取り権限だけでも成功するため、「予定の閲覧権限」だけで
+ * 共有されていると、空き表示は正常なのに予約が入ってもカレンダーに
+ * 書き込まれない状態になる。それを事前に検知する。
+ *
+ * 10年先の日時に1分間の予定を作り、すぐ削除する。GETと分けているのは、
+ * 画面を開いたりリロードしたりするだけで予定が作られるのを避けるため。
+ */
+export async function POST(request: NextRequest) {
+  const session = await verifyAdminSession(request);
+  if (!session) {
+    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
   }
 
-  return NextResponse.json({ env, busyTest, accessTest });
+  const result = await probeCalendarWriteAccess();
+
+  return NextResponse.json({
+    writeTest: {
+      ...result,
+      hint: result.canWrite
+        ? result.leftoverEventId
+          ? `書き込みはできましたが、確認用イベントの削除に失敗しました。カレンダーから「[書き込み確認]」の予定を手動で削除してください。`
+          : '書き込み権限があります。予約時にカレンダーへ登録されます。'
+        : 'カレンダーに書き込めません。Googleカレンダーの共有設定で、サービスアカウントに「予定の変更権限」を付与してください（「予定の閲覧権限」では不足です）。',
+    },
+  });
 }
