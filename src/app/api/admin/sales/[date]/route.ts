@@ -151,7 +151,7 @@ export async function GET(
       // 履歴表示用: その日に発行された決済を全ステータスで返す
       writeClient.fetch(
         `*[_type == "inStoreCharge" && createdAt >= $start && createdAt < $end] | order(createdAt desc) {
-          _id, amount, subtotal, discountAmount, description, status, createdAt, paidAt, visitorCount,
+          _id, amount, subtotal, discountAmount, description, status, createdAt, paidAt, visitorCount, method,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { start, end }

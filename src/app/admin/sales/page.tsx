@@ -66,6 +66,9 @@ interface HistoricalCustomRow {
 
 interface ChargeView {
   _id: string;
+  // inStoreCharge.method（'qr' = Square QR / 'pos' = タッチ決済 / 'paypay' = PayPay動的QR）。
+  // 履歴のバッジ表示に使う。未設定の古いデータはスキーマのinitialValueに合わせて 'qr' 扱いにする。
+  method?: 'qr' | 'pos' | 'paypay';
   amount?: number;
   subtotal?: number;
   discountAmount?: number;
@@ -1568,7 +1571,13 @@ function SummaryTab({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-gray-400">{formatTime(charge.createdAt)}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">クレジット(QR)</span>
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded ${
+                          charge.method === 'paypay' ? 'bg-red-100 text-red-800' : 'bg-purple-100 text-purple-800'
+                        }`}
+                      >
+                        {methodLabels[charge.method || 'qr']}
+                      </span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${status.className}`}>{status.label}</span>
                       {(charge.visitorCount || 0) > 0 && (
                         <span className="text-xs text-gray-500">{charge.visitorCount}名</span>
