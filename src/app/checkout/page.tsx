@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
@@ -93,7 +94,15 @@ export default function CheckoutPage() {
     // removable設計: 承認前・無効化したい場合は NEXT_PUBLIC_PAYPAY_ENABLED を false/未設定にするだけで
     // この選択肢自体が表示されなくなる（他の支払い方法には影響しない）
     ...(process.env.NEXT_PUBLIC_PAYPAY_ENABLED === 'true'
-      ? [{ id: 'paypay', name: 'PayPay', description: 'PayPayアプリでお支払い' }]
+      ? [{
+          id: 'paypay',
+          name: 'PayPay',
+          description: 'PayPayアプリでお支払い',
+          // PayPay加盟店規約で掲出が義務づけられているアクセプタンスマーク（PayPay配布の600x100 PNG）。
+          // 色・比率・枠線の改変が禁止されているため、CSSでは幅の指定のみを行い加工しない。
+          // PayPayのサーバーへの直リンクも禁止されているため、自サイトのpublic配下に置いて配信する。
+          markSrc: '/images/paypay-acceptance.png',
+        }]
       : [])
   ];
 
@@ -737,7 +746,17 @@ export default function CheckoutPage() {
                           className="text-emerald-500"
                         />
                         <div>
-                          <div className="text-white font-medium mb-1">{method.name}</div>
+                          {'markSrc' in method && method.markSrc ? (
+                            <Image
+                              src={method.markSrc}
+                              alt={method.name}
+                              width={600}
+                              height={100}
+                              className="w-52 max-w-full h-auto mb-1"
+                            />
+                          ) : (
+                            <div className="text-white font-medium mb-1">{method.name}</div>
+                          )}
                           <p className="text-stone-400 text-sm">{method.description}</p>
                         </div>
                       </label>
