@@ -79,6 +79,9 @@ export default async function LegalPage() {
                               alt="PayPay"
                               width={822}
                               height={300}
+                              // 元画像が7.5KBと小さく、96px表示のために828px/1920pxへ変換されるのは
+                              // Vercelの画像最適化枠の無駄なので、最適化を通さず原本を配信する
+                              unoptimized
                               className="inline-block align-middle w-24 h-auto"
                             />
                           </li>

@@ -752,6 +752,9 @@ export default function CheckoutPage() {
                               alt={method.name}
                               width={600}
                               height={100}
+                              // 元画像が2.5KBと小さいため、画像最適化を通さず原本を配信する
+                              // （208px表示のために640px/1200pxへ変換するのはVercelの最適化枠の無駄）
+                              unoptimized
                               className="w-52 max-w-full h-auto mb-1"
                             />
                           ) : (
