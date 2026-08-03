@@ -22,9 +22,21 @@ Xserver側 `config.php` の `PAYPAY_ENV` だけで行う。
 `https://mosscountry.com/...` にアクセスしてもXserverには一切届かない（Vercelが403を返す）。
 Xserver上の `mosscountry.com/public_html/` にファイルを置いても、そのドメインでは公開されない。
 
-中継スクリプトは**Xserverを向いているホスト名**の公開ディレクトリに置くこと。おすすめは
-**Xserverの初期ドメイン（`<アカウントID>.xsrv.jp`）**で、DNS変更が不要。サブドメイン
-（例: `relay.mosscountry.com`）をXserverに向けてもよいが、その場合はDNSのAレコード追加が必要。
+中継スクリプトは**Xserverを向いていて、かつ有効なHTTPS証明書があるホスト名**の公開ディレクトリに
+置くこと。HTTPSは必須（`X-Relay-Secret` を平文で流さないため）。
+
+2026-08-03に実際に調査した結果は以下のとおり（このアカウントでの実測値）:
+
+| ホスト名 | 結果 |
+|---|---|
+| `mosscountry.com` | **不可**。DNSがVercelを向いている（Vercelが403を返す） |
+| `sv16805.xserver.jp` | **不可**。「無効なURLです」の案内ページのみ。ユーザーのファイルは公開されない |
+| `xs9024.xsrv.jp`（初期ドメイン） | **そのままでは不可**。DNSは通る（85.131.209.166）が、サーバーが出す証明書が `*.xserver.jp` 用で `.xsrv.jp` に対応せずHTTPSが張れない（`curl: (60)`）。SSL設定で無料独自SSLを発行できれば可 |
+| `relay.mosscountry.com` 等のサブドメイン | **推奨**。Route 53にAレコード（→ `85.131.209.166`）を追加し、Xserverでサブドメイン追加＋無料独自SSLを発行する |
+
+mosscountry.com のDNSはAWS Route 53で管理されている（`ns-275.awsdns-34.com` ほか）。
+サブドメインだけXserverに向ければ、本体（Vercel）には影響しない。SSLの発行はDNS反映後に行うこと
+（Let's Encryptの認証にDNSが必要なため）。
 
 どのホスト名を使ってもPayPayのIP制限には影響しない（PayPayが見るのはXserverからの
 **送信元IP**であり、アクセスに使うホスト名とは無関係のため）。
