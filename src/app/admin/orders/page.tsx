@@ -82,6 +82,21 @@ const AdminOrdersPage = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // 支払い済みの注文を「キャンセル」にしても決済は取り消されない（返金は注文詳細の返金ボタン）。
+    // 入金されたままお客様に返金されない事故を防ぐため、ここで明示的に確認する。
+    const target = orders.find(order => order.id === orderId);
+    if (newStatus === 'cancelled' && target?.status === 'paid') {
+      if (
+        !window.confirm(
+          'この注文は支払い済みです。キャンセルに変更しても決済は取り消されず、お客様に返金されません。\n' +
+          '返金する場合は注文詳細ページの返金ボタンを使ってください。\n\n' +
+          'このままキャンセルに変更しますか？'
+        )
+      ) {
+        return;
+      }
+    }
+
     const previousOrders = orders;
     setOrders(orders.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order

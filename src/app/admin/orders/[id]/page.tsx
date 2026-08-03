@@ -159,6 +159,27 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
   const handleSave = async () => {
     if (!orderId || !order) return;
+
+    // 支払い済みの注文を「キャンセル」にしても決済は取り消されない（返金は別操作）。
+    // 取り違えると入金されたままお客様に返金されないため、ここで明示的に確認する。
+    if (
+      statusInput === "cancelled" &&
+      order.status !== "cancelled" &&
+      order.paymentStatus === "paid" &&
+      !order.refundId
+    ) {
+      const refundLabel = order.paymentMethod === "paypay" ? "PayPay" : "カード";
+      if (
+        !window.confirm(
+          "この注文は支払い済みです。キャンセルに変更しても決済は取り消されず、お客様に返金されません。\n" +
+          `返金する場合は「${refundLabel}へ返金する」ボタンを使ってください。\n\n` +
+          "このままキャンセルに変更しますか？"
+        )
+      ) {
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -220,8 +241,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     if (!orderId || !order) return;
     if (
       !window.confirm(
-        `お客様のカードに ¥${order.total.toLocaleString()} を返金します。\n` +
-        `この操作でSquare経由で実際に返金され、取り消せません。よろしいですか？`
+        `お客様に ¥${order.total.toLocaleString()} を返金します。\n` +
+        `この操作で${order.paymentMethod === "paypay" ? "PayPay" : "Square"}経由で実際に返金され、取り消せません。よろしいですか？`
       )
     ) {
       return;
@@ -289,11 +310,14 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   }
 
   const isFinalStatus = order.status === "cancelled" || order.status === "refunded";
-  // カード決済で支払い済み・未返金の注文だけ「カードへ返金」を出す。
-  // Square Payment ID が無い注文（振込・代引など）はカード返金の対象外。
+  const isPaypayOrder = order.paymentMethod === "paypay";
+  // 返金先の呼び方（カード決済はお客様のカード、PayPay決済はPayPay残高）
+  const refundTargetLabel = isPaypayOrder ? "PayPay" : "カード";
+  // オンライン決済（Square カード / PayPay）で支払い済み・未返金の注文だけ返金ボタンを出す。
+  // Square Payment ID もPayPay決済でもない注文（振込・代引など）はAPI返金の対象外。
   const isRefundable =
     order.paymentStatus === "paid" &&
-    !!order.squarePaymentId &&
+    (!!order.squarePaymentId || isPaypayOrder) &&
     !order.refundId &&
     order.status !== "refunded";
 
@@ -333,7 +357,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               disabled={saving}
               className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 border border-orange-600 rounded-md hover:bg-orange-700 disabled:opacity-50"
             >
-              カードへ返金する（¥{order.total.toLocaleString()}）
+              {refundTargetLabel}へ返金する（¥{order.total.toLocaleString()}）
             </button>
           ) : !isFinalStatus ? (
             <button
@@ -545,13 +569,16 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               {order.refundId && (
                 <div>
                   <p className="text-sm text-gray-600">返金</p>
-                  <p className="font-medium text-orange-700">カードへ返金済み</p>
-                  <p className="text-xs text-gray-400 break-all">Square返金ID: {order.refundId}</p>
+                  <p className="font-medium text-orange-700">{refundTargetLabel}へ返金済み</p>
+                  <p className="text-xs text-gray-400 break-all">
+                    {isPaypayOrder ? "PayPay" : "Square"}返金ID: {order.refundId}
+                  </p>
                 </div>
               )}
               {isRefundable && (
                 <p className="text-xs text-gray-500 border-t pt-3">
-                  この注文はカード決済済みです。返金する場合は上部の「カードへ返金する」ボタンから行ってください（お客様のカードに実際に返金されます）。
+                  この注文は{isPaypayOrder ? "PayPayで決済" : "カード決済"}済みです。返金する場合は上部の「{refundTargetLabel}へ返金する」ボタンから行ってください（お客様に実際に返金されます）。
+                  ステータスを「キャンセル」に変えるだけでは決済は取り消されません。
                 </p>
               )}
             </div>
