@@ -13,16 +13,21 @@
  * このファイルと config.php（README.md参照）をアップロードするだけで動作する。
  *
  * 対応エンドポイント（?action= で分岐）:
- *   - action=create (POST) : PayPay QRCodeCreate（Web決済用リダイレクトURL付き）
+ *   - action=create (POST) : PayPay QRCodeCreate（redirectUrl指定時はWeb決済用リダイレクト付き、
+ *                            未指定時は店頭用の金額付き動的QR）
  *   - action=status (GET)  : PayPay GetCodePaymentDetails（決済状況取得）
  *   - action=refund (POST) : PayPay PaymentRefund（返金）
+ *   - action=delete (POST) : PayPay QRCodeDelete（未決済QRの削除）
+ *
+ * EC決済（src/lib/paypayWebClient.ts）と店頭QR決済（src/lib/paypay.ts）の両方がこの中継を使う。
+ * 店頭QRも本番ではIP制限を受けるため、Vercelから直接PayPayを呼ぶ経路は存在しない。
  *
  * HMAC-Auth（PayPay OPA API認証）の実装について
  * ----------------------------------------------------------------------------
  * 重要: 本ファイルの署名アルゴリズムは、PayPay公式ドキュメントを推測で実装したものではなく、
- * このリポジトリに実際に導入され本番の店頭QR決済（src/lib/paypay.ts）で使われている
- * 公式Node SDK「@paypayopa/paypayopa-sdk-node」の実装（
- * node_modules/@paypayopa/paypayopa-sdk-node/dist/lib/paypay-rest-sdk.js の
+ * かつてこのリポジトリの店頭QR決済（src/lib/paypay.ts）で実際に動作していた
+ * 公式Node SDK「@paypayopa/paypayopa-sdk-node」v2.2.0 の実装（
+ * dist/lib/paypay-rest-sdk.js の
  * createAuthHeader() ）をそのままPHPに移植したものである。したがって細部（ヘッダーの
  * 1つ目がmerchantIdではなくAPIキーであること等）まで実際に動作しているコードに基づく。
  *
@@ -52,8 +57,9 @@
  *     （dist/lib/environments.js）が実際に接続しているホストは
  *       PROD    = apigw.paypay.ne.jp
  *       STAGING = apigw.sandbox.paypay.ne.jp
- *     である。本ファイルは「このリポジトリで実績のある店頭QR決済と同じSDKが実際に使っている
- *     ホスト」を正として採用した（下記 PAYPAY_API_HOSTS）。ドキュメント記載のホストと異なる点に注意。
+ *     である。本ファイルはSDKが実際に接続しているホストを正として採用した（下記 PAYPAY_API_HOSTS）。
+ *     なお2026-08時点の公式ドキュメント（Dynamic QR Code）でも本番は apigw.paypay.ne.jp が
+ *     現行、api.paypay.ne.jp は非推奨と記載されており、この採用と一致している。
  *   - merchantPaymentId / merchantRefundId の文字種・長さ制限（PayPay公式仕様では英数字と
  *     ハイフン/アンダースコアで64文字以内とされることが多い）はこのファイルでは強制検証していない。
  *     このリポジトリの注文番号形式（`MOS-<timestamp>-<英数字9桁>`）は条件を満たす想定だが、
@@ -116,6 +122,22 @@ function paypay_relay_uuid_v4(): string
         substr($hex, 16, 4),
         substr($hex, 20, 12)
     );
+}
+
+/**
+ * UTF-8文字列を文字数で切り詰める（PayPayの品名長制限用）。
+ * mbstringが有効でない環境でも動くよう、mb_substrが無い場合はPCREのUTF-8モードで代替する
+ * （bytes単位のsubstrだと日本語の途中で切れて不正なUTF-8になり、PayPayに弾かれるため）。
+ */
+function paypay_relay_truncate(string $text, int $limit): string
+{
+    if (function_exists('mb_substr')) {
+        return mb_substr($text, 0, $limit);
+    }
+    if (preg_match('/^.{0,' . $limit . '}/us', $text, $matches) === 1) {
+        return $matches[0];
+    }
+    return substr($text, 0, $limit);
 }
 
 /**
@@ -261,7 +283,9 @@ try {
 
     switch ($action) {
         // --------------------------------------------------------------
-        // action=create : PayPay QRCodeCreate（ウェブ決済用リダイレクトURL付き）
+        // action=create : PayPay QRCodeCreate
+        //   redirectUrl あり = EC（ウェブ決済用リダイレクト付き）
+        //   redirectUrl なし = 店頭の金額付き動的QR（お客様が店頭でスキャンするため戻り先が無い）
         // --------------------------------------------------------------
         case 'create': {
             if ($method !== 'POST') {
@@ -273,8 +297,8 @@ try {
             $amount = isset($input['amount']) ? (float) $input['amount'] : 0;
             $redirectUrl = isset($input['redirectUrl']) ? (string) $input['redirectUrl'] : '';
 
-            if ($merchantPaymentId === '' || $amount <= 0 || $redirectUrl === '') {
-                paypay_relay_respond(400, ['error' => 'merchantPaymentId, amount, redirectUrl は必須です']);
+            if ($merchantPaymentId === '' || $amount <= 0) {
+                paypay_relay_respond(400, ['error' => 'merchantPaymentId, amount は必須です']);
             }
 
             $payload = [
@@ -284,10 +308,15 @@ try {
                     'currency' => 'JPY',
                 ],
                 'codeType' => 'ORDER_QR',
-                'redirectUrl' => $redirectUrl,
-                'redirectType' => 'WEB_LINK',
                 'isAuthorization' => false,
             ];
+
+            // 店頭QR（redirectUrl未指定）では redirectUrl / redirectType を送らない。
+            // PayPayは redirectType を指定した場合 redirectUrl を必須とするため、必ず対で付ける。
+            if ($redirectUrl !== '') {
+                $payload['redirectUrl'] = $redirectUrl;
+                $payload['redirectType'] = 'WEB_LINK';
+            }
 
             if (!empty($input['orderDescription'])) {
                 $payload['orderDescription'] = (string) $input['orderDescription'];
@@ -300,8 +329,8 @@ try {
                         continue;
                     }
                     $orderItems[] = [
-                        // PayPayの品名は長すぎると弾かれるため、店頭決済(src/lib/paypay.ts)と同様30文字に丸める
-                        'name' => mb_substr((string) ($item['name'] ?? ''), 0, 30),
+                        // PayPayの品名は長すぎると弾かれるため30文字に丸める（EC・店頭とも共通）
+                        'name' => paypay_relay_truncate((string) ($item['name'] ?? ''), 30),
                         'quantity' => (int) ($item['quantity'] ?? 1),
                         'unitPrice' => [
                             'amount' => (int) round((float) ($item['unitPriceJpy'] ?? 0)),
@@ -331,7 +360,9 @@ try {
                 paypay_relay_respond(400, ['error' => 'merchantPaymentId は必須です']);
             }
 
-            $path = '/v2/codes/payments/' . $merchantPaymentId;
+            // IDはURLパスに埋め込むため必ずエンコードする（スラッシュ等によるパス改変を防ぐ）。
+            // 署名対象のpathと実際に送信するpathを同一にするため、エンコード後の値を使う。
+            $path = '/v2/codes/payments/' . rawurlencode($merchantPaymentId);
             [$status, $data] = paypay_relay_call('GET', $path, null, $baseUrl, PAYPAY_API_KEY, PAYPAY_API_SECRET, PAYPAY_MERCHANT_ID);
             paypay_relay_respond($status, $data);
             break;
@@ -368,8 +399,30 @@ try {
             break;
         }
 
+        // --------------------------------------------------------------
+        // action=delete : PayPay QRCodeDelete（未決済QRの削除。店頭会計の取り消しで使う）
+        // PayPay側は DELETE /v2/codes/{codeId} だが、Vercel側からの呼び出しは他アクションと
+        // 揃えてPOST + JSONボディで受ける。
+        // --------------------------------------------------------------
+        case 'delete': {
+            if ($method !== 'POST') {
+                paypay_relay_respond(405, ['error' => 'action=delete にはPOSTを使用してください']);
+            }
+            $input = paypay_relay_read_json_body();
+
+            $codeId = isset($input['codeId']) ? (string) $input['codeId'] : '';
+            if ($codeId === '') {
+                paypay_relay_respond(400, ['error' => 'codeId は必須です']);
+            }
+
+            $path = '/v2/codes/' . rawurlencode($codeId);
+            [$status, $data] = paypay_relay_call('DELETE', $path, null, $baseUrl, PAYPAY_API_KEY, PAYPAY_API_SECRET, PAYPAY_MERCHANT_ID);
+            paypay_relay_respond($status, $data);
+            break;
+        }
+
         default:
-            paypay_relay_respond(400, ['error' => 'Unknown action. Use ?action=create|status|refund']);
+            paypay_relay_respond(400, ['error' => 'Unknown action. Use ?action=create|status|refund|delete']);
     }
 } catch (Throwable $e) {
     error_log('[paypay-relay] Unhandled error: ' . $e->getMessage());

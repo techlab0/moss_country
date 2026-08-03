@@ -10,11 +10,11 @@
     "test:shipping": "node --experimental-strip-types --test tests/shipping-note.test.mjs",
     "test:workshop": "node --experimental-strip-types --test tests/workshop-booking-safety.test.mjs tests/workshop-calendar-policy.test.mjs",
     "test:admin-ui": "node --test tests/admin-ui-order.test.mjs",
+    "test:inventory": "node --experimental-strip-types --test tests/inventory-responsibility.test.mjs",
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.0",
-    "@paypayopa/paypayopa-sdk-node": "^2.2.0",
     "@portabletext/react": "^3.2.1",
     "@sanity/client": "^7.6.0",
     "@sanity/image-url": "^1.1.0",
@@ -74,10 +74,6 @@
       "teeny-request": {
         "uuid": "11.1.1"
       }
-    },
-    "@paypayopa/paypayopa-sdk-node": {
-      "jsonwebtoken": "9.0.3",
-      "uuid": "11.1.1"
     },
     "next": {
       "sharp": "0.35.3"

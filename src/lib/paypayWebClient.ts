@@ -1,32 +1,19 @@
-// PayPay ウェブ決済（EC）のための中継クライアント。
+// PayPay ウェブ決済（EC）のクライアント。
 //
 // PayPay本番APIは固定IPからのみ許可されるため、Vercel（本アプリ）からPayPayを直接呼ばず、
-// 固定IPを持つXserver上の中継スクリプト（xserver-relay/paypay-relay.php）を
-// 共有シークレット（X-Relay-Secretヘッダー）経由で呼び出す。PayPayのAPIキー・シークレット・
-// 加盟店IDはXserver側にのみ置き、Vercel側（このファイル・環境変数）は一切保持しない。
+// 固定IPを持つXserver上の中継スクリプト（xserver-relay/paypay-relay.php）経由で呼び出す。
+// HTTP部分の実装は店頭QR決済（src/lib/paypay.ts）と共通で、src/lib/paypayRelay.ts にある。
 //
 // removable設計の要: 環境変数 PAYPAY_RELAY_URL / PAYPAY_RELAY_SECRET が揃っていない場合は
 // 「PayPay決済は未設定」として明確にthrowする（呼び出し元のAPIルートはこれを検知して
 // 503を返し、他の決済手段には一切影響させない）。isPaypayConfigured() で事前判定できる。
 
-interface PayPayResultInfo {
-  code: string;
-  message?: string;
-  codeId?: string;
-}
-
-// 中継スクリプト（paypay-relay.php）はPayPay APIのレスポンスJSON（{resultInfo, data}）を
-// そのまま横流しする。中継自体のエラー（403認証エラー・400バリデーション等）は
-// resultInfoを含まない { error: string } 形なので、callRelay側で区別する。
-interface PayPayRelayResponse<T> {
-  resultInfo: PayPayResultInfo;
-  data?: T | null;
-}
-
-interface PayPayMoney {
-  amount?: number;
-  currency?: string;
-}
+import {
+  assertRelaySuccess,
+  callRelay,
+  isPaypayRelayConfigured,
+  type PayPayMoney,
+} from '@/lib/paypayRelay';
 
 /** PayPay Web決済（Dynamic QR + redirectType: WEB_LINK）の決済ステータス（GetCodePaymentDetailsが返す値） */
 export type PayPayWebPaymentStatus =
@@ -58,92 +45,13 @@ interface RefundData {
   paymentId?: string;
 }
 
-function getRelayConfig(): { url: string; secret: string } | null {
-  const url = process.env.PAYPAY_RELAY_URL;
-  const secret = process.env.PAYPAY_RELAY_SECRET;
-  if (!url || !secret) {
-    return null;
-  }
-  return { url, secret };
-}
-
 /**
  * PayPayウェブ決済が利用できる状態か（Xserver中継のURL・共有シークレットが両方設定されているか）を返す。
  * removable設計の要: これがfalseの間はAPIルート側で503を返し、チェックアウトのPayPay選択肢も
  * NEXT_PUBLIC_PAYPAY_ENABLED フラグ側で隠す。
  */
 export function isPaypayConfigured(): boolean {
-  return getRelayConfig() !== null;
-}
-
-function requireRelayConfig(): { url: string; secret: string } {
-  const config = getRelayConfig();
-  if (!config) {
-    throw new Error('PayPay決済は未設定です（PAYPAY_RELAY_URL / PAYPAY_RELAY_SECRET が必要です）');
-  }
-  return config;
-}
-
-async function callRelay<T>(
-  action: 'create' | 'status' | 'refund',
-  method: 'GET' | 'POST',
-  options: { query?: Record<string, string>; body?: unknown }
-): Promise<PayPayRelayResponse<T>> {
-  const { url, secret } = requireRelayConfig();
-
-  const target = new URL(url);
-  target.searchParams.set('action', action);
-  if (options.query) {
-    for (const [key, value] of Object.entries(options.query)) {
-      target.searchParams.set(key, value);
-    }
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(target.toString(), {
-      method,
-      headers: {
-        'X-Relay-Secret': secret,
-        ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: method === 'POST' ? JSON.stringify(options.body ?? {}) : undefined,
-      cache: 'no-store',
-    });
-  } catch (error) {
-    throw new Error(`PayPay中継（Xserver）への接続に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
-  }
-
-  const text = await response.text();
-  let parsed: unknown = null;
-  if (text) {
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      throw new Error(`PayPay中継からのレスポンスをJSONとして解析できませんでした（HTTP ${response.status}）`);
-    }
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error(`PayPay中継から不正なレスポンスを受け取りました（HTTP ${response.status}）`);
-  }
-
-  const parsedObj = parsed as Record<string, unknown>;
-  // 中継スクリプト自体のエラー（403認証エラー・400バリデーション・500設定不備等）は
-  // resultInfoを含まない { error, message? } 形で返る。PayPay自体のエラーはresultInfoを含むため、
-  // resultInfoの有無で区別する。
-  if (!('resultInfo' in parsedObj)) {
-    const message = (parsedObj.message as string | undefined) || (parsedObj.error as string | undefined);
-    throw new Error(`PayPay中継エラー（HTTP ${response.status}）: ${message || '不明なエラー'}`);
-  }
-
-  return parsedObj as unknown as PayPayRelayResponse<T>;
-}
-
-function assertSuccess(resultInfo: PayPayResultInfo | undefined, action: string): void {
-  if (!resultInfo || resultInfo.code !== 'SUCCESS') {
-    throw new Error(`PayPay ${action}に失敗しました: ${resultInfo?.message || resultInfo?.code || '不明なエラー'}`);
-  }
+  return isPaypayRelayConfigured();
 }
 
 /**
@@ -173,7 +81,7 @@ export async function createWebPayment({
     },
   });
 
-  assertSuccess(response.resultInfo, 'ウェブ決済作成');
+  assertRelaySuccess(response.resultInfo, 'ウェブ決済作成');
 
   const data = response.data;
   if (!data?.url || !data.codeId) {
@@ -241,7 +149,7 @@ export async function refundPayment({
     },
   });
 
-  assertSuccess(response.resultInfo, '返金');
+  assertRelaySuccess(response.resultInfo, '返金');
 
   return {
     refundId: merchantRefundId,

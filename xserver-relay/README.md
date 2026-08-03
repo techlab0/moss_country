@@ -1,15 +1,20 @@
-# PayPay ウェブ決済 中継スクリプト（Xserver設置用）
+# PayPay 決済 中継スクリプト（Xserver設置用）
 
-PayPayの本番APIは「PayPay for Businessに登録した固定IPからのみ」呼び出しを許可する。
-Vercel（サーバレス）はIPを固定できないため、固定IPを持つXserverにこの中継スクリプトを設置し、
-PayPay APIへのリクエストは常にこのXserverから送信する構成にする。
+PayPayの本番APIは「PayPay for Businessに登録した固定IPからのみ」呼び出しを許可する
+（サンドボックスにはこの制限が無い）。Vercel（サーバレス）はIPを固定できないため、固定IPを持つ
+Xserverにこの中継スクリプトを設置し、PayPay APIへのリクエストは常にこのXserverから送信する構成にする。
 
 ```
 Vercel(サイト) → Xserver上の paypay-relay.php（固定IP） → PayPay OPA API
 ```
 
+**ECチェックアウトのウェブ決済（`src/lib/paypayWebClient.ts`）と店頭の動的QR決済
+（`src/lib/paypay.ts`）の両方がこの中継を通る。** 店頭QRは当初Vercelから公式Node SDKで直接
+PayPayを呼んでいたが、本番ではIP制限で必ず失敗するため2026-08に中継経由へ統一した。
+
 Vercel側はPayPayの認証情報を一切持たず、この中継スクリプトを共有シークレット
-（`X-Relay-Secret` ヘッダー）だけで呼び出す。
+（`X-Relay-Secret` ヘッダー）だけで呼び出す。サンドボックス/本番の切り替えは
+Xserver側 `config.php` の `PAYPAY_ENV` だけで行う。
 
 ## 1. 設置手順
 
@@ -49,7 +54,8 @@ define('RELAY_SHARED_SECRET', 'generate-a-long-random-shared-secret');
 ## 2. PHPバージョン要件
 
 - PHP 7.4以上（推奨: PHP 8.1以上。Xserverのサーバーパネル「PHP Ver.切替」で変更可能）
-- 拡張モジュール: `curl`、`json`（いずれもXserverの標準構成で有効）
+- 拡張モジュール: `curl`、`json`（いずれもXserverの標準構成で有効）。`mbstring` は
+  あれば使うが、無い場合もPCREのUTF-8モードで代替するため必須ではない。
 - 追加のライブラリ・Composerパッケージは不要（単一ファイルで完結）
 
 ## 3. エンドポイント仕様
@@ -59,7 +65,9 @@ define('RELAY_SHARED_SECRET', 'generate-a-long-random-shared-secret');
 
 ### `POST /paypay-relay.php?action=create`
 
-PayPay QRCodeCreate（`redirectType: WEB_LINK` 付き）を呼び出し、Web決済用の支払いURLを発行する。
+PayPay QRCodeCreateを呼び出し、支払いURL・QRコードを発行する。
+`redirectUrl` を**指定した場合はEC用**（`redirectType: WEB_LINK` を付ける）、
+**省略した場合は店頭用の金額付き動的QR**（戻り先が無いため `redirectUrl` / `redirectType` を送らない）。
 
 リクエストボディ（JSON）:
 ```json
@@ -74,7 +82,8 @@ PayPay QRCodeCreate（`redirectType: WEB_LINK` 付き）を呼び出し、Web決
 }
 ```
 
-レスポンス: PayPay APIのレスポンス（`resultInfo` / `data.url` など）をそのまま返す。
+必須は `merchantPaymentId` と `amount` のみ。レスポンス: PayPay APIのレスポンス
+（`resultInfo` / `data.url` など）をそのまま返す。
 
 ### `GET /paypay-relay.php?action=status&merchantPaymentId=...`
 
@@ -94,6 +103,19 @@ PayPay PaymentRefundを呼び出す。
 ```
 
 レスポンス: PayPay APIのレスポンスをそのまま返す。
+
+### `POST /paypay-relay.php?action=delete`
+
+PayPay QRCodeDelete（`DELETE /v2/codes/{codeId}`）を呼び出し、未決済のQRを削除する。
+店頭会計の取り消しで使う。
+
+リクエストボディ（JSON）:
+```json
+{ "codeId": "QRCodeCreateが返したcodeId" }
+```
+
+レスポンス: PayPay APIのレスポンスをそのまま返す（支払い済みの場合は
+`DYNAMIC_QR_ALREADY_PAID` 等が `resultInfo` に入る）。
 
 ## 4. 疎通確認方法
 
@@ -122,15 +144,21 @@ PayPay PaymentRefundを呼び出す。
 4. **本番切り替え**
    PayPayの加盟店審査が完了し本番APIキーを払い出されたら、`config.php` の
    `PAYPAY_API_KEY` / `PAYPAY_API_SECRET` / `PAYPAY_MERCHANT_ID` を本番用に差し替え、
-   `PAYPAY_ENV` を `PROD` に変更する。
+   `PAYPAY_ENV` を `PROD` に変更する。**この1か所でEC・店頭QRの両方が本番に切り替わる。**
+
+   切り替える前に、**PayPayに登録済みの接続元IPがXserverの実際の送信元IPと一致しているか**を
+   必ず確認する（不一致だと全APIが `UNAUTHORIZED(08100016)` で失敗する）。送信元IPは
+   `<?php echo file_get_contents('https://api.ipify.org');` だけのPHPファイルをXserverに置いて
+   ブラウザで開けば確認できる。登録IPの追加・変更はPayPayへの申請が必要で、**反映まで最大4日**
+   かかるため最初に着手すること。
 
 ## 5. HMAC-Auth実装について（重要）
 
 `paypay-relay.php` 内のHMAC署名生成は、PayPay公式ドキュメントを独自解釈したものではなく、
-このリポジトリの店頭QR決済（`src/lib/paypay.ts`）で実際に使われている公式Node SDK
-（`@paypayopa/paypayopa-sdk-node`）の `createAuthHeader()` 実装
-（`node_modules/@paypayopa/paypayopa-sdk-node/dist/lib/paypay-rest-sdk.js`）をPHPに移植したもの。
-各ステップの詳細は `paypay-relay.php` 冒頭のコメントを参照。
+公式Node SDK `@paypayopa/paypayopa-sdk-node`（v2.2.0）の `createAuthHeader()` 実装
+（`dist/lib/paypay-rest-sdk.js`）をPHPに移植したもの。移植元のSDKは、当時このリポジトリの
+店頭QR決済で実際に動作していたものである（店頭QRも中継経由に統一したため、SDK自体は
+2026-08に依存関係から削除した）。各ステップの詳細は `paypay-relay.php` 冒頭のコメントを参照。
 
 **要注意（推測を含む・要検証の箇所）**:
 
