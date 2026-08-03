@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Image from 'next/image'
 import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 
 export const metadata: Metadata = {
@@ -69,7 +70,19 @@ export default async function LegalPage() {
                         <li>クレジットカード決済（Square決済システム / Visa・Mastercard・JCB・AMEX）</li>
                         <li>銀行振込（振込手数料はお客様のご負担となります）</li>
                         <li>代金引換（代引手数料 ¥300）</li>
-                        {paypayEnabled && <li>PayPay</li>}
+                        {/* PayPay公式ブランドロゴ。色・比率の改変とPayPayサーバーへの直リンクが
+                            禁止されているため、public配下の配布データをそのまま幅指定だけで表示する */}
+                        {paypayEnabled && (
+                          <li>
+                            <Image
+                              src="/images/paypay-logo.png"
+                              alt="PayPay"
+                              width={822}
+                              height={300}
+                              className="inline-block align-middle w-24 h-auto"
+                            />
+                          </li>
+                        )}
                       </ul>
                     </dd>
                   </div>
