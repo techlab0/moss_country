@@ -18,8 +18,20 @@ Xserver側 `config.php` の `PAYPAY_ENV` だけで行う。
 
 ## 1. 設置手順
 
-1. Xserverのサーバーパネル（またはFTPクライアント）で、公開ディレクトリ（例:
-   `/home/<アカウント>/<ドメイン>/public_html/`）配下に任意のサブディレクトリを作成する
+**先に注意（重要）**: `mosscountry.com` のDNSは**Vercelを向いている**。したがって
+`https://mosscountry.com/...` にアクセスしてもXserverには一切届かない（Vercelが403を返す）。
+Xserver上の `mosscountry.com/public_html/` にファイルを置いても、そのドメインでは公開されない。
+
+中継スクリプトは**Xserverを向いているホスト名**の公開ディレクトリに置くこと。おすすめは
+**Xserverの初期ドメイン（`<アカウントID>.xsrv.jp`）**で、DNS変更が不要。サブドメイン
+（例: `relay.mosscountry.com`）をXserverに向けてもよいが、その場合はDNSのAレコード追加が必要。
+
+どのホスト名を使ってもPayPayのIP制限には影響しない（PayPayが見るのはXserverからの
+**送信元IP**であり、アクセスに使うホスト名とは無関係のため）。
+
+1. Xserverのサーバーパネル（またはFTPクライアント）で、**Xserverを向いているドメインの**
+   公開ディレクトリ（例: `/home/<アカウント>/<アカウントID>.xsrv.jp/public_html/`）配下に
+   任意のサブディレクトリを作成する
    （例: `public_html/paypay-relay/`。URLに推測されにくい名前を付けることを推奨）。
 2. このディレクトリに `paypay-relay.php` をアップロードする（ファイルマネージャーの
    「アップロード」機能、または FTP/SFTP クライアントでそのまま転送すればよい。ビルドや
@@ -46,8 +58,9 @@ define('RELAY_SHARED_SECRET', 'generate-a-long-random-shared-secret');
 ```
 
 4. Vercel側の環境変数に以下を設定する（Vercelプロジェクト設定 > Environment Variables）。
-   - `PAYPAY_RELAY_URL` = `https://<ドメイン>/paypay-relay/paypay-relay.php`
-     （手順1で作成したディレクトリ名に合わせる）
+   - `PAYPAY_RELAY_URL` = `https://<Xserverを向いているホスト名>/paypay-relay/paypay-relay.php`
+     （例: `https://<アカウントID>.xsrv.jp/paypay-relay/paypay-relay.php`。手順1で作成した
+     ディレクトリ名に合わせる。**mosscountry.com はVercelを向いているので使えない**）
    - `PAYPAY_RELAY_SECRET` = 上記 `RELAY_SHARED_SECRET` と同じ値
    - `NEXT_PUBLIC_PAYPAY_ENABLED` = `true`（チェックアウトにPayPayを表示する場合のみ）
 
@@ -123,14 +136,14 @@ PayPay QRCodeDelete（`DELETE /v2/codes/{codeId}`）を呼び出し、未決済�
 
 1. **中継スクリプトが動作しているか（認証チェックの確認）**
    ```bash
-   curl -i "https://<ドメイン>/paypay-relay/paypay-relay.php?action=status&merchantPaymentId=test"
+   curl -i "https://<Xserverを向いているホスト名>/paypay-relay/paypay-relay.php?action=status&merchantPaymentId=test"
    ```
    `X-Relay-Secret` ヘッダーを付けていないため、**`403 Forbidden` が返れば設置は成功**
    （config.php の読み込み・シークレット照合まで正しく動いている）。
 
 2. **共有シークレットが一致しているか**
    ```bash
-   curl -i "https://<ドメイン>/paypay-relay/paypay-relay.php?action=unknown" \
+   curl -i "https://<Xserverを向いているホスト名>/paypay-relay/paypay-relay.php?action=unknown" \
      -H "X-Relay-Secret: <RELAY_SHARED_SECRETの値>"
    ```
    シークレットが正しければ `400 Bad Request`（`Unknown action`）が返る。ここで403のままなら
@@ -173,7 +186,10 @@ PayPay QRCodeDelete（`DELETE /v2/codes/{codeId}`）を呼び出し、未決済�
 
 ## 6. トラブルシューティング
 
-- **403が常に返る**: `config.php` の `RELAY_SHARED_SECRET` とVercelの
+- **403が返り、レスポンスヘッダーに `Server: Vercel` がある**: 中継ではなくVercelに
+  アクセスしている。`PAYPAY_RELAY_URL` のホスト名がVercelを向いているドメイン
+  （`mosscountry.com`）になっているのが原因。Xserverを向いているホスト名に直す（手順1の注意参照）。
+- **403が常に返る（`Server: Vercel` ではない）**: `config.php` の `RELAY_SHARED_SECRET` とVercelの
   `PAYPAY_RELAY_SECRET` が一致しているか確認する。
 - **PayPay APIから `UNAUTHORIZED` 系のエラーが返る**: `PAYPAY_API_KEY` /
   `PAYPAY_API_SECRET` / `PAYPAY_MERCHANT_ID` の設定、および固定IPがPayPay for Business側に
