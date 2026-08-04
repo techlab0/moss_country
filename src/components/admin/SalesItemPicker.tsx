@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // 商品編集/新規登録フォームで「この商品のEC購入を売上集計のどの項目に合算するか」を選ぶ
-// 検索式コンボボックス。既存の売上項目一覧APIを使い、その場で新規項目も追加できる。
+// ドロップダウン。既存の売上項目一覧APIを使い、一覧に無ければその場で新規項目も追加できる。
+//
+// 商品名の入力より先にここで項目を選ぶ運用にしている（フォームの先頭に配置）。
+// 項目を選ぶと呼び出し側が商品名を自動入力するため、同じ商品を別名で二重登録するのを防げる。
 
 export interface SalesItem {
   _id: string;
@@ -24,27 +27,30 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'other', label: 'その他' },
 ];
 
-function categoryLabel(value: string): string {
-  return CATEGORY_OPTIONS.find((c) => c.value === value)?.label ?? value;
+// ドロップダウンで「新規項目を追加」を選んだことを表す番兵値（Sanityの_idと衝突しない値）
+const NEW_ITEM_VALUE = '__new__';
+
+function optionLabel(item: SalesItem): string {
+  return item.pricingType === 'fixed' && item.unitPrice
+    ? `${item.name}（¥${item.unitPrice.toLocaleString()}）`
+    : item.name;
 }
 
 interface SalesItemPickerProps {
   salesItemId: string | null;
-  onChange: (salesItemId: string | null) => void;
+  /** 選択された項目そのものも渡す（呼び出し側が商品名や価格を自動入力できるようにするため） */
+  onChange: (salesItemId: string | null, item?: SalesItem | null) => void;
 }
 
 export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps) {
   const [items, setItems] = useState<SalesItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newCategory, setNewCategory] = useState('product');
   const [newName, setNewName] = useState('');
   const [newPricingType, setNewPricingType] = useState<'fixed' | 'variable'>('fixed');
   const [newUnitPrice, setNewUnitPrice] = useState('');
   const [creating, setCreating] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -62,36 +68,26 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
     };
   }, []);
 
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  // 選択中の項目が無効化済みでも選択肢から消えないよう、有効な項目に加えて現在値も残す
+  const selectableItems = items.filter((item) => item.isActive || item._id === salesItemId);
 
-  const selected = salesItemId ? items.find((i) => i._id === salesItemId) : undefined;
+  const groups = CATEGORY_OPTIONS.map((category) => ({
+    ...category,
+    items: selectableItems
+      .filter((item) => item.category === category.value)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name, 'ja')),
+  })).filter((group) => group.items.length > 0);
 
-  const candidates = items
-    .filter((item) => {
-      if (!item.isActive) return false;
-      if (!query.trim()) return true;
-      const haystack = `${categoryLabel(item.category)} ${item.name}`.toLowerCase();
-      return haystack.includes(query.trim().toLowerCase());
-    })
-    .slice(0, 30);
-
-  const handleSelect = (item: SalesItem) => {
-    onChange(item._id);
-    setQuery('');
-    setOpen(false);
-  };
-
-  const handleClear = () => {
-    onChange(null);
-    setQuery('');
+  const handleSelectChange = (value: string) => {
+    if (value === NEW_ITEM_VALUE) {
+      setShowNewForm(true);
+      return;
+    }
+    if (!value) {
+      onChange(null, null);
+      return;
+    }
+    onChange(value, items.find((item) => item._id === value) ?? null);
   };
 
   const handleCreate = async () => {
@@ -115,11 +111,10 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
       if (!res.ok) throw new Error('作成に失敗しました');
       const { item } = await res.json();
       setItems((prev) => [...prev, item]);
-      onChange(item._id);
+      onChange(item._id, item);
       setShowNewForm(false);
       setNewName('');
       setNewUnitPrice('');
-      setOpen(false);
     } catch (err) {
       console.error(err);
       alert('売上項目の作成に失敗しました');
@@ -129,71 +124,32 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         売上明細の項目（集計での商品名）
       </label>
       <p className="text-xs text-gray-500 mb-2">
-        この商品がEC購入されたとき、売上集計の「商品別明細」でどの項目に合算するかを指定します。未設定の場合は商品名でそのまま表示されます。
+        この商品がEC購入されたとき、売上集計の「商品別明細」でどの項目に合算するかを指定します。先にここで項目を選ぶと、商品名が自動で入力されます。
       </p>
 
-      {selected ? (
-        <div className="flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 bg-gray-50">
-          <span className="text-sm text-gray-900">
-            {categoryLabel(selected.category)} / {selected.name}
-          </span>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="text-gray-400 hover:text-gray-600 text-sm"
-          >
-            ✕ クリア
-          </button>
-        </div>
-      ) : (
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder={loading ? '読み込み中...' : '項目名やカテゴリで検索'}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      )}
-
-      {open && !selected && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {candidates.length > 0 ? (
-            candidates.map((item) => (
-              <button
-                key={item._id}
-                type="button"
-                onClick={() => handleSelect(item)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b last:border-0"
-              >
-                <span className="text-gray-500">{categoryLabel(item.category)}</span>
-                {' / '}
-                <span className="text-gray-900">{item.name}</span>
-              </button>
-            ))
-          ) : (
-            <p className="px-3 py-2 text-sm text-gray-500">該当する項目がありません</p>
-          )}
-        </div>
-      )}
-
-      <div className="mt-2">
-        <button
-          type="button"
-          onClick={() => setShowNewForm((prev) => !prev)}
-          className="text-sm text-moss-green hover:underline"
-        >
-          {showNewForm ? '− 新規項目の追加を閉じる' : '+ 新規項目を追加'}
-        </button>
-      </div>
+      <select
+        value={salesItemId ?? ''}
+        onChange={(e) => handleSelectChange(e.target.value)}
+        disabled={loading}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+      >
+        <option value="">{loading ? '読み込み中...' : '未設定（商品名でそのまま集計）'}</option>
+        {groups.map((group) => (
+          <optgroup key={group.value} label={group.label}>
+            {group.items.map((item) => (
+              <option key={item._id} value={item._id}>
+                {optionLabel(item)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        <option value={NEW_ITEM_VALUE}>＋ 新規項目を追加...</option>
+      </select>
 
       {showNewForm && (
         <div className="mt-2 p-3 border border-gray-200 rounded-md bg-gray-50 space-y-3">
@@ -247,7 +203,14 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
               </div>
             )}
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowNewForm(false)}
+              className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-100"
+            >
+              キャンセル
+            </button>
             <button
               type="button"
               onClick={handleCreate}

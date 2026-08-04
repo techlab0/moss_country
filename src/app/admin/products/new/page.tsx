@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
 import { suggestReadingFromName } from '@/lib/productSort';
-import { SalesItemPicker } from '@/components/admin/SalesItemPicker';
+import { SalesItemPicker, type SalesItem } from '@/components/admin/SalesItemPicker';
 
 interface SanityImageRef {
   _type: 'image';
@@ -61,6 +61,9 @@ const NewProductPage = () => {
     featured: false,
     salesItemId: null,
   });
+  // 売上項目の選択によって商品名を自動入力した場合、その値を覚えておく。
+  // 手入力された商品名を勝手に上書きしないための判定に使う。
+  const [autoFilledName, setAutoFilledName] = useState<string | null>(null);
 
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
@@ -121,6 +124,26 @@ const NewProductPage = () => {
     }
   };
 
+  // 売上項目を選んだら商品名を自動入力する（同じ商品を別名で二重登録するのを防ぐ）。
+  // ただし手入力された商品名は上書きしない。上書きしてよいのは「未入力」か
+  // 「前回の自動入力のまま」の場合だけ。
+  const handleSalesItemChange = (salesItemId: string | null, item?: SalesItem | null) => {
+    setFormData(prev => {
+      const canAutofill = !prev.name.trim() || prev.name === autoFilledName;
+      if (!item || !canAutofill) {
+        return { ...prev, salesItemId };
+      }
+      return {
+        ...prev,
+        salesItemId,
+        name: item.name,
+        nameReading: prev.nameReading.trim() ? prev.nameReading : suggestReadingFromName(item.name) ?? '',
+        slug: generateProductSlug(item.name),
+      };
+    });
+    setAutoFilledName(item ? item.name : null);
+  };
+
   const handleNameChange = (name: string) => {
     setFormData(prev => {
       // ふりがなが未入力のときだけ、ひらがな/カタカナ名から機械的に補完する（手動入力を優先）
@@ -151,6 +174,13 @@ const NewProductPage = () => {
 
       <div className="bg-white shadow rounded-lg">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* 売上項目を先に選ぶ運用にしている。項目を選べば商品名が自動で入り、
+              同じ商品が別名でEC・店頭に二重登録されるのを防げる。 */}
+          <SalesItemPicker
+            salesItemId={formData.salesItemId}
+            onChange={handleSalesItemChange}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -294,11 +324,6 @@ const NewProductPage = () => {
               </select>
             </div>
           </div>
-
-          <SalesItemPicker
-            salesItemId={formData.salesItemId}
-            onChange={(salesItemId) => setFormData((prev) => ({ ...prev, salesItemId }))}
-          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

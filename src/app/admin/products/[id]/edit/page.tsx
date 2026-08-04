@@ -237,6 +237,12 @@ export default function EditProductPage() {
 
       <div className="bg-white shadow rounded-lg">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* 新規登録画面と同じく売上項目を先頭に置く（既存商品では商品名を上書きしない） */}
+          <SalesItemPicker
+            salesItemId={formData.salesItemId}
+            onChange={(salesItemId) => setFormData((prev) => ({ ...prev, salesItemId }))}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">商品名 *</label>
@@ -363,11 +369,6 @@ export default function EditProductPage() {
               </select>
             </div>
           </div>
-
-          <SalesItemPicker
-            salesItemId={formData.salesItemId}
-            onChange={(salesItemId) => setFormData((prev) => ({ ...prev, salesItemId }))}
-          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">使用材料 (カンマ区切り)</label>
