@@ -6,6 +6,9 @@ import { InventoryService } from '@/lib/inventory';
 import { createOrder, updateOrderStatus } from '@/lib/orders';
 import { isCarrierId } from '@/lib/shipping';
 import { assertPurchaseAllowed } from '@/lib/purchaseLock';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { buildReceiptItemLines, formatShippingAddress } from '@/lib/orderReceipt';
+import { CARRIER_LABELS } from '@/lib/shipping';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 export async function POST(request: NextRequest) {
@@ -178,6 +181,58 @@ export async function POST(request: NextRequest) {
       } catch (inventoryError) {
         console.error('Failed to finalize inventory after successful payment:', inventoryError);
         // 決済は既に成立しているため処理は継続する（在庫は管理画面で手動調整が必要）
+      }
+    }
+
+    // 注文確認メール。このルートで決済が完結するため、Webhook側のメール送信は
+    // 「既に paymentStatus: 'paid'」の重複ガードに掛かって実行されない。
+    // したがってカード決済の確認メールはここで送る必要がある。
+    // 決済は既に成立しているので、送信に失敗しても成功レスポンスを返す。
+    if (customerData.email) {
+      try {
+        const customerName = [customerData.lastName, customerData.firstName].filter(Boolean).join(' ');
+        await sendMail({
+          to: customerData.email,
+          // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
+          replyTo: STORE_EMAIL,
+          // 店舗にも控えを送る（お客様に届かない事態を店舗側で検知できるようにするため）
+          bcc: STORE_EMAIL,
+          subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${orderNumber})`,
+          text: [
+            customerName ? `${customerName} 様` : 'お客様',
+            '',
+            'この度はMOSS COUNTRYにてご注文いただき、誠にありがとうございます。',
+            'クレジットカードでのお支払いが完了しましたのでご確認ください。',
+            '',
+            `注文番号: ${orderNumber}`,
+            '',
+            '【ご注文内容】',
+            ...buildReceiptItemLines(
+              cart.items.map(item => ({
+                name: item.product.name,
+                variant: item.variant?.name,
+                quantity: item.quantity,
+                price: item.price,
+              }))
+            ),
+            '',
+            `小計: ¥${totals.subtotal.toLocaleString()}`,
+            `送料: ¥${totals.shippingCost.toLocaleString()}`,
+            `消費税: ¥${totals.tax.toLocaleString()}`,
+            `合計: ¥${totals.total.toLocaleString()}`,
+            '',
+            'お支払い方法: クレジットカード',
+            shippingCarrier ? `配送業者: ${CARRIER_LABELS[shippingCarrier] ?? shippingCarrier}` : null,
+            '',
+            '【お届け先】',
+            formatShippingAddress(orderData.shippingAddress),
+            '',
+            '----',
+            'MOSS COUNTRY',
+          ].filter((line): line is string => line !== null).join('\n'),
+        });
+      } catch (mailError) {
+        console.error(`注文確認メールの送信に失敗しました (orderNumber: ${orderNumber}):`, mailError);
       }
     }
 
