@@ -1,8 +1,25 @@
 // 在庫管理システム - Sanity CMS連携
 // 決済前の在庫確認など「今この瞬間の正確な在庫数」が必須の処理のため、
 // CDNキャッシュが効く client ではなく、常に最新を返す writeClient を使う
+import { revalidateTag } from 'next/cache';
 import { writeClient as client } from '@/lib/sanity';
 import type { Product } from '@/types/ecommerce';
+
+/**
+ * 在庫を変更したあと、公開ページ（商品一覧・商品詳細）のキャッシュを破棄する。
+ * これらは `products` タグ付きで60秒キャッシュされるため、これを呼ばないと購入で
+ * 売り切れた商品が最大60秒「在庫あり」のまま表示され続ける。
+ *
+ * revalidateTag はリクエストのライフサイクル内でのみ有効なため、
+ * 万一それ以外から呼ばれても在庫更新自体は止めないようにする。
+ */
+function revalidateProductCache(): void {
+  try {
+    revalidateTag('products');
+  } catch (error) {
+    console.warn('在庫更新後の商品キャッシュ破棄に失敗しました:', error);
+  }
+}
 
 export interface InventoryUpdate {
   productId: string;
@@ -112,6 +129,7 @@ export class InventoryService {
         .setIfMissing({ reserved: 0 })
         .inc({ reserved: quantity })
         .commit();
+      revalidateProductCache();
 
       console.log(`在庫予約成功: ${productId} - ${quantity}個予約`);
       
@@ -145,6 +163,7 @@ export class InventoryService {
           .setIfMissing({ reserved: 0 })
           .inc({ reserved: -releaseAmount })
           .commit();
+        revalidateProductCache();
 
         console.log(`予約在庫解放: ${productId} - ${releaseAmount}個解放`);
         
@@ -193,6 +212,7 @@ export class InventoryService {
           reserved: Math.min(quantity, currentReserved)
         })
         .commit();
+      revalidateProductCache();
 
       console.log(`購入確定: ${productId} - ${quantity}個販売完了`);
       
@@ -237,6 +257,7 @@ export class InventoryService {
         .setIfMissing({ stockQuantity: 0 })
         .dec({ stockQuantity: applied })
         .commit();
+      revalidateProductCache();
 
       await this.logInventoryChange({
         productId,
@@ -260,6 +281,7 @@ export class InventoryService {
         .setIfMissing({ stockQuantity: 0 })
         .inc({ stockQuantity: quantity })
         .commit();
+      revalidateProductCache();
 
       console.log(`在庫補充: ${productId} - ${quantity}個追加`);
       
