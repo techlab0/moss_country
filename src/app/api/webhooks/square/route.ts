@@ -4,7 +4,7 @@ import { verifyWebhookSignature, getPayment, getOrder } from '@/lib/square'
 import { writeClient as client } from '@/lib/sanity'
 import { InventoryService } from '@/lib/inventory'
 import { sendMail, STORE_EMAIL } from '@/lib/mailer'
-import { getOrderBySquareId, updateOrderStatus, type Order } from '@/lib/orders'
+import { getOrderBySquareId, updateOrderStatus, type Order, type OrderStatus } from '@/lib/orders'
 import { syncChargeToSheetById } from '@/lib/salesBackup'
 import { applyStoreSaleInventory } from '@/lib/storeInventory'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
@@ -86,9 +86,15 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
     }
 
     // Square は同一Webhookを複数回配信することがあるため、
-    // 既に反映済みのステータスであれば処理をスキップする（在庫の二重減算・二重復元を防止）
-    if (payment.status === 'COMPLETED' && order.paymentStatus === 'paid') {
-      console.log(`Order ${order.orderNumber} is already marked as paid - skipping duplicate webhook`)
+    // 既に反映済みのステータスであれば処理をスキップする（在庫の二重減算・二重復元を防止）。
+    //
+    // 返金済み（refunded / partially_refunded）も対象に含める。SquareのPaymentは返金後も
+    // status: COMPLETED のままで、返金操作そのものが payment.updated を発火させるため、
+    // 'paid' だけを見ていると返金した注文が「支払い済み」に戻り、在庫が二重に減り、
+    // 注文確認メールまで再送されてしまう。
+    const FINALIZED_PAYMENT_STATUSES = ['paid', 'refunded', 'partially_refunded']
+    if (payment.status === 'COMPLETED' && FINALIZED_PAYMENT_STATUSES.includes(order.paymentStatus)) {
+      console.log(`Order ${order.orderNumber} is already finalized (${order.paymentStatus}) - skipping webhook`)
       return
     }
     if ((payment.status === 'FAILED' || payment.status === 'CANCELED') && order.paymentStatus === 'failed') {
@@ -210,8 +216,15 @@ async function handleOrderUpdate(event: SquareWebhookEvent) {
       return
     }
 
+    // 返金・キャンセル済みの注文は、返金操作で飛んでくる order.updated（Squareの
+    // Orderは返金後も state: COMPLETED のまま）でステータスを 'paid' に戻さない。
+    if (order.status === 'refunded' || order.status === 'cancelled') {
+      console.log(`Order ${order.orderNumber} is already ${order.status} - skipping order update webhook`)
+      return
+    }
+
     // Update order status based on Square order state
-    let newStatus = order.status
+    let newStatus: OrderStatus = order.status
     switch (squareOrder.state) {
       case 'COMPLETED':
         newStatus = 'paid'
