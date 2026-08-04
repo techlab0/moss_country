@@ -310,6 +310,32 @@ export async function getBookingsInDateRange(startDate: string, endDate: string)
 }
 
 /**
+ * プランごとの「未開催かつ確定済み」の予約件数を数える。
+ * プランを削除してよいかを管理画面で判断するために使う（削除しても既存予約は
+ * プラン名・金額をスナップショットで保持しているため壊れないが、警告は出したい）。
+ */
+export async function countUpcomingBookingsByPlan(fromDate: string): Promise<Record<string, number>> {
+  const { data, error } = await supabaseAdmin
+    .from('workshop_bookings')
+    .select('workshop_plan_id')
+    .eq('status', 'confirmed')
+    .gte('date', fromDate);
+
+  if (error) {
+    console.error('プラン別の予約件数の集計に失敗しました:', error);
+    return {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    const planId = (row as { workshop_plan_id: string | null }).workshop_plan_id;
+    if (!planId) continue;
+    counts[planId] = (counts[planId] || 0) + 1;
+  }
+  return counts;
+}
+
+/**
  * 予約をキャンセルする。Googleカレンダーイベントの削除は呼び出し元で行う
  * （このモジュールはSupabaseへのアクセスのみを担当するため）。
  * 失敗時はログを残したうえで例外をthrowする。

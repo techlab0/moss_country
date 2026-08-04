@@ -8,7 +8,7 @@ import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 // （営業日データは受付枠の受付可否を決める前提条件として参照する）。
 
 export default function WorkshopBookingsPage() {
-  const [activeTab, setActiveTab] = useState<'bookings' | 'slots'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'slots' | 'plans'>('bookings');
 
   return (
     <div className="space-y-6">
@@ -21,6 +21,7 @@ export default function WorkshopBookingsPage() {
           {[
             { key: 'bookings' as const, label: '予約一覧' },
             { key: 'slots' as const, label: '受付枠設定' },
+            { key: 'plans' as const, label: 'プラン設定' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -39,6 +40,7 @@ export default function WorkshopBookingsPage() {
 
       {activeTab === 'bookings' && <BookingsListTab />}
       {activeTab === 'slots' && <SlotSettingsTab />}
+      {activeTab === 'plans' && <PlanSettingsTab />}
     </div>
   );
 }
@@ -317,6 +319,278 @@ function getFirstDayOfMonth(year: number, month: number) {
 
 function formatDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// ===================== プラン設定タブ =====================
+// 予約画面（/workshop/booking）で選択できるプランの管理。実体はSanityの simpleWorkshop で、
+// 予約時の請求額もこの price をサーバー側で参照して再計算する（クライアント申告値は使わない）。
+
+interface WorkshopPlan {
+  _id: string;
+  title: string;
+  description?: string;
+  price?: number;
+  duration?: string;
+  upcomingBookingCount?: number;
+}
+
+interface PlanFormState {
+  title: string;
+  description: string;
+  price: string;
+  duration: string;
+}
+
+const emptyPlanForm: PlanFormState = { title: '', description: '', price: '', duration: '' };
+
+function PlanSettingsTab() {
+  const [plans, setPlans] = useState<WorkshopPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<PlanFormState>(emptyPlanForm);
+
+  const fetchPlans = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/workshop-plans');
+      if (!res.ok) throw new Error('プランの取得に失敗しました');
+      const data = await res.json();
+      setPlans(Array.isArray(data.plans) ? data.plans : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'プランの取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  const startCreate = () => {
+    setCreating(true);
+    setEditingId(null);
+    setForm(emptyPlanForm);
+  };
+
+  const startEdit = (plan: WorkshopPlan) => {
+    setCreating(false);
+    setEditingId(plan._id);
+    setForm({
+      title: plan.title || '',
+      description: plan.description || '',
+      price: plan.price != null ? String(plan.price) : '',
+      duration: plan.duration || '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setCreating(false);
+    setEditingId(null);
+    setForm(emptyPlanForm);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const isNew = creating;
+      const res = await fetch(isNew ? '/api/admin/workshop-plans' : `/api/admin/workshop-plans/${editingId}`, {
+        method: isNew ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          price: Number(form.price),
+          duration: form.duration,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '保存に失敗しました');
+      }
+      cancelEdit();
+      await fetchPlans();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (plan: WorkshopPlan) => {
+    const upcoming = plan.upcomingBookingCount || 0;
+    const warning =
+      upcoming > 0
+        ? `このプランには未開催の予約が${upcoming}件あります。既存の予約（プラン名・金額）はそのまま残りますが、今後このプランでの新規予約はできなくなります。`
+        : '';
+    if (!window.confirm(`${warning}プラン「${plan.title}」を削除しますか？この操作は取り消せません。`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/workshop-plans/${plan._id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '削除に失敗しました');
+      }
+      await fetchPlans();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '削除に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isFormOpen = creating || editingId !== null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <p className="text-sm text-gray-600">
+          予約画面で選べるプランを管理します。ここで設定した料金が、お客様の予約時の請求額になります。
+        </p>
+        <button
+          type="button"
+          onClick={startCreate}
+          disabled={saving}
+          className="px-4 py-2 text-sm font-medium text-white bg-moss-green rounded-md hover:opacity-90 disabled:opacity-50"
+        >
+          プランを追加
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>
+      )}
+
+      {isFormOpen && (
+        <div className="bg-white shadow rounded-lg p-4 space-y-3">
+          <h3 className="font-medium text-gray-900">{creating ? 'プランを追加' : 'プランを編集'}</h3>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">プラン名 *</label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="苔テラリウム作り体験"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">料金（円・1名あたり） *</label>
+              <input
+                type="number"
+                min={1}
+                value={form.price}
+                onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                placeholder="4000"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">所要時間</label>
+              <input
+                type="text"
+                value={form.duration}
+                onChange={(e) => setForm((prev) => ({ ...prev, duration: e.target.value }))}
+                placeholder="約90分"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">説明</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                placeholder="予約画面に表示される説明文です"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={saving}
+              className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 text-sm text-white bg-moss-green rounded-md hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? '保存中...' : '保存'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white shadow rounded-lg overflow-x-auto">
+        {loading ? (
+          <p className="px-4 py-6 text-sm text-gray-500 text-center">読み込み中...</p>
+        ) : plans.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-gray-500 text-center">
+            プランがありません。「プランを追加」から登録してください。
+          </p>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 text-gray-600">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">プラン名</th>
+                <th className="px-4 py-2 text-right font-medium">料金</th>
+                <th className="px-4 py-2 text-left font-medium">所要時間</th>
+                <th className="px-4 py-2 text-left font-medium">説明</th>
+                <th className="px-4 py-2 text-right font-medium">未開催の予約</th>
+                <th className="px-4 py-2 text-right font-medium"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {plans.map((plan) => (
+                <tr key={plan._id}>
+                  <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{plan.title}</td>
+                  <td className="px-4 py-3 text-right text-gray-900 whitespace-nowrap">
+                    {plan.price != null ? `¥${plan.price.toLocaleString()}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{plan.duration || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600 max-w-md">{plan.description || '—'}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{plan.upcomingBookingCount || 0}件</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(plan)}
+                        disabled={saving}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        編集
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(plan)}
+                        disabled={saving}
+                        className="px-3 py-1.5 text-xs font-medium text-red-700 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function SlotSettingsTab() {
