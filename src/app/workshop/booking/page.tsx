@@ -584,7 +584,10 @@ export default function WorkshopBookingPage() {
                       className="text-emerald-500"
                     />
                     <div>
-                      <p className="text-white font-medium">現地払い</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium">現地払い</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-700 text-stone-200">当日精算</span>
+                      </div>
                       <p className="text-stone-400 text-xs">当日、店頭にてお支払いください</p>
                     </div>
                   </label>
@@ -597,8 +600,11 @@ export default function WorkshopBookingPage() {
                       className="text-emerald-500"
                     />
                     <div>
-                      <p className="text-white font-medium">クレジットカード</p>
-                      <p className="text-stone-400 text-xs">オンラインで事前決済します</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium">クレジットカード</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-200">事前決済</span>
+                      </div>
+                      <p className="text-stone-400 text-xs">この画面でカード情報を入力して決済します</p>
                     </div>
                   </label>
                   {paypayEnabled && (
@@ -611,12 +617,22 @@ export default function WorkshopBookingPage() {
                         className="text-emerald-500"
                       />
                       <div>
-                        <p className="text-white font-medium">PayPay</p>
-                        <p className="text-stone-400 text-xs">PayPayアプリでオンライン事前決済します</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium">PayPay</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-200">事前決済</span>
+                        </div>
+                        <p className="text-stone-400 text-xs">PayPayの支払いページへ移動してお支払いいただきます</p>
                       </div>
                     </label>
                   )}
                 </div>
+
+                {paymentMethod !== 'on_site' && (
+                  <p className="mt-4 text-xs text-amber-200/90 bg-amber-950/30 border border-amber-800/40 rounded-lg p-3 leading-relaxed">
+                    事前決済をお選びの場合、お支払いが完了するまでご予約は仮押さえの状態です。
+                    お支払いが確認できない場合、ご予約をキャンセルさせていただくことがあります。
+                  </p>
+                )}
               </div>
 
               {submitUnavailable && (
