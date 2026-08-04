@@ -235,7 +235,9 @@ export default function BulkEditProductsPage() {
               const changed = original ? isChanged(row, original) : false;
               return (
                 <tr key={row._id} className={changed ? 'bg-amber-50' : undefined}>
-                  <td className="px-3 py-2 align-middle">
+                  {/* 商品名を折り返すとスマホで1行が3行分の高さになり一覧性が落ちるため、
+                      折り返さずテーブルごと横スクロールさせる */}
+                  <td className="px-3 py-2 align-middle whitespace-nowrap">
                     <Link
                       href={`/admin/products/${row._id}/edit`}
                       className="text-gray-900 hover:text-moss-green hover:underline"

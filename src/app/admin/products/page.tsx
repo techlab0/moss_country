@@ -289,33 +289,35 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* スマホでは見出しの下にボタンを2列で並べる。横並びのままだと幅が足りず、
+          ボタンの文字が縦積みになって潰れてしまうため。 */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">商品管理</h1>
           <p className="text-gray-600 mt-2">商品の登録・編集・公開設定</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
           <Link
             href="/admin/products/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
           >
             新商品登録
           </Link>
           <Link
             href="/admin/products/bulk"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             一括編集
           </Link>
           <Link
             href="/admin/cms"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             詳細CMS管理
           </Link>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             データ更新
           </button>
