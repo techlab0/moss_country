@@ -51,11 +51,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'この予約は既にキャンセル済みです' }, { status: 400 });
     }
 
-    // TODO(返金): credit_cardで決済済み(paymentStatus === 'paid')の予約をキャンセルする場合、
-    // 現時点ではSquareへの返金は自動実行しない（スコープ外）。
-    // 既存の src/lib/square.ts の refundPayment（src/app/api/admin/orders/[id]/refund/route.ts参照）を
-    // 流用して、squarePaymentIdに対する返金APIを別途呼び出す運用フローを想定する。
-    const needsManualRefund = booking.paymentMethod === 'credit_card' && booking.paymentStatus === 'paid';
+    // 支払い済みのオンライン決済（カード/PayPay）は、このキャンセルAPIでは返金しない。
+    // 返金は POST /api/admin/workshop-bookings/[id]/refund が担当する（返金＋キャンセルを行う）。
+    // ここでは「返金がまだ必要な状態か」を呼び出し元に伝えるだけにする。
+    const needsRefund = booking.paymentStatus === 'paid' && booking.paymentMethod !== 'on_site';
 
     if (booking.googleEventId) {
       await deleteBookingEvent(booking.googleEventId);
@@ -67,7 +66,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       booking: updated,
-      needsManualRefund,
+      needsRefund,
     });
   } catch (error) {
     console.error('ワークショップ予約キャンセルエラー:', error);

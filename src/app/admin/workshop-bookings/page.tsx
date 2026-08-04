@@ -86,6 +86,7 @@ function BookingsListTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'confirmed' | 'cancelled'>('all');
 
   const fetchBookings = useCallback(async () => {
@@ -110,6 +111,35 @@ function BookingsListTab() {
     fetchBookings();
   }, [fetchBookings]);
 
+  // 返金（Square/PayPay）。返金と同時に予約もキャンセルされ、枠とカレンダーが解放される。
+  const handleRefund = async (booking: Booking) => {
+    const methodLabel = booking.paymentMethod === 'paypay' ? 'PayPay' : 'クレジットカード';
+    const amountLabel = (booking.total ?? 0).toLocaleString();
+    if (
+      !window.confirm(
+        `予約「${booking.bookingNumber}」に ¥${amountLabel} を${methodLabel}へ返金します。
+返金と同時に予約はキャンセルされ、Googleカレンダーのイベントも削除されます。
+この操作は取り消せません。よろしいですか？`
+      )
+    ) {
+      return;
+    }
+    setRefundingId(booking.id);
+    try {
+      const res = await fetch(`/api/admin/workshop-bookings/${booking.id}/refund`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '返金に失敗しました');
+      }
+      alert(`返金しました（¥${(data.amount ?? booking.total ?? 0).toLocaleString()}）`);
+      await fetchBookings();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '返金に失敗しました');
+    } finally {
+      setRefundingId(null);
+    }
+  };
+
   const handleCancel = async (booking: Booking) => {
     if (
       !window.confirm(
@@ -126,11 +156,10 @@ function BookingsListTab() {
       if (!res.ok) {
         throw new Error(data.error || 'キャンセルに失敗しました');
       }
-      if (data.needsManualRefund) {
+      if (data.needsRefund) {
         alert(
           'キャンセルしました。\n' +
-          'この予約はクレジットカードで決済済みのため、返金は手動で行ってください' +
-          '（Squareダッシュボード、または注文の返金機能を使用）。'
+          'この予約は支払い済みです。返金する場合は「返金」ボタンから実行してください。'
         );
       } else {
         alert('キャンセルしました。');
@@ -228,15 +257,28 @@ function BookingsListTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {b.status === 'confirmed' && (
-                      <button
-                        onClick={() => handleCancel(b)}
-                        disabled={cancellingId === b.id}
-                        className="px-3 py-1.5 text-xs font-medium text-red-700 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
-                      >
-                        {cancellingId === b.id ? '処理中...' : 'キャンセル'}
-                      </button>
-                    )}
+                    <div className="flex justify-end gap-2">
+                      {/* オンラインで支払い済みの予約には返金（＝返金＋キャンセル）を出す。
+                          現地払い・未入金はキャンセルのみ。 */}
+                      {b.paymentStatus === 'paid' && b.paymentMethod !== 'on_site' && (
+                        <button
+                          onClick={() => handleRefund(b)}
+                          disabled={refundingId === b.id || cancellingId === b.id}
+                          className="px-3 py-1.5 text-xs font-medium text-white bg-orange-600 border border-orange-600 rounded-md hover:bg-orange-700 disabled:opacity-50"
+                        >
+                          {refundingId === b.id ? '返金中...' : '返金'}
+                        </button>
+                      )}
+                      {b.status === 'confirmed' && (
+                        <button
+                          onClick={() => handleCancel(b)}
+                          disabled={cancellingId === b.id || refundingId === b.id}
+                          className="px-3 py-1.5 text-xs font-medium text-red-700 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {cancellingId === b.id ? '処理中...' : 'キャンセル'}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
