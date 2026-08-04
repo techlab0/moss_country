@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { DATE_PATTERN, todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
+import { applyStoreSaleInventory } from '@/lib/storeInventory';
 import { storeTransactionToTxRow } from '@/lib/salesBackup';
 import { upsertTransactionRow } from '@/lib/googleSheets';
 
@@ -62,6 +63,14 @@ export async function POST(request: NextRequest) {
     // 取引作成のたびに加算すると二重加算になってしまう。そのためカウンタ加算はスキップする。
     if (!isHistorical) {
       await adjustDailyCounters(date, visitorCount, lineItems.length > 0 ? 1 : 0);
+
+      // EC商品が紐づく明細の在庫を引き落とす（過去分の一括入力では、その時点の販売は
+      // 既に現物が出ているため在庫は動かさない）。失敗しても会計は成立させる。
+      try {
+        await applyStoreSaleInventory(lineItems, `店頭会計 ${transaction._id}`);
+      } catch (inventoryError) {
+        console.error('店頭会計の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
+      }
     }
 
     // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため

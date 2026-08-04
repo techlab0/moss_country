@@ -6,10 +6,21 @@ import { refundPayment, deletePaymentLink } from '@/lib/square';
 import { cancelDynamicQr, getQrPaymentStatus, refundQrPayment } from '@/lib/paypay';
 import { adjustDailyCounters, jstDateOf } from '@/lib/storeSales';
 import { syncChargeToSheetById } from '@/lib/salesBackup';
+import { revertStoreSaleInventory, type StoreInventoryLine } from '@/lib/storeInventory';
 
 // 店頭QR決済のキャンセル（Square QR/POS・PayPay動的QR共通）。
 // - 未払い(pending): 決済リンク/QRを削除（ベストエフォート）して cancelled にし、購入組数を戻す
 // - 支払い済み(paid): 各決済手段の返金APIで全額返金し refunded にする（お客様に実際に返金される）
+// 返金時に、決済確定時へ引き落とした在庫を戻す。
+// 在庫のずれは棚卸しで調整する運用なので、失敗しても返金処理そのものは成立させる。
+async function restoreChargeInventory(lineItems: StoreInventoryLine[] | undefined, chargeId: string) {
+  try {
+    await revertStoreSaleInventory(lineItems || [], `店頭決済の返金 ${chargeId}`);
+  } catch (inventoryError) {
+    console.error('店頭決済の返金時の在庫戻しに失敗しました（棚卸しで調整してください）:', inventoryError);
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,8 +42,12 @@ export async function POST(
       paypayCodeId?: string;
       paypayMerchantPaymentId?: string;
       createdAt?: string;
+      lineItems?: StoreInventoryLine[];
     } | null = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && _id == $id][0]{ _id, status, amount, method, squarePaymentId, paymentLinkId, paypayCodeId, paypayMerchantPaymentId, createdAt }`,
+      `*[_type == "inStoreCharge" && _id == $id][0]{
+        _id, status, amount, method, squarePaymentId, paymentLinkId, paypayCodeId, paypayMerchantPaymentId, createdAt,
+        lineItems[]{ quantity, "salesItemId": salesItem._ref }
+      }`,
       { id }
     );
     if (!charge) {
@@ -100,6 +115,9 @@ export async function POST(
           .patch(id)
           .set({ status: 'refunded', paypayRefundId: refund.refundId })
           .commit();
+
+        // 支払い済みの会計を返金したので、引き落とした在庫を戻す
+        await restoreChargeInventory(charge.lineItems, id);
         // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
         // 完了を待つ。失敗してもこの返金処理・レスポンスには一切影響させない）
         try {
@@ -122,6 +140,9 @@ export async function POST(
         .patch(id)
         .set({ status: 'refunded', refundId: refund.id })
         .commit();
+
+      // 支払い済みの会計を返金したので、引き落とした在庫を戻す
+      await restoreChargeInventory(charge.lineItems, id);
       // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
       // 完了を待つ。失敗してもこの返金処理・レスポンスには一切影響させない）
       try {

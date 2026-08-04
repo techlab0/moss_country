@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
+import { applyStoreSaleInventory, revertStoreSaleInventory, type StoreInventoryLine } from '@/lib/storeInventory';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
@@ -14,13 +15,17 @@ interface ExistingTransaction {
   subtotal?: number;
   discountType?: DiscountType;
   discountValue?: number;
+  // 在庫を戻すために、変更前の明細（売上項目と数量）も取得する
+  lineItems?: StoreInventoryLine[];
+  source?: string;
 }
 
 async function fetchExisting(id: string): Promise<ExistingTransaction | null> {
   return writeClient.fetch(
     `*[_type == "storeTransaction" && _id == $id][0]{
       _id, date, visitorCount, "itemCount": count(lineItems),
-      subtotal, discountType, discountValue
+      subtotal, discountType, discountValue, source,
+      lineItems[]{ quantity, "salesItemId": salesItem._ref }
     }`,
     { id }
   );
@@ -99,6 +104,17 @@ export async function PATCH(
     const transaction = await writeClient.patch(id).set(updates).commit();
     await adjustDailyCounters(existing.date, visitorDelta, groupDelta);
 
+    // 明細を差し替えた場合は、旧明細分の在庫を戻してから新明細分を引き落とす。
+    // 過去分の一括入力（source: 'historical'）は登録時に在庫を動かしていないため対象外。
+    if (lineItemsChanged && existing.source !== 'historical') {
+      try {
+        await revertStoreSaleInventory(existing.lineItems || [], `店頭会計の修正 ${id}`);
+        await applyStoreSaleInventory((updates.lineItems as StoreInventoryLine[]) || [], `店頭会計の修正 ${id}`);
+      } catch (inventoryError) {
+        console.error('店頭会計修正時の在庫調整に失敗しました（棚卸しで調整してください）:', inventoryError);
+      }
+    }
+
     return NextResponse.json({ transaction });
   } catch (error) {
     console.error('店頭取引更新エラー:', error);
@@ -130,6 +146,15 @@ export async function DELETE(
       -(existing.visitorCount || 0),
       (existing.itemCount || 0) > 0 ? -1 : 0
     );
+
+    // 誤登録の取り消しなので、引き落とした在庫を戻す（過去分の一括入力は元々動かしていない）
+    if (existing.source !== 'historical') {
+      try {
+        await revertStoreSaleInventory(existing.lineItems || [], `店頭会計の削除 ${id}`);
+      } catch (inventoryError) {
+        console.error('店頭会計削除時の在庫戻しに失敗しました（棚卸しで調整してください）:', inventoryError);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

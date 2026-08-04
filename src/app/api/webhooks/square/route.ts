@@ -6,6 +6,7 @@ import { InventoryService } from '@/lib/inventory'
 import { sendMail, STORE_EMAIL } from '@/lib/mailer'
 import { getOrderBySquareId, updateOrderStatus, type Order } from '@/lib/orders'
 import { syncChargeToSheetById } from '@/lib/salesBackup'
+import { applyStoreSaleInventory } from '@/lib/storeInventory'
 import type { SquareWebhookEvent } from '@/types/ecommerce'
 
 export async function POST(request: NextRequest) {
@@ -118,14 +119,15 @@ async function handlePaymentUpdate(event: SquareWebhookEvent) {
 
 /**
  * 店頭QRコード決済（inStoreCharge）の決済結果を反映する。
- * ECの注文と異なり在庫操作は不要。金額・ステータスのみ更新する。
+ * ECの注文と違い在庫の予約は無いが、EC商品が紐づく明細については確定時に在庫を引き落とす。
  */
 async function handleInStoreChargeUpdate(payment: { status: string; id: string; order_id?: string }, paymentId: string) {
   try {
     const chargeQuery = `
       *[_type == "inStoreCharge" && (squareOrderId == $orderId || squarePaymentId == $paymentId)][0] {
         _id,
-        status
+        status,
+        lineItems[]{ quantity, "salesItemId": salesItem._ref }
       }
     `
     const charge = await client.fetch(chargeQuery, {
@@ -154,6 +156,14 @@ async function handleInStoreChargeUpdate(payment: { status: string; id: string; 
         })
         .commit()
       console.log(`In-store charge ${charge._id} marked as paid`)
+
+      // EC商品が紐づく明細の在庫を引き落とす。上の pending チェックにより二重実行はされない。
+      try {
+        await applyStoreSaleInventory(charge.lineItems || [], `店頭QR決済 ${charge._id}`)
+      } catch (inventoryError) {
+        console.error('店頭QR決済の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError)
+      }
+
       // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
       // 完了を待つ。失敗してもこのwebhook処理には一切影響させない）
       try {

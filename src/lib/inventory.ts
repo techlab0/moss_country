@@ -212,6 +212,46 @@ export class InventoryService {
     }
   }
 
+  /**
+   * 店頭販売による在庫の引き落とし。ECと違い予約（reserved）を経ないため、実在庫だけを減らす。
+   *
+   * 在庫数が足りない場合でも「販売そのもの」は既に店頭で成立しているので、エラーにはせず
+   * 減らせる分だけ減らして0で止める（マイナス在庫はストアフロントの在庫判定を壊すため）。
+   * データのずれは月末の棚卸しで目視調整する運用。
+   */
+  static async recordStoreSale(productId: string, quantity: number, reason: string): Promise<boolean> {
+    try {
+      const product = await client.fetch(
+        `*[_type == "product" && _id == $productId][0]{ stockQuantity }`,
+        { productId }
+      );
+      const currentStock = product?.stockQuantity || 0;
+      const applied = Math.min(quantity, currentStock);
+      if (applied <= 0) {
+        console.warn(`店頭販売の在庫引き落としをスキップ: ${productId} - 在庫が0のため`);
+        return false;
+      }
+
+      await client
+        .patch(productId)
+        .setIfMissing({ stockQuantity: 0 })
+        .dec({ stockQuantity: applied })
+        .commit();
+
+      await this.logInventoryChange({
+        productId,
+        quantityChange: -applied,
+        operation: 'purchase',
+        reason,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('店頭販売の在庫引き落としエラー:', error);
+      return false;
+    }
+  }
+
   // 在庫補充
   static async restockProduct(productId: string, quantity: number, reason?: string): Promise<boolean> {
     try {

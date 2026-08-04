@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getQrPaymentStatus } from '@/lib/paypay';
 import { syncChargeToSheetById } from '@/lib/salesBackup';
+import { applyStoreSaleInventory, type StoreInventoryLine } from '@/lib/storeInventory';
 
 // PayPay動的QR決済の状況を確定させるための明示ポーリングエンドポイント。
 // Squareのwebhook（/api/webhooks/square）に相当する仕組みがPayPayには無いため、
@@ -22,8 +23,12 @@ export async function GET(
       _id: string;
       status: string;
       paypayMerchantPaymentId?: string;
+      lineItems?: StoreInventoryLine[];
     } | null = await writeClient.fetch(
-      `*[_type == "inStoreCharge" && _id == $id][0]{ _id, status, paypayMerchantPaymentId }`,
+      `*[_type == "inStoreCharge" && _id == $id][0]{
+        _id, status, paypayMerchantPaymentId,
+        lineItems[]{ quantity, "salesItemId": salesItem._ref }
+      }`,
       { id }
     );
 
@@ -47,6 +52,14 @@ export async function GET(
         .patch(id)
         .set({ status: 'paid', paidAt: new Date().toISOString() })
         .commit();
+      // EC商品が紐づく明細の在庫を引き落とす。ここへ来るのは status が pending の場合だけなので
+      // 二重に引き落とされることはない。失敗しても決済確定は覆さない。
+      try {
+        await applyStoreSaleInventory(charge.lineItems || [], `店頭QR決済 ${id}`);
+      } catch (inventoryError) {
+        console.error('店頭QR決済の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
+      }
+
       // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
       // 完了を待つ。失敗してもこの決済確定処理・レスポンスには一切影響させない）
       try {
