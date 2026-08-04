@@ -68,6 +68,8 @@ async function verifyBookingPayment(bookingNumber: string): Promise<VerifyResult
       await sendMail({
         to: booking.customerEmail,
         replyTo: STORE_EMAIL,
+        // 店舗にも控えを送る（お客様に届かない事態を店舗側で検知できるようにするため）
+        bcc: STORE_EMAIL,
         subject: `【MOSS COUNTRY】お支払い完了 (予約番号: ${bookingNumber})`,
         text: [
           `${booking.customerName || 'お客様'} 様`,

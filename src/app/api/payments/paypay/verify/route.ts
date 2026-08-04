@@ -94,6 +94,8 @@ async function verifyPaypayOrder(orderNumber: string): Promise<{ httpStatus: num
             to: order.customerEmail,
             // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
             replyTo: STORE_EMAIL,
+            // 店舗にも控えを送る（お客様に届かない事態を店舗側で検知できるようにするため）
+            bcc: STORE_EMAIL,
             subject: `【MOSS COUNTRY】ご注文確認 (注文番号: ${order.orderNumber})`,
             text: [
               customerName ? `${customerName} 様` : 'お客様',

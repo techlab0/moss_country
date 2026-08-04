@@ -117,6 +117,8 @@ export async function POST(
       await sendMail({
         to: booking.customerEmail,
         replyTo: STORE_EMAIL,
+        // 店舗にも控えを送る（お客様に届かない事態を店舗側で検知できるようにするため）
+        bcc: STORE_EMAIL,
         subject: `【MOSS COUNTRY】ご予約のキャンセルと返金のお知らせ (予約番号: ${booking.bookingNumber})`,
         text: [
           `${booking.customerName || 'お客様'} 様`,
