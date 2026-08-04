@@ -130,7 +130,11 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
         },
         featured,
         inStock,
-        dimensions,
+        // 商品スキーマのフィールド名は size。dimensions のまま選択すると常にundefinedになる。
+        // weight / fragile とあわせて送料計算に必要（src/app/api/products/route.ts と同じ理由）
+        "dimensions": size,
+        weight,
+        fragile,
         "salesItemId": salesItem._ref
       }`,
       { start: offset, end: offset + limit - 1 },

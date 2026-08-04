@@ -35,7 +35,12 @@ export async function GET() {
         },
         featured,
         inStock,
+        // 送料の見積もりに必須。欠けているとカート内の商品が寸法・重量・割れ物フラグを
+        // 持たないまま保存され、チェックアウトの表示送料がサーバーの再計算額より安くなる
+        // （お客様が表示より高い額を請求される）。
         "dimensions": size,
+        weight,
+        fragile,
         "salesItemId": salesItem._ref
       }`,
       {},
