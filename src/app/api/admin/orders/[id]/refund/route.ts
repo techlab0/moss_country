@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { verifyAdminSession } from '@/lib/auth';
 import { getOrderById, updateOrderStatus } from '@/lib/orders';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { restoreOrderInventory } from '@/lib/orderInventory';
 import { refundPayment as refundSquarePayment } from '@/lib/square';
 import { getPaymentStatus as getPaypayPaymentStatus, refundPayment as refundPaypayPayment } from '@/lib/paypayWebClient';
@@ -94,6 +95,33 @@ export async function POST(
       paymentStatus: 'refunded',
       refundId,
     });
+
+    // 返金完了のお知らせ。返金は既に成立しているため、送信に失敗しても処理は成功として返す。
+    // 店舗にもBCCで控えを送り、お客様に届かない場合に気づけるようにする。
+    if (order.customerEmail) {
+      const customerName = [order.customerLastName, order.customerFirstName].filter(Boolean).join(' ');
+      await sendMail({
+        to: order.customerEmail,
+        replyTo: STORE_EMAIL,
+        bcc: STORE_EMAIL,
+        subject: `【MOSS COUNTRY】ご返金のお知らせ (注文番号: ${order.orderNumber})`,
+        text: [
+          customerName ? `${customerName} 様` : 'お客様',
+          '',
+          'ご注文について、お支払いいただいた全額を返金いたしました。',
+          '',
+          `注文番号: ${order.orderNumber}`,
+          `返金金額: ¥${(order.total ?? 0).toLocaleString()}`,
+          `返金方法: ${order.paymentMethod === 'paypay' ? 'PayPay' : 'クレジットカード'}`,
+          '',
+          '返金の反映までにはお支払い方法により数日かかる場合があります。',
+          'ご不明な点がございましたら本メールへ返信にてお問い合わせください。',
+          '',
+          '----',
+          'MOSS COUNTRY',
+        ].join('\n'),
+      });
+    }
 
     return NextResponse.json({
       success: true,
