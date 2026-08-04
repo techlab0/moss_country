@@ -137,7 +137,7 @@ export default function WorkshopPage() {
               variant="primary" 
               size="lg"
               className="bg-white !text-moss-green hover:bg-moss-green hover:!text-white"
-              onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
+              onClick={() => window.location.href = '/workshop/booking'}
             >
               今すぐ予約する
             </Button>
