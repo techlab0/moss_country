@@ -3,6 +3,8 @@ import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { consumeDistributedRateLimit } from '@/lib/distributedRateLimit';
 import { getSimpleWorkshopById } from '@/lib/sanity';
 import { convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
+import { createWebPayment, isPaypayConfigured } from '@/lib/paypayWebClient';
+import { buildPaymentDescription } from '@/lib/orderReceipt';
 import { createBookingEvent, deleteBookingEvent } from '@/lib/googleCalendar';
 import { isSlotStillAvailable, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import {
@@ -175,7 +177,11 @@ function buildConfirmationEmailBody(params: {
       ? params.paymentStatus === 'paid'
         ? 'クレジットカード（決済完了）'
         : 'クレジットカード（決済処理中）'
-      : '現地精算（当日店舗にてお支払いください）';
+      : params.paymentMethod === 'paypay'
+        ? params.paymentStatus === 'paid'
+          ? 'PayPay（決済完了）'
+          : 'PayPay（お支払い手続き中）'
+        : '現地精算（当日店舗にてお支払いください）';
 
   return [
     `${params.customerName} 様`,
@@ -581,9 +587,58 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-    // on_site / paypay はpayment_status: 'pending'のまま（現地精算）。
-    // TODO(paypay): 現時点ではon_siteと同様「現地/別途」扱い。オンラインPayPay決済（動的QR）は次フェーズで、
-    // src/lib/paypay.ts の店頭動的QR決済の仕組みを流用する想定。
+    // ---- PayPay（オンライン事前決済）----
+    // 予約は先に確定させ、この後お客様をPayPayの支払いページへ送る。支払い結果は
+    // 戻りページから /api/workshop/paypay/verify を呼んで確定させる（PayPayにWebhookが無いため）。
+    let paypayPaymentUrl: string | undefined;
+    if (paymentMethod === 'paypay' && paymentStatus !== 'paid') {
+      if (!isPaypayConfigured()) {
+        try {
+          await rollbackReservation(booking.id, booking.googleEventId);
+        } catch (rollbackError) {
+          console.error('ワークショップ予約: PayPay未設定時のロールバックに失敗しました:', rollbackError);
+        }
+        return NextResponse.json(
+          { error: 'PayPay決済は現在ご利用いただけません。現地払いをご利用ください。' },
+          { status: 503 }
+        );
+      }
+
+      // 同じ冪等キーでの再送では予約が既に存在する。PayPayは同じ merchantPaymentId での
+      // 二重発行を受け付けないため、決済リンクは新規作成時だけ発行し、再送時は戻りページで
+      // 支払い状況を確認させる。
+      if (reservation.created) {
+        try {
+          const siteBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+          const webPayment = await createWebPayment({
+            merchantPaymentId: bookingNumber,
+            amountJpy: total,
+            orderDescription: buildPaymentDescription({
+              items: [{ name: plan.title, quantity: partySize as number, price: plan.price }],
+              total,
+            }),
+            redirectUrl: `${siteBaseUrl}/workshop/booking/paypay/return?booking=${encodeURIComponent(bookingNumber)}`,
+          });
+          paypayPaymentUrl = webPayment.paymentUrl;
+        } catch (error) {
+          console.error('ワークショップ予約: PayPay決済リンクの発行に失敗しました:', { bookingNumber, error });
+          try {
+            await rollbackReservation(booking.id, booking.googleEventId);
+          } catch (rollbackError) {
+            console.error('ワークショップ予約: PayPay発行失敗後のロールバックに失敗しました。手動確認が必要です:', {
+              bookingId: booking.id,
+              bookingNumber,
+              rollbackError,
+            });
+          }
+          return NextResponse.json(
+            { error: 'PayPayのお支払い手続きを開始できませんでした。時間をおいて再度お試しください。' },
+            { status: 502 }
+          );
+        }
+      }
+    }
+    // on_site は payment_status: 'pending' のまま（当日店頭で精算）。
 
     // ---- 確認メール送信（顧客・店舗。失敗しても例外を投げない sendMail のためtry不要） ----
     const emailBody = buildConfirmationEmailBody({
@@ -626,7 +681,7 @@ export async function POST(request: NextRequest) {
           customerName,
           customerEmail: customerEmail || '',
           paymentMethod:
-            paymentMethod === 'credit_card' ? 'クレジット(オンライン)' : paymentMethod === 'paypay' ? 'PayPay(現地)' : '現地払い',
+            paymentMethod === 'credit_card' ? 'クレジット(オンライン)' : paymentMethod === 'paypay' ? 'PayPay(オンライン)' : '現地払い',
           itemsSummary: `${plan.title}×${partySize}名`,
           subtotal: total,
           shipping: 0,
@@ -650,6 +705,8 @@ export async function POST(request: NextRequest) {
       total,
       paymentMethod,
       paymentStatus,
+      // PayPayを選んだ場合、クライアントはこのURLへ遷移して支払いを完了させる
+      paypayPaymentUrl,
     });
   } catch (error) {
     console.error('ワークショップ予約作成エラー:', error);

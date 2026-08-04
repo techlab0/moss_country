@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ecMethodLabel } from '@/lib/salesAggregation';
+import { ecMethodLabel, workshopMethodLabel } from '@/lib/salesAggregation';
 
 // ========== 型 ==========
 
@@ -105,6 +105,9 @@ interface Aggregate {
   storeTotal: number;
   ecTotal: number;
   ecBreakdown?: Array<{ method: string; amount: number; count: number }>;
+  // ワークショップのオンライン事前決済（現地払いは店舗売上に入るため含まない）
+  workshopTotal?: number;
+  workshopBreakdown?: Array<{ method: string; amount: number; count: number }>;
   discountTotal: number;
   grandTotal: number;
   taxExcludedTotal: number;
@@ -1148,7 +1151,8 @@ function SummaryTab({
 
   const agg = data?.aggregate;
   // 調整・割引は保存前でも画面上の総売上に即時反映する
-  const grandTotal = (agg?.storeTotal || 0) + toNumber(adjustment) - toNumber(wordOfMouthDiscount) + (agg?.ecTotal || 0);
+  const grandTotal =
+    (agg?.storeTotal || 0) + toNumber(adjustment) - toNumber(wordOfMouthDiscount) + (agg?.ecTotal || 0) + (agg?.workshopTotal || 0);
 
   const handleSave = async () => {
     setSaving(true);
@@ -1350,6 +1354,20 @@ function SummaryTab({
             <span>¥{b.amount.toLocaleString()}</span>
           </div>
         ))}
+        {(agg?.workshopTotal || 0) > 0 && (
+          <>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">ワークショップ（事前決済）</span>
+              <span>¥{(agg?.workshopTotal || 0).toLocaleString()}</span>
+            </div>
+            {(agg?.workshopBreakdown || []).map(b => (
+              <div key={b.method} className="flex justify-between text-xs text-gray-500 pl-4">
+                <span>うち {workshopMethodLabel(b.method)}（{b.count}件）</span>
+                <span>¥{b.amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </>
+        )}
         {(agg?.discountTotal || 0) > 0 && (
           <div className="flex justify-between text-sm text-orange-600">
             <span>割引合計</span>

@@ -30,6 +30,8 @@ interface BookingResult {
   total: number;
   paymentMethod: 'credit_card' | 'on_site' | 'paypay';
   paymentStatus: 'pending' | 'paid';
+  /** PayPayを選んだ場合の支払いページURL。受け取ったらそのまま遷移する */
+  paypayPaymentUrl?: string;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -168,7 +170,9 @@ export default function WorkshopBookingPage() {
   const [customerError, setCustomerError] = useState<string | null>(null);
 
   // ---- 5. お支払い ----
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'on_site'>('on_site');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'on_site' | 'paypay'>('on_site');
+  // PayPayはチェックアウトと同じフラグで出し分ける（未承認・停止時は選択肢ごと消える）
+  const paypayEnabled = process.env.NEXT_PUBLIC_PAYPAY_ENABLED === 'true';
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitUnavailable, setSubmitUnavailable] = useState(false);
@@ -256,8 +260,17 @@ export default function WorkshopBookingPage() {
         return;
       }
 
-      setResult(data as BookingResult);
+      const bookingResult = data as BookingResult;
       idempotencyKeyRef.current = null;
+
+      // PayPayはこの後の支払いページで決済を完了させる。戻り先は
+      // /workshop/booking/paypay/return で、そこで支払い状態を確定させる。
+      if (bookingResult.paypayPaymentUrl) {
+        window.location.href = bookingResult.paypayPaymentUrl;
+        return;
+      }
+
+      setResult(bookingResult);
     } catch {
       setSubmitError('通信エラーが発生しました。しばらくしてから再度お試しください。');
     } finally {
@@ -588,6 +601,21 @@ export default function WorkshopBookingPage() {
                       <p className="text-stone-400 text-xs">オンラインで事前決済します</p>
                     </div>
                   </label>
+                  {paypayEnabled && (
+                    <label className="flex items-center gap-3 p-4 border border-stone-700 rounded-lg cursor-pointer hover:border-stone-600 transition-colors">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        checked={paymentMethod === 'paypay'}
+                        onChange={() => setPaymentMethod('paypay')}
+                        className="text-emerald-500"
+                      />
+                      <div>
+                        <p className="text-white font-medium">PayPay</p>
+                        <p className="text-stone-400 text-xs">PayPayアプリでオンライン事前決済します</p>
+                      </div>
+                    </label>
+                  )}
                 </div>
               </div>
 
@@ -626,7 +654,11 @@ export default function WorkshopBookingPage() {
                   disabled={submitting}
                   onClick={() => submitBooking()}
                 >
-                  {submitting ? '送信中...' : 'この内容で予約を確定する'}
+                  {submitting
+                    ? '送信中...'
+                    : paymentMethod === 'paypay'
+                      ? 'PayPayでお支払いに進む'
+                      : 'この内容で予約を確定する'}
                 </Button>
               )}
 

@@ -6,6 +6,7 @@ import { syncDailySalesToSheet } from '@/lib/googleSheets';
 import { computeDailySalesSheetRow } from '@/lib/salesBackup';
 import { taxBreakdown } from '@/lib/tax';
 import { getOrdersInDateRange } from '@/lib/orders';
+import { getBookingsInDateRange } from '@/lib/workshopBookings';
 import type { OrderItemSnapshot } from '@/lib/orders';
 
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
@@ -225,6 +226,29 @@ export async function GET(
       .map(([method, v]) => ({ method, amount: v.amount, count: v.count }))
       .sort((a, b) => b.amount - a.amount);
 
+    // ワークショップのオンライン事前決済（クレジットカード/PayPay）を売上に加える。
+    // 現地払いの予約は当日レジで会計され店舗売上に入るため、ここでは対象外にする
+    // （両方数えると二重計上になる）。日付は「開催日」に寄せて現地払いと並びを揃える。
+    const workshopBookings = await getBookingsInDateRange(date, date).catch(error => {
+      console.error('ワークショップ予約の取得に失敗しました（売上集計は続行します）:', error);
+      return [];
+    });
+    const prepaidBookings = workshopBookings.filter(
+      booking => booking.paymentStatus === 'paid' && booking.paymentMethod !== 'on_site'
+    );
+    const workshopMethodTotals = new Map<string, { amount: number; count: number }>();
+    for (const booking of prepaidBookings) {
+      const method = booking.paymentMethod || '不明';
+      const agg = workshopMethodTotals.get(method) || { amount: 0, count: 0 };
+      agg.amount += booking.total || 0;
+      agg.count += 1;
+      workshopMethodTotals.set(method, agg);
+    }
+    const workshopBreakdown = Array.from(workshopMethodTotals.entries())
+      .map(([method, v]) => ({ method, amount: v.amount, count: v.count }))
+      .sort((a, b) => b.amount - a.amount);
+    const workshopTotal = prepaidBookings.reduce((sum, booking) => sum + (booking.total || 0), 0);
+
     const itemRows = Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
     const itemsTotal = itemRows.reduce((sum, row) => sum + row.total, 0);
     const ecTotal = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
@@ -232,7 +256,7 @@ export async function GET(
     const adjustment = dailySales?.adjustment || 0;
     const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
     const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
-    const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal;
+    const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal + workshopTotal;
     const tax = taxBreakdown(grandTotal);
 
     return NextResponse.json({
@@ -246,6 +270,8 @@ export async function GET(
         storeTotal,
         ecTotal,
         ecBreakdown,
+        workshopTotal,
+        workshopBreakdown,
         discountTotal,
         grandTotal,
         taxExcludedTotal: tax.excludedAmount,

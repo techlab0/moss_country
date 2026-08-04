@@ -32,6 +32,18 @@ export function ecMethodLabel(method: string): string {
   return EC_METHOD_LABELS[method] || method;
 }
 
+// ワークショップ予約の決済方法ラベル（現地払いは店舗売上として計上されるためここには出てこない）
+const WORKSHOP_METHOD_LABELS: Record<string, string> = {
+  credit_card: 'クレジットカード',
+  paypay: 'PayPay',
+  on_site: '現地払い',
+};
+
+/** ワークショップ予約の決済方法ラベルを返す。未知のキーはそのままのキー文字列を返す。 */
+export function workshopMethodLabel(method: string): string {
+  return WORKSHOP_METHOD_LABELS[method] || method;
+}
+
 /** 今日の日付を日本時間基準の YYYY-MM-DD 文字列で返す */
 export function todayJst(): string {
   const now = new Date();
