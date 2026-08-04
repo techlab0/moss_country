@@ -298,6 +298,10 @@ interface SlotInfo {
   start: string;
   end: string;
   isOpen: boolean;
+  /** 予約済み人数（同一日・同一開始時刻の合計） */
+  booked?: number;
+  /** 1枠あたりの定員 */
+  capacity?: number;
 }
 
 interface DaySlots {
@@ -653,6 +657,13 @@ function SlotSettingsTab() {
     return slot?.isOpen ?? false;
   };
 
+  // 残り枠（定員 − 予約済み人数）。データが無い日は null を返して表示しない。
+  const slotVacancy = (dateStr: string, start: string): { remaining: number; capacity: number } | null => {
+    const slot = days.get(dateStr)?.slots.find(s => s.start === start);
+    if (!slot || slot.capacity == null) return null;
+    return { remaining: Math.max(0, slot.capacity - (slot.booked || 0)), capacity: slot.capacity };
+  };
+
   const toggleSlot = (date: string, start: string) => {
     const day = days.get(date);
     if (!day?.businessDay || day.closed) return; // 営業日未登録・休業日は操作不可
@@ -761,6 +772,7 @@ function SlotSettingsTab() {
           <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded mr-1.5"></div>営業日未登録（停止・操作不可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-1.5"></div>休業日（操作不可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-white border-2 border-amber-400 rounded mr-1.5"></div>未保存の変更あり</div>
+          <div className="flex items-center text-gray-500">枠内の数字は「空き人数／定員」</div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-2">
@@ -812,6 +824,7 @@ function SlotSettingsTab() {
                     {SLOT_STARTS.map(start => {
                       const isOpen = effectiveIsOpen(dateStr, start);
                       const dirty = pending.has(`${dateStr}|${start}`);
+                      const vacancy = slotVacancy(dateStr, start);
                       return (
                         <button
                           key={start}
@@ -819,11 +832,12 @@ function SlotSettingsTab() {
                           onClick={() => toggleSlot(dateStr, start)}
                           disabled={!businessDay}
                           title={
-                            !businessDay
+                            (!businessDay
                               ? `${start}: 営業日未登録のため停止中`
                               : isOpen
                                 ? `${start}: 受付中（クリックで停止）`
-                                : `${start}: 停止中（クリックで再開）`
+                                : `${start}: 停止中（クリックで再開）`) +
+                            (vacancy ? ` / 空き${vacancy.remaining}名（定員${vacancy.capacity}名）` : '')
                           }
                           className={`w-full text-[11px] px-1.5 py-1 rounded transition-colors ${
                             isOpen
@@ -833,7 +847,22 @@ function SlotSettingsTab() {
                                 : 'bg-gray-200 text-gray-400 line-through cursor-not-allowed'
                           } ${dirty ? 'ring-2 ring-amber-400' : ''}`}
                         >
-                          {start}
+                          <span className="flex items-center justify-center gap-1.5">
+                            <span>{start}</span>
+                            {vacancy && (
+                              <span
+                                className={
+                                  vacancy.remaining === 0
+                                    ? 'font-semibold text-red-600'
+                                    : vacancy.remaining < vacancy.capacity
+                                      ? 'font-semibold text-amber-700'
+                                      : 'opacity-70'
+                                }
+                              >
+                                {vacancy.remaining}/{vacancy.capacity}
+                              </span>
+                            )}
+                          </span>
                         </button>
                       );
                     })}

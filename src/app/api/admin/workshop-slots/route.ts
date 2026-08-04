@@ -3,7 +3,8 @@ import { verifyAdminSession } from '@/lib/auth';
 import { getWorkshopCalendarPolicy, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import { isWorkshopBusinessDate } from '@/lib/workshopCalendarPolicy';
 import { getOverridesInRange, setOverride } from '@/lib/workshopSlotOverrides';
-import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
+import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import { getBookingsInDateRange } from '@/lib/workshopBookings';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -12,7 +13,15 @@ interface DaySlots {
   date: string;
   businessDay: boolean;
   closed: boolean;
-  slots: Array<{ start: string; end: string; isOpen: boolean }>;
+  slots: Array<{
+    start: string;
+    end: string;
+    isOpen: boolean;
+    /** 予約済みの人数（同一日・同一開始時刻の合計） */
+    booked: number;
+    /** 1枠あたりの定員 */
+    capacity: number;
+  }>;
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -44,11 +53,13 @@ export async function GET(request: NextRequest) {
 
     let calendarPolicy: Awaited<ReturnType<typeof getWorkshopCalendarPolicy>>;
     let overrides: Awaited<ReturnType<typeof getOverridesInRange>>;
+    let bookings: Awaited<ReturnType<typeof getBookingsInDateRange>> = [];
     try {
       [calendarPolicy, overrides] = await Promise.all([
         getWorkshopCalendarPolicy(fromDate, toDate),
         getOverridesInRange(fromDate, toDate),
       ]);
+      bookings = await getBookingsInDateRange(fromDate, toDate);
     } catch (error) {
       if (error instanceof CalendarUnavailableError) {
         return NextResponse.json(
@@ -66,6 +77,14 @@ export async function GET(request: NextRequest) {
     // (date|startTime) -> isOpen（管理者が明示的に設定した枠のみ）
     const overrideMap = new Map(overrides.map(o => [`${o.date}|${o.startTime}`, o.isOpen]));
 
+    // (date|startTime) -> 予約済み人数。空き枠計算（computeAvailableSlots）と同じく
+    // プランを問わず1枠の定員に対する合計人数で数える。
+    const bookedBySlot = new Map<string, number>();
+    for (const booking of bookings) {
+      const key = `${booking.date}|${booking.startTime}`;
+      bookedBySlot.set(key, (bookedBySlot.get(key) || 0) + booking.partySize);
+    }
+
     const days: DaySlots[] = [];
     for (let day = 1; day <= lastDay; day++) {
       const date = `${monthParam}-${String(day).padStart(2, '0')}`;
@@ -79,6 +98,8 @@ export async function GET(request: NextRequest) {
           end: slot.end,
           // 営業日登録が前提。営業日の枠だけ、オーバーライドが無ければ既定でOPEN
           isOpen: businessDay && (overrideMap.get(`${date}|${slot.start}`) ?? true),
+          booked: bookedBySlot.get(`${date}|${slot.start}`) || 0,
+          capacity: CAPACITY_PER_SLOT,
         })),
       });
     }
