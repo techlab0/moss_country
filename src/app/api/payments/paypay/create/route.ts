@@ -5,6 +5,7 @@ import { createOrder, updateOrderStatus } from '@/lib/orders';
 import { isCarrierId } from '@/lib/shipping';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { createWebPayment, isPaypayConfigured } from '@/lib/paypayWebClient';
+import { buildPaymentDescription } from '@/lib/orderReceipt';
 import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
@@ -140,7 +141,17 @@ export async function POST(request: NextRequest) {
       const webPayment = await createWebPayment({
         merchantPaymentId: orderNumber,
         amountJpy: totals.total,
-        orderDescription: `MOSS COUNTRY Order ${orderNumber} - ${cart.items.length} item(s)`,
+        // PayPayアプリの支払い詳細にレシート体裁（商品→送料→合計）で表示する
+        orderDescription: buildPaymentDescription({
+          items: cart.items.map(item => ({
+            name: item.product.name,
+            variant: item.variant?.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          shippingCost: totals.shippingCost,
+          total: totals.total,
+        }),
         orderItems,
         redirectUrl,
       });

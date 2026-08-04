@@ -4,6 +4,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { createPaymentLink, convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 import { createDynamicQr } from '@/lib/paypay';
+import { buildPaymentDescription } from '@/lib/orderReceipt';
 import { todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 
@@ -79,14 +80,23 @@ export async function POST(request: NextRequest) {
     // お客様のスマホで読み取って支払い、決済確定はレジ側の明示ポーリング（paypay-statusエンドポイント）で行う
     // （Squareのwebhookに相当する仕組みがPayPayには無いため）。
     if (mode === 'paypay') {
-      // お客様のPayPay明細に商品名が出るよう、品名入りの説明文と明細を渡す。
-      // 品名の要約（例: 「コウヤノマンネングサ×2、石×1」）。PayPayのorderDescriptionは255文字程度が上限。
-      const itemsSummary = lineItems
-        .map(li => `${li.name}${(li.quantity ?? 1) > 1 ? `×${li.quantity}` : ''}`)
-        .join('、')
-        .slice(0, 200);
+      // お客様のPayPay明細にレシート体裁（商品→合計）で出るよう、説明文と明細を渡す。
+      // 店頭会計なので送料は無い。文字数上限(255)の丸めは buildPaymentDescription 側で行う。
       const paypayOrderDescription =
-        (itemsSummary ? `MOSS COUNTRY: ${itemsSummary}` : 'MOSS COUNTRY 店頭会計').slice(0, 255);
+        lineItems.length > 0
+          ? buildPaymentDescription({
+              items: lineItems.map(li => {
+                const quantity = li.quantity ?? 1;
+                const amount = li.amount ?? 0;
+                return {
+                  name: li.name,
+                  quantity,
+                  price: quantity > 0 ? Math.round(amount / quantity) : amount,
+                };
+              }),
+              total: amount,
+            })
+          : 'MOSS COUNTRY 店頭会計';
       // 明細（orderItems）は、割引でPayPay側の「明細合計＝請求額」検証に弾かれないよう、
       // 割引なし（請求額＝小計）のときだけ渡す。割引時は品名入りの説明文で商品名を伝える。
       const paypayOrderItems =

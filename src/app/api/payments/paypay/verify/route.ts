@@ -4,6 +4,8 @@ import { InventoryService } from '@/lib/inventory';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
 import { getPaymentStatus, isPaypayConfigured } from '@/lib/paypayWebClient';
+import { buildReceiptItemLines, formatShippingAddress } from '@/lib/orderReceipt';
+import { CARRIER_LABELS } from '@/lib/shipping';
 
 type VerifyStatus = 'paid' | 'pending' | 'failed';
 
@@ -100,11 +102,31 @@ async function verifyPaypayOrder(orderNumber: string): Promise<{ httpStatus: num
               'PayPayでのお支払いが完了しましたのでご確認ください。',
               '',
               `注文番号: ${order.orderNumber}`,
-              `お支払い金額: ¥${(order.total ?? 0).toLocaleString()}`,
+              '',
+              '【ご注文内容】',
+              ...buildReceiptItemLines(
+                order.items.map(item => ({
+                  name: item.name,
+                  variant: item.variant,
+                  quantity: item.quantity,
+                  price: item.price,
+                }))
+              ),
+              '',
+              `小計: ¥${(order.subtotal ?? 0).toLocaleString()}`,
+              `送料: ¥${(order.shippingCost ?? 0).toLocaleString()}`,
+              `消費税: ¥${(order.tax ?? 0).toLocaleString()}`,
+              `合計: ¥${(order.total ?? 0).toLocaleString()}`,
+              '',
+              'お支払い方法: PayPay',
+              order.shippingCarrier ? `配送業者: ${CARRIER_LABELS[order.shippingCarrier] ?? order.shippingCarrier}` : null,
+              '',
+              '【お届け先】',
+              formatShippingAddress(order.shippingAddress),
               '',
               '----',
               'MOSS COUNTRY',
-            ].join('\n'),
+            ].filter((line): line is string => line !== null).join('\n'),
           });
         } catch (mailError) {
           console.error(`PayPay注文確認メールの送信に失敗しました (orderNumber: ${orderNumber}):`, mailError);

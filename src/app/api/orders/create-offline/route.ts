@@ -4,18 +4,13 @@ import { InventoryService } from '@/lib/inventory';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { createOrder } from '@/lib/orders';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
-import { isCarrierId } from '@/lib/shipping';
+import { isCarrierId, CARRIER_LABELS } from '@/lib/shipping';
 import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
 const OFFLINE_PAYMENT_METHODS: Record<string, string> = {
   bank_transfer: '銀行振込',
   cash_on_delivery: '代金引換',
-};
-
-const CARRIER_LABELS: Record<string, string> = {
-  yupack: 'ゆうパック（日本郵便）',
-  yamato: '宅急便（ヤマト運輸）',
 };
 
 /**

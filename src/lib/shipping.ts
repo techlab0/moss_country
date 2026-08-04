@@ -15,6 +15,12 @@ export function isCarrierId(value: unknown): value is CarrierId {
   return value === 'yupack' || value === 'yamato';
 }
 
+// 注文確認メール等でお客様に見せる配送業者名
+export const CARRIER_LABELS: Record<string, string> = {
+  yupack: 'ゆうパック（日本郵便）',
+  yamato: '宅急便（ヤマト運輸）',
+};
+
 export interface ShippingZone {
   id: string;
   name: string;
