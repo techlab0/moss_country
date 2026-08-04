@@ -6,6 +6,7 @@ import { getProductSlug } from '@/lib/adapters';
 import { compareByReading } from '@/lib/productSort';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
+import { useSalesItems, SalesItemSelect } from '@/components/admin/SalesItemPicker';
 
 interface ProductWithInventory extends Product {
   currentStock?: number;
@@ -19,6 +20,8 @@ interface QuickEditData {
   nameReading: string;
   category: string;
   isVisible: boolean;
+  // 店頭売上との紐付け。未設定なら在庫連動もされないため、ここから直せるようにしている
+  salesItemId: string | null;
 }
 
 // 状態に依存しない純粋関数。コンポーネント内に置くと毎描画で
@@ -44,7 +47,9 @@ export default function AdminProductsPage() {
     nameReading: '',
     category: PRODUCT_CATEGORIES[0],
     isVisible: true,
+    salesItemId: null,
   });
+  const { items: salesItems, loading: salesItemsLoading } = useSalesItems();
   const [savingQuickEdit, setSavingQuickEdit] = useState(false);
   const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null);
 
@@ -110,6 +115,7 @@ export default function AdminProductsPage() {
       nameReading: product.nameReading || '',
       category: resolveCategory(product.category),
       isVisible: product.isVisible !== false,
+      salesItemId: product.salesItemId ?? null,
     });
   };
 
@@ -135,6 +141,7 @@ export default function AdminProductsPage() {
               nameReading: quickEditData.nameReading,
               category: quickEditData.category,
               isVisible: quickEditData.isVisible,
+              salesItemId: quickEditData.salesItemId,
             }
           : p
       )
@@ -148,6 +155,7 @@ export default function AdminProductsPage() {
           nameReading: quickEditData.nameReading,
           category: quickEditData.category,
           isVisible: quickEditData.isVisible,
+          salesItemId: quickEditData.salesItemId,
         }),
       });
 
@@ -292,6 +300,12 @@ export default function AdminProductsPage() {
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
           >
             新商品登録
+          </Link>
+          <Link
+            href="/admin/products/bulk"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            一括編集
           </Link>
           <Link
             href="/admin/cms"
@@ -593,6 +607,23 @@ export default function AdminProductsPage() {
                                   </option>
                                 ))}
                               </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                売上明細の項目
+                              </label>
+                              <SalesItemSelect
+                                items={salesItems}
+                                loading={salesItemsLoading}
+                                value={quickEditData.salesItemId}
+                                onChange={(salesItemId) =>
+                                  setQuickEditData((prev) => ({ ...prev, salesItemId }))
+                                }
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-moss-green focus:border-transparent disabled:bg-gray-100"
+                              />
+                              <p className="text-xs text-gray-400 mt-1">
+                                店頭で売れた分の在庫を減らすには、この項目の設定が必要です
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <input

@@ -36,21 +36,13 @@ function optionLabel(item: SalesItem): string {
     : item.name;
 }
 
-interface SalesItemPickerProps {
-  salesItemId: string | null;
-  /** 選択された項目そのものも渡す（呼び出し側が商品名や価格を自動入力できるようにするため） */
-  onChange: (salesItemId: string | null, item?: SalesItem | null) => void;
-}
-
-export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps) {
+/**
+ * 売上項目の一覧を1回だけ取得する。商品一覧の一括編集のように同じ選択肢を多数並べる画面で、
+ * 行ごとにAPIを叩かないためにフックとして切り出している。
+ */
+export function useSalesItems(): { items: SalesItem[]; loading: boolean; addItem: (item: SalesItem) => void } {
   const [items, setItems] = useState<SalesItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [newCategory, setNewCategory] = useState('product');
-  const [newName, setNewName] = useState('');
-  const [newPricingType, setNewPricingType] = useState<'fixed' | 'variable'>('fixed');
-  const [newUnitPrice, setNewUnitPrice] = useState('');
-  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -68,8 +60,32 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
     };
   }, []);
 
+  const addItem = (item: SalesItem) => setItems((prev) => [...prev, item]);
+
+  return { items, loading, addItem };
+}
+
+interface SalesItemSelectProps {
+  items: SalesItem[];
+  loading?: boolean;
+  value: string | null;
+  onChange: (salesItemId: string | null, item?: SalesItem | null) => void;
+  /** 「＋ 新規項目を追加...」を選べるようにする場合に渡す */
+  onRequestCreate?: () => void;
+  className?: string;
+}
+
+/** 売上項目のドロップダウン本体。カテゴリごとにグループ化して表示する */
+export function SalesItemSelect({
+  items,
+  loading = false,
+  value,
+  onChange,
+  onRequestCreate,
+  className,
+}: SalesItemSelectProps) {
   // 選択中の項目が無効化済みでも選択肢から消えないよう、有効な項目に加えて現在値も残す
-  const selectableItems = items.filter((item) => item.isActive || item._id === salesItemId);
+  const selectableItems = items.filter((item) => item.isActive || item._id === value);
 
   const groups = CATEGORY_OPTIONS.map((category) => ({
     ...category,
@@ -78,17 +94,55 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name, 'ja')),
   })).filter((group) => group.items.length > 0);
 
-  const handleSelectChange = (value: string) => {
-    if (value === NEW_ITEM_VALUE) {
-      setShowNewForm(true);
-      return;
-    }
-    if (!value) {
-      onChange(null, null);
-      return;
-    }
-    onChange(value, items.find((item) => item._id === value) ?? null);
-  };
+  return (
+    <select
+      value={value ?? ''}
+      onChange={(e) => {
+        if (e.target.value === NEW_ITEM_VALUE) {
+          onRequestCreate?.();
+          return;
+        }
+        if (!e.target.value) {
+          onChange(null, null);
+          return;
+        }
+        onChange(e.target.value, items.find((item) => item._id === e.target.value) ?? null);
+      }}
+      disabled={loading}
+      className={
+        className ??
+        'w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+      }
+    >
+      <option value="">{loading ? '読み込み中...' : '未設定'}</option>
+      {groups.map((group) => (
+        <optgroup key={group.value} label={group.label}>
+          {group.items.map((item) => (
+            <option key={item._id} value={item._id}>
+              {optionLabel(item)}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+      {onRequestCreate && <option value={NEW_ITEM_VALUE}>＋ 新規項目を追加...</option>}
+    </select>
+  );
+}
+
+interface SalesItemPickerProps {
+  salesItemId: string | null;
+  /** 選択された項目そのものも渡す（呼び出し側が商品名や価格を自動入力できるようにするため） */
+  onChange: (salesItemId: string | null, item?: SalesItem | null) => void;
+}
+
+export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps) {
+  const { items, loading, addItem } = useSalesItems();
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newCategory, setNewCategory] = useState('product');
+  const [newName, setNewName] = useState('');
+  const [newPricingType, setNewPricingType] = useState<'fixed' | 'variable'>('fixed');
+  const [newUnitPrice, setNewUnitPrice] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
     if (!newName.trim()) {
@@ -110,7 +164,7 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
       });
       if (!res.ok) throw new Error('作成に失敗しました');
       const { item } = await res.json();
-      setItems((prev) => [...prev, item]);
+      addItem(item);
       onChange(item._id, item);
       setShowNewForm(false);
       setNewName('');
@@ -132,24 +186,13 @@ export function SalesItemPicker({ salesItemId, onChange }: SalesItemPickerProps)
         この商品がEC購入されたとき、売上集計の「商品別明細」でどの項目に合算するかを指定します。先にここで項目を選ぶと、商品名が自動で入力されます。
       </p>
 
-      <select
-        value={salesItemId ?? ''}
-        onChange={(e) => handleSelectChange(e.target.value)}
-        disabled={loading}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-      >
-        <option value="">{loading ? '読み込み中...' : '未設定（商品名でそのまま集計）'}</option>
-        {groups.map((group) => (
-          <optgroup key={group.value} label={group.label}>
-            {group.items.map((item) => (
-              <option key={item._id} value={item._id}>
-                {optionLabel(item)}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-        <option value={NEW_ITEM_VALUE}>＋ 新規項目を追加...</option>
-      </select>
+      <SalesItemSelect
+        items={items}
+        loading={loading}
+        value={salesItemId}
+        onChange={onChange}
+        onRequestCreate={() => setShowNewForm(true)}
+      />
 
       {showNewForm && (
         <div className="mt-2 p-3 border border-gray-200 rounded-md bg-gray-50 space-y-3">
