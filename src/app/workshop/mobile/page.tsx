@@ -128,12 +128,36 @@ const assistanceFees = [
   { people: '41〜50名', fee: '+30,000円' },
 ];
 
+// フィギュアの扱い（資料「2. フィギュアについて」）。作品の完成度や制作の楽しさを考慮し、
+// フィギュア付きでの開催を基本としている。
+const figurePlans = [
+  {
+    name: '通常プラン',
+    price: 'フィギュア代 200〜500円（税込）／個',
+    notes: [
+      '希望者のみお選びいただけます',
+      '種類によって価格が異なります',
+      '使用数に応じて追加精算となります',
+    ],
+  },
+  {
+    name: '法人・団体向け おまとめプラン',
+    price: '材料費 2,000円（税込）／名（フィギュア代込み）',
+    notes: [
+      '会計を簡略化したい場合におすすめです',
+      '対象フィギュアから自由に選択可能',
+      '追加精算不要でスムーズにご精算いただけます',
+    ],
+  },
+];
+
 const hostingConditions = [
   '最小開催人数の定めはございません。講師料・材料費・交通費をお支払いいただければ開催いたします。',
   '1回あたり最大10名までを目安とし、1日最大2回まで開催可能です（原則20名まで）。',
   '20名以上での開催は、内容・運営体制を相談の上決定します。',
   '開催可能な最大人数は50名までです。51名以上での開催は承っておりません。',
   '少人数プランもございます。詳細はお問い合わせください。',
+  'ご相談時のスタッフ人数に応じて、開催可能な人数が変動する場合がございます。',
 ];
 
 const cancellationFees = [
@@ -143,18 +167,18 @@ const cancellationFees = [
 ];
 
 const facilityGuides = [
-  '所要時間は90〜120分です。人数・内容により前後します。',
+  '制作の所要時間は60〜120分です。容器・人数・内容により前後します。',
   '準備は約60分、撤収は約60分を目安としています。',
-  '会議テーブル（180cm）1台につき、参加目安は3名までです。',
+  '会議テーブル（180cm）1台につき、余裕を持って2名までを目安としています。',
   '対象年齢は小学生以上です。小学生は保護者同伴で参加可能です。',
 ];
 
 const importantNotes = [
-  'ワークショップ中の怪我、衣服の汚れ等につきましては十分に配慮いたしますが、責任を負いかねる場合がございます。',
+  'ワークショップ中の怪我、衣服の汚れ等につきましては、一切責任を負いかねますのでご了承ください。',
   '制作後の管理環境や経年変化により、植物の状態が変化する場合がございます。',
   '記録・広報を目的として、制作風景を撮影させていただく場合がございます。',
   '天候不良、災害、交通機関の影響等により開催が困難な場合、日程変更または中止をご相談させていただく場合がございます。',
-  'お支払いは事前精算をお願いしております。内容追加や人数変更等による追加費用は後日精算をお願いいたします。',
+  'お支払いは開催日前までの事前精算をお願いしております。内容追加や人数変更等により発生した追加費用は後日精算をお願いいたします（請求書払いもご相談可能です）。',
 ];
 
 const bookingSteps = [
@@ -464,6 +488,30 @@ export default function MobileWorkshopPage() {
 
             <Card className="lg:col-span-2">
               <CardHeader>
+                <h3 className="text-2xl font-bold text-moss-green">フィギュアについて</h3>
+                <p className="text-gray-600 mt-2">
+                  作品の完成度や制作の楽しさを考慮し、フィギュア付きでの開催を基本としております。
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {figurePlans.map((plan) => (
+                    <div key={plan.name} className="rounded-lg bg-gray-50 p-4">
+                      <p className="font-semibold text-moss-green">{plan.name}</p>
+                      <p className="text-lg font-semibold text-gray-900 mt-1">{plan.price}</p>
+                      <ul className="mt-3 space-y-1 text-sm text-gray-700">
+                        {plan.notes.map((note) => (
+                          <li key={note}>・{note}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
                 <h3 className="text-2xl font-bold text-moss-green">開催条件</h3>
               </CardHeader>
               <CardContent>
@@ -492,6 +540,7 @@ export default function MobileWorkshopPage() {
                 </div>
                 <p className="mt-4 text-sm text-gray-600 leading-relaxed">
                   キャンセル料は、講師料・材料費・運営補助費・交通費等を含む総額を基準として算出いたします。
+                  資材準備・人員確保等のため、上記の規定とさせていただいております。
                 </p>
               </CardContent>
             </Card>
