@@ -14,7 +14,9 @@
 
 import { supabaseAdmin } from './supabase';
 
-export type WorkshopBookingPaymentMethod = 'credit_card' | 'on_site' | 'paypay';
+// 'external' はじゃらん等の外部予約サイトで決済済み（後日入金）を表す。
+// 当日店頭で精算する外部予約は 'on_site' を使う（レジ側で売上計上されるため）。
+export type WorkshopBookingPaymentMethod = 'credit_card' | 'on_site' | 'paypay' | 'external';
 export type WorkshopBookingPaymentStatus = 'pending' | 'paid' | 'refunded';
 export type WorkshopBookingStatus = 'confirmed' | 'cancelled';
 

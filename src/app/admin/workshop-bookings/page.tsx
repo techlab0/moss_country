@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
+import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
@@ -70,6 +70,7 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: 'クレジット',
   on_site: '現地払い',
   paypay: 'PayPay',
+  external: '外部予約',
 };
 
 const paymentStatusLabels: Record<string, string> = {
@@ -89,6 +90,20 @@ function BookingsListTab() {
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [refundingId, setRefundingId] = useState<string | null>(null);
+  // じゃらん・電話・来店など、オンライン予約以外の予約を枠に載せるための手動登録
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    date: '',
+    startTime: WORKSHOP_SLOTS[0].start,
+    partySize: '1',
+    customerName: '',
+    customerPhone: '',
+    planName: '',
+    total: '',
+    paymentMethod: 'external',
+    notes: 'じゃらん経由',
+  });
   const [statusFilter, setStatusFilter] = useState<'all' | 'confirmed' | 'cancelled'>('all');
 
   const fetchBookings = useCallback(async () => {
@@ -112,6 +127,43 @@ function BookingsListTab() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  const handleCreateManualBooking = async () => {
+    if (!manualForm.date || !manualForm.customerName.trim()) {
+      alert('日付とお名前は必須です');
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/workshop-bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: manualForm.date,
+          startTime: manualForm.startTime,
+          partySize: Number(manualForm.partySize),
+          customerName: manualForm.customerName.trim(),
+          customerPhone: manualForm.customerPhone.trim() || undefined,
+          planName: manualForm.planName.trim() || undefined,
+          total: manualForm.total === '' ? undefined : Number(manualForm.total),
+          paymentMethod: manualForm.paymentMethod,
+          notes: manualForm.notes.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '予約の登録に失敗しました');
+      }
+      setShowManualForm(false);
+      setManualForm((prev) => ({ ...prev, customerName: '', customerPhone: '', total: '', partySize: '1' }));
+      await fetchBookings();
+      alert('予約を登録しました');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '予約の登録に失敗しました');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   // 返金（Square/PayPay）。返金と同時に予約もキャンセルされ、枠とカレンダーが解放される。
   const handleRefund = async (booking: Booking) => {
@@ -177,7 +229,17 @@ function BookingsListTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setShowManualForm((prev) => !prev);
+              setManualForm((prev) => ({ ...prev, date: prev.date || new Date().toISOString().slice(0, 10) }));
+            }}
+            className="px-3 py-1.5 text-sm font-medium rounded-md bg-moss-green text-white hover:opacity-90"
+          >
+            {showManualForm ? '閉じる' : '＋ 予約を追加'}
+          </button>
           {(['all', 'confirmed', 'cancelled'] as const).map(f => (
             <button
               key={f}
@@ -199,6 +261,136 @@ function BookingsListTab() {
           </button>
         </div>
       </div>
+
+      {showManualForm && (
+        <div className="bg-white shadow rounded-lg p-4 space-y-3">
+          <div>
+            <h3 className="font-medium text-gray-900">予約を追加</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              じゃらん・電話・来店などオンライン以外の予約を登録します。オンライン予約と同じ枠を消費するため、
+              ダブルブッキングを防げます。
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">日付 *</label>
+              <input
+                type="date"
+                value={manualForm.date}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, date: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">時間枠 *</label>
+              <select
+                value={manualForm.startTime}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
+              >
+                {WORKSHOP_SLOTS.map((slot) => (
+                  <option key={slot.start} value={slot.start}>
+                    {slot.start}〜{slot.end}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">人数 *</label>
+              <input
+                type="number"
+                min={1}
+                max={CAPACITY_PER_SLOT}
+                value={manualForm.partySize}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, partySize: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">お名前 *</label>
+              <input
+                type="text"
+                value={manualForm.customerName}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, customerName: e.target.value }))}
+                placeholder="山田 太郎"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">電話番号</label>
+              <input
+                type="tel"
+                value={manualForm.customerPhone}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, customerPhone: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">プラン名</label>
+              <input
+                type="text"
+                value={manualForm.planName}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, planName: e.target.value }))}
+                placeholder="苔テラリウム作り体験"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">支払い方法 *</label>
+              <select
+                value={manualForm.paymentMethod}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, paymentMethod: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
+              >
+                <option value="external">外部予約（決済済み・売上に計上）</option>
+                <option value="on_site">現地払い（当日レジで会計）</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">金額（円）</label>
+              <input
+                type="number"
+                min={0}
+                value={manualForm.total}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, total: e.target.value }))}
+                placeholder={manualForm.paymentMethod === 'external' ? '売上に計上する金額' : '任意'}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">備考</label>
+              <input
+                type="text"
+                value={manualForm.notes}
+                onChange={(e) => setManualForm((prev) => ({ ...prev, notes: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            「外部予約」を選ぶと支払い済みとして日別売上に計上されます。当日レジで会計する場合は「現地払い」を選んでください
+            （レジ側で計上されるため、二重計上になりません）。
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowManualForm(false)}
+              disabled={creating}
+              className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateManualBooking}
+              disabled={creating}
+              className="px-4 py-2 text-sm text-white bg-moss-green rounded-md hover:opacity-90 disabled:opacity-50"
+            >
+              {creating ? '登録中...' : '登録する'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="animate-pulse space-y-3">

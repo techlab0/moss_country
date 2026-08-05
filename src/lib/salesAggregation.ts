@@ -37,6 +37,7 @@ const WORKSHOP_METHOD_LABELS: Record<string, string> = {
   credit_card: 'クレジットカード',
   paypay: 'PayPay',
   on_site: '現地払い',
+  external: '外部予約（じゃらん等）',
 };
 
 /** ワークショップ予約の決済方法ラベルを返す。未知のキーはそのままのキー文字列を返す。 */
