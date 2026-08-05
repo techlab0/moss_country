@@ -27,6 +27,7 @@ interface OrderDetail {
   paymentStatus: string;
   squarePaymentId?: string | null;
   refundId?: string | null;
+  refundedAmount?: number;
   trackingNumber?: string;
   notes?: string;
   createdAt: string;
@@ -129,6 +130,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           paymentStatus: o.paymentStatus || "pending",
           squarePaymentId: o.squarePaymentId,
           refundId: o.refundId,
+          refundedAmount: o.refundedAmount ?? 0,
           trackingNumber: o.trackingNumber,
           notes: o.notes,
           createdAt: o.createdAt || new Date().toISOString(),
@@ -239,9 +241,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
   const handleRefund = async () => {
     if (!orderId || !order) return;
+    // 送料の取りすぎを返す場合などに備え、返金額を指定できるようにする（既定は残額全額）
+    const refundable = order.total - (order.refundedAmount || 0);
+    const input = window.prompt(
+      `返金額を入力してください（円）。\n` +
+      `お支払い金額: ¥${order.total.toLocaleString()}\n` +
+      `返金可能な残額: ¥${refundable.toLocaleString()}`,
+      String(refundable)
+    );
+    if (input === null) return;
+    const amount = Number(input);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > refundable) {
+      alert(`返金額は1〜${refundable.toLocaleString()}円で入力してください`);
+      return;
+    }
     if (
       !window.confirm(
-        `お客様に ¥${order.total.toLocaleString()} を返金します。\n` +
+        `お客様に ¥${amount.toLocaleString()} を返金します。\n` +
         `この操作で${order.paymentMethod === "paypay" ? "PayPay" : "Square"}経由で実際に返金され、取り消せません。よろしいですか？`
       )
     ) {
@@ -249,15 +265,30 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     }
     setSaving(true);
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}/refund`, { method: "POST" });
+      const response = await fetch(`/api/admin/orders/${orderId}/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(data.error || "返金に失敗しました");
       }
-      setOrder(prev => prev ? { ...prev, status: "refunded", paymentStatus: "refunded", refundId: data.refundId } : prev);
-      setStatusInput("refunded");
-      setPaymentStatusInput("refunded");
-      alert(`返金が完了しました（¥${(data.amount ?? order.total).toLocaleString()}）`);
+      const nextPaymentStatus = data.isFullRefund ? "refunded" : "partially_refunded";
+      setOrder(prev => prev ? {
+        ...prev,
+        ...(data.isFullRefund ? { status: "refunded" } : {}),
+        paymentStatus: nextPaymentStatus,
+        refundId: data.refundId,
+        refundedAmount: data.refundedAmount,
+      } : prev);
+      if (data.isFullRefund) setStatusInput("refunded");
+      setPaymentStatusInput(nextPaymentStatus);
+      alert(
+        data.isFullRefund
+          ? `返金が完了しました（¥${(data.amount ?? 0).toLocaleString()}）`
+          : `一部返金が完了しました（¥${(data.amount ?? 0).toLocaleString()} / 返金済み合計 ¥${(data.refundedAmount ?? 0).toLocaleString()}）`
+      );
     } catch (err) {
       console.error("Order refund error:", err);
       alert(err instanceof Error ? err.message : "返金に失敗しました");
@@ -315,10 +346,12 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const refundTargetLabel = isPaypayOrder ? "PayPay" : "カード";
   // オンライン決済（Square カード / PayPay）で支払い済み・未返金の注文だけ返金ボタンを出す。
   // Square Payment ID もPayPay決済でもない注文（振込・代引など）はAPI返金の対象外。
+  // 一部返金後も残額があれば続けて返金できる（送料だけ返した後に全額返金する等）
+  const refundedSoFar = order.refundedAmount || 0;
   const isRefundable =
-    order.paymentStatus === "paid" &&
+    (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded") &&
     (!!order.squarePaymentId || isPaypayOrder) &&
-    !order.refundId &&
+    refundedSoFar < order.total &&
     order.status !== "refunded";
 
   return (
@@ -569,7 +602,10 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               {order.refundId && (
                 <div>
                   <p className="text-sm text-gray-600">返金</p>
-                  <p className="font-medium text-orange-700">{refundTargetLabel}へ返金済み</p>
+                  <p className="font-medium text-orange-700">
+                    {refundTargetLabel}へ返金済み
+                    {refundedSoFar > 0 && `（¥${refundedSoFar.toLocaleString()}${refundedSoFar < order.total ? ' / 一部返金' : ''}）`}
+                  </p>
                   <p className="text-xs text-gray-400 break-all">
                     {isPaypayOrder ? "PayPay" : "Square"}返金ID: {order.refundId}
                   </p>

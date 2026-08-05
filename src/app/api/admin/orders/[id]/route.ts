@@ -12,6 +12,7 @@ function toApiOrder(order: Order) {
     squareOrderId: order.squareOrderId,
     squarePaymentId: order.squarePaymentId,
     refundId: order.refundId,
+    refundedAmount: order.refundedAmount,
     customer: {
       email: order.customerEmail,
       firstName: order.customerFirstName,

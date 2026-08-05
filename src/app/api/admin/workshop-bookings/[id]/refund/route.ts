@@ -8,7 +8,10 @@ import { getPaymentStatus as getPaypayPaymentStatus, refundPayment as refundPayp
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 
 // ワークショップ予約の返金。オンラインで事前決済された予約（Squareカード / PayPay）に対して
-// 全額返金し、あわせて予約をキャンセルする（枠とGoogleカレンダーのイベントも解放する）。
+// 返金し、あわせて予約をキャンセルする（枠とGoogleカレンダーのイベントも解放する）。
+//
+// 金額を指定すると一部返金になる（キャンセルポリシーに沿ってキャンセル料を差し引く場合）。
+// 省略すると残額全額。一部返金でも参加はされないため、予約は必ずキャンセルする。
 //
 // 返金を伴わない単なるキャンセルは PATCH /api/admin/workshop-bookings/[id] が担当する。
 // 現地払い（on_site）は店頭での現金授受のため、このAPIの対象外。
@@ -28,12 +31,7 @@ export async function POST(
       return NextResponse.json({ error: '予約が見つかりません' }, { status: 404 });
     }
 
-    // 二重返金の防止
-    if (booking.paymentStatus === 'refunded' || booking.refundId) {
-      return NextResponse.json({ error: 'この予約は既に返金済みです' }, { status: 400 });
-    }
-
-    if (booking.paymentStatus !== 'paid') {
+    if (booking.paymentStatus !== 'paid' && booking.paymentStatus !== 'refunded') {
       return NextResponse.json(
         { error: '支払い済みの予約のみ返金できます。未入金の予約はキャンセルしてください' },
         { status: 400 }
@@ -43,6 +41,30 @@ export async function POST(
     if (!booking.total || booking.total <= 0) {
       return NextResponse.json({ error: '返金額が不正です' }, { status: 400 });
     }
+
+    // 返金可能な残額。キャンセル料を差し引いた一部返金にも対応する。
+    const alreadyRefunded = booking.refundedAmount || 0;
+    const refundableAmount = booking.total - alreadyRefunded;
+    if (refundableAmount <= 0) {
+      return NextResponse.json({ error: 'この予約は既に全額返金済みです' }, { status: 400 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const requestedAmount = body?.amount === undefined || body?.amount === null || body?.amount === ''
+      ? refundableAmount
+      : Number(body.amount);
+
+    if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+      return NextResponse.json({ error: '返金額は1円以上で指定してください' }, { status: 400 });
+    }
+    const refundAmount = Math.round(requestedAmount);
+    if (refundAmount > refundableAmount) {
+      return NextResponse.json(
+        { error: `返金可能な残額は¥${refundableAmount.toLocaleString()}です` },
+        { status: 400 }
+      );
+    }
+    const isFullRefund = alreadyRefunded + refundAmount >= booking.total;
 
     let refundId: string;
 
@@ -59,7 +81,7 @@ export async function POST(
       const refund = await refundPaypayPayment({
         merchantRefundId: uuidv4(),
         paymentId: paypayStatus.paymentId,
-        amountJpy: booking.total,
+        amountJpy: refundAmount,
       });
       refundId = refund.refundId;
     } else if (booking.paymentMethod === 'credit_card') {
@@ -69,7 +91,7 @@ export async function POST(
           { status: 400 }
         );
       }
-      const refund = await refundSquarePayment(booking.squarePaymentId, booking.total, uuidv4());
+      const refund = await refundSquarePayment(booking.squarePaymentId, refundAmount, uuidv4());
       refundId = refund.id;
     } else {
       return NextResponse.json(
@@ -80,7 +102,13 @@ export async function POST(
 
     // ---- ここから先は返金が既に成立している。失敗しても成功レスポンスを返す ----
     try {
-      await updateBookingPayment(id, { paymentStatus: 'refunded', refundId });
+      await updateBookingPayment(id, {
+        // 一部返金でも予約はキャンセルするため、支払い状態は返金済みとして扱い、
+        // 実際にいくら返したかは refundedAmount で持つ
+        paymentStatus: 'refunded',
+        refundId,
+        refundedAmount: alreadyRefunded + refundAmount,
+      });
     } catch (updateError) {
       // refund_id カラム未追加（マイグレーション未実行）でもここに来る。返金自体は成立しているため
       // ログに残して継続し、支払い状態だけでも更新を試みる。
@@ -123,12 +151,20 @@ export async function POST(
         text: [
           `${booking.customerName || 'お客様'} 様`,
           '',
-          'ご予約をキャンセルし、お支払いいただいた全額を返金いたしました。',
+          isFullRefund
+            ? 'ご予約をキャンセルし、お支払いいただいた全額を返金いたしました。'
+            : 'ご予約をキャンセルし、下記の金額を返金いたしました。',
           '',
           `予約番号: ${booking.bookingNumber}`,
           `プラン: ${booking.workshopPlanName || 'ワークショップ'}`,
           `日時: ${booking.date} ${booking.startTime}〜${booking.endTime}`,
-          `返金金額: ¥${booking.total.toLocaleString('ja-JP')}`,
+          `返金金額: ¥${refundAmount.toLocaleString()}`,
+          ...(isFullRefund
+            ? []
+            : [
+                `お支払い金額: ¥${booking.total.toLocaleString('ja-JP')}`,
+                'キャンセルポリシーに基づき、キャンセル料を差し引いた金額を返金しております。',
+              ]),
           `返金方法: ${booking.paymentMethod === 'paypay' ? 'PayPay' : 'クレジットカード'}`,
           '',
           '返金の反映までにはお支払い方法により数日かかる場合があります。',
@@ -145,7 +181,9 @@ export async function POST(
       success: true,
       booking: updated,
       refundId,
-      amount: booking.total,
+      amount: refundAmount,
+      refundedAmount: alreadyRefunded + refundAmount,
+      isFullRefund,
     });
   } catch (error) {
     console.error('ワークショップ予約の返金エラー:', error);

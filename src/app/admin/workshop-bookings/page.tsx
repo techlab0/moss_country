@@ -168,10 +168,23 @@ function BookingsListTab() {
   // 返金（Square/PayPay）。返金と同時に予約もキャンセルされ、枠とカレンダーが解放される。
   const handleRefund = async (booking: Booking) => {
     const methodLabel = booking.paymentMethod === 'paypay' ? 'PayPay' : 'クレジットカード';
-    const amountLabel = (booking.total ?? 0).toLocaleString();
+    const fullAmount = booking.total ?? 0;
+    // キャンセルポリシーに沿ってキャンセル料を差し引く場合があるため、返金額を指定できるようにする
+    const input = window.prompt(
+      `予約「${booking.bookingNumber}」の返金額を入力してください（円）。
+お支払い金額: ¥${fullAmount.toLocaleString()}
+キャンセル料を差し引く場合は金額を変更してください。`,
+      String(fullAmount)
+    );
+    if (input === null) return;
+    const amount = Number(input);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > fullAmount) {
+      alert(`返金額は1〜${fullAmount.toLocaleString()}円で入力してください`);
+      return;
+    }
     if (
       !window.confirm(
-        `予約「${booking.bookingNumber}」に ¥${amountLabel} を${methodLabel}へ返金します。
+        `予約「${booking.bookingNumber}」に ¥${amount.toLocaleString()} を${methodLabel}へ返金します。
 返金と同時に予約はキャンセルされ、Googleカレンダーのイベントも削除されます。
 この操作は取り消せません。よろしいですか？`
       )
@@ -180,7 +193,11 @@ function BookingsListTab() {
     }
     setRefundingId(booking.id);
     try {
-      const res = await fetch(`/api/admin/workshop-bookings/${booking.id}/refund`, { method: 'POST' });
+      const res = await fetch(`/api/admin/workshop-bookings/${booking.id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || '返金に失敗しました');

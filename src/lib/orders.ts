@@ -62,6 +62,8 @@ export interface Order {
   squareOrderId: string | null;
   squarePaymentId: string | null;
   refundId: string | null;
+  /** 返金済みの累計金額。一部返金を繰り返した合計 */
+  refundedAmount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -96,6 +98,7 @@ export interface UpdateOrderStatusInput {
   squareOrderId?: string | null;
   squarePaymentId?: string | null;
   refundId?: string | null;
+  refundedAmount?: number;
 }
 
 export interface GetOrdersOptions {
@@ -126,6 +129,7 @@ interface OrderRow {
   square_order_id: string | null;
   square_payment_id: string | null;
   refund_id: string | null;
+  refunded_amount?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +157,7 @@ function rowToOrder(row: OrderRow): Order {
     squareOrderId: row.square_order_id,
     squarePaymentId: row.square_payment_id,
     refundId: row.refund_id,
+    refundedAmount: Number(row.refunded_amount ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -401,6 +406,7 @@ export async function updateOrderStatus(id: string, patch: UpdateOrderStatusInpu
   if (patch.squareOrderId !== undefined) updateFields.square_order_id = patch.squareOrderId;
   if (patch.squarePaymentId !== undefined) updateFields.square_payment_id = patch.squarePaymentId;
   if (patch.refundId !== undefined) updateFields.refund_id = patch.refundId;
+  if (patch.refundedAmount !== undefined) updateFields.refunded_amount = patch.refundedAmount;
 
   const { error } = await supabaseAdmin.from('orders').update(updateFields).eq('id', id);
 

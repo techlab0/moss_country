@@ -38,6 +38,8 @@ export interface WorkshopBooking {
   squarePaymentId: string | null;
   /** 返金ID（Square: refund.id / PayPay: merchantRefundId）。返金していなければnull */
   refundId: string | null;
+  /** 返金済みの累計金額。一部返金を繰り返した合計 */
+  refundedAmount: number;
   googleEventId: string | null;
   status: WorkshopBookingStatus;
   notes: string | null;
@@ -70,6 +72,7 @@ export interface UpdateWorkshopBookingPaymentInput {
   paymentStatus?: WorkshopBookingPaymentStatus;
   squarePaymentId?: string | null;
   refundId?: string | null;
+  refundedAmount?: number;
 }
 
 export interface ListWorkshopBookingsOptions {
@@ -96,6 +99,7 @@ interface WorkshopBookingRow {
   total: number | null;
   square_payment_id: string | null;
   refund_id?: string | null;
+  refunded_amount?: number | null;
   google_event_id: string | null;
   status: string;
   notes: string | null;
@@ -122,6 +126,7 @@ function rowToBooking(row: WorkshopBookingRow): WorkshopBooking {
     total: row.total,
     squarePaymentId: row.square_payment_id,
     refundId: row.refund_id ?? null,
+    refundedAmount: Number(row.refunded_amount ?? 0),
     googleEventId: row.google_event_id,
     status: (row.status as WorkshopBookingStatus) || 'confirmed',
     notes: row.notes,
@@ -365,6 +370,7 @@ export async function updateBookingPayment(id: string, patch: UpdateWorkshopBook
   if (patch.paymentStatus !== undefined) updateFields.payment_status = patch.paymentStatus;
   if (patch.squarePaymentId !== undefined) updateFields.square_payment_id = patch.squarePaymentId;
   if (patch.refundId !== undefined) updateFields.refund_id = patch.refundId;
+  if (patch.refundedAmount !== undefined) updateFields.refunded_amount = patch.refundedAmount;
 
   if (Object.keys(updateFields).length === 0) return;
 
