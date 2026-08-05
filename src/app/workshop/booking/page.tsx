@@ -527,6 +527,10 @@ export default function WorkshopBookingPage() {
                     className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
                     placeholder="ご要望等がございましたらご記入ください"
                   />
+                  <p className="text-stone-400 text-xs mt-2">
+                    小学生以下のお子様がご一緒の場合は、人数と年齢を備考欄にご記入ください。
+                    当日のご案内や道具のご用意に使わせていただきます。
+                  </p>
                 </div>
 
                 {customerError && <p className="text-red-400 text-sm">{customerError}</p>}
@@ -633,6 +637,28 @@ export default function WorkshopBookingPage() {
                     お支払いが確認できない場合、ご予約をキャンセルさせていただくことがあります。
                   </p>
                 )}
+              </div>
+
+              <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <h2 className="text-white font-medium mb-3">キャンセルポリシー</h2>
+                <ul className="space-y-1.5 text-sm text-stone-300">
+                  <li className="flex justify-between gap-4">
+                    <span>2日前まで</span>
+                    <span className="text-stone-400">無料</span>
+                  </li>
+                  <li className="flex justify-between gap-4">
+                    <span>前日</span>
+                    <span className="text-stone-400">参加費の30%</span>
+                  </li>
+                  <li className="flex justify-between gap-4">
+                    <span>当日</span>
+                    <span className="text-stone-400">参加費の50%</span>
+                  </li>
+                </ul>
+                <p className="text-stone-400 text-xs mt-3 leading-relaxed">
+                  体調不良・悪天候・交通機関の乱れなど、やむを得ない事情によるキャンセルはキャンセル料をいただきません。
+                  お手数ですが、お早めにご連絡ください。
+                </p>
               </div>
 
               {submitUnavailable && (
