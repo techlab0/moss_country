@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { ecMethodLabel, workshopMethodLabel } from '@/lib/salesAggregation';
+import { includesNormalized, normalizeForSearch } from '@/lib/searchText';
 
 // ========== 型 ==========
 
@@ -483,14 +484,16 @@ function EntryTab({
     setAmounts(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
   };
 
-  // 検索語の正規化と一致判定。カテゴリ名でも引けるようにしている
-  const normalizedCatalogQuery = catalogQuery.trim().toLowerCase();
-  const isSearching = normalizedCatalogQuery.length > 0;
+  // 検索語の一致判定。カテゴリ名でも引けるようにしている。
+  // ひらがな入力でカタカナの商品名に一致させるため normalizeForSearch を通す
+  // （レジではIME変換前のひらがなのまま打ち込むことが多いため）。
+  const isSearching = normalizeForSearch(catalogQuery).trim().length > 0;
   const matchesCatalogQuery = (item: SalesItem): boolean => {
     if (!isSearching) return true;
-    return `${item.name} ${categoryLabels[item.category] ?? item.category}`
-      .toLowerCase()
-      .includes(normalizedCatalogQuery);
+    return includesNormalized(
+      `${item.name} ${categoryLabels[item.category] ?? item.category}`,
+      catalogQuery.trim()
+    );
   };
   // 数量・金額が入っている項目（会計に載る項目）
   const selectedCatalogItems = sortByNameJa(
