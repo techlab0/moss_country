@@ -6,6 +6,7 @@ import { PRODUCT_CATEGORIES } from '@/lib/productCategories';
 import { generateProductSlug } from '@/lib/slugUtils';
 import { suggestReadingFromName } from '@/lib/productSort';
 import { SalesItemPicker, type SalesItem } from '@/components/admin/SalesItemPicker';
+import { compressImageForUpload } from '@/lib/imageCompress';
 
 interface SanityImageRef {
   _type: 'image';
@@ -68,15 +69,21 @@ const NewProductPage = () => {
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
     try {
+      // スマホの写真はそのままだとサーバー側の上限(4MB)を超えて失敗することが多いため、
+      // 送信前にブラウザ内で縮小・再圧縮する
+      const uploadFile = await compressImageForUpload(file);
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', uploadFile);
       const res = await fetch('/api/admin/images/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.error || (await res.text()));
+      }
       const { image, thumbnailUrl } = await res.json();
       setImages((prev) => [...prev, { image, previewUrl: thumbnailUrl }]);
     } catch (err) {
       console.error(err);
-      alert('画像のアップロードに失敗しました');
+      alert(err instanceof Error ? `画像のアップロードに失敗しました\n${err.message}` : '画像のアップロードに失敗しました');
     } finally {
       setUploadingImage(false);
     }
@@ -399,6 +406,8 @@ const NewProductPage = () => {
                 <input
                   type="number"
                   min={0}
+                  step="any"
+                  inputMode="decimal"
                   value={formData.dimensions.width ?? ''}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -415,6 +424,8 @@ const NewProductPage = () => {
                 <input
                   type="number"
                   min={0}
+                  step="any"
+                  inputMode="decimal"
                   value={formData.dimensions.height ?? ''}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -431,6 +442,8 @@ const NewProductPage = () => {
                 <input
                   type="number"
                   min={0}
+                  step="any"
+                  inputMode="decimal"
                   value={formData.dimensions.depth ?? ''}
                   onChange={(e) =>
                     setFormData((prev) => ({
