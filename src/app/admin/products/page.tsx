@@ -7,6 +7,7 @@ import { compareByReading } from '@/lib/productSort';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 import { useSalesItems, SalesItemSelect } from '@/components/admin/SalesItemPicker';
+import { includesNormalized } from '@/lib/searchText';
 
 interface ProductWithInventory extends Product {
   currentStock?: number;
@@ -254,8 +255,10 @@ export default function AdminProductsPage() {
     if (visibilityFilter === 'visible' && !isVisible) return false;
     if (visibilityFilter === 'hidden' && isVisible) return false;
 
-    const query = nameQuery.trim().toLowerCase();
-    if (query && !(product.name || '').toLowerCase().includes(query)) {
+    // ひらがな入力でカタカナの商品名にも一致させる。ふりがな・スラッグも検索対象にすることで
+    // 漢字の商品名（例:「苔玉」）をふりがな（こけだま）で引ける。
+    const query = nameQuery.trim();
+    if (query && !includesNormalized(`${product.name || ''} ${product.nameReading || ''} ${getProductSlug(product)}`, query)) {
       return false;
     }
 
@@ -335,7 +338,7 @@ export default function AdminProductsPage() {
             type="text"
             value={nameQuery}
             onChange={(e) => setNameQuery(e.target.value)}
-            placeholder="商品名で検索"
+            placeholder="商品名・ふりがなで検索"
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-moss-green focus:border-transparent"
           />
         </div>

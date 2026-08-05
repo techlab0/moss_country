@@ -6,6 +6,7 @@ import { getProductSlug } from '@/lib/adapters';
 import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import { compareByReading } from '@/lib/productSort';
 import { useSalesItems, SalesItemSelect } from '@/components/admin/SalesItemPicker';
+import { includesNormalized } from '@/lib/searchText';
 import type { Product } from '@/types/sanity';
 
 // 商品の一括編集。クイック編集と同じ項目（ふりがな・スラッグ・カテゴリ・売上項目・表示）を
@@ -95,11 +96,12 @@ export default function BulkEditProductsPage() {
   );
 
   const visibleRows = useMemo(() => {
-    const query = nameQuery.trim().toLowerCase();
+    // ひらがな入力でカタカナの商品名にも一致させる（ふりがな・スラッグも検索対象）
+    const query = nameQuery.trim();
     return rows.filter((row) => {
       if (onlyUnlinked && row.salesItemId) return false;
       if (!query) return true;
-      return `${row.name} ${row.nameReading} ${row.slug}`.toLowerCase().includes(query);
+      return includesNormalized(`${row.name} ${row.nameReading} ${row.slug}`, query);
     });
   }, [rows, nameQuery, onlyUnlinked]);
 
