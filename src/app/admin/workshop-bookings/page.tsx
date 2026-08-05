@@ -657,6 +657,58 @@ function SlotSettingsTab() {
     return slot?.isOpen ?? false;
   };
 
+  // 枠のボタン。スマホのリスト表示とPCのカレンダー表示で同じ挙動・同じ配色を使う。
+  const renderSlotButton = (dateStr: string, start: string, businessDay: boolean, layout: 'grid' | 'list') => {
+    const isOpen = effectiveIsOpen(dateStr, start);
+    const dirty = pending.has(`${dateStr}|${start}`);
+    const vacancy = slotVacancy(dateStr, start);
+    return (
+      <button
+        key={start}
+        type="button"
+        onClick={() => toggleSlot(dateStr, start)}
+        disabled={!businessDay}
+        title={
+          (!businessDay
+            ? `${start}: 営業日未登録のため停止中`
+            : isOpen
+              ? `${start}: 受付中（クリックで停止）`
+              : `${start}: 停止中（クリックで再開）`) +
+          (vacancy ? ` / 空き${vacancy.remaining}名（定員${vacancy.capacity}名）` : '')
+        }
+        className={`rounded transition-colors ${
+          layout === 'grid'
+            ? 'w-full text-[11px] px-1 py-1 leading-tight'
+            : 'flex-1 text-sm px-3 py-2'
+        } ${
+          isOpen
+            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+            : businessDay
+              ? 'bg-gray-200 text-gray-500 line-through hover:bg-gray-300'
+              : 'bg-gray-200 text-gray-400 line-through cursor-not-allowed'
+        } ${dirty ? 'ring-2 ring-amber-400' : ''}`}
+      >
+        {/* 横幅が足りないグリッドでは時刻と空き状況を2段にして切れを防ぐ */}
+        <span className={layout === 'grid' ? 'flex flex-col items-center' : 'flex items-center justify-center gap-2'}>
+          <span className="whitespace-nowrap">{start}</span>
+          {vacancy && (
+            <span
+              className={`whitespace-nowrap ${
+                vacancy.remaining === 0
+                  ? 'font-semibold text-red-600'
+                  : vacancy.remaining < vacancy.capacity
+                    ? 'font-semibold text-amber-700'
+                    : 'opacity-70'
+              }`}
+            >
+              {vacancy.remaining}/{vacancy.capacity}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  };
+
   // 残り枠（定員 − 予約済み人数）。データが無い日は null を返して表示しない。
   const slotVacancy = (dateStr: string, start: string): { remaining: number; capacity: number } | null => {
     const slot = days.get(dateStr)?.slots.find(s => s.start === start);
@@ -788,7 +840,45 @@ function SlotSettingsTab() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        {/* スマホ: 日付ごとのリスト。7列グリッドだと1マスが狭すぎて時刻も空き人数も切れるため */}
+        <div className="sm:hidden divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+            const dateStr = formatDate(year, month, day);
+            const dayData = days.get(dateStr);
+            const businessDay = dayData?.businessDay ?? false;
+            const closed = dayData?.closed ?? false;
+            const weekday = dayNames[new Date(`${dateStr}T00:00:00Z`).getUTCDay()];
+
+            return (
+              <div
+                key={dateStr}
+                className={`flex items-center gap-3 px-3 py-2 ${
+                  closed ? 'bg-gray-50' : businessDay ? 'bg-white' : 'bg-slate-50'
+                }`}
+              >
+                <div className="w-16 shrink-0">
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-base font-semibold ${closed || !businessDay ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {day}
+                    </span>
+                    <span className="text-xs text-gray-500">{weekday}</span>
+                  </div>
+                  {closed && <span className="text-[10px] text-gray-500">休業</span>}
+                  {!closed && !businessDay && <span className="text-[10px] text-gray-500">未登録</span>}
+                </div>
+                {closed ? (
+                  <p className="flex-1 text-xs text-gray-400">休業日のため受付できません</p>
+                ) : (
+                  <div className="flex-1 flex gap-2">
+                    {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'list'))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden sm:grid grid-cols-7 gap-1">
           {Array.from({ length: firstDay }, (_, i) => (
             <div
               key={`empty-${i}`}
@@ -821,51 +911,7 @@ function SlotSettingsTab() {
                 </div>
                 {!closed && (
                   <div className="space-y-1">
-                    {SLOT_STARTS.map(start => {
-                      const isOpen = effectiveIsOpen(dateStr, start);
-                      const dirty = pending.has(`${dateStr}|${start}`);
-                      const vacancy = slotVacancy(dateStr, start);
-                      return (
-                        <button
-                          key={start}
-                          type="button"
-                          onClick={() => toggleSlot(dateStr, start)}
-                          disabled={!businessDay}
-                          title={
-                            (!businessDay
-                              ? `${start}: 営業日未登録のため停止中`
-                              : isOpen
-                                ? `${start}: 受付中（クリックで停止）`
-                                : `${start}: 停止中（クリックで再開）`) +
-                            (vacancy ? ` / 空き${vacancy.remaining}名（定員${vacancy.capacity}名）` : '')
-                          }
-                          className={`w-full text-[11px] px-1.5 py-1 rounded transition-colors ${
-                            isOpen
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              : businessDay
-                                ? 'bg-gray-200 text-gray-500 line-through hover:bg-gray-300'
-                                : 'bg-gray-200 text-gray-400 line-through cursor-not-allowed'
-                          } ${dirty ? 'ring-2 ring-amber-400' : ''}`}
-                        >
-                          <span className="flex items-center justify-center gap-1.5">
-                            <span>{start}</span>
-                            {vacancy && (
-                              <span
-                                className={
-                                  vacancy.remaining === 0
-                                    ? 'font-semibold text-red-600'
-                                    : vacancy.remaining < vacancy.capacity
-                                      ? 'font-semibold text-amber-700'
-                                      : 'opacity-70'
-                                }
-                              >
-                                {vacancy.remaining}/{vacancy.capacity}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      );
-                    })}
+                    {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'grid'))}
                   </div>
                 )}
               </div>

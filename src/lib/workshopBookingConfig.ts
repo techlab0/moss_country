@@ -22,7 +22,7 @@ export const WORKSHOP_SLOTS: ReadonlyArray<{ start: string; end: string }> = [
 ];
 
 /** 1枠あたりの最大受け入れ人数（同一日・同一開始時刻の予約party_size合計がこれ以上なら満枠扱い） */
-export const CAPACITY_PER_SLOT = 4;
+export const CAPACITY_PER_SLOT = 6;
 
 /** simpleWorkshop側にduration指定が無い/パースできない場合のデフォルト所要時間（分） */
 export const DEFAULT_DURATION_MIN = 120;

@@ -183,7 +183,7 @@ export default function WorkshopPage() {
                   </svg>
                 </div>
                 <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">利用人数</h3>
-                <p className="text-base md:text-2xl font-bold text-moss-green">1～4人</p>
+                <p className="text-base md:text-2xl font-bold text-moss-green">1～6人</p>
                 <p className="text-gray-600 text-xs md:text-sm mt-2">少人数での丁寧な指導</p>
               </CardHeader>
             </Card>
@@ -317,7 +317,7 @@ export default function WorkshopPage() {
                     </svg>
                   </div>
                   <h3 className="text-sm md:text-xl font-bold text-moss-green mb-2">少人数制</h3>
-                  <p className="text-gray-600 text-xs md:text-base">1回最大4人まで</p>
+                  <p className="text-gray-600 text-xs md:text-base">1回最大6人まで</p>
                 </div>
               </div>
               

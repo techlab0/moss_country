@@ -35,7 +35,7 @@ export function buildBookingEventRequest(input: CreateBookingEventInput) {
     start: { dateTime: input.startISO, timeZone: TIME_ZONE },
     end: { dateTime: input.endISO, timeZone: TIME_ZONE },
     // 予約人数はSupabaseで管理する。予約自身をfreebusyへ含めると、
-    // 1人目の予約だけで定員4名の枠全体が閉じてしまうため「予定なし」にする。
+    // 1人目の予約だけで定員いっぱいの枠全体が閉じてしまうため「予定なし」にする。
     transparency: 'transparent',
     visibility: 'private',
     extendedProperties: {
