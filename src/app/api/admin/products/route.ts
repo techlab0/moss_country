@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
         sortOrder,
         isVisible,
         "salesItemId": salesItem._ref,
+        // 一覧のサムネイル用に1枚目の画像のURLだけを返す（images配列全体を各行で扱わずに済む）
+        "thumbnailUrl": images[0].asset->url,
         _createdAt,
         _updatedAt
       }

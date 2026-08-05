@@ -479,9 +479,20 @@ export default function AdminProductsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
-                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                              🌱
-                            </div>
+                            {/* Sanityの画像CDNで96px（Retina用に表示サイズの2倍）に縮小して配信する。
+                                next/imageを通さないのは、Vercelの画像最適化の変換回数を消費しないため。 */}
+                            {product.thumbnailUrl ? (
+                              <img
+                                src={`${product.thumbnailUrl}?w=96&h=96&fit=crop&auto=format`}
+                                alt=""
+                                loading="lazy"
+                                className="h-12 w-12 rounded-lg object-cover bg-gray-100"
+                              />
+                            ) : (
+                              <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                🌱
+                              </div>
+                            )}
                           </div>
                           <div className="ml-4">
                             <div className="flex items-center gap-2">
