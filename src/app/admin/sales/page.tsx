@@ -376,6 +376,9 @@ function EntryTab({
   onRegistered: (text: string) => void;
 }) {
   const [visitorCount, setVisitorCount] = useState('1');
+  // 項目が増えてスクロールが辛くなったため、名前検索とカテゴリ絞り込みで探せるようにする
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [customItems, setCustomItems] = useState<CustomItemRow[]>([]);
@@ -479,6 +482,20 @@ function EntryTab({
   const setAmount = (id: string, value: string) => {
     setAmounts(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
   };
+
+  // 検索語の正規化と一致判定。カテゴリ名でも引けるようにしている
+  const normalizedCatalogQuery = catalogQuery.trim().toLowerCase();
+  const isSearching = normalizedCatalogQuery.length > 0;
+  const matchesCatalogQuery = (item: SalesItem): boolean => {
+    if (!isSearching) return true;
+    return `${item.name} ${categoryLabels[item.category] ?? item.category}`
+      .toLowerCase()
+      .includes(normalizedCatalogQuery);
+  };
+  // 数量・金額が入っている項目（会計に載る項目）
+  const selectedCatalogItems = sortByNameJa(
+    salesItems.filter(item => item.isActive && itemAmount(item) > 0)
+  );
 
   const buildLineItems = () => {
     const catalogLines = salesItems
@@ -888,8 +905,94 @@ function EntryTab({
         <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
       ) : (
         <>
+          {/* 検索・カテゴリ絞り込み。検索中はカテゴリ指定を無視して全カテゴリから探す */}
+          <div className="bg-white shadow rounded-lg p-3 space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                value={catalogQuery}
+                onChange={(e) => setCatalogQuery(e.target.value)}
+                placeholder="商品名で検索"
+                className="w-full px-3 py-2.5 pr-16 text-sm border border-gray-300 rounded-md"
+              />
+              {catalogQuery && (
+                <button
+                  type="button"
+                  onClick={() => setCatalogQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+                >
+                  クリア
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {(['all', ...categoryOrder] as const).map((key) => {
+                const count =
+                  key === 'all'
+                    ? salesItems.filter((item) => item.isActive).length
+                    : salesItems.filter((item) => item.isActive && item.category === key).length;
+                if (count === 0) return null;
+                const selectedCount =
+                  key === 'all'
+                    ? salesItems.filter((item) => item.isActive && itemAmount(item) > 0).length
+                    : salesItems.filter((item) => item.isActive && item.category === key && itemAmount(item) > 0).length;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActiveCategory(key)}
+                    disabled={catalogQuery.trim().length > 0}
+                    className={`shrink-0 px-3 py-1.5 text-sm rounded-full border transition-colors disabled:opacity-40 ${
+                      activeCategory === key
+                        ? 'bg-moss-green text-white border-moss-green'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {key === 'all' ? 'すべて' : categoryLabels[key]}
+                    {selectedCount > 0 && (
+                      <span className={activeCategory === key ? 'ml-1' : 'ml-1 text-moss-green font-bold'}>
+                        ({selectedCount})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 選択中の項目。検索やカテゴリ切り替えで見えなくなっても会計内容を確認できるようにする */}
+          {selectedCatalogItems.length > 0 && (
+            <div className="bg-moss-green/5 border border-moss-green/30 rounded-lg p-3">
+              <p className="text-xs font-medium text-moss-green mb-2">選択中（{selectedCatalogItems.length}件）</p>
+              <ul className="space-y-1">
+                {selectedCatalogItems.map((item) => (
+                  <li key={item._id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-gray-800 truncate">
+                      {item.name}
+                      <span className="text-gray-500"> × {toNumber(qtyStr(item))}</span>
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      <span className="font-medium text-gray-900">¥{itemAmount(item).toLocaleString()}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(item._id, '0')}
+                        className="text-xs text-gray-400 hover:text-red-600"
+                      >
+                        取消
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {categoryOrder.map(category => {
-            const itemsInCategory = sortByNameJa(salesItems.filter(item => item.category === category && item.isActive));
+            if (!isSearching && activeCategory !== 'all' && activeCategory !== category) return null;
+            const itemsInCategory = sortByNameJa(
+              salesItems.filter(item => item.category === category && item.isActive && matchesCatalogQuery(item))
+            );
             if (itemsInCategory.length === 0) return null;
 
             const categoryTotal = itemsInCategory.reduce((sum, item) => sum + itemAmount(item), 0);
