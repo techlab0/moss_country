@@ -836,11 +836,15 @@ function EntryTab({
             ) : (
               <>
                 <img src={qrFlow.qrCodeDataUrl} alt="決済用QRコード" className="mx-auto w-64 h-64" />
-                <p className="text-sm text-gray-500">
-                  {qrFlow.method === 'paypay'
-                    ? 'お客様のPayPayアプリでQRコードを読み取ってお支払いください'
-                    : 'お客様のスマホでQRコードを読み取ってお支払いください'}
-                </p>
+                <p className="text-sm text-gray-500">お客様のスマホでQRコードを読み取ってお支払いください</p>
+                {qrFlow.method === 'paypay' && (
+                  // PayPayアプリ内のスキャン機能ではエラーになる報告があるため、
+                  // 標準カメラ経由（PayPay公式が案内している読み取り方法）を案内する
+                  <p className="text-xs text-gray-500">
+                    PayPayアプリの「スキャン」ではなく、スマホ標準のカメラアプリで読み取り、
+                    表示されたページから「PayPayアプリに行く」を押してください。
+                  </p>
+                )}
               </>
             )}
             <p className="text-sm text-moss-green animate-pulse">支払い待ち...</p>
