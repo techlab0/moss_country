@@ -1,14 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
 // （営業日データは受付枠の受付可否を決める前提条件として参照する）。
+// これに加えて「Gmail連携」タブを持つ（予約通知メールの読み取り設定・調査用）。
+
+type TabKey = 'bookings' | 'slots' | 'plans' | 'gmail';
+
+const TAB_KEYS: TabKey[] = ['bookings', 'slots', 'plans', 'gmail'];
+
+// Gmail連携のOAuthコールバックは ?tab=gmail を付けて戻ってくるため、初期タブをURLから決める。
+// useSearchParams はSuspense境界を要求するので、ここでは初期化時に一度だけlocationを読む。
+function initialTab(): TabKey {
+  if (typeof window === 'undefined') return 'bookings';
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  return TAB_KEYS.includes(tab as TabKey) ? (tab as TabKey) : 'bookings';
+}
 
 export default function WorkshopBookingsPage() {
-  const [activeTab, setActiveTab] = useState<'bookings' | 'slots' | 'plans'>('bookings');
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
   return (
     <div className="space-y-6">
@@ -22,6 +35,7 @@ export default function WorkshopBookingsPage() {
             { key: 'bookings' as const, label: '予約一覧' },
             { key: 'slots' as const, label: '受付枠設定' },
             { key: 'plans' as const, label: 'プラン設定' },
+            { key: 'gmail' as const, label: 'Gmail連携' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -41,6 +55,7 @@ export default function WorkshopBookingsPage() {
       {activeTab === 'bookings' && <BookingsListTab />}
       {activeTab === 'slots' && <SlotSettingsTab />}
       {activeTab === 'plans' && <PlanSettingsTab />}
+      {activeTab === 'gmail' && <GmailIntegrationTab />}
     </div>
   );
 }
@@ -1147,6 +1162,406 @@ function SlotSettingsTab() {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// ===================== Gmail連携タブ =====================
+
+// 予約通知メール（activityboard.jp）をGmailから読み取るための連携設定と、
+// 取込みルールを決めるための「メール調査モード」。
+// 調査モードは読み取り専用で、予約台帳へは一切書き込まない。
+
+const GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+
+interface GmailStatus {
+  configured: boolean;
+  connected: boolean;
+  expectedScope: string;
+  connection?: {
+    email: string | null;
+    scope: string | null;
+    connectedBy: string | null;
+    connectedAt: string | null;
+    updatedAt: string | null;
+  } | null;
+}
+
+interface InspectMessage {
+  id: string;
+  from: string;
+  to: string;
+  subject: string;
+  date: string;
+  internalDate: string | null;
+  snippet: string;
+  subjectPattern: string;
+  bookingNumberCandidates: string[];
+}
+
+interface InspectResult {
+  query: string;
+  fetched: number;
+  totalEstimate: number | null;
+  senders: { value: string; count: number }[];
+  subjectPatterns: { value: string; count: number }[];
+  bookingNumberSamples: { value: string; count: number }[];
+  messages: InspectMessage[];
+}
+
+// OAuthコールバックが付けてくる理由コードを、対処の分かる日本語にする
+const GMAIL_ERROR_LABELS: Record<string, string> = {
+  access_denied: 'Googleの許可画面で「許可」されませんでした。もう一度やり直してください。',
+  missing_code: 'Googleから認証コードが返りませんでした。もう一度やり直してください。',
+  state_mismatch:
+    '連携の開始と戻りが一致しませんでした。管理画面から改めて「Gmailを連携する」を押してください。',
+  exchange_failed: 'トークンの取得に失敗しました。',
+};
+
+function formatDateTime(value: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+}
+
+function GmailIntegrationTab() {
+  const [status, setStatus] = useState<GmailStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const [query, setQuery] = useState('from:activityboard.jp');
+  const [maxResults, setMaxResults] = useState(20);
+  const [inspecting, setInspecting] = useState(false);
+  const [result, setResult] = useState<InspectResult | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const loadStatus = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/gmail/status');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '状態の取得に失敗しました');
+      setStatus(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '状態の取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadStatus();
+  }, [loadStatus]);
+
+  // OAuthコールバックからの戻りをバナー表示し、URLからは結果パラメータを消す
+  // （リロードで同じ結果が再表示されるのを防ぐ）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gmail = params.get('gmail');
+    if (!gmail) return;
+
+    if (gmail === 'connected') {
+      const email = params.get('email');
+      setNotice({
+        type: 'success',
+        text: email ? `${email} と連携しました。` : 'Gmailと連携しました。',
+      });
+    } else {
+      const reason = params.get('reason') ?? '';
+      const detail = params.get('message');
+      const label = GMAIL_ERROR_LABELS[reason] ?? `連携に失敗しました（${reason || '原因不明'}）`;
+      setNotice({ type: 'error', text: detail ? `${label} ${detail}` : label });
+    }
+
+    for (const key of ['gmail', 'email', 'reason', 'message']) {
+      params.delete(key);
+    }
+    params.set('tab', 'gmail');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, []);
+
+  const handleDisconnect = async () => {
+    if (!confirm('Gmail連携を解除します。再開するには改めてGoogleの許可が必要です。よろしいですか？')) {
+      return;
+    }
+    setDisconnecting(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/admin/gmail/status', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '解除に失敗しました');
+      setNotice({ type: 'success', text: 'Gmail連携を解除しました。' });
+      setResult(null);
+      await loadStatus();
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '解除に失敗しました' });
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const handleInspect = async () => {
+    setInspecting(true);
+    setNotice(null);
+    try {
+      const params = new URLSearchParams({ q: query, max: String(maxResults) });
+      const res = await fetch(`/api/admin/gmail/inspect?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'メールの読み取りに失敗しました');
+      setResult(data);
+      if (data.fetched === 0) {
+        setNotice({ type: 'error', text: '条件に一致するメールが見つかりませんでした。検索条件を見直してください。' });
+      }
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'メールの読み取りに失敗しました' });
+    } finally {
+      setInspecting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="py-12 text-center text-gray-500">読み込み中...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {error}
+        <button onClick={() => void loadStatus()} className="ml-3 underline">
+          再読み込み
+        </button>
+      </div>
+    );
+  }
+
+  const connection = status?.connection ?? null;
+  const scopeIsReadonlyOnly = !connection?.scope || connection.scope.trim() === GMAIL_READONLY_SCOPE;
+
+  return (
+    <div className="space-y-6">
+      {notice && (
+        <div
+          className={`rounded-md border p-4 text-sm ${
+            notice.type === 'success'
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {notice.text}
+        </div>
+      )}
+
+      {/* 接続状態 */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="text-xl font-bold text-gray-800">接続状態</h2>
+
+        {!status?.configured ? (
+          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <p className="font-medium">環境変数が設定されていません。</p>
+            <p className="mt-2">
+              Vercelの環境変数に <code className="font-mono">GMAIL_OAUTH_CLIENT_ID</code> /{' '}
+              <code className="font-mono">GMAIL_OAUTH_CLIENT_SECRET</code> /{' '}
+              <code className="font-mono">GMAIL_OAUTH_REDIRECT_URI</code> を設定して、再デプロイしてください。
+            </p>
+          </div>
+        ) : status.connected ? (
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                接続済み
+              </span>
+              <span className="text-sm text-gray-600">{connection?.email ?? 'アドレス未取得'}</span>
+            </div>
+
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-gray-500">連携した日時</dt>
+                <dd className="text-gray-900">{formatDateTime(connection?.connectedAt ?? null)}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">最終更新</dt>
+                <dd className="text-gray-900">{formatDateTime(connection?.updatedAt ?? null)}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">操作した管理者</dt>
+                <dd className="text-gray-900">{connection?.connectedBy ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">許可された権限</dt>
+                <dd className="break-all font-mono text-xs text-gray-900">{connection?.scope ?? '—'}</dd>
+              </div>
+            </dl>
+
+            {!scopeIsReadonlyOnly && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                読み取り専用（gmail.readonly）以外の権限が含まれています。意図しない設定の可能性があるため、
+                一度解除してGoogle Cloud側のスコープ設定を確認してください。
+              </div>
+            )}
+
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              {disconnecting ? '解除中...' : '連携を解除'}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+              未接続
+            </span>
+            <p className="text-sm text-gray-600">
+              予約通知メールを受け取っているGoogleアカウントで許可してください。要求する権限は
+              <span className="font-medium">メールの読み取りのみ</span>です（送信・削除・変更は要求しません）。
+            </p>
+            <a
+              href="/api/admin/gmail/connect"
+              className="inline-block rounded-md bg-moss-green px-4 py-2 text-sm font-medium text-white hover:bg-moss-dark"
+            >
+              Gmailを連携する
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* メール調査モード */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="text-xl font-bold text-gray-800">メール調査モード</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          届いているメールの送信元・件名の種類・予約番号の形式を確認します。
+          <span className="font-medium">読み取りのみで、予約台帳には一切書き込みません。</span>
+          自動取込みは、ここで形式を確認してから実装します。
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-[280px] flex-1">
+            <label className="block text-sm font-medium text-gray-700">検索条件（Gmailの検索構文）</label>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-none"
+              placeholder="from:activityboard.jp"
+            />
+          </div>
+          <div className="w-28">
+            <label className="block text-sm font-medium text-gray-700">件数</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={maxResults}
+              onChange={(e) => setMaxResults(Number(e.target.value))}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={handleInspect}
+            disabled={inspecting || !status?.connected}
+            className="rounded-md bg-moss-green px-4 py-2 text-sm font-medium text-white hover:bg-moss-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {inspecting ? '読み取り中...' : '読み取る'}
+          </button>
+        </div>
+
+        {!status?.connected && (
+          <p className="mt-3 text-sm text-gray-500">先にGmailを連携してください。</p>
+        )}
+
+        {result && (
+          <div className="mt-6 space-y-6">
+            <p className="text-sm text-gray-600">
+              取得 {result.fetched} 件
+              {result.totalEstimate !== null && `（該当メールの概算総数: 約 ${result.totalEstimate} 件）`}
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <SummaryCard title="送信元" items={result.senders} />
+              <SummaryCard
+                title="件名の型"
+                items={result.subjectPatterns}
+                note="数字は ＃ / 長い英数IDは ＊ に置き換えて集計"
+              />
+              <SummaryCard title="予約番号の候補" items={result.bookingNumberSamples} />
+            </div>
+
+            <div className="overflow-hidden rounded-md border border-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">受信日時</th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">送信元</th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">件名</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {result.messages.map((message) => (
+                    <Fragment key={message.id}>
+                      <tr
+                        onClick={() => setExpandedId(expandedId === message.id ? null : message.id)}
+                        className="cursor-pointer hover:bg-gray-50"
+                      >
+                        <td className="whitespace-nowrap px-4 py-2 text-gray-600">
+                          {formatDateTime(message.internalDate)}
+                        </td>
+                        <td className="px-4 py-2 text-gray-600">{message.from}</td>
+                        <td className="px-4 py-2 text-gray-900">{message.subject || '(件名なし)'}</td>
+                      </tr>
+                      {expandedId === message.id && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={3} className="px-4 py-3 text-gray-700">
+                            <p className="whitespace-pre-wrap">{message.snippet || '(本文プレビューなし)'}</p>
+                            {message.bookingNumberCandidates.length > 0 && (
+                              <p className="mt-2 text-xs text-gray-600">
+                                予約番号の候補: {message.bookingNumberCandidates.join(' / ')}
+                              </p>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  title,
+  items,
+  note,
+}: {
+  title: string;
+  items: { value: string; count: number }[];
+  note?: string;
+}) {
+  return (
+    <div className="rounded-md border border-gray-200 p-4">
+      <h3 className="font-medium text-gray-800">{title}</h3>
+      {note && <p className="mt-1 text-xs text-gray-500">{note}</p>}
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-gray-500">該当なし</p>
+      ) : (
+        <ul className="mt-2 space-y-1 text-sm">
+          {items.map((item) => (
+            <li key={item.value} className="flex justify-between gap-2">
+              <span className="break-all text-gray-700">{item.value}</span>
+              <span className="shrink-0 text-gray-500">{item.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
