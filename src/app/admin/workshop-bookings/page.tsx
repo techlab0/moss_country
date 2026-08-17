@@ -1199,6 +1199,12 @@ interface InspectMessage {
   bookingNumberCandidates: string[];
 }
 
+interface MessageBody {
+  format: string;
+  truncated: boolean;
+  body: string;
+}
+
 interface InspectResult {
   query: string;
   fetched: number;
@@ -1237,6 +1243,23 @@ function GmailIntegrationTab() {
   const [inspecting, setInspecting] = useState(false);
   const [result, setResult] = useState<InspectResult | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // 本文は明示的に押したときだけ取りに行く（一覧を開くだけで全文を読み込まない）
+  const [bodies, setBodies] = useState<Record<string, MessageBody>>({});
+  const [loadingBodyId, setLoadingBodyId] = useState<string | null>(null);
+
+  const loadBody = async (id: string) => {
+    setLoadingBodyId(id);
+    try {
+      const res = await fetch(`/api/admin/gmail/message?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '本文の取得に失敗しました');
+      setBodies((prev) => ({ ...prev, [id]: data }));
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '本文の取得に失敗しました' });
+    } finally {
+      setLoadingBodyId(null);
+    }
+  };
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -1521,6 +1544,26 @@ function GmailIntegrationTab() {
                               <p className="mt-2 text-xs text-gray-600">
                                 予約番号の候補: {message.bookingNumberCandidates.join(' / ')}
                               </p>
+                            )}
+
+                            {bodies[message.id] ? (
+                              <div className="mt-3">
+                                <p className="text-xs text-gray-500">
+                                  本文（{bodies[message.id].format}）
+                                  {bodies[message.id].truncated && '／長いため途中まで表示しています'}
+                                </p>
+                                <pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-3 text-xs text-gray-800">
+                                  {bodies[message.id].body || '(本文なし)'}
+                                </pre>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => void loadBody(message.id)}
+                                disabled={loadingBodyId === message.id}
+                                className="mt-3 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                              >
+                                {loadingBodyId === message.id ? '取得中...' : '本文を表示'}
+                              </button>
                             )}
                           </td>
                         </tr>
