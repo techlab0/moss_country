@@ -97,6 +97,10 @@ export async function middleware(request: NextRequest) {
       '/api/admin/2fa/verify',
       '/api/admin/2fa/webauthn/authenticate',
       '/api/admin/logout',
+      // GmailのOAuthコールバック。Googleからのトップレベル遷移では SameSite=strict の
+      // admin-session Cookieが送られないため、ここで認証すると必ず401になる。
+      // 代わりにルート側が署名付きstateトークン（SameSite=lax）で正当性を確認する。
+      '/api/admin/gmail/callback',
     ]);
 
     // 公開ページ（店舗ページ）が参照する読み取り専用エンドポイントはGETのみ認証不要

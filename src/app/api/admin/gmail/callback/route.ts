@@ -3,9 +3,18 @@
 //
 // 完了後は管理画面のGmail連携タブへ戻す。結果はクエリパラメータで伝える。
 
+//
+// 認証について: 管理者セッションのCookie（admin-session）は SameSite=strict のため、
+// Googleからのトップレベル遷移では送られてこない。したがってここでは admin-session を使わず、
+// /api/admin/gmail/connect が発行した署名付きstateトークン（SameSite=lax のCookie）で
+// 「認証済み管理者が開始したフローか」を判定する。middleware側でもこのパスだけ除外している。
+
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminSession } from '@/lib/auth';
-import { exchangeCodeAndSave, GMAIL_OAUTH_STATE_COOKIE } from '@/lib/gmailOAuth';
+import {
+  exchangeCodeAndSave,
+  verifyOAuthStateToken,
+  GMAIL_OAUTH_STATE_COOKIE,
+} from '@/lib/gmailOAuth';
 
 const RETURN_PATH = '/admin/workshop-bookings?tab=gmail';
 
@@ -22,13 +31,6 @@ function backToAdmin(request: NextRequest, params: Record<string, string>) {
 
 export async function GET(request: NextRequest) {
   try {
-    // 未ログインの場合は middleware（src/middleware.ts の /api/admin/:path* 判定）が
-    // ここへ来る前に401を返す。ここでの確認は connected_by に記録する管理者を得るためのもの。
-    const session = await verifyAdminSession(request);
-    if (!session) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
-    }
-
     const params = request.nextUrl.searchParams;
 
     // 利用者が「許可」せずキャンセルした場合はerrorだけが返る
@@ -42,14 +44,15 @@ export async function GET(request: NextRequest) {
       return backToAdmin(request, { gmail: 'error', reason: 'missing_code' });
     }
 
-    const expectedState = request.cookies.get(GMAIL_OAUTH_STATE_COOKIE)?.value;
-    const actualState = params.get('state');
-    if (!expectedState || !actualState || expectedState !== actualState) {
+    const stateToken = request.cookies.get(GMAIL_OAUTH_STATE_COOKIE)?.value;
+    const statePayload = stateToken ? await verifyOAuthStateToken(stateToken) : null;
+    const returnedState = params.get('state');
+    if (!statePayload || !returnedState || statePayload.nonce !== returnedState) {
       // 自分が始めたフローの戻りではない可能性があるので、トークン交換はしない
       return backToAdmin(request, { gmail: 'error', reason: 'state_mismatch' });
     }
 
-    const email = await exchangeCodeAndSave(code, session.email);
+    const email = await exchangeCodeAndSave(code, statePayload.email);
 
     return backToAdmin(request, {
       gmail: 'connected',

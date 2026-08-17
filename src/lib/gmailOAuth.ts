@@ -12,6 +12,8 @@
 
 import { google } from 'googleapis';
 import { createClient } from '@supabase/supabase-js';
+import { SignJWT, jwtVerify } from 'jose';
+import { getAdminJwtSecretKey } from '@/lib/auth';
 
 // google-auth-library は googleapis が内部に別バージョンを持っているため、
 // トップレベルの 'google-auth-library' から型をimportすると google.gmail({ auth }) に渡せない。
@@ -26,6 +28,41 @@ const ROW_ID = 'default';
 
 /** OAuthフローのCSRF対策に使うstateを入れるCookie名 */
 export const GMAIL_OAUTH_STATE_COOKIE = 'gmail-oauth-state';
+
+// 管理者セッションのCookie（admin-session）は SameSite=strict のため、Googleの許可画面から
+// 戻ってくるトップレベル遷移では送られてこない。そのためコールバックは admin-session では
+// 認証できない。代わりに、この署名付きstateトークンをコールバックの認証材料として使う。
+// 発行できるのは認証済み管理者だけ（/api/admin/gmail/connect が middleware に守られている）なので、
+// 正しく署名されたトークンを提示できること自体が「管理者が開始したフローである」ことの証明になる。
+// Cookieは SameSite=lax にして、Googleからの戻りでも送られるようにしている。
+
+interface OAuthStatePayload {
+  /** Googleへ渡すstateと突き合わせる乱数 */
+  nonce: string;
+  /** 連携操作を行った管理者。connected_by に記録する */
+  email: string;
+}
+
+export async function createOAuthStateToken(nonce: string, email: string): Promise<string> {
+  return new SignJWT({ nonce, email })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('10m')
+    .sign(getAdminJwtSecretKey());
+}
+
+export async function verifyOAuthStateToken(token: string): Promise<OAuthStatePayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, getAdminJwtSecretKey());
+    if (typeof payload.nonce !== 'string' || typeof payload.email !== 'string') {
+      return null;
+    }
+    return { nonce: payload.nonce, email: payload.email };
+  } catch {
+    // 署名不正・期限切れはいずれも「このフローを信用しない」で同じ扱いにする
+    return null;
+  }
+}
 
 function getSupabase() {
   return createClient(

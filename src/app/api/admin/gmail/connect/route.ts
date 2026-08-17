@@ -5,7 +5,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { verifyAdminSession } from '@/lib/auth';
-import { buildAuthUrl, isGmailConfigured, GMAIL_OAUTH_STATE_COOKIE } from '@/lib/gmailOAuth';
+import {
+  buildAuthUrl,
+  isGmailConfigured,
+  createOAuthStateToken,
+  GMAIL_OAUTH_STATE_COOKIE,
+} from '@/lib/gmailOAuth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,10 +26,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const state = randomUUID();
-    const response = NextResponse.redirect(buildAuthUrl(state));
+    // Googleへ渡すのは乱数だけ。管理者のメールアドレスは署名付きCookie側に入れて外へ出さない
+    const nonce = randomUUID();
+    const stateToken = await createOAuthStateToken(nonce, session.email);
+    const response = NextResponse.redirect(buildAuthUrl(nonce));
 
-    response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, state, {
+    response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, stateToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       // Googleからの戻りは外部サイトからのGET遷移なので、strictではCookieが送られない
