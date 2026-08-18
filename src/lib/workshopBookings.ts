@@ -383,6 +383,26 @@ export async function updateBookingPayment(id: string, patch: UpdateWorkshopBook
 }
 
 /**
+ * じゃらん経由で取り込んだ、今日以降の有効な予約を取得する。
+ * カレンダーのイベント名を台帳の状態に合わせ直すために使う。
+ */
+export async function listUpcomingJalanBookings(fromDate: string): Promise<WorkshopBooking[]> {
+  const { data, error } = await supabaseAdmin
+    .from('workshop_bookings')
+    .select('*')
+    .like('booking_number', 'JALAN-%')
+    .eq('status', 'confirmed')
+    .gte('date', fromDate)
+    .order('date', { ascending: true });
+
+  if (error) {
+    console.error('じゃらん予約一覧の取得に失敗しました:', error);
+    throw error;
+  }
+  return (data || []).map(rowToBooking);
+}
+
+/**
  * プラン名だけを更新する。じゃらん連携で仮予約が確定したときに、
  * プラン名の先頭に付けた「（仮）」を外すために使う。
  */

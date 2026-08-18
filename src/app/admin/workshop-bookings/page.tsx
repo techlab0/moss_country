@@ -1223,6 +1223,7 @@ interface ImportSummary {
   cancelled: number;
   skipped: number;
   failed: number;
+  calendarRenamed: number;
   items: ImportItem[];
 }
 
@@ -1576,6 +1577,9 @@ function GmailIntegrationTab() {
               {' '}
               対象 {importResult.scanned} 件／新規 {importResult.created}・確定 {importResult.confirmed}・
               キャンセル {importResult.cancelled}・対象外 {importResult.skipped}・解析失敗 {importResult.failed}
+              {!importResult.dryRun && importResult.calendarRenamed > 0 && (
+                <span>／カレンダー名を {importResult.calendarRenamed} 件そろえ直しました</span>
+              )}
             </div>
 
             <div className="overflow-x-auto rounded-md border border-gray-200">

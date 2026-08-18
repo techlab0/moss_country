@@ -168,6 +168,18 @@ export function buildCalendarSummary(mail: JalanBooking, tentative: boolean): st
 }
 
 /**
+ * 台帳の予約行からカレンダーのイベント名を組み立てる。
+ * 取込み済みの予約を後から直す用途では元のメールが手元にないため、
+ * 台帳に入っている氏名と人数から同じ形式を再現する。
+ */
+export function buildCalendarSummaryFromBooking(
+  booking: Pick<WorkshopBooking, 'customerName' | 'partySize'>,
+  tentative: boolean
+): string {
+  return `WS予約(じゃらん${tentative ? '仮' : ''}): ${booking.customerName ?? ''} / ${booking.partySize}名`;
+}
+
+/**
  * 備考欄。金額の内訳をここに残す。
  * 売上には計上しない方針のため、いくら受け取るはずかを人が読める形で残しておく必要がある。
  */

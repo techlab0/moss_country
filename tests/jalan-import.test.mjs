@@ -22,6 +22,7 @@ const {
   buildJalanIdempotencyKey,
   buildPlanName,
   buildCalendarSummary,
+  buildCalendarSummaryFromBooking,
   isTentativeBooking,
   TENTATIVE_PREFIX,
 } = await import(moduleUrl);
@@ -231,4 +232,28 @@ test('キャンセル済みの予約に仮予約・確定が届いたら自動�
   const cancelled = booking({ status: 'cancelled' });
   assert.equal(planImportAction(mail(), cancelled, TODAY, SLOT_CONFIG).type, 'skip');
   assert.equal(planImportAction(mail({ kind: 'confirmed' }), cancelled, TODAY, SLOT_CONFIG).type, 'skip');
+});
+
+
+test('台帳の予約行からでも、メールからと同じイベント名を作れる', () => {
+  // 取込み済みの予約を後から直すときは元のメールが無いため、台帳の値から再現する。
+  // 両者がズレると、直したつもりのイベント名が別物になってしまう。
+  const m = mail();
+  const fromBooking = buildCalendarSummaryFromBooking(
+    { customerName: m.customerName, partySize: m.partySize },
+    false
+  );
+  assert.equal(fromBooking, buildCalendarSummary(m, false));
+
+  const tentativeFromBooking = buildCalendarSummaryFromBooking(
+    { customerName: m.customerName, partySize: m.partySize },
+    true
+  );
+  assert.equal(tentativeFromBooking, buildCalendarSummary(m, true));
+});
+
+test('氏名が未設定の予約でもイベント名を作れる', () => {
+  const name = buildCalendarSummaryFromBooking({ customerName: null, partySize: 2 }, false);
+  assert.match(name, /WS予約\(じゃらん\)/);
+  assert.match(name, /2名/);
 });

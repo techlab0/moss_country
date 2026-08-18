@@ -21,6 +21,8 @@ import {
   buildJalanIdempotencyKey,
   buildPlanName,
   buildCalendarSummary,
+  buildCalendarSummaryFromBooking,
+  isTentativeBooking,
   buildNotes,
   type ImportAction,
   type ExistingBookingView,
@@ -31,6 +33,7 @@ import {
   getBookingByIdempotencyKey,
   updateBookingGoogleEvent,
   updateBookingPlanName,
+  listUpcomingJalanBookings,
   WorkshopSlotCapacityError,
 } from '@/lib/workshopBookings';
 import {
@@ -84,6 +87,8 @@ export interface ImportSummary {
   cancelled: number;
   skipped: number;
   failed: number;
+  /** カレンダーのイベント名を台帳の状態に合わせ直した件数 */
+  calendarRenamed: number;
   items: ImportItemResult[];
 }
 
@@ -121,6 +126,45 @@ function getHeader(
   name: string
 ): string {
   return headers?.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? '';
+}
+
+/**
+ * カレンダーのイベント名を台帳の状態に合わせ直す。
+ *
+ * 確定時のイベント名更新は後から実装したため、それ以前に取り込んだ予約は
+ * 「WS予約(じゃらん仮)」のまま残っている。また、確定処理の途中でカレンダー更新だけが
+ * 失敗した場合も同じ状態になる。取込みのたびにここで揃えることで、
+ * 手作業で直さなくても自然に正しい状態へ戻る。
+ *
+ * events.patch は同じ値を何度送っても副作用が無いため、現在のイベント名を
+ * 読み出して比較する処理は入れていない（読み出しも同じだけAPI呼び出しを使うため）。
+ * 対象は今日以降の予約に限る。過去の予約まで毎日書き換える必要はない。
+ */
+async function syncCalendarTitles(todayJst: string): Promise<number> {
+  if (!isCalendarConfigured()) return 0;
+
+  let renamed = 0;
+  try {
+    const bookings = await listUpcomingJalanBookings(todayJst);
+    for (const booking of bookings) {
+      if (!booking.googleEventId) continue;
+      try {
+        await updateBookingEventSummary(booking.googleEventId, {
+          summary: buildCalendarSummaryFromBooking(booking, isTentativeBooking(booking)),
+        });
+        renamed += 1;
+      } catch (error) {
+        console.error('じゃらん取込み: カレンダー名の同期に失敗', {
+          bookingNumber: booking.bookingNumber,
+          error,
+        });
+      }
+    }
+  } catch (error) {
+    // 台帳が読めないだけで取込み全体を失敗にはしない
+    console.error('じゃらん取込み: カレンダー名同期の対象取得に失敗', error);
+  }
+  return renamed;
 }
 
 export interface RunImportOptions {
@@ -353,6 +397,9 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
   const count = (type: ImportAction['type']) =>
     items.filter((item) => item.action === type && (options.dryRun || item.applied)).length;
 
+  // 試し実行では台帳もカレンダーも変更しない
+  const calendarRenamed = options.dryRun ? 0 : await syncCalendarTitles(todayJst);
+
   return {
     dryRun: options.dryRun,
     query,
@@ -362,6 +409,7 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
     cancelled: count('cancel'),
     skipped: items.filter((item) => item.action === 'skip' && item.bookingNumber !== null).length,
     failed: items.filter((item) => item.bookingNumber === null).length,
+    calendarRenamed,
     items,
   };
 }
