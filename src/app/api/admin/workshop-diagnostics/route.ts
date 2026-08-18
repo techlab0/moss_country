@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminSession } from '@/lib/auth';
 import { isCalendarConfigured, getBusyIntervals, probeCalendarWriteAccess } from '@/lib/googleCalendar';
-import { CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import { checkCapacityConsistency } from '@/lib/workshopCapacityCheck';
 
 // ワークショップ予約のGoogleカレンダー接続を診断する管理者用エンドポイント。
 // 空き枠APIが503になる原因（環境変数未設定 / Calendar API未有効 / 共有ミス / カレンダーID誤り）を
@@ -11,72 +10,6 @@ function mask(value: string | undefined): string {
   if (!value) return '(未設定)';
   if (value.length <= 8) return `設定あり(${value.length}文字)`;
   return `${value.slice(0, 4)}…${value.slice(-6)}`;
-}
-
-/**
- * DBのトリガーが強制している定員と、コードの CAPACITY_PER_SLOT が一致しているかを確認する。
- *
- * 定員はコード（表示・事前チェック）とDBトリガー（最終保証）の2か所にあり、
- * 実際に片方だけ変更された事故が起きている（2026-08-05にコードだけ4→6へ変更され、
- * トリガーは4のまま残っていた）。食い違うと、画面上は「空きあり」なのに
- * 予約確定の瞬間だけ失敗し、お客様からは「空いているのに予約できない」ように見える。
- * 症状から原因にたどり着きにくいので、ここで機械的に検知できるようにする。
- */
-async function checkCapacityConsistency(): Promise<{
-  ok: boolean;
-  code: number;
-  database: number | null;
-  message: string;
-}> {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const { data, error } = await supabase.rpc('get_workshop_slot_capacity');
-
-    if (error) {
-      return {
-        ok: false,
-        code: CAPACITY_PER_SLOT,
-        database: null,
-        message: `DB側の定員を取得できませんでした（${error.message}）。docs/sql/fix-workshop-slot-capacity.sql を適用してください`,
-      };
-    }
-
-    const database = typeof data === 'number' ? data : Number(data);
-    if (!Number.isFinite(database)) {
-      return {
-        ok: false,
-        code: CAPACITY_PER_SLOT,
-        database: null,
-        message: 'DB側の定員を数値として読み取れませんでした',
-      };
-    }
-
-    if (database !== CAPACITY_PER_SLOT) {
-      return {
-        ok: false,
-        code: CAPACITY_PER_SLOT,
-        database,
-        message: `定員が食い違っています（コード ${CAPACITY_PER_SLOT}名 / DB ${database}名）。${Math.min(database, CAPACITY_PER_SLOT) + 1}名以上の予約が確定時に失敗します`,
-      };
-    }
-
-    return {
-      ok: true,
-      code: CAPACITY_PER_SLOT,
-      database,
-      message: `一致しています（${CAPACITY_PER_SLOT}名）`,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      code: CAPACITY_PER_SLOT,
-      database: null,
-      message: error instanceof Error ? error.message : '定員の確認に失敗しました',
-    };
-  }
 }
 
 export async function GET(request: NextRequest) {

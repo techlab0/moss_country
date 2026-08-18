@@ -7,6 +7,7 @@ import { verifyAdminSession } from '@/lib/auth';
 import { computeAvailableSlots, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import { findSlotsToCloseOnJalan, LOW_REMAINING_THRESHOLD } from '@/lib/jalanSlotAlerts';
 import { todayJstDateStr } from '@/lib/workshopBookingConfig';
+import { checkCapacityConsistency } from '@/lib/workshopCapacityCheck';
 
 /** 既定で何日先まで見るか。長くするほどGoogleカレンダー参照が増えるので既定は短めにする */
 const DEFAULT_DAYS = 30;
@@ -34,11 +35,16 @@ export async function GET(request: NextRequest) {
     const slots = await computeAvailableSlots(from, to);
     const alerts = findSlotsToCloseOnJalan(slots);
 
+    // 定員設定の不整合もここで返す。受付枠に関わる問題を1画面で拾えるようにするため
+    // （専用の診断画面を作っても見に行かないので、日常的に開く画面に出す）。
+    const capacityCheck = await checkCapacityConsistency();
+
     return NextResponse.json({
       from,
       to,
       threshold: LOW_REMAINING_THRESHOLD,
       alerts,
+      capacityCheck,
     });
   } catch (error) {
     // カレンダーが引けないと空き人数が確定できない。空配列を返すと「対応不要」に

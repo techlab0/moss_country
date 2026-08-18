@@ -1804,10 +1804,21 @@ interface JalanSlotAlert {
   level: 'full' | 'low';
 }
 
+// 定員はコード側（画面表示・事前チェック）とDBトリガー（最終保証）の2か所にあり、
+// 片方だけ変更されると「空きありと表示されるのに予約確定だけ失敗する」状態になる。
+// 症状から原因にたどり着けないので、食い違ったときだけここに警告を出す。
+interface CapacityCheck {
+  ok: boolean;
+  code: number;
+  database: number | null;
+  message: string;
+}
+
 const ACTIVITY_BOARD_URL = 'https://acb.jalan.net/gw/kanri/slogin.html';
 
 function JalanCloseAlerts() {
   const [alerts, setAlerts] = useState<JalanSlotAlert[] | null>(null);
+  const [capacityCheck, setCapacityCheck] = useState<CapacityCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -1819,6 +1830,7 @@ function JalanCloseAlerts() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
       setAlerts(data.alerts);
+      setCapacityCheck(data.capacityCheck ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '取得に失敗しました');
     } finally {
@@ -1855,7 +1867,18 @@ function JalanCloseAlerts() {
   const low = (alerts ?? []).filter((a) => a.level === 'low');
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
+    <>
+      {capacityCheck && !capacityCheck.ok && (
+        <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4">
+          <p className="text-sm font-bold text-red-800">定員の設定に問題があります</p>
+          <p className="mt-1 text-sm text-red-900">{capacityCheck.message}</p>
+          <p className="mt-2 text-xs text-red-700">
+            docs/sql/fix-workshop-slot-capacity.sql をSupabaseで実行すると直ります。
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold text-gray-800">じゃらん側で閉じるべき枠</h2>
         <button onClick={() => void load()} className="text-sm text-gray-500 underline">
@@ -1910,6 +1933,7 @@ function JalanCloseAlerts() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
