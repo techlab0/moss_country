@@ -17,12 +17,26 @@ const { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } = await import(configUrl);
 const SLOT_CONFIG = { slots: WORKSHOP_SLOTS, capacityPerSlot: CAPACITY_PER_SLOT };
 const {
   planImportAction,
+  applyActionToView,
   buildJalanBookingNumber,
   buildJalanIdempotencyKey,
   buildPlanName,
   isTentativeBooking,
   TENTATIVE_PREFIX,
 } = await import(moduleUrl);
+
+/**
+ * 試し実行と同じ流れ（DBに書かず、直前までの操作を覚えながら順に処理する）を再現して、
+ * メール列に対する操作の並びを返す。
+ */
+function planSequence(mails, initialView = null) {
+  let view = initialView;
+  return mails.map((m) => {
+    const action = planImportAction(m, view, TODAY, SLOT_CONFIG);
+    view = applyActionToView(view, m, action);
+    return action;
+  });
+}
 
 const TODAY = '2026-08-18';
 
@@ -146,6 +160,56 @@ test('定員を超える人数は取り込まない', () => {
   const action = planImportAction(tooMany, null, TODAY, SLOT_CONFIG);
   assert.equal(action.type, 'skip');
   assert.match(action.reason, /定員/);
+});
+
+// ここから下は「1件の予約につき2〜3通のメールが届く」ことに起因する連続処理の検証。
+// 試し実行はDBに書かないため、直前までの操作を覚えていないと同じ予約を
+// 「新規登録」2件として表示してしまい、実際の反映結果と食い違う。
+
+test('仮予約→確定の2通で、新規登録は1件だけになる', () => {
+  const actions = planSequence([mail(), mail({ kind: 'confirmed' })]);
+  assert.deepEqual(actions[0], { type: 'create', tentative: true });
+  assert.deepEqual(actions[1], { type: 'confirm' });
+});
+
+test('仮予約→確定→キャンセルの3通が順に反映される', () => {
+  const actions = planSequence([
+    mail(),
+    mail({ kind: 'confirmed' }),
+    mail({ kind: 'cancelled' }),
+  ]);
+  assert.deepEqual(actions.map((a) => a.type), ['create', 'confirm', 'cancel']);
+});
+
+test('同じ仮予約メールが2通届いても新規登録は1件だけ', () => {
+  const actions = planSequence([mail(), mail()]);
+  assert.equal(actions[0].type, 'create');
+  assert.equal(actions[1].type, 'skip');
+});
+
+test('確定のみ→キャンセルでも正しく消える（仮予約を取りこぼした場合）', () => {
+  const actions = planSequence([mail({ kind: 'confirmed' }), mail({ kind: 'cancelled' })]);
+  assert.deepEqual(actions.map((a) => a.type), ['create', 'cancel']);
+});
+
+test('キャンセル後に同じ予約番号の通知が来ても復活させない', () => {
+  const actions = planSequence([
+    mail(),
+    mail({ kind: 'cancelled' }),
+    mail({ kind: 'confirmed' }),
+  ]);
+  assert.deepEqual(actions.map((a) => a.type), ['create', 'cancel', 'skip']);
+});
+
+test('applyActionToViewは確定で「（仮）」を外す', () => {
+  const created = applyActionToView(null, mail(), { type: 'create', tentative: true });
+  assert.ok(created.workshopPlanName.startsWith(TENTATIVE_PREFIX));
+
+  const confirmed = applyActionToView(created, mail({ kind: 'confirmed' }), { type: 'confirm' });
+  assert.ok(!confirmed.workshopPlanName.startsWith(TENTATIVE_PREFIX));
+
+  const cancelled = applyActionToView(confirmed, mail({ kind: 'cancelled' }), { type: 'cancel' });
+  assert.equal(cancelled.status, 'cancelled');
 });
 
 test('キャンセル済みの予約に仮予約・確定が届いたら自動で復活させない', () => {

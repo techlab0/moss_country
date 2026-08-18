@@ -16,11 +16,13 @@ import {
 } from '@/lib/jalanBookingMail';
 import {
   planImportAction,
+  applyActionToView,
   buildJalanBookingNumber,
   buildJalanIdempotencyKey,
   buildPlanName,
   buildNotes,
   type ImportAction,
+  type ExistingBookingView,
 } from '@/lib/jalanImport';
 import {
   reserveBookingSlot,
@@ -157,6 +159,12 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
   const slotConfig = { slots: WORKSHOP_SLOTS, capacityPerSlot: CAPACITY_PER_SLOT };
   const items: ImportItemResult[] = [];
 
+  // 試し実行はDBに書かないため、この実行の中で行った操作を自分で覚えておく必要がある。
+  // 1件の予約につき仮予約と確定の2通が届くので、これが無いと2通目も「台帳に無い」と
+  // 判断され、同じ予約が「新規登録」2件として表示されてしまう。
+  // 本番反映では実際にDBが更新されるため、毎回DBを引き直せば正しい状態が得られる。
+  const dryRunView = new Map<string, ExistingBookingView | null>();
+
   for (const message of fetched) {
     // 対象外の送信元（検索条件をユーザーが変えた場合など）は結果にも載せず読み飛ばす
     if (!resolveJalanMailKind(message.from)) continue;
@@ -206,8 +214,19 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
     };
 
     try {
-      const existing = await getBookingByIdempotencyKey(idempotencyKey);
+      // 試し実行でこの実行中に「登録した」ことになっている予約は、DBには存在しない。
+      // 判断には仮の見え方（view）を使い、実際の更新には必ずDBから取った予約（stored）を使う。
+      const useDryRunView = options.dryRun && dryRunView.has(idempotencyKey);
+      const stored = useDryRunView ? null : await getBookingByIdempotencyKey(idempotencyKey);
+      const existing: ExistingBookingView | null = useDryRunView
+        ? dryRunView.get(idempotencyKey)!
+        : stored;
+
       const action = planImportAction(mail, existing, todayJst, slotConfig);
+
+      if (options.dryRun) {
+        dryRunView.set(idempotencyKey, applyActionToView(existing, mail, action));
+      }
 
       if (action.type === 'skip') {
         items.push({ ...detail, action: 'skip', reason: action.reason });
@@ -264,15 +283,15 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
       }
 
       if (action.type === 'confirm') {
-        await updateBookingPlanName(existing!.id, buildPlanName(mail, false));
+        await updateBookingPlanName(stored!.id, buildPlanName(mail, false));
         items.push({ ...detail, action: 'confirm', applied: true });
         continue;
       }
 
       // action.type === 'cancel'
-      if (existing!.googleEventId && isCalendarConfigured()) {
+      if (stored!.googleEventId && isCalendarConfigured()) {
         try {
-          await deleteBookingEvent(existing!.googleEventId);
+          await deleteBookingEvent(stored!.googleEventId);
         } catch (calendarError) {
           console.error('じゃらん取込み: カレンダー削除に失敗（予約はキャンセル済み）', {
             bookingNumber: ledgerBookingNumber,
@@ -280,7 +299,7 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
           });
         }
       }
-      await cancelBooking(existing!.id, { googleEventId: null });
+      await cancelBooking(stored!.id, { googleEventId: null });
       items.push({ ...detail, action: 'cancel', applied: true });
     } catch (error) {
       // 枠が満杯で入らないケース。じゃらん側は自社サイトの空きを知らないので起こりうる。

@@ -37,6 +37,13 @@ export function buildJalanIdempotencyKey(jalanNumber: string): string {
   return `jalan-${jalanNumber}`;
 }
 
+/**
+ * 判断に必要な台帳側の情報だけを表す。
+ * planImportAction が実際に見るのはこの3項目だけなので、試し実行では
+ * DBに書かずにこの形の「仮の見え方」を組み立てて渡せる。
+ */
+export type ExistingBookingView = Pick<WorkshopBooking, 'id' | 'status' | 'workshopPlanName'>;
+
 export function isTentativeBooking(booking: Pick<WorkshopBooking, 'workshopPlanName'>): boolean {
   return (booking.workshopPlanName ?? '').startsWith(TENTATIVE_PREFIX);
 }
@@ -60,7 +67,7 @@ export type ImportAction =
  */
 export function planImportAction(
   mail: JalanBooking,
-  existing: WorkshopBooking | null,
+  existing: ExistingBookingView | null,
   todayJst: string,
   config: SlotConfig
 ): ImportAction {
@@ -112,6 +119,36 @@ export function planImportAction(
     return { type: 'confirm' };
   }
   return { type: 'skip', reason: '確定済みです' };
+}
+
+/**
+ * 試し実行のために、ある操作を行った「後」の台帳の見え方を返す。
+ *
+ * 1件の予約につき仮予約メールと確定メールの2通が届くため、試し実行で
+ * これを使わないと、2通目を見るときも「台帳に無い」と判断してしまい、
+ * 同じ予約が「新規登録」2件として表示される（＝実際の反映結果と食い違う）。
+ * 試し実行はDBに書かないぶん、直前までの操作を自分で覚えておく必要がある。
+ */
+export function applyActionToView(
+  current: ExistingBookingView | null,
+  mail: JalanBooking,
+  action: ImportAction
+): ExistingBookingView | null {
+  switch (action.type) {
+    case 'create':
+      return {
+        // 試し実行では実際のIDが存在しないため、以降の判断に使わない値を入れておく
+        id: `(dry-run:${mail.bookingNumber})`,
+        status: 'confirmed',
+        workshopPlanName: buildPlanName(mail, action.tentative),
+      };
+    case 'confirm':
+      return current ? { ...current, workshopPlanName: buildPlanName(mail, false) } : current;
+    case 'cancel':
+      return current ? { ...current, status: 'cancelled' } : current;
+    case 'skip':
+      return current;
+  }
 }
 
 /** 台帳に入れるプラン名。仮予約のあいだだけ「（仮）」を付ける */
