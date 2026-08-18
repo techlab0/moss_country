@@ -21,7 +21,15 @@ export const WORKSHOP_SLOTS: ReadonlyArray<{ start: string; end: string }> = [
   { start: '15:00', end: '17:00' },
 ];
 
-/** 1枠あたりの最大受け入れ人数（同一日・同一開始時刻の予約party_size合計がこれ以上なら満枠扱い） */
+/**
+ * 1枠あたりの最大受け入れ人数（同一日・同一開始時刻の予約party_size合計がこれ以上なら満枠扱い）。
+ *
+ * 重要: この値はDBのトリガー enforce_workshop_slot_capacity にも同じ数値がある。
+ * ここだけ変えるとトリガーが古い定員のまま残り、画面上は「空きあり」なのに
+ * 予約確定の瞬間だけ失敗する（実際に2026-08-05に4→6へ変更した際に発生した）。
+ * 変更するときは docs/sql/fix-workshop-slot-capacity.sql の数値も直して適用すること。
+ * 一致しているかは管理画面のワークショップ診断で確認できる。
+ */
 export const CAPACITY_PER_SLOT = 6;
 
 /** simpleWorkshop側にduration指定が無い/パースできない場合のデフォルト所要時間（分） */

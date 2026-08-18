@@ -12,8 +12,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_workshop_bookings_idempotency_key
   ON public.workshop_bookings(idempotency_key)
   WHERE idempotency_key IS NOT NULL;
 
--- 同一日・同一開始時刻のINSERT/UPDATEを直列化し、合計4名をDBで強制する。
+-- 同一日・同一開始時刻のINSERT/UPDATEを直列化し、定員をDBで強制する。
 -- アプリ側の事前確認は表示用であり、最終保証はこのトリガーが担当する。
+--
+-- 注意: ここの定員は当初4名だった。2026-08-05に6名へ変更されたが、この
+-- ファイルは当時の記録として4名のまま残してある。現行の定員は
+-- docs/sql/fix-workshop-slot-capacity.sql が正であり、そちらを適用すること。
 CREATE OR REPLACE FUNCTION public.enforce_workshop_slot_capacity()
 RETURNS TRIGGER
 LANGUAGE plpgsql
