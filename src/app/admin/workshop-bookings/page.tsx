@@ -1021,6 +1021,8 @@ function SlotSettingsTab() {
         </div>
       )}
 
+      <JalanCloseAlerts />
+
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">
@@ -1777,6 +1779,132 @@ function SummaryCard({
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+
+// ===================== じゃらん側で閉じるべき枠 =====================
+
+// じゃらんの遊び・体験予約は在庫を外部から操作する手段が無く（サイトコントローラー非対応・
+// 事業者向けAPIなし）、ACTIVITY BOARDの管理画面で手動で閉じるしかない。
+// 自社サイト側で埋まった枠を閉じ忘れるとオーバーブッキングになるため、
+// 対応が必要な枠をここに出して見逃さないようにする。
+
+interface JalanSlotAlert {
+  date: string;
+  startTime: string;
+  endTime: string;
+  remaining: number;
+  level: 'full' | 'low';
+}
+
+const ACTIVITY_BOARD_URL = 'https://acb.jalan.net/gw/kanri/slogin.html';
+
+function JalanCloseAlerts() {
+  const [alerts, setAlerts] = useState<JalanSlotAlert[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/workshop-slots/jalan-alerts');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+      setAlerts(data.alerts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
+        じゃらん側の対応要否を確認中...
+      </div>
+    );
+  }
+
+  // 空き枠が判定できないときに「対応不要」と見えると閉じ忘れにつながるため、
+  // 失敗はそのまま見せる
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        じゃらん側の対応要否を判定できませんでした：{error}
+        <button onClick={() => void load()} className="ml-3 underline">
+          再試行
+        </button>
+      </div>
+    );
+  }
+
+  const full = (alerts ?? []).filter((a) => a.level === 'full');
+  const low = (alerts ?? []).filter((a) => a.level === 'low');
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-bold text-gray-800">じゃらん側で閉じるべき枠</h2>
+        <button onClick={() => void load()} className="text-sm text-gray-500 underline">
+          再読み込み
+        </button>
+      </div>
+      <p className="mt-2 text-sm text-gray-600">
+        じゃらんは在庫を自動で連携できないため、ここに出た枠は
+        <a
+          href={ACTIVITY_BOARD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-1 text-moss-green underline"
+        >
+          ACTIVITY BOARD
+        </a>
+        で手動で閉じてください。今後30日間が対象です。
+      </p>
+
+      {full.length === 0 && low.length === 0 ? (
+        <p className="mt-4 text-sm text-gray-500">対応が必要な枠はありません。</p>
+      ) : (
+        <div className="mt-4 space-y-4">
+          {full.length > 0 && (
+            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-800">
+                満席（{full.length}件）— 閉じないとじゃらんから追加で予約が入ります
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-red-900">
+                {full.map((a) => (
+                  <li key={`${a.date}-${a.startTime}`}>
+                    {a.date} {a.startTime}〜{a.endTime}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {low.length > 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-800">
+                残りわずか（{low.length}件）— じゃらん側の在庫が残り人数を超えていないか確認してください
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-amber-900">
+                {low.map((a) => (
+                  <li key={`${a.date}-${a.startTime}`}>
+                    {a.date} {a.startTime}〜{a.endTime}（残り {a.remaining} 名）
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

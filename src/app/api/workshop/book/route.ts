@@ -6,7 +6,16 @@ import { convertToSquareAmount, SQUARE_CONFIG } from '@/lib/square';
 import { createWebPayment, isPaypayConfigured } from '@/lib/paypayWebClient';
 import { buildPaymentDescription } from '@/lib/orderReceipt';
 import { createBookingEvent, deleteBookingEvent } from '@/lib/googleCalendar';
-import { isSlotStillAvailable, CalendarUnavailableError } from '@/lib/workshopAvailability';
+import {
+  isSlotStillAvailable,
+  computeAvailableSlots,
+  CalendarUnavailableError,
+} from '@/lib/workshopAvailability';
+import {
+  findSlotsToCloseOnJalan,
+  findAlertForSlot,
+  buildJalanCloseWarning,
+} from '@/lib/jalanSlotAlerts';
 import {
   reserveBookingSlot,
   deleteBooking,
@@ -660,6 +669,22 @@ export async function POST(request: NextRequest) {
       paymentStatus,
       customerName,
     });
+    // じゃらんは在庫を外部から操作できず、満枠になってもACTIVITY BOARDでは売れ続ける。
+    // 閉じ忘れるとオーバーブッキングになるため、店舗宛メールに対応の要否を添える。
+    // 空き枠を確認できなくても予約自体は成立させる（メールの一文が減るだけ）。
+    let jalanWarning: string | null = null;
+    try {
+      const slotsAfterBooking = await computeAvailableSlots(date, date);
+      const alerts = findSlotsToCloseOnJalan(slotsAfterBooking);
+      jalanWarning = buildJalanCloseWarning(findAlertForSlot(alerts, date, startTime));
+    } catch (error) {
+      console.error('じゃらん向け在庫警告の判定に失敗しました（予約は成立済み）:', error);
+    }
+
+    const storeEmailBody = jalanWarning ? `${jalanWarning}
+
+${emailBody}` : emailBody;
+
     await Promise.all([
       sendMail({
         to: customerEmail,
@@ -673,7 +698,7 @@ export async function POST(request: NextRequest) {
         // 受信箱でそのまま返信すればお客様に届くようにする
         replyTo: customerEmail,
         subject: `【新規予約】ワークショップ ${date} ${startTime} (${bookingNumber})`,
-        text: emailBody,
+        text: storeEmailBody,
       }),
     ]);
 
