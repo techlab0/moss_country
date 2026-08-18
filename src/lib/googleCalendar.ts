@@ -165,6 +165,42 @@ export async function createBookingEvent(
 }
 
 /**
+ * 既存イベントのタイトルと説明だけを差し替える（じゃらんの仮予約が確定したとき用）。
+ *
+ * 日時・人数は変わらないため patch で必要な項目だけを送る。
+ * イベントが既に無い（404/410）場合は握りつぶす。カレンダーの表示は
+ * 後から手動で直せる一方、ここで例外にすると予約側の確定処理まで巻き添えで
+ * 失敗してしまうため。
+ */
+export async function updateBookingEventSummary(
+  eventId: string,
+  patch: { summary: string; description?: string }
+): Promise<void> {
+  if (!isCalendarConfigured()) {
+    throw new Error('Googleカレンダーが未設定のため、イベントを更新できません');
+  }
+
+  const calendarId = requireCalendarId();
+
+  try {
+    const calendar = await getCalendarClient();
+    await calendar.events.patch({
+      calendarId,
+      eventId,
+      requestBody: { summary: patch.summary, description: patch.description },
+    });
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = (error as any)?.code ?? (error as any)?.response?.status;
+    if (status === 404 || status === 410) {
+      return;
+    }
+    console.error('Googleカレンダーイベントの更新に失敗しました:', { eventId, error });
+    throw error;
+  }
+}
+
+/**
  * ワークショップ予約のGoogleカレンダーイベントを削除する（キャンセル用）。
  * 既に削除済み・存在しない（404/410）場合は握りつぶす。
  * それ以外の失敗は例外を投げる。呼び出し側がDBのgoogle_event_idを保持したまま

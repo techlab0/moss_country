@@ -157,6 +157,17 @@ export function buildPlanName(mail: JalanBooking, tentative: boolean): string {
 }
 
 /**
+ * Googleカレンダーのイベント名。
+ *
+ * 店舗のカレンダーには自社サイト経由・手動登録・じゃらん経由が混在するため、
+ * どの経路の予約かがタイトルだけで分かるようにする（手動登録は「WS予約(手動)」）。
+ * 仮予約のあいだは「じゃらん仮」とし、確定したらこの関数で作り直したタイトルへ差し替える。
+ */
+export function buildCalendarSummary(mail: JalanBooking, tentative: boolean): string {
+  return `WS予約(じゃらん${tentative ? '仮' : ''}): ${mail.customerName} / ${mail.partySize}名`;
+}
+
+/**
  * 備考欄。金額の内訳をここに残す。
  * 売上には計上しない方針のため、いくら受け取るはずかを人が読める形で残しておく必要がある。
  */

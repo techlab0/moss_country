@@ -21,6 +21,7 @@ const {
   buildJalanBookingNumber,
   buildJalanIdempotencyKey,
   buildPlanName,
+  buildCalendarSummary,
   isTentativeBooking,
   TENTATIVE_PREFIX,
 } = await import(moduleUrl);
@@ -81,6 +82,20 @@ test('仮予約は「（仮）」付きで登録し、確定後は外す', () =>
   assert.ok(!buildPlanName(mail(), false).startsWith(TENTATIVE_PREFIX));
   assert.ok(isTentativeBooking(booking()));
   assert.ok(!isTentativeBooking(booking({ workshopPlanName: 'じゃらん / 体験' })));
+});
+
+test('カレンダーのイベント名は、確定後もじゃらん経由だと分かる', () => {
+  // 店舗のカレンダーには自社サイト経由・手動登録・じゃらん経由が混在するため、
+  // タイトルだけで経路が分かる必要がある
+  const tentative = buildCalendarSummary(mail(), true);
+  const confirmed = buildCalendarSummary(mail(), false);
+
+  assert.match(tentative, /じゃらん仮/);
+  assert.match(confirmed, /じゃらん/);
+  // 確定後に「仮」が残っていると、確定済みかどうか判断できなくなる
+  assert.ok(!confirmed.includes('仮'));
+  assert.match(confirmed, /テスト太郎/);
+  assert.match(confirmed, /2名/);
 });
 
 test('新規の仮予約は（仮）付きで登録する', () => {

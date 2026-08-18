@@ -20,6 +20,7 @@ import {
   buildJalanBookingNumber,
   buildJalanIdempotencyKey,
   buildPlanName,
+  buildCalendarSummary,
   buildNotes,
   type ImportAction,
   type ExistingBookingView,
@@ -39,7 +40,12 @@ import {
   jstDateTimeToIso,
 } from '@/lib/workshopBookingConfig';
 import { buildGoogleBookingEventId } from '@/lib/workshopBookingSafety';
-import { createBookingEvent, deleteBookingEvent, isCalendarConfigured } from '@/lib/googleCalendar';
+import {
+  createBookingEvent,
+  deleteBookingEvent,
+  updateBookingEventSummary,
+  isCalendarConfigured,
+} from '@/lib/googleCalendar';
 
 /** 取込み対象の3種類だけを取りに行く。他の通知（メッセージ受信・プラン延長等）は最初から除外する */
 const IMPORT_QUERY =
@@ -264,7 +270,7 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
             const event = await createBookingEvent({
               eventId: buildGoogleBookingEventId(idempotencyKey),
               idempotencyKey,
-              summary: `WS予約(じゃらん${action.tentative ? '仮' : ''}): ${mail.customerName} / ${mail.partySize}名`,
+              summary: buildCalendarSummary(mail, action.tentative),
               description: buildNotes(mail),
               startISO: jstDateTimeToIso(mail.date, slot.start),
               endISO: jstDateTimeToIso(mail.date, slot.end),
@@ -284,6 +290,37 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
 
       if (action.type === 'confirm') {
         await updateBookingPlanName(stored!.id, buildPlanName(mail, false));
+
+        // 台帳だけ確定にしてカレンダーを放置すると、店舗のカレンダー上は
+        // 「じゃらん仮」のまま残り、確定済みなのか判断できなくなる。
+        if (isCalendarConfigured()) {
+          try {
+            if (stored!.googleEventId) {
+              await updateBookingEventSummary(stored!.googleEventId, {
+                summary: buildCalendarSummary(mail, false),
+                description: buildNotes(mail),
+              });
+            } else {
+              // 仮予約の登録時にカレンダー作成が失敗していた場合。ここで作り直す
+              const slot = WORKSHOP_SLOTS.find((s) => s.start === mail.startTime)!;
+              const event = await createBookingEvent({
+                eventId: buildGoogleBookingEventId(idempotencyKey),
+                idempotencyKey,
+                summary: buildCalendarSummary(mail, false),
+                description: buildNotes(mail),
+                startISO: jstDateTimeToIso(mail.date, slot.start),
+                endISO: jstDateTimeToIso(mail.date, slot.end),
+              });
+              await updateBookingGoogleEvent(stored!.id, event.eventId);
+            }
+          } catch (calendarError) {
+            console.error('じゃらん取込み: カレンダー更新に失敗（台帳は確定済み）', {
+              bookingNumber: ledgerBookingNumber,
+              error: calendarError,
+            });
+          }
+        }
+
         items.push({ ...detail, action: 'confirm', applied: true });
         continue;
       }
