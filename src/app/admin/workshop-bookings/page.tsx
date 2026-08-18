@@ -1199,6 +1199,38 @@ interface InspectMessage {
   bookingNumberCandidates: string[];
 }
 
+interface ImportItem {
+  messageId: string;
+  bookingNumber: string | null;
+  date: string | null;
+  startTime: string | null;
+  partySize: number | null;
+  customerName: string | null;
+  kind: 'tentative' | 'confirmed' | 'cancelled' | null;
+  action: 'create' | 'confirm' | 'cancel' | 'skip';
+  ledgerBookingNumber: string | null;
+  reason: string | null;
+  applied: boolean;
+}
+
+interface ImportSummary {
+  dryRun: boolean;
+  scanned: number;
+  created: number;
+  confirmed: number;
+  cancelled: number;
+  skipped: number;
+  failed: number;
+  items: ImportItem[];
+}
+
+const IMPORT_ACTION_LABELS: Record<ImportItem['action'], string> = {
+  create: '新規登録',
+  confirm: '確定に変更',
+  cancel: 'キャンセル',
+  skip: '対象外',
+};
+
 interface MessageBody {
   format: string;
   truncated: boolean;
@@ -1246,6 +1278,43 @@ function GmailIntegrationTab() {
   // 本文は明示的に押したときだけ取りに行く（一覧を開くだけで全文を読み込まない）
   const [bodies, setBodies] = useState<Record<string, MessageBody>>({});
   const [loadingBodyId, setLoadingBodyId] = useState<string | null>(null);
+
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportSummary | null>(null);
+
+  // apply=false なら試し実行（何が起きるかを見せるだけで台帳は変えない）
+  const runImport = async (apply: boolean) => {
+    if (apply) {
+      const ok = confirm(
+        '試し実行の結果どおりに予約台帳へ反映します。\n' +
+          '「新規登録」「確定に変更」「キャンセル」が実際に行われます。よろしいですか？'
+      );
+      if (!ok) return;
+    }
+
+    setImporting(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/admin/gmail/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apply }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取込みに失敗しました');
+      setImportResult(data);
+      setNotice({
+        type: 'success',
+        text: apply
+          ? `取込みを実行しました（新規${data.created}件・確定${data.confirmed}件・キャンセル${data.cancelled}件）`
+          : `試し実行が完了しました。台帳はまだ変更していません（新規${data.created}件・確定${data.confirmed}件・キャンセル${data.cancelled}件の予定）`,
+      });
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '取込みに失敗しました' });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const loadBody = async (id: string) => {
     setLoadingBodyId(id);
@@ -1449,6 +1518,110 @@ function GmailIntegrationTab() {
             >
               Gmailを連携する
             </a>
+          </div>
+        )}
+      </div>
+
+      {/* 予約の取込み */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="text-xl font-bold text-gray-800">じゃらん予約の取込み</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          じゃらんの仮予約・予約確定・キャンセル通知を読み取り、予約台帳へ反映します。
+          仮予約の段階で枠を押さえ、プラン名の先頭に「（仮）」を付けます。確定通知が届くと「（仮）」が外れ、
+          キャンセル通知が届くと枠を解放します。
+        </p>
+        <p className="mt-2 text-sm text-gray-600">
+          売上には計上しません（当日レジで受け取った分だけが売上になります）。金額の内訳は各予約の備考に残します。
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            onClick={() => void runImport(false)}
+            disabled={importing || !status?.connected}
+            className="rounded-md border border-moss-green bg-white px-4 py-2 text-sm font-medium text-moss-green hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {importing ? '実行中...' : '試し実行（台帳は変更しない）'}
+          </button>
+          <button
+            onClick={() => void runImport(true)}
+            disabled={importing || !status?.connected || !importResult}
+            className="rounded-md bg-moss-green px-4 py-2 text-sm font-medium text-white hover:bg-moss-dark disabled:cursor-not-allowed disabled:opacity-50"
+            title={!importResult ? '先に試し実行して内容を確認してください' : undefined}
+          >
+            台帳へ反映する
+          </button>
+        </div>
+
+        {!status?.connected && <p className="mt-3 text-sm text-gray-500">先にGmailを連携してください。</p>}
+        {status?.connected && !importResult && (
+          <p className="mt-3 text-sm text-gray-500">
+            まず「試し実行」で何が起きるかを確認してください。確認するまで反映はできません。
+          </p>
+        )}
+
+        {importResult && (
+          <div className="mt-6 space-y-4">
+            <div
+              className={`rounded-md border p-3 text-sm ${
+                importResult.dryRun
+                  ? 'border-amber-200 bg-amber-50 text-amber-800'
+                  : 'border-green-200 bg-green-50 text-green-800'
+              }`}
+            >
+              {importResult.dryRun
+                ? '試し実行の結果です。台帳はまだ変更していません。'
+                : '台帳へ反映しました。'}
+              {' '}
+              対象 {importResult.scanned} 件／新規 {importResult.created}・確定 {importResult.confirmed}・
+              キャンセル {importResult.cancelled}・対象外 {importResult.skipped}・解析失敗 {importResult.failed}
+            </div>
+
+            <div className="overflow-x-auto rounded-md border border-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">操作</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">じゃらん予約番号</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">利用日時</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">人数</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">お客様</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">備考</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {importResult.items.map((item) => (
+                    <tr key={item.messageId} className={item.action === 'skip' ? 'text-gray-500' : ''}>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            item.action === 'create'
+                              ? 'bg-green-100 text-green-800'
+                              : item.action === 'confirm'
+                                ? 'bg-blue-100 text-blue-800'
+                                : item.action === 'cancel'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {IMPORT_ACTION_LABELS[item.action]}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
+                        {item.bookingNumber ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        {item.date ? `${item.date} ${item.startTime ?? ''}` : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        {item.partySize ? `${item.partySize}名` : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2">{item.customerName || '—'}</td>
+                      <td className="px-3 py-2">{item.reason ?? ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

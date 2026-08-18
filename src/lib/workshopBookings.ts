@@ -383,6 +383,22 @@ export async function updateBookingPayment(id: string, patch: UpdateWorkshopBook
 }
 
 /**
+ * プラン名だけを更新する。じゃらん連携で仮予約が確定したときに、
+ * プラン名の先頭に付けた「（仮）」を外すために使う。
+ */
+export async function updateBookingPlanName(id: string, workshopPlanName: string): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('workshop_bookings')
+    .update({ workshop_plan_name: workshopPlanName })
+    .eq('id', id);
+
+  if (error) {
+    console.error(`ワークショップ予約のプラン名更新に失敗しました (id: ${id}):`, error);
+    throw error;
+  }
+}
+
+/**
  * 予約を完全に削除する（決済失敗時のロールバック用）。
  * 失敗時はログを残したうえで例外をthrowする。
  */
