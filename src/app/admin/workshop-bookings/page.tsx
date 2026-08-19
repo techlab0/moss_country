@@ -9,9 +9,9 @@ import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 // （営業日データは受付枠の受付可否を決める前提条件として参照する）。
 // これに加えて「Gmail連携」タブを持つ（予約通知メールの読み取り設定・調査用）。
 
-type TabKey = 'bookings' | 'slots' | 'plans' | 'gmail';
+type TabKey = 'bookings' | 'slots' | 'plans' | 'calendar' | 'gmail';
 
-const TAB_KEYS: TabKey[] = ['bookings', 'slots', 'plans', 'gmail'];
+const TAB_KEYS: TabKey[] = ['bookings', 'slots', 'plans', 'calendar', 'gmail'];
 
 // Gmail連携のOAuthコールバックは ?tab=gmail を付けて戻ってくるため、初期タブをURLから決める。
 // useSearchParams はSuspense境界を要求するので、ここでは初期化時に一度だけlocationを読む。
@@ -36,6 +36,7 @@ export default function WorkshopBookingsPage() {
             { key: 'bookings' as const, label: '予約一覧' },
             { key: 'slots' as const, label: '受付枠設定' },
             { key: 'plans' as const, label: 'プラン設定' },
+            { key: 'calendar' as const, label: 'Googleカレンダー' },
             { key: 'gmail' as const, label: 'Gmail連携' },
           ].map((tab) => (
             <button
@@ -56,6 +57,7 @@ export default function WorkshopBookingsPage() {
       {activeTab === 'bookings' && <BookingsListTab />}
       {activeTab === 'slots' && <SlotSettingsTab />}
       {activeTab === 'plans' && <PlanSettingsTab />}
+      {activeTab === 'calendar' && <GoogleCalendarTab />}
       {activeTab === 'gmail' && <GmailIntegrationTab />}
     </div>
   );
@@ -1993,5 +1995,197 @@ function JalanCloseAlerts() {
       )}
       </div>
     </>
+  );
+}
+
+
+// ===================== Googleカレンダー閲覧タブ =====================
+
+// 連携中のGoogleカレンダーを読み取り専用で表示する。追加・変更はGoogleカレンダー側で行う。
+//
+// 埋め込み（iframe）を使わないのは、埋め込みがカレンダーを公開設定にしないと表示されないため。
+// 予定のタイトルにお客様の氏名が入っているので公開はできない。
+// 既にサービスアカウントで読み取れるので、取得して自前で描画している。
+
+interface GoogleCalendarEvent {
+  id: string;
+  summary: string;
+  description: string | null;
+  location: string | null;
+  allDay: boolean;
+  start: string;
+  end: string;
+}
+
+/** 予定の開始日時から、表示に使うJSTの暦日（YYYY-MM-DD）を求める */
+function eventDateKey(event: GoogleCalendarEvent): string {
+  if (event.allDay) return event.start.slice(0, 10);
+  const d = new Date(event.start);
+  return new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function eventTimeLabel(event: GoogleCalendarEvent): string {
+  if (event.allDay) return '終日';
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleTimeString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  return `${fmt(event.start)}〜${fmt(event.end)}`;
+}
+
+function monthStartString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}-01`;
+}
+
+function todayJstKey(): string {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function GoogleCalendarTab() {
+  const [cursor, setCursor] = useState(() => new Date());
+  const [events, setEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const from = monthStartString(cursor);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 月初から31日分。31日に満たない月では翌月頭が数日入るだけで実害はない
+      const res = await fetch(`/api/admin/google-calendar?from=${from}&days=31`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'カレンダーを取得できませんでした');
+      setEvents(data.events ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'カレンダーを取得できませんでした');
+    } finally {
+      setLoading(false);
+    }
+  }, [from]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shiftMonth = (delta: number) => {
+    setCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  };
+
+  // 日付ごとにまとめる。月グリッドより、予定の内容が読める一覧の方が実用的
+  const grouped = new Map<string, GoogleCalendarEvent[]>();
+  for (const event of events) {
+    const key = eventDateKey(event);
+    const list = grouped.get(key);
+    if (list) {
+      list.push(event);
+    } else {
+      grouped.set(key, [event]);
+    }
+  }
+  const dates = [...grouped.keys()].sort();
+  const todayKey = todayJstKey();
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-bold text-gray-800">
+          {cursor.getFullYear()}年 {cursor.getMonth() + 1}月の予定
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => shiftMonth(-1)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            ← 前月
+          </button>
+          <button
+            onClick={() => setCursor(new Date())}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            今月
+          </button>
+          <button
+            onClick={() => shiftMonth(1)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            翌月 →
+          </button>
+        </div>
+      </div>
+
+      <p className="mt-2 text-sm text-gray-600">
+        予約管理と連携しているGoogleカレンダーの予定です。ここでは閲覧のみで、追加・変更は
+        Googleカレンダー側で行ってください。
+      </p>
+
+      {loading && <p className="mt-4 text-sm text-gray-500">読み込み中...</p>}
+
+      {error && (
+        <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+          <button onClick={() => void load()} className="ml-3 underline">
+            再試行
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && dates.length === 0 && (
+        <p className="mt-4 text-sm text-gray-500">この期間に予定はありません。</p>
+      )}
+
+      {!loading && !error && dates.length > 0 && (
+        <div className="mt-4 divide-y divide-gray-200 rounded-md border border-gray-200">
+          {dates.map((date) => (
+            <div key={date} className={date === todayKey ? 'bg-green-50' : ''}>
+              <div className="flex items-baseline gap-2 px-4 py-2">
+                <span className="font-medium text-gray-800">{date}</span>
+                <span className="text-xs text-gray-500">
+                  {new Date(`${date}T00:00:00+09:00`).toLocaleDateString('ja-JP', {
+                    timeZone: 'Asia/Tokyo',
+                    weekday: 'short',
+                  })}
+                </span>
+                {date === todayKey && (
+                  <span className="rounded-full bg-moss-green px-2 py-0.5 text-xs text-white">
+                    今日
+                  </span>
+                )}
+              </div>
+              <ul className="space-y-2 px-4 pb-3">
+                {(grouped.get(date) ?? []).map((event) => (
+                  <li key={event.id} className="rounded-md border border-gray-200 bg-white p-3">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="whitespace-nowrap text-sm text-gray-600">
+                        {eventTimeLabel(event)}
+                      </span>
+                      <span className="font-medium text-gray-900">{event.summary}</span>
+                    </div>
+                    {event.location && (
+                      <p className="mt-1 text-xs text-gray-600">場所: {event.location}</p>
+                    )}
+                    {event.description && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-xs text-gray-500">
+                          詳細を見る
+                        </summary>
+                        <pre className="mt-1 whitespace-pre-wrap text-xs text-gray-700">
+                          {event.description}
+                        </pre>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -124,6 +124,71 @@ export async function getBusyIntervals(startISO: string, endISO: string): Promis
   }
 }
 
+export interface CalendarEventSummary {
+  id: string;
+  summary: string;
+  description: string | null;
+  location: string | null;
+  /** 終日予定の場合は true。時刻は持たない */
+  allDay: boolean;
+  /** 終日予定は YYYY-MM-DD、時刻付きは RFC3339 */
+  start: string;
+  end: string;
+}
+
+/**
+ * 指定期間のイベント一覧を取得する（管理画面の閲覧用）。
+ *
+ * freebusy（getBusyIntervals）は「予定あり」の時間帯しか返さず、
+ * 予約自身は transparency: 'transparent' で登録しているため freebusy には現れない。
+ * 実際の予定を見せるにはこちらのAPIを使う必要がある。
+ *
+ * 繰り返し予定は singleEvents で個々の予定に展開する（そのまま返すと
+ * 繰り返しルールだけが1件返り、カレンダー上の見え方と食い違うため）。
+ */
+export async function listCalendarEvents(
+  startISO: string,
+  endISO: string,
+  maxResults = 250
+): Promise<CalendarEventSummary[]> {
+  if (!isCalendarConfigured()) {
+    throw new Error('Googleカレンダーが設定されていません');
+  }
+
+  const calendarId = requireCalendarId();
+  const calendar = await getCalendarClient();
+
+  const response = await calendar.events.list({
+    calendarId,
+    timeMin: startISO,
+    timeMax: endISO,
+    singleEvents: true,
+    orderBy: 'startTime',
+    maxResults,
+    timeZone: TIME_ZONE,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items: any[] = response.data?.items ?? [];
+
+  return items
+    // キャンセル済みの予定はカレンダー上も表示されないので除外する
+    .filter((item) => item.status !== 'cancelled')
+    .map((item) => {
+      const allDay = !!item.start?.date;
+      return {
+        id: String(item.id ?? ''),
+        summary: item.summary ?? '(タイトルなし)',
+        description: item.description ?? null,
+        location: item.location ?? null,
+        allDay,
+        start: String(item.start?.dateTime ?? item.start?.date ?? ''),
+        end: String(item.end?.dateTime ?? item.end?.date ?? ''),
+      };
+    })
+    .filter((item) => item.id && item.start);
+}
+
 /**
  * ワークショップ予約のGoogleカレンダーイベントを作成する。
  * イベント作成に失敗した場合は例外を投げる（呼び出し側は予約を確定させないこと。
