@@ -12,7 +12,7 @@
     "test:admin-ui": "node --test tests/admin-ui-order.test.mjs",
     "test:inventory": "node --experimental-strip-types --test tests/inventory-responsibility.test.mjs",
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs",
-    "test:jalan": "node --experimental-strip-types --test tests/jalan-booking-mail.test.mjs tests/jalan-import.test.mjs tests/jalan-slot-alerts.test.mjs tests/workshop-plan-display.test.mjs tests/request-params.test.mjs"
+    "test:jalan": "node --experimental-strip-types --test tests/jalan-booking-mail.test.mjs tests/jalan-import.test.mjs tests/jalan-slot-alerts.test.mjs tests/workshop-plan-display.test.mjs tests/request-params.test.mjs tests/linkify-keyword.test.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.0",

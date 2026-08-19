@@ -702,7 +702,9 @@ export default function StorePage() {
       </section>
 
       {/* Store Calendar */}
-      <section className="py-20">
+      {/* フッターの「カレンダー」からここへ直接飛べるようにする。
+          scroll-mt はヘッダーに見出しが隠れないための余白 */}
+      <section className="py-20 scroll-mt-24" id="calendar">
         <Container>
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">

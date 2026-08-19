@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { linkifyKeyword } from '@/lib/linkifyKeyword';
 import { defaultSiteSettings, SiteSettingsData, SnsPlatform, snsPlatformLabels } from '@/lib/siteSettingsDefaults';
 
 // SNSアイコン（platformキーで参照。URLや表示/非表示は管理画面のサイト設定から変更できる）
@@ -99,7 +100,23 @@ export const Footer: React.FC = () => {
               </li>
               <li className="text-gray-300">
                 <span className="block text-sm">営業日</span>
-                <span className="text-white">{settings.businessDays}</span>
+                <span className="text-white">
+                  {/* 営業日表記は管理画面から編集できるため、文中に「カレンダー」が
+                      あればそこだけをリンクにする。無ければそのまま表示する */}
+                  {linkifyKeyword(settings.businessDays, 'カレンダー').map((part, index) =>
+                    part.isKeyword ? (
+                      <Link
+                        key={index}
+                        href="/store#calendar"
+                        className="text-emerald-400 underline hover:text-white transition-colors duration-200"
+                      >
+                        {part.text}
+                      </Link>
+                    ) : (
+                      <span key={index}>{part.text}</span>
+                    )
+                  )}
+                </span>
               </li>
               <li>
                 <Link href="/contact" className="text-emerald-600 hover:text-white transition-colors duration-200">
