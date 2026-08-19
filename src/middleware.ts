@@ -26,16 +26,38 @@ interface MaintenanceState {
   maintenancePages: string[];
 }
 
+// メンテナンス状態の短時間キャッシュ。
+//
+// middlewareはページ遷移のたびに（クライアント遷移のRSCリクエストも含めて）動くため、
+// ここで毎回 /api/maintenance/status へfetchすると、全ての遷移に往復1回分の遅延が乗る。
+// 相手も別のサーバーレス関数なので、コールドスタート時はさらに待たされる。
+// 実際にアクセスログでもこのパスが突出して多かった。
+//
+// メンテナンスの切り替えは頻繁ではないので、短時間だけキャッシュする。
+// 切り替えが反映されるまで最大 MAINTENANCE_CACHE_MS の遅れが出るが、
+// 全ページの表示速度と引き換えに許容する。
+const MAINTENANCE_CACHE_MS = 30_000;
+
+let maintenanceCache: { state: MaintenanceState; expiresAt: number } | null = null;
+
 async function getMaintenanceState(request: NextRequest): Promise<MaintenanceState> {
+  const now = Date.now();
+  if (maintenanceCache && maintenanceCache.expiresAt > now) {
+    return maintenanceCache.state;
+  }
+
   try {
     const statusUrl = new URL(MAINTENANCE_STATUS_PATH, request.url);
     const res = await fetch(statusUrl, { cache: 'no-store' });
     const data = res.ok ? await res.json() : {};
-    return {
+    const state: MaintenanceState = {
       isEnabled: process.env.MAINTENANCE_MODE === 'true' || data?.isEnabled === true,
       maintenancePages: Array.isArray(data?.maintenancePages) ? data.maintenancePages : [],
     };
+    maintenanceCache = { state, expiresAt: now + MAINTENANCE_CACHE_MS };
+    return state;
   } catch {
+    // 取得失敗はキャッシュしない。次のリクエストで再試行させる
     return { isEnabled: process.env.MAINTENANCE_MODE === 'true', maintenancePages: [] };
   }
 }
