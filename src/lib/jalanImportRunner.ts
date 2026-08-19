@@ -89,6 +89,8 @@ export interface ImportSummary {
   failed: number;
   /** カレンダーのイベント名を台帳の状態に合わせ直した件数 */
   calendarRenamed: number;
+  /** 取込み時に作られていなかったカレンダー予定を作り直した件数 */
+  calendarCreated: number;
   items: ImportItemResult[];
 }
 
@@ -129,42 +131,80 @@ function getHeader(
 }
 
 /**
- * カレンダーのイベント名を台帳の状態に合わせ直す。
+ * 今日以降のじゃらん予約について、Googleカレンダーを台帳の状態に合わせ直す。
  *
- * 確定時のイベント名更新は後から実装したため、それ以前に取り込んだ予約は
- * 「WS予約(じゃらん仮)」のまま残っている。また、確定処理の途中でカレンダー更新だけが
- * 失敗した場合も同じ状態になる。取込みのたびにここで揃えることで、
- * 手作業で直さなくても自然に正しい状態へ戻る。
+ * 2つのズレを直す:
+ *  1. イベント名が古い（確定したのに「WS予約(じゃらん仮)」のまま等）
+ *  2. イベント自体が無い（google_event_idがNULL）
  *
- * events.patch は同じ値を何度送っても副作用が無いため、現在のイベント名を
- * 読み出して比較する処理は入れていない（読み出しも同じだけAPI呼び出しを使うため）。
- * 対象は今日以降の予約に限る。過去の予約まで毎日書き換える必要はない。
+ * 2つ目が重要。取込み時のカレンダー登録は「失敗しても予約は成立させる」方針で
+ * try/catchしているため、一時的な失敗でイベントだけ作られないことがある。
+ * 以前はここでそういう予約を読み飛ばしていたので、一度失敗すると二度と
+ * カレンダーに載らなかった（実際に予約が1件カレンダーに現れなかった）。
+ * ここで作り直すことで、次の取込みで自動的に復旧する。
+ *
+ * events.patch / insert は同じ値・同じIDで何度呼んでも副作用が無いため、
+ * 現在の状態を読み出して比較する処理は入れていない（読み出しも同じだけ
+ * API呼び出しを使うため）。対象を今日以降に限り、過去の予約は触らない。
  */
-async function syncCalendarTitles(todayJst: string): Promise<number> {
-  if (!isCalendarConfigured()) return 0;
+async function syncCalendarEvents(
+  todayJst: string
+): Promise<{ renamed: number; created: number }> {
+  if (!isCalendarConfigured()) return { renamed: 0, created: 0 };
 
   let renamed = 0;
+  let created = 0;
+
   try {
     const bookings = await listUpcomingJalanBookings(todayJst);
+
     for (const booking of bookings) {
-      if (!booking.googleEventId) continue;
+      const summary = buildCalendarSummaryFromBooking(booking, isTentativeBooking(booking));
+
       try {
-        await updateBookingEventSummary(booking.googleEventId, {
-          summary: buildCalendarSummaryFromBooking(booking, isTentativeBooking(booking)),
+        if (booking.googleEventId) {
+          await updateBookingEventSummary(booking.googleEventId, { summary });
+          renamed += 1;
+          continue;
+        }
+
+        // 取込み時にカレンダー登録が失敗していた予約。ここで作り直す
+        const slot = WORKSHOP_SLOTS.find((s) => s.start === booking.startTime);
+        if (!slot) {
+          console.error('じゃらん取込み: 受付枠に無い時刻の予約はカレンダーに作れません', {
+            bookingNumber: booking.bookingNumber,
+            startTime: booking.startTime,
+          });
+          continue;
+        }
+
+        // 取込み時と同じ決定的なIDを使う。Google側に既にイベントが残っていれば
+        // createBookingEvent が409を正常系として扱い、そのIDを返す
+        const key = booking.idempotencyKey ?? booking.bookingNumber;
+        const event = await createBookingEvent({
+          eventId: buildGoogleBookingEventId(key),
+          idempotencyKey: key,
+          summary,
+          description: booking.notes ?? undefined,
+          startISO: jstDateTimeToIso(booking.date, slot.start),
+          endISO: jstDateTimeToIso(booking.date, slot.end),
         });
-        renamed += 1;
+        await updateBookingGoogleEvent(booking.id, event.eventId);
+        created += 1;
       } catch (error) {
-        console.error('じゃらん取込み: カレンダー名の同期に失敗', {
+        console.error('じゃらん取込み: カレンダーの同期に失敗', {
           bookingNumber: booking.bookingNumber,
+          hasEventId: !!booking.googleEventId,
           error,
         });
       }
     }
   } catch (error) {
     // 台帳が読めないだけで取込み全体を失敗にはしない
-    console.error('じゃらん取込み: カレンダー名同期の対象取得に失敗', error);
+    console.error('じゃらん取込み: カレンダー同期の対象取得に失敗', error);
   }
-  return renamed;
+
+  return { renamed, created };
 }
 
 export interface RunImportOptions {
@@ -398,7 +438,9 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
     items.filter((item) => item.action === type && (options.dryRun || item.applied)).length;
 
   // 試し実行では台帳もカレンダーも変更しない
-  const calendarRenamed = options.dryRun ? 0 : await syncCalendarTitles(todayJst);
+  const calendarSync = options.dryRun
+    ? { renamed: 0, created: 0 }
+    : await syncCalendarEvents(todayJst);
 
   return {
     dryRun: options.dryRun,
@@ -409,7 +451,8 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
     cancelled: count('cancel'),
     skipped: items.filter((item) => item.action === 'skip' && item.bookingNumber !== null).length,
     failed: items.filter((item) => item.bookingNumber === null).length,
-    calendarRenamed,
+    calendarRenamed: calendarSync.renamed,
+    calendarCreated: calendarSync.created,
     items,
   };
 }

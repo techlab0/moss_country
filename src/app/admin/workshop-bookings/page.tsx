@@ -1224,6 +1224,7 @@ interface ImportSummary {
   skipped: number;
   failed: number;
   calendarRenamed: number;
+  calendarCreated: number;
   items: ImportItem[];
 }
 
@@ -1577,6 +1578,9 @@ function GmailIntegrationTab() {
               {' '}
               対象 {importResult.scanned} 件／新規 {importResult.created}・確定 {importResult.confirmed}・
               キャンセル {importResult.cancelled}・対象外 {importResult.skipped}・解析失敗 {importResult.failed}
+              {!importResult.dryRun && importResult.calendarCreated > 0 && (
+                <span>／カレンダーに登録漏れがあった {importResult.calendarCreated} 件を作成しました</span>
+              )}
               {!importResult.dryRun && importResult.calendarRenamed > 0 && (
                 <span>／カレンダー名を {importResult.calendarRenamed} 件そろえ直しました</span>
               )}
