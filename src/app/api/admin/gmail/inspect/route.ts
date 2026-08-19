@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { verifyAdminSession } from '@/lib/auth';
 import { getAuthorizedGmailClient } from '@/lib/gmailOAuth';
+import { parsePositiveInt } from '@/lib/requestParams';
 
 /** 既定の検索条件。activityboard.jpからの予約通知メールを対象にする */
 const DEFAULT_QUERY = 'from:activityboard.jp';
@@ -70,11 +71,7 @@ export async function GET(request: NextRequest) {
 
     const params = request.nextUrl.searchParams;
     const query = params.get('q')?.trim() || DEFAULT_QUERY;
-    const requestedMax = Number(params.get('max'));
-    const maxResults = Math.min(
-      Number.isFinite(requestedMax) && requestedMax > 0 ? Math.floor(requestedMax) : DEFAULT_MAX,
-      HARD_MAX
-    );
+    const maxResults = parsePositiveInt(params.get('max'), DEFAULT_MAX, { max: HARD_MAX });
 
     const auth = await getAuthorizedGmailClient();
     const gmail = google.gmail({ version: 'v1', auth });

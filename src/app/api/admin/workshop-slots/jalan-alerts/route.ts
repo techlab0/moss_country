@@ -13,6 +13,7 @@ import {
 import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 import { todayJstDateStr } from '@/lib/workshopBookingConfig';
 import { checkCapacityConsistency } from '@/lib/workshopCapacityCheck';
+import { parsePositiveInt } from '@/lib/requestParams';
 
 /** 既定で何日先まで見るか。長くするほどGoogleカレンダー参照が増えるので既定は短めにする */
 const DEFAULT_DAYS = 30;
@@ -31,8 +32,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const requested = Number(request.nextUrl.searchParams.get('days'));
-    const days = Math.max(1, Math.min(Number.isFinite(requested) ? requested : DEFAULT_DAYS, MAX_DAYS));
+    const days = parsePositiveInt(request.nextUrl.searchParams.get('days'), DEFAULT_DAYS, {
+      max: MAX_DAYS,
+    });
 
     const from = todayJstDateStr();
     const to = addDays(from, days);

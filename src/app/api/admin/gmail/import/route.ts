@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
 import { runJalanImport } from '@/lib/jalanImportRunner';
+import { parsePositiveInt } from '@/lib/requestParams';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,13 +17,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const apply = body?.apply === true;
-    const sinceDays = Number(body?.sinceDays);
-    const maxMessages = Number(body?.maxMessages);
-
     const summary = await runJalanImport({
       dryRun: !apply,
-      sinceDays: Number.isFinite(sinceDays) ? sinceDays : undefined,
-      maxMessages: Number.isFinite(maxMessages) ? maxMessages : undefined,
+      sinceDays: body?.sinceDays === undefined ? undefined : parsePositiveInt(body.sinceDays, 90),
+      maxMessages: body?.maxMessages === undefined ? undefined : parsePositiveInt(body.maxMessages, 100),
     });
 
     if (apply) {
