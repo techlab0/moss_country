@@ -4,10 +4,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { computeSlotStatuses, CalendarUnavailableError } from '@/lib/workshopAvailability';
+import {
+  computeSlotStatuses,
+  getRegisteredCalendarMonths,
+  CalendarUnavailableError,
+} from '@/lib/workshopAvailability';
 import {
   findSlotsToCloseOnJalan,
   findFullyClosedDates,
+  filterToRegisteredMonths,
   LOW_REMAINING_THRESHOLD,
 } from '@/lib/jalanSlotAlerts';
 import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
@@ -42,7 +47,11 @@ export async function GET(request: NextRequest) {
     // computeAvailableSlots ではなく computeSlotStatuses を使う。
     // 前者は予約可能な枠しか返さないため、満席・休業日という最も知らせたい枠が落ちる。
     const statuses = await computeSlotStatuses(from, to);
-    const alerts = findSlotsToCloseOnJalan(statuses);
+
+    // 営業日カレンダーを登録していない月は「休業」ではなく「予定が未定」。
+    // そこまで警告すると月まるごとが一覧に並び、本当に対応が必要な日が埋もれる。
+    const registeredMonths = await getRegisteredCalendarMonths(from, to);
+    const alerts = filterToRegisteredMonths(findSlotsToCloseOnJalan(statuses), registeredMonths);
 
     // 定員設定の不整合もここで返す。受付枠に関わる問題を1画面で拾えるようにするため
     // （専用の診断画面を作っても見に行かないので、日常的に開く画面に出す）。
@@ -52,6 +61,9 @@ export async function GET(request: NextRequest) {
       from,
       to,
       threshold: LOW_REMAINING_THRESHOLD,
+      // 画面に「どの月を見ているか」を出すため。警告が0件のとき、
+      // 対応不要なのか未登録で対象外なのかを区別できるようにする
+      registeredMonths: [...registeredMonths].sort(),
       alerts,
       // 終日閉じている日は日単位でまとめて見せる（枠ごとに並べると件数が多くなりすぎる）
       fullyClosedDates: findFullyClosedDates(alerts, WORKSHOP_SLOTS.length),

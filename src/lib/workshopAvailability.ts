@@ -94,6 +94,31 @@ export interface SlotStatus {
 }
 
 /**
+ * 営業日カレンダーに1件でも登録がある月（YYYY-MM）を返す。
+ *
+ * 未登録の月は「休業」ではなく「まだ予定を決めていない」状態なので、
+ * じゃらん側を閉じるべき日として警告しても意味がない（月まるごと警告になり、
+ * 本当に対応が必要な日が埋もれる）。警告対象をこの月に絞るために使う。
+ */
+export async function getRegisteredCalendarMonths(
+  fromDate: string,
+  toDate: string
+): Promise<Set<string>> {
+  const { data, error } = await supabaseAdmin
+    .from('calendar_events')
+    .select('date')
+    .gte('date', fromDate)
+    .lte('date', toDate);
+
+  if (error) {
+    console.error('営業日カレンダーの登録月の取得に失敗しました:', error);
+    throw new CalendarUnavailableError('営業日カレンダーを確認できません');
+  }
+
+  return new Set((data || []).map((row: { date: string }) => row.date.slice(0, 7)));
+}
+
+/**
  * [fromDate, toDate]の全受付枠を、状態付きで返す。
  * computeAvailableSlots はこの結果から open だけを取り出したもので、
  * 判定ロジックの二重化を避けるため両者は同じ計算を共有する。

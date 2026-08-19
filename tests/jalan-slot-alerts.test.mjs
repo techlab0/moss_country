@@ -13,6 +13,7 @@ const moduleUrl = pathToFileURL(resolve('src/lib/jalanSlotAlerts.ts')).href;
 const {
   findSlotsToCloseOnJalan,
   findFullyClosedDates,
+  filterToRegisteredMonths,
   buildJalanCloseWarning,
   findAlertForSlot,
   LOW_REMAINING_THRESHOLD,
@@ -127,4 +128,33 @@ test('予約した枠に対応するアラートだけを取り出す', () => {
   ]);
   assert.equal(findAlertForSlot(alerts, '2026-09-21', '15:00').startTime, '15:00');
   assert.equal(findAlertForSlot(alerts, '2026-09-22', '11:30'), null);
+});
+
+
+// 営業日カレンダーを登録していない先の月は「休業」ではなく「予定が未定」。
+// 月まるごと警告に並ぶと、本当に対応が必要な日が埋もれてしまう。
+
+test('営業日カレンダー未登録の月は警告しない', () => {
+  const alerts = findSlotsToCloseOnJalan([
+    slot('2026-08-26', '11:30', 'closed', 0, '営業日ではありません'),
+    slot('2026-09-05', '11:30', 'closed', 0, '営業日ではありません'),
+  ]);
+  const filtered = filterToRegisteredMonths(alerts, new Set(['2026-08']));
+
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].date, '2026-08-26');
+});
+
+test('登録済みの月は満席・残りわずかも含めてすべて残る', () => {
+  const alerts = findSlotsToCloseOnJalan([
+    slot('2026-08-22', '11:30', 'full'),
+    slot('2026-08-23', '15:00', 'open', 1),
+  ]);
+  const filtered = filterToRegisteredMonths(alerts, new Set(['2026-08']));
+  assert.equal(filtered.length, 2);
+});
+
+test('登録月が空なら何も警告しない', () => {
+  const alerts = findSlotsToCloseOnJalan([slot('2026-08-26', '11:30', 'full')]);
+  assert.deepEqual(filterToRegisteredMonths(alerts, new Set()), []);
 });

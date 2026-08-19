@@ -68,6 +68,19 @@ export function findSlotsToCloseOnJalan(
   );
 }
 
+/**
+ * 営業日カレンダーに登録がある月の分だけに絞る。
+ *
+ * まだ営業日を登録していない先の月は、休業と決まったわけではなく予定が未定なだけ。
+ * そこまで警告すると月まるごとが一覧に並び、本当に対応が必要な日が埋もれる。
+ */
+export function filterToRegisteredMonths<T extends { date: string }>(
+  items: readonly T[],
+  registeredMonths: ReadonlySet<string>
+): T[] {
+  return items.filter((item) => registeredMonths.has(item.date.slice(0, 7)));
+}
+
 /** 1日の全枠が閉じている日付の一覧。日単位でまとめて表示するために使う */
 export function findFullyClosedDates(alerts: readonly SlotAlert[], slotsPerDay: number): string[] {
   const closedByDate = new Map<string, number>();

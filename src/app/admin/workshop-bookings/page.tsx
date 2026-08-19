@@ -1831,6 +1831,7 @@ const ACTIVITY_BOARD_URL = 'https://acb.jalan.net/gw/kanri/slogin.html';
 function JalanCloseAlerts() {
   const [alerts, setAlerts] = useState<JalanSlotAlert[] | null>(null);
   const [fullyClosedDates, setFullyClosedDates] = useState<string[]>([]);
+  const [registeredMonths, setRegisteredMonths] = useState<string[]>([]);
   const [capacityCheck, setCapacityCheck] = useState<CapacityCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1844,6 +1845,7 @@ function JalanCloseAlerts() {
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
       setAlerts(data.alerts);
       setFullyClosedDates(data.fullyClosedDates ?? []);
+      setRegisteredMonths(data.registeredMonths ?? []);
       setCapacityCheck(data.capacityCheck ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '取得に失敗しました');
@@ -1914,12 +1916,18 @@ function JalanCloseAlerts() {
         >
           ACTIVITY BOARD
         </a>
-        で手動で閉じてください。今後30日間が対象です。満席の枠と、定休日・イベント出店などで
-        受け付けていない日を表示します。
+        で手動で閉じてください。満席の枠と、定休日・イベント出店などで受け付けていない日を表示します。
+        今後30日間のうち、営業日カレンダーを登録済みの月
+        {registeredMonths.length > 0 ? `（${registeredMonths.join('・')}）` : ''}
+        だけが対象です。未登録の月は予定が未定のため対象外にしています。
       </p>
 
       {full.length === 0 && low.length === 0 && closedSlots.length === 0 && fullyClosedDates.length === 0 ? (
-        <p className="mt-4 text-sm text-gray-500">対応が必要な枠はありません。</p>
+        <p className="mt-4 text-sm text-gray-500">
+          {registeredMonths.length === 0
+            ? '今後30日間に営業日カレンダーの登録がありません。先に営業日を登録してください。'
+            : '対応が必要な枠はありません。'}
+        </p>
       ) : (
         <div className="mt-4 space-y-4">
           {full.length > 0 && (
