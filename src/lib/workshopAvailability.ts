@@ -68,13 +68,37 @@ export async function getWorkshopCalendarPolicy(
 }
 
 /**
- * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で予約可能な枠一覧を計算する。
- * 枠の時間帯はWORKSHOP_SLOTSの固定window（プランのdurationには依存しない）。
- *
- * 依存データ（営業日 / 既存予約 / Googleカレンダーのbusy時間帯 / 枠ON-OFFオーバーライド）の
- * いずれかが取得できない場合は CalendarUnavailableError を投げる（呼び出し元で503等に倒すこと）。
+ * 受付枠の状態。computeAvailableSlots は open のものだけを返すため、
+ * 「満席」「受付していない」枠は結果に現れない。じゃらん側の在庫を閉じる判断には
+ * それらこそが必要なので、全部の枠を状態付きで返す関数を別に用意している。
  */
-export async function computeAvailableSlots(fromDate: string, toDate: string): Promise<AvailableSlot[]> {
+export type SlotState =
+  /** 予約を受け付けられる */
+  | 'open'
+  /** 定員に達している */
+  | 'full'
+  /** 営業日でない・曜日対象外・枠停止中・カレンダーに別予定 */
+  | 'closed'
+  /** 受付締切（開始24時間前）を過ぎている */
+  | 'past';
+
+export interface SlotStatus {
+  date: string;
+  startTime: string;
+  endTime: string;
+  /** open のときの残り人数。それ以外は0 */
+  remaining: number;
+  state: SlotState;
+  /** closed の理由（管理画面にそのまま表示する） */
+  reason?: string;
+}
+
+/**
+ * [fromDate, toDate]の全受付枠を、状態付きで返す。
+ * computeAvailableSlots はこの結果から open だけを取り出したもので、
+ * 判定ロジックの二重化を避けるため両者は同じ計算を共有する。
+ */
+export async function computeSlotStatuses(fromDate: string, toDate: string): Promise<SlotStatus[]> {
   if (fromDate > toDate) return [];
 
   let calendarPolicy: WorkshopCalendarPolicy;
@@ -110,37 +134,72 @@ export async function computeAvailableSlots(fromDate: string, toDate: string): P
   );
 
   const dates = listDatesInRange(fromDate, toDate);
-  const available: AvailableSlot[] = [];
+  const statuses: SlotStatus[] = [];
 
   for (const date of dates) {
-    if (!isBookableWeekday(date)) continue;
-    if (!isWorkshopBusinessDate(calendarPolicy, date)) continue;
+    // 日単位で受け付けない理由。判定順は従来のcomputeAvailableSlotsと同じ
+    const dayClosedReason = !isBookableWeekday(date)
+      ? '受付対象の曜日ではありません'
+      : !isWorkshopBusinessDate(calendarPolicy, date)
+        ? '営業日ではありません（定休日・イベント出店など）'
+        : null;
 
     for (const slot of WORKSHOP_SLOTS) {
-      if (closedSlotKeys.has(`${date}|${slot.start}`)) continue;
+      const base = { date, startTime: slot.start, endTime: slot.end };
+
+      if (dayClosedReason) {
+        statuses.push({ ...base, remaining: 0, state: 'closed', reason: dayClosedReason });
+        continue;
+      }
+
+      if (closedSlotKeys.has(`${date}|${slot.start}`)) {
+        statuses.push({ ...base, remaining: 0, state: 'closed', reason: '受付枠を停止中です' });
+        continue;
+      }
 
       const slotStartIso = jstDateTimeToIso(date, slot.start);
       const slotEndIso = jstDateTimeToIso(date, slot.end);
 
-      if (!isWithinLeadTime(slotStartIso)) continue;
+      if (!isWithinLeadTime(slotStartIso)) {
+        statuses.push({ ...base, remaining: 0, state: 'past' });
+        continue;
+      }
 
       const overlapsBusy = busyIntervals.some(b => intervalsOverlap(slotStartIso, slotEndIso, b.start, b.end));
-      if (overlapsBusy) continue;
+      if (overlapsBusy) {
+        statuses.push({
+          ...base,
+          remaining: 0,
+          state: 'closed',
+          reason: 'Googleカレンダーに別の予定が入っています',
+        });
+        continue;
+      }
 
       const booked = partySizeBySlot.get(`${date}|${slot.start}`) || 0;
       const remaining = CAPACITY_PER_SLOT - booked;
-      if (remaining <= 0) continue;
 
-      available.push({
-        date,
-        startTime: slot.start,
-        endTime: slot.end,
-        remaining,
-      });
+      if (remaining <= 0) {
+        statuses.push({ ...base, remaining: 0, state: 'full' });
+        continue;
+      }
+
+      statuses.push({ ...base, remaining, state: 'open' });
     }
   }
 
-  return available;
+  return statuses;
+}
+
+/**
+ * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で予約可能な枠一覧を計算する。
+ * 予約可能な枠だけを返す（満席・受付停止の枠は含まれない）。
+ */
+export async function computeAvailableSlots(fromDate: string, toDate: string): Promise<AvailableSlot[]> {
+  const statuses = await computeSlotStatuses(fromDate, toDate);
+  return statuses
+    .filter((s) => s.state === 'open')
+    .map(({ date, startTime, endTime, remaining }) => ({ date, startTime, endTime, remaining }));
 }
 
 /**

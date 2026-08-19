@@ -8,7 +8,7 @@ import { buildPaymentDescription } from '@/lib/orderReceipt';
 import { createBookingEvent, deleteBookingEvent } from '@/lib/googleCalendar';
 import {
   isSlotStillAvailable,
-  computeAvailableSlots,
+  computeSlotStatuses,
   CalendarUnavailableError,
 } from '@/lib/workshopAvailability';
 import {
@@ -674,7 +674,9 @@ export async function POST(request: NextRequest) {
     // 空き枠を確認できなくても予約自体は成立させる（メールの一文が減るだけ）。
     let jalanWarning: string | null = null;
     try {
-      const slotsAfterBooking = await computeAvailableSlots(date, date);
+      // 満席になった枠を拾う必要があるため、予約可能な枠だけを返す
+      // computeAvailableSlots ではなく computeSlotStatuses を使う
+      const slotsAfterBooking = await computeSlotStatuses(date, date);
       const alerts = findSlotsToCloseOnJalan(slotsAfterBooking);
       jalanWarning = buildJalanCloseWarning(findAlertForSlot(alerts, date, startTime));
     } catch (error) {

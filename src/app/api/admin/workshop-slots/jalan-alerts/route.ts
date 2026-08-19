@@ -4,8 +4,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
-import { computeAvailableSlots, CalendarUnavailableError } from '@/lib/workshopAvailability';
-import { findSlotsToCloseOnJalan, LOW_REMAINING_THRESHOLD } from '@/lib/jalanSlotAlerts';
+import { computeSlotStatuses, CalendarUnavailableError } from '@/lib/workshopAvailability';
+import {
+  findSlotsToCloseOnJalan,
+  findFullyClosedDates,
+  LOW_REMAINING_THRESHOLD,
+} from '@/lib/jalanSlotAlerts';
+import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 import { todayJstDateStr } from '@/lib/workshopBookingConfig';
 import { checkCapacityConsistency } from '@/lib/workshopCapacityCheck';
 
@@ -32,8 +37,10 @@ export async function GET(request: NextRequest) {
     const from = todayJstDateStr();
     const to = addDays(from, days);
 
-    const slots = await computeAvailableSlots(from, to);
-    const alerts = findSlotsToCloseOnJalan(slots);
+    // computeAvailableSlots ではなく computeSlotStatuses を使う。
+    // 前者は予約可能な枠しか返さないため、満席・休業日という最も知らせたい枠が落ちる。
+    const statuses = await computeSlotStatuses(from, to);
+    const alerts = findSlotsToCloseOnJalan(statuses);
 
     // 定員設定の不整合もここで返す。受付枠に関わる問題を1画面で拾えるようにするため
     // （専用の診断画面を作っても見に行かないので、日常的に開く画面に出す）。
@@ -44,6 +51,8 @@ export async function GET(request: NextRequest) {
       to,
       threshold: LOW_REMAINING_THRESHOLD,
       alerts,
+      // 終日閉じている日は日単位でまとめて見せる（枠ごとに並べると件数が多くなりすぎる）
+      fullyClosedDates: findFullyClosedDates(alerts, WORKSHOP_SLOTS.length),
       capacityCheck,
     });
   } catch (error) {

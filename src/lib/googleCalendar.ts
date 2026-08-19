@@ -175,7 +175,7 @@ export async function createBookingEvent(
 export async function updateBookingEventSummary(
   eventId: string,
   patch: { summary: string; description?: string }
-): Promise<void> {
+): Promise<{ updated: boolean }> {
   if (!isCalendarConfigured()) {
     throw new Error('Googleカレンダーが未設定のため、イベントを更新できません');
   }
@@ -189,11 +189,14 @@ export async function updateBookingEventSummary(
       eventId,
       requestBody: { summary: patch.summary, description: patch.description },
     });
+    return { updated: true };
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const status = (error as any)?.code ?? (error as any)?.response?.status;
     if (status === 404 || status === 410) {
-      return;
+      // イベントが消えている。呼び出し側が作り直せるよう、成功と区別して返す
+      // （ここで例外にすると、台帳の更新まで巻き添えで失敗する）
+      return { updated: false };
     }
     console.error('Googleカレンダーイベントの更新に失敗しました:', { eventId, error });
     throw error;

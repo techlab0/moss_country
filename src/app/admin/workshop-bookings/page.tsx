@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect, useCallback } from 'react';
 import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
@@ -456,7 +457,13 @@ function BookingsListTab() {
                     {b.date}<br />
                     <span className="text-gray-500">{b.startTime}〜{b.endTime}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{b.workshopPlanName || '—'}</td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {/* じゃらんのプラン名は販促文込みで100文字を超え、スマホでは1件で画面が埋まる。
+                        経路（じゃらん）と（仮）は残したまま後ろを削り、全文はtitleで見られるようにする */}
+                    <span title={b.workshopPlanName || undefined}>
+                      {shortenPlanName(b.workshopPlanName) || '—'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-gray-700">
                     {b.customerName || '—'}<br />
                     <span className="text-xs text-gray-400">{b.customerEmail}</span>
@@ -1805,7 +1812,8 @@ interface JalanSlotAlert {
   startTime: string;
   endTime: string;
   remaining: number;
-  level: 'full' | 'low';
+  level: 'full' | 'closed' | 'low';
+  reason?: string;
 }
 
 // 定員はコード側（画面表示・事前チェック）とDBトリガー（最終保証）の2か所にあり、
@@ -1822,6 +1830,7 @@ const ACTIVITY_BOARD_URL = 'https://acb.jalan.net/gw/kanri/slogin.html';
 
 function JalanCloseAlerts() {
   const [alerts, setAlerts] = useState<JalanSlotAlert[] | null>(null);
+  const [fullyClosedDates, setFullyClosedDates] = useState<string[]>([]);
   const [capacityCheck, setCapacityCheck] = useState<CapacityCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1834,6 +1843,7 @@ function JalanCloseAlerts() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
       setAlerts(data.alerts);
+      setFullyClosedDates(data.fullyClosedDates ?? []);
       setCapacityCheck(data.capacityCheck ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '取得に失敗しました');
@@ -1869,6 +1879,11 @@ function JalanCloseAlerts() {
 
   const full = (alerts ?? []).filter((a) => a.level === 'full');
   const low = (alerts ?? []).filter((a) => a.level === 'low');
+  // 終日閉じている日は日単位で見せ、片方の枠だけ閉じている場合は枠単位で見せる
+  const closedDateSet = new Set(fullyClosedDates);
+  const closedSlots = (alerts ?? []).filter(
+    (a) => a.level === 'closed' && !closedDateSet.has(a.date)
+  );
 
   return (
     <>
@@ -1899,10 +1914,11 @@ function JalanCloseAlerts() {
         >
           ACTIVITY BOARD
         </a>
-        で手動で閉じてください。今後30日間が対象です。
+        で手動で閉じてください。今後30日間が対象です。満席の枠と、定休日・イベント出店などで
+        受け付けていない日を表示します。
       </p>
 
-      {full.length === 0 && low.length === 0 ? (
+      {full.length === 0 && low.length === 0 && closedSlots.length === 0 && fullyClosedDates.length === 0 ? (
         <p className="mt-4 text-sm text-gray-500">対応が必要な枠はありません。</p>
       ) : (
         <div className="mt-4 space-y-4">
@@ -1915,6 +1931,36 @@ function JalanCloseAlerts() {
                 {full.map((a) => (
                   <li key={`${a.date}-${a.startTime}`}>
                     {a.date} {a.startTime}〜{a.endTime}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {fullyClosedDates.length > 0 && (
+            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-800">
+                終日受け付けていない日（{fullyClosedDates.length}日）—
+                定休日・イベント出店など。じゃらんが開いていると予約が入ります
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-red-900">
+                {fullyClosedDates.map((date) => (
+                  <li key={date}>{date}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {closedSlots.length > 0 && (
+            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-800">
+                受け付けていない枠（{closedSlots.length}件）
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-red-900">
+                {closedSlots.map((a) => (
+                  <li key={`${a.date}-${a.startTime}`}>
+                    {a.date} {a.startTime}〜{a.endTime}
+                    {a.reason && <span className="ml-2 text-xs">（{a.reason}）</span>}
                   </li>
                 ))}
               </ul>

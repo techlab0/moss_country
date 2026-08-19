@@ -163,12 +163,16 @@ async function syncCalendarEvents(
 
       try {
         if (booking.googleEventId) {
-          await updateBookingEventSummary(booking.googleEventId, { summary });
-          renamed += 1;
-          continue;
+          const { updated } = await updateBookingEventSummary(booking.googleEventId, { summary });
+          if (updated) {
+            renamed += 1;
+            continue;
+          }
+          // 台帳にイベントIDはあるが、Google側では消えている（手動削除など）。
+          // ここでcontinueすると二度とカレンダーに載らないので、下で作り直す
         }
 
-        // 取込み時にカレンダー登録が失敗していた予約。ここで作り直す
+        // カレンダーに予定が無い予約。ここで作り直す
         const slot = WORKSHOP_SLOTS.find((s) => s.start === booking.startTime);
         if (!slot) {
           console.error('じゃらん取込み: 受付枠に無い時刻の予約はカレンダーに作れません', {
@@ -379,13 +383,17 @@ export async function runJalanImport(options: RunImportOptions): Promise<ImportS
         // 「じゃらん仮」のまま残り、確定済みなのか判断できなくなる。
         if (isCalendarConfigured()) {
           try {
-            if (stored!.googleEventId) {
-              await updateBookingEventSummary(stored!.googleEventId, {
-                summary: buildCalendarSummary(mail, false),
-                description: buildNotes(mail),
-              });
-            } else {
-              // 仮予約の登録時にカレンダー作成が失敗していた場合。ここで作り直す
+            const updatedExisting = stored!.googleEventId
+              ? (
+                  await updateBookingEventSummary(stored!.googleEventId, {
+                    summary: buildCalendarSummary(mail, false),
+                    description: buildNotes(mail),
+                  })
+                ).updated
+              : false;
+
+            if (!updatedExisting) {
+              // 仮予約の登録時にカレンダー作成が失敗していた、または予定が消えている場合
               const slot = WORKSHOP_SLOTS.find((s) => s.start === mail.startTime)!;
               const event = await createBookingEvent({
                 eventId: buildGoogleBookingEventId(idempotencyKey),
