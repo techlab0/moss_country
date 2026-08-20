@@ -218,7 +218,8 @@ export default function WorkshopPage() {
                   />
                 </div>
                 <CardHeader className="!p-3 md:!p-6">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-0.5 md:gap-0 mb-2">
+                  {/* 価格はタイトルの下に置く。横並びにすると、幅の広い画面でタイトルと価格が離れて対応が分かりにくくなる */}
+                  <div className="flex flex-col gap-0.5 mb-2">
                     <h3 className="text-base md:text-2xl font-semibold text-moss-green">{size.name}</h3>
                     <span className="text-moss-green font-bold text-sm md:text-xl">{size.price}</span>
                   </div>

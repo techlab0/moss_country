@@ -359,17 +359,20 @@ export default function MobileWorkshopPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-2 gap-3 md:gap-8">
             {eventScenes.map((scene, index) => (
               <Card key={index} className="hover:transform hover:scale-105 transition-all duration-300">
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
+                <CardHeader className="!p-3 md:!p-6">
+                  {/* 2列にすると横幅が足りないため、狭い画面ではアイコンを文章の上に積む */}
+                  <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
+                    <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
                       {scene.icon}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-moss-green mb-2">{scene.title}</h3>
-                      <p className="text-gray-600">{scene.description}</p>
+                      <h3 className="text-base md:text-xl font-bold text-moss-green mb-1 md:mb-2">
+                        {scene.title}
+                      </h3>
+                      <p className="text-sm md:text-base text-gray-600">{scene.description}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -394,7 +397,9 @@ export default function MobileWorkshopPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          {/* ワークショップページのプランカードと同じ密度・同じ並びに揃える
+              （スマホで2列、価格はタイトルの下） */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
             {mobileWorkshopMenus.map((menu) => (
               <Card key={menu.id} className="hover:transform hover:scale-105 transition-all duration-300">
                 <div className="overflow-hidden">
@@ -404,18 +409,18 @@ export default function MobileWorkshopPage() {
                     className="w-full h-auto object-contain"
                   />
                 </div>
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-2xl font-semibold text-moss-green">{menu.name}</h3>
-                    <span className="text-moss-green font-bold text-xl">{menu.price}</span>
+                <CardHeader className="!p-3 md:!p-6">
+                  <div className="flex flex-col gap-0.5 mb-2">
+                    <h3 className="text-base md:text-2xl font-semibold text-moss-green">{menu.name}</h3>
+                    <span className="text-moss-green font-bold text-sm md:text-xl">{menu.price}</span>
                   </div>
-                  <div className="flex items-center gap-4 mb-3">
-                    <p className="text-lg font-medium text-gray-700">{menu.dimensions}</p>
-                    <span className="bg-light-green text-moss-green px-2 py-1 rounded text-sm font-medium">
+                  <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 mb-3">
+                    <p className="text-sm md:text-lg font-medium text-gray-700">{menu.dimensions}</p>
+                    <span className="self-start bg-light-green text-moss-green px-2 py-1 rounded text-xs md:text-sm font-medium">
                       {menu.time}
                     </span>
                   </div>
-                  <p className="text-gray-600">{menu.description}</p>
+                  <p className="text-sm md:text-base text-gray-600">{menu.description}</p>
                 </CardHeader>
               </Card>
             ))}
@@ -594,15 +599,17 @@ export default function MobileWorkshopPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
             {features.map((feature, index) => (
-              <div key={index} className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
+              <div key={index} className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
                   {feature.icon}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-moss-green mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <h3 className="text-base md:text-xl font-bold text-moss-green mb-1 md:mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm md:text-base text-gray-600">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -623,7 +630,7 @@ export default function MobileWorkshopPage() {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {bookingSteps.map((item, index) => (
                 <div key={index} className="text-center">
                   <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
