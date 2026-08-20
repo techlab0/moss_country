@@ -183,6 +183,18 @@ export const defaultHeroImages: Record<string, ImageInfo> = {
 // 後方互換性のため、heroImagesもエクスポート（defaultHeroImagesのエイリアス）
 export const heroImages = defaultHeroImages;
 
+/**
+ * 背景・ヒーロー画像の配信品質。
+ *
+ * これらは背景として大きく引き伸ばして表示し、上から暗いオーバーレイを重ねるため、
+ * 細部の劣化は目立たない。一方でファイルサイズはそのまま表示速度に効く。
+ *
+ * あわせて auto('format') を必ず付けること。付けないと元画像の形式のまま配信され、
+ * 写真をPNGでアップロードした場合に極端に重くなる
+ * （実測: モバイル背景が2.10MBのPNG。auto('format')で95KBのWebPになった）。
+ */
+const IMAGE_QUALITY = 75;
+
 // 背景画像のデフォルト定義（フォールバック用）
 export const defaultBackgroundImages: Record<string, ImageInfo> = {
   'main': {
@@ -312,6 +324,8 @@ export async function getHeroImage(page: 'main' | 'products' | 'workshop' | 'sto
       const imageUrl = urlFor(pageSettings.image as SanityImage)
         .width(page === 'main' ? 1920 : 1920)
         .height(page === 'main' ? 1080 : 600)
+        .auto('format')
+        .quality(IMAGE_QUALITY)
         .url();
 
       // URLが有効かチェック
@@ -358,7 +372,9 @@ export async function getAllHeroImages(): Promise<Record<string, ImageInfo>> {
         const imageUrl = urlFor(pageSettings.image as SanityImage)
           .width(page === 'main' ? 1920 : 1920)
           .height(page === 'main' ? 1080 : 600)
-          .url();
+          .auto('format')
+        .quality(IMAGE_QUALITY)
+        .url();
 
         result[page] = {
           src: imageUrl,
@@ -410,7 +426,9 @@ export async function getBackgroundImage(
         const imageUrl = urlFor(pageSettings.imageMobile as SanityImage)
           .width(750)
           .height(1334)
-          .url();
+          .auto('format')
+        .quality(IMAGE_QUALITY)
+        .url();
 
         // URLが有効かチェック
         if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
@@ -437,7 +455,9 @@ export async function getBackgroundImage(
           const imageUrl = urlFor(pageSettings.image as SanityImage)
             .width(750)
             .height(1334)
-            .url();
+            .auto('format')
+        .quality(IMAGE_QUALITY)
+        .url();
 
           if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
             return defaultImage;
@@ -467,6 +487,8 @@ export async function getBackgroundImage(
       const imageUrl = urlFor(pageSettings.image as SanityImage)
         .width(1920)
         .height(1080)
+        .auto('format')
+        .quality(IMAGE_QUALITY)
         .url();
 
       // URLが有効かチェック
@@ -516,7 +538,9 @@ export async function getAllBackgroundImages(): Promise<Record<string, ImageInfo
         const imageUrl = urlFor(pageSettings.image as SanityImage)
           .width(1920)
           .height(1080)
-          .url();
+          .auto('format')
+        .quality(IMAGE_QUALITY)
+        .url();
 
         result[page] = {
           src: imageUrl,
@@ -533,7 +557,9 @@ export async function getAllBackgroundImages(): Promise<Record<string, ImageInfo
         const mobileImageUrl = urlFor(pageSettings.imageMobile as SanityImage)
           .width(750)
           .height(1334)
-          .url();
+          .auto('format')
+        .quality(IMAGE_QUALITY)
+        .url();
 
         result[mobileKey] = {
           src: mobileImageUrl,
