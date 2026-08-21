@@ -36,7 +36,29 @@ interface MonthlySummary {
   visitorTotal: number;
   purchaseGroupTotal: number;
   avgPerGroup: number;
+  avgPerVisitor: number;
+  avgPerBusinessDay: number;
+  purchaseRate: number;
   businessDays: number;
+}
+
+interface WeekdayRow {
+  weekday: number;
+  total: number;
+  businessDays: number;
+  avg: number;
+}
+
+interface HourRow {
+  hour: number;
+  total: number;
+  count: number;
+}
+
+interface ItemRow {
+  name: string;
+  quantity: number;
+  amount: number;
 }
 
 interface MonthlyReport {
@@ -44,6 +66,10 @@ interface MonthlyReport {
   days: DayRow[];
   summary: MonthlySummary;
   previousSummary: MonthlySummary | null;
+  weekdays: WeekdayRow[];
+  hours: HourRow[];
+  hourCoveredTotal: number;
+  items: ItemRow[];
 }
 
 const categoryLabels: Record<string, string> = {
@@ -64,6 +90,19 @@ const methodLabels: Record<string, string> = {
 };
 const methodOrder = ['cash', 'payPay', 'card', 'qr'] as const;
 
+const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+
+/** その月の日数 */
+function daysInMonthCount(month: string): number {
+  const [year, mon] = month.split('-').map(Number);
+  return new Date(Date.UTC(year, mon, 0)).getUTCDate();
+}
+
+function todayJst(): { month: string; day: number } {
+  const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return { month: jst.toISOString().slice(0, 7), day: jst.getUTCDate() };
+}
+
 function currentMonthJst(): string {
   const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
   return jst.toISOString().slice(0, 7);
@@ -78,6 +117,12 @@ function shiftMonth(month: string, delta: number): string {
 function monthLabel(month: string): string {
   const [year, mon] = month.split('-');
   return `${year}年${Number(mon)}月`;
+}
+
+/** 前後の月ボタン用。表示中の月と同じ年なら年を省いて短くする */
+function shortMonthLabel(month: string, baseMonth: string): string {
+  const [year, mon] = month.split('-');
+  return year === baseMonth.slice(0, 4) ? `${Number(mon)}月` : `${year}年${Number(mon)}月`;
 }
 
 /** 前月比の変化率（%）。前月が0のときはnull（表示しない） */
@@ -109,11 +154,11 @@ function SummaryCard({
 }) {
   return (
     <div className="bg-white shadow rounded-lg p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-xs sm:text-sm text-gray-500 leading-snug">{label}</p>
+      <div className="flex items-baseline flex-wrap gap-x-2 mt-1">
+        <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
         {rate !== undefined && <ChangeBadge rate={rate} />}
       </div>
-      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
@@ -149,6 +194,15 @@ function BreakdownBars({
       })}
       {total <= 0 && <p className="text-sm text-gray-400">データがありません</p>}
     </div>
+  );
+}
+
+/** 数字を読んだあと何をすればいいか迷わないよう、その場に判断材料を添える */
+function InsightNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-3 text-xs text-gray-500 leading-relaxed bg-gray-50 rounded-md p-3">
+      {children}
+    </p>
   );
 }
 
@@ -188,6 +242,58 @@ export default function MonthlySalesPage() {
 
   const hasAnySales = (summary?.grandTotal || 0) !== 0 || (summary?.storeTotal || 0) > 0;
 
+  const weekdayData = useMemo(
+    () => (report?.weekdays || []).map(row => ({ ...row, label: weekdayLabels[row.weekday] })),
+    [report]
+  );
+
+  // 時間帯は営業していない時間まで並べても読みにくいので、実績のある範囲だけを描く
+  const hourData = useMemo(() => {
+    const hours = report?.hours || [];
+    if (hours.length === 0) return [];
+    const min = hours[0].hour;
+    const max = hours[hours.length - 1].hour;
+    const byHour = new Map(hours.map(row => [row.hour, row]));
+    const filled: Array<{ hour: number; label: string; total: number; count: number }> = [];
+    for (let hour = min; hour <= max; hour++) {
+      const row = byHour.get(hour);
+      filled.push({ hour, label: `${hour}時`, total: row?.total || 0, count: row?.count || 0 });
+    }
+    return filled;
+  }, [report]);
+
+  const bestWeekday = useMemo(() => {
+    const candidates = weekdayData.filter(row => row.businessDays > 0);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((best, row) => (row.avg > best.avg ? row : best));
+  }, [weekdayData]);
+
+  const bestHour = useMemo(() => {
+    if (hourData.length === 0) return null;
+    return hourData.reduce((best, row) => (row.total > best.total ? row : best));
+  }, [hourData]);
+
+  // 時間帯が分かる売上が店舗売上のどれくらいを占めるか。紙の記録の一括入力分は時刻が無いので除いている
+  const hourCoverageRate = useMemo(() => {
+    const storeTotal = summary?.storeTotal || 0;
+    if (storeTotal <= 0) return 0;
+    return Math.round(((report?.hourCoveredTotal || 0) / storeTotal) * 100);
+  }, [report, summary]);
+
+  // 当月は途中経過なので、暦日ベースの日平均から月末の着地を見込む
+  const projection = useMemo(() => {
+    if (!summary || !isCurrentMonth) return null;
+    const { month: nowMonth, day } = todayJst();
+    if (nowMonth !== month || day <= 0) return null;
+    const totalDays = daysInMonthCount(month);
+    if (day >= totalDays) return null;
+    return {
+      elapsedDays: day,
+      totalDays,
+      amount: Math.round((summary.grandTotal / day) * totalDays),
+    };
+  }, [summary, isCurrentMonth, month]);
+
   return (
     <div className="space-y-4 max-w-4xl pb-8">
       <div>
@@ -198,20 +304,20 @@ export default function MonthlySalesPage() {
       </div>
 
       {/* 月ナビゲーション */}
-      <div className="bg-white shadow rounded-lg p-3 flex items-center justify-between">
+      <div className="bg-white shadow rounded-lg p-3 flex items-center justify-between gap-2">
         <button
           onClick={() => setMonth(shiftMonth(month, -1))}
-          className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+          className="px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          ← {monthLabel(shiftMonth(month, -1))}
+          ← {shortMonthLabel(shiftMonth(month, -1), month)}
         </button>
-        <span className="text-lg font-bold text-gray-900">{monthLabel(month)}</span>
+        <span className="text-base sm:text-lg font-bold text-gray-900 whitespace-nowrap">{monthLabel(month)}</span>
         <button
           onClick={() => setMonth(shiftMonth(month, 1))}
           disabled={isCurrentMonth}
-          className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30"
+          className="px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30"
         >
-          {monthLabel(shiftMonth(month, 1))} →
+          {shortMonthLabel(shiftMonth(month, 1), month)} →
         </button>
       </div>
 
@@ -260,6 +366,22 @@ export default function MonthlySalesPage() {
               rate={changeRate(summary.purchaseGroupTotal, prev?.purchaseGroupTotal)}
             />
             <SummaryCard
+              label="来店1名あたり売上"
+              value={`¥${summary.avgPerVisitor.toLocaleString()}`}
+              rate={changeRate(summary.avgPerVisitor, prev?.avgPerVisitor)}
+            />
+            <SummaryCard
+              label="購入率（組数÷来店者数）"
+              value={`${summary.purchaseRate}%`}
+              rate={changeRate(summary.purchaseRate, prev?.purchaseRate)}
+              sub="1組が複数名のこともあるため目安"
+            />
+            <SummaryCard
+              label="営業日1日あたり売上"
+              value={`¥${summary.avgPerBusinessDay.toLocaleString()}`}
+              rate={changeRate(summary.avgPerBusinessDay, prev?.avgPerBusinessDay)}
+            />
+            <SummaryCard
               label="割引合計"
               value={`−¥${summary.discountTotal.toLocaleString()}`}
             />
@@ -267,6 +389,14 @@ export default function MonthlySalesPage() {
               label="営業日数（売上のあった日）"
               value={`${summary.businessDays}日`}
             />
+            {projection && (
+              <SummaryCard
+                label="今月の着地見込み"
+                value={`¥${projection.amount.toLocaleString()}`}
+                rate={changeRate(projection.amount, prev?.grandTotal)}
+                sub={`${projection.elapsedDays}/${projection.totalDays}日経過の平均ペース`}
+              />
+            )}
           </div>
 
           {/* 税内訳 */}
@@ -329,6 +459,125 @@ export default function MonthlySalesPage() {
                 <p className="text-xs text-gray-400 mt-3">
                   ※カテゴリー別は割引前の定価ベースの内訳です。実際の受取額との差は「割引合計」をご参照ください。
                 </p>
+                <InsightNote>
+                  構成比が偏っているカテゴリーは、在庫と陳列を厚くする候補です。逆に比率が小さいカテゴリーは、
+                  売り場での見せ方を変えるか、扱いを絞るかの判断材料になります。
+                </InsightNote>
+              </div>
+
+              {/* 曜日別の平均売上 */}
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="font-medium text-gray-900 mb-1">曜日別の平均売上</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  売上のあった日だけで平均しています（定休日は平均に含めません）。
+                </p>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `¥${v.toLocaleString()}`} width={70} />
+                      <Tooltip
+                        formatter={(value) => [`¥${Number(value).toLocaleString()}`, '平均売上']}
+                        labelFormatter={(label) => {
+                          const row = weekdayData.find(d => d.label === label);
+                          return `${label}曜日（${row?.businessDays || 0}日分）`;
+                        }}
+                      />
+                      <Bar dataKey="avg" name="平均売上" fill="#3D5A2E" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                {bestWeekday && bestWeekday.avg > 0 && (
+                  <InsightNote>
+                    この月で最も強いのは<strong className="text-gray-700">{bestWeekday.label}曜日</strong>
+                    （平均 ¥{bestWeekday.avg.toLocaleString()}）です。強い曜日はワークショップやイベントを重ねると
+                    取りこぼしを減らせます。弱い曜日は、割引より「その日限定の体験」を置くほうが単価を落とさずに済みます。
+                  </InsightNote>
+                )}
+              </div>
+
+              {/* 時間帯別の売上 */}
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="font-medium text-gray-900 mb-1">時間帯別の売上（店頭）</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  レジで登録した時刻を会計時刻とみなしています。紙の記録をまとめて入力した分は時刻が残らないため除外しています。
+                </p>
+                {hourData.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    時刻の分かる取引がありません。店頭でその場に登録した会計が貯まると表示されます。
+                  </p>
+                ) : (
+                  <>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={hourData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `¥${v.toLocaleString()}`} width={70} />
+                          <Tooltip
+                            formatter={(value) => [`¥${Number(value).toLocaleString()}`, '売上']}
+                            labelFormatter={(label) => {
+                              const row = hourData.find(d => d.label === label);
+                              return `${label}台（${row?.count || 0}件）`;
+                            }}
+                          />
+                          <Bar dataKey="total" name="売上" fill="#8DB580" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      店舗売上のうち {hourCoverageRate}% を集計対象にしています。
+                    </p>
+                    {bestHour && (
+                      <InsightNote>
+                        山は<strong className="text-gray-700">{bestHour.label}台</strong>
+                        （¥{bestHour.total.toLocaleString()}）です。人手を厚くする時間、SNSの投稿時間、
+                        ワークショップの開始時刻を決めるときの根拠に使えます。売上がほとんど無い時間が続くなら、
+                        営業時間の見直しも検討できます。
+                      </InsightNote>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* 売れ筋ランキング */}
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="font-medium text-gray-900 mb-1">売れ筋ランキング（上位20件）</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  金額は割引前の定価ベースです。数量は明細に入力された個数の合計です。
+                </p>
+                {(report.items || []).length === 0 ? (
+                  <p className="text-sm text-gray-400">明細のある取引がありません</p>
+                ) : (
+                  <ol className="divide-y">
+                    {report.items.map((item, index) => {
+                      const top = report.items[0].amount || 1;
+                      const percent = Math.round((item.amount / top) * 100);
+                      return (
+                        <li key={item.name} className="py-2">
+                          <div className="flex items-baseline justify-between gap-2 text-sm">
+                            <span className="text-gray-700 min-w-0 truncate">
+                              <span className="text-gray-400 mr-2">{index + 1}</span>
+                              {item.name}
+                            </span>
+                            <span className="text-gray-900 font-medium whitespace-nowrap">
+                              ¥{item.amount.toLocaleString()}
+                              <span className="text-xs text-gray-400 ml-1">/ {item.quantity}点</span>
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
+                            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+                <InsightNote>
+                  上位は切らさないことが最優先です。金額は小さいが数量が多い品は集客の入口、
+                  数量は少ないが金額が大きい品は客単価の柱にあたります。役割が違うので、値上げや品切れの判断は分けて考えてください。
+                </InsightNote>
               </div>
             </>
           )}

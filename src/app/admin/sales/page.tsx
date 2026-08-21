@@ -216,6 +216,22 @@ function todayJstString(): string {
   return jst.toISOString().slice(0, 10);
 }
 
+const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+
+/** YYYY-MM-DD を delta 日ずらす。月またぎ・うるう年はDateに任せる */
+function shiftDate(date: string, delta: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + delta));
+  return shifted.toISOString().slice(0, 10);
+}
+
+/** 「2026/08/21（金）」の形にする。曜日は日別の傾向を見るときの手がかりになる */
+function formatDateWithWeekday(date: string): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const weekday = WEEKDAY_LABELS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}（${weekday}）`;
+}
+
 function toNumber(value: string): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -317,17 +333,18 @@ export default function SalesPage() {
     <div className="space-y-4 max-w-2xl pb-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-gray-900">売上管理</h1>
-        <div className="flex items-center gap-2">
-          <Link href="/admin/sales/monthly" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+        {/* ボタンの文字は折り返さず、入りきらないときはボタン単位で改行する */}
+        <div className="flex items-center flex-wrap gap-2">
+          <Link href="/admin/sales/monthly" className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50">
             月次レポート
           </Link>
-          <Link href="/admin/sales/items" className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+          <Link href="/admin/sales/items" className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50">
             項目カタログ
           </Link>
           <button
             onClick={handleBackfill}
             disabled={backfilling}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
           >
             {backfilling ? 'バックアップ中...' : '過去分を一括バックアップ'}
           </button>
@@ -338,13 +355,13 @@ export default function SalesPage() {
       <div className="flex rounded-lg overflow-hidden border border-gray-300">
         <button
           onClick={() => setTab('entry')}
-          className={`flex-1 py-3 font-medium ${tab === 'entry' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 px-1 py-3 text-sm sm:text-base font-medium whitespace-nowrap ${tab === 'entry' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           入力
         </button>
         <button
           onClick={() => setTab('summary')}
-          className={`flex-1 py-3 font-medium ${tab === 'summary' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 px-1 py-3 text-sm sm:text-base font-medium whitespace-nowrap ${tab === 'summary' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           集計・履歴
         </button>
@@ -1234,6 +1251,8 @@ function SummaryTab({
   const [edit, setEdit] = useState<EditState | null>(null);
   const [busyId, setBusyId] = useState('');
   const [showHistoricalPanel, setShowHistoricalPanel] = useState(false);
+  // 未来日には売上が存在しないので、日付移動の上限にする
+  const today = todayJstString();
 
   const loadDay = useCallback(async (targetDate: string) => {
     setLoading(true);
@@ -1426,9 +1445,37 @@ function SummaryTab({
         <input
           type="date"
           value={date}
+          max={today}
           onChange={(e) => setDate(e.target.value)}
           className="block w-full min-w-0 max-w-full box-border appearance-none px-3 py-3 text-lg border border-gray-300 rounded-md"
         />
+        {/* 日付の入れ替えは前日/翌日が大半なので、カレンダーを開かずに動かせるようにする */}
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <button
+            onClick={() => setDate(prev => shiftDate(prev, -1))}
+            className="px-2 py-2 text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            ← 前日
+          </button>
+          <button
+            onClick={() => setDate(today)}
+            disabled={date === today}
+            className="px-2 py-2 text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30"
+          >
+            今日
+          </button>
+          <button
+            onClick={() => setDate(prev => shiftDate(prev, 1))}
+            disabled={date >= today}
+            className="px-2 py-2 text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30"
+          >
+            翌日 →
+          </button>
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          {formatDateWithWeekday(date)}
+          {date === today && <span className="ml-2 text-xs text-moss-green font-medium">今日</span>}
+        </p>
       </div>
 
       {/* 集計サマリー */}
