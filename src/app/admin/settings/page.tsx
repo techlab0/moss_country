@@ -214,19 +214,19 @@ export default function SettingsPage() {
       <div className="flex rounded-lg overflow-hidden border border-gray-300">
         <button
           onClick={() => setTab('maintenance')}
-          className={`flex-1 py-3 font-medium ${tab === 'maintenance' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 px-1 py-3 text-xs sm:text-sm md:text-base font-medium whitespace-nowrap ${tab === 'maintenance' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           メンテナンス
         </button>
         <button
           onClick={() => setTab('navigation')}
-          className={`flex-1 py-3 font-medium ${tab === 'navigation' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 px-1 py-3 text-xs sm:text-sm md:text-base font-medium whitespace-nowrap ${tab === 'navigation' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           ヘッダー・フッター
         </button>
         <button
           onClick={() => setTab('shipping')}
-          className={`flex-1 py-3 font-medium ${tab === 'shipping' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 px-1 py-3 text-xs sm:text-sm md:text-base font-medium whitespace-nowrap ${tab === 'shipping' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           送料
         </button>
@@ -785,8 +785,11 @@ function NavLinkListEditor({
       </div>
       <ul className="space-y-2">
         {links.map((link, index) => (
-          <li key={index} className="flex items-center gap-2 flex-wrap">
-            <div className="flex flex-col">
+          <li
+            key={index}
+            className="flex items-center gap-2 rounded-md border border-gray-200 p-2 sm:border-0 sm:p-0"
+          >
+            <div className="flex flex-col shrink-0">
               <button
                 onClick={() => onMove(index, -1)}
                 disabled={index === 0}
@@ -802,29 +805,40 @@ function NavLinkListEditor({
                 ▼
               </button>
             </div>
-            <input
-              type="text"
-              value={link.label}
-              onChange={(e) => onUpdate(index, { label: e.target.value })}
-              placeholder="表示名"
-              className="w-32 px-2 py-2 text-sm border border-gray-300 rounded-md"
-            />
-            <input
-              type="text"
-              value={link.href}
-              onChange={(e) => onUpdate(index, { href: e.target.value })}
-              placeholder="/path または https://..."
-              className="flex-1 min-w-[140px] px-2 py-2 text-sm border border-gray-300 rounded-md"
-            />
-            <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+            <div className="flex-1 min-w-0 flex flex-col sm:flex-row gap-2">
               <input
-                type="checkbox"
-                checked={link.isVisible !== false}
-                onChange={(e) => onUpdate(index, { isVisible: e.target.checked })}
+                type="text"
+                value={link.label}
+                onChange={(e) => onUpdate(index, { label: e.target.value })}
+                placeholder="表示名"
+                className="w-full sm:w-32 sm:shrink-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
               />
-              表示
-            </label>
-            <button onClick={() => onRemove(index)} className="text-red-500 text-sm px-1">✕</button>
+              <input
+                type="text"
+                value={link.href}
+                onChange={(e) => onUpdate(index, { href: e.target.value })}
+                placeholder="/path または https://..."
+                className="w-full sm:flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={link.isVisible !== false}
+                  onChange={(e) => onUpdate(index, { isVisible: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                表示
+              </label>
+              <button
+                onClick={() => onRemove(index)}
+                aria-label="このリンクを削除"
+                className="text-red-500 text-sm px-2 py-1 leading-none"
+              >
+                ✕
+              </button>
+            </div>
           </li>
         ))}
       </ul>
