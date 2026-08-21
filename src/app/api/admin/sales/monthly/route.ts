@@ -48,6 +48,7 @@ interface MonthDailySales {
   purchaseGroupCount?: number;
   adjustment?: number;
   wordOfMouthDiscount?: number;
+  notes?: string;
 }
 
 interface DayRow {
@@ -59,6 +60,12 @@ interface DayRow {
   payPay: number;
   card: number;
   qr: number;
+  /** その日の来店者数（日別の記録から） */
+  visitors: number;
+  /** その日のワークショップ売上。イベント日の偏りを見るために日別で持つ */
+  workshopTotal: number;
+  /** 日別の記録に書かれたメモ。イベント名などが入るのでグラフの注釈に使う */
+  note: string;
 }
 
 /** 曜日別の売上。定休日を平均に含めると実態より低く出るため、売上のあった日だけで割る */
@@ -67,6 +74,10 @@ interface WeekdayRow {
   total: number;
   businessDays: number;
   avg: number;
+  /** その曜日の来店者数の合計と、来店の記録があった日数 */
+  visitors: number;
+  visitorDays: number;
+  visitorAvg: number;
 }
 
 /** 時間帯別の売上。会計時刻が分かる取引だけを対象にする */
@@ -179,7 +190,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     ),
     writeClient.fetch(
       `*[_type == "dailySales" && date >= $first && date <= $last]{
-        date, visitorCount, purchaseGroupCount, adjustment, wordOfMouthDiscount
+        date, visitorCount, purchaseGroupCount, adjustment, wordOfMouthDiscount, notes
       }`,
       { first, last }
     ),
@@ -187,7 +198,19 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
 
   const dayMap = new Map<string, DayRow>();
   for (const date of dayList) {
-    dayMap.set(date, { date, storeTotal: 0, ecTotal: 0, total: 0, cash: 0, payPay: 0, card: 0, qr: 0 });
+    dayMap.set(date, {
+      date,
+      storeTotal: 0,
+      ecTotal: 0,
+      total: 0,
+      cash: 0,
+      payPay: 0,
+      card: 0,
+      qr: 0,
+      visitors: 0,
+      workshopTotal: 0,
+      note: '',
+    });
   }
 
   const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
@@ -233,6 +256,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     for (const li of tx.lineItems || []) {
       const category = li.category || 'other';
       categoryTotals[category] = (categoryTotals[category] || 0) + (li.amount || 0);
+      if (category === 'workshop' && row) row.workshopTotal += li.amount || 0;
     }
   }
 
@@ -254,6 +278,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     for (const li of charge.lineItems || []) {
       const category = li.category || 'other';
       categoryTotals[category] = (categoryTotals[category] || 0) + (li.amount || 0);
+      if (category === 'workshop' && row) row.workshopTotal += li.amount || 0;
     }
   }
 
@@ -272,6 +297,11 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     wordOfMouthTotal += ds.wordOfMouthDiscount || 0;
     visitorTotal += ds.visitorCount || 0;
     purchaseGroupTotal += ds.purchaseGroupCount || 0;
+    const row = ds.date ? dayMap.get(ds.date) : undefined;
+    if (row) {
+      row.visitors = ds.visitorCount || 0;
+      row.note = ds.notes?.trim() || '';
+    }
   }
 
   const days = Array.from(dayMap.values());
@@ -281,6 +311,9 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     total: 0,
     businessDays: 0,
     avg: 0,
+    visitors: 0,
+    visitorDays: 0,
+    visitorAvg: 0,
   }));
   for (const row of days) {
     row.total = row.storeTotal + row.ecTotal;
@@ -289,9 +322,13 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
     weekdays[weekday].total += row.total;
     if (row.total > 0) weekdays[weekday].businessDays++;
+    weekdays[weekday].visitors += row.visitors;
+    // 来店者数を記録した日だけで平均する。未入力の日を0として混ぜると平均が沈む
+    if (row.visitors > 0) weekdays[weekday].visitorDays++;
   }
   for (const row of weekdays) {
     row.avg = row.businessDays > 0 ? Math.round(row.total / row.businessDays) : 0;
+    row.visitorAvg = row.visitorDays > 0 ? Math.round((row.visitors / row.visitorDays) * 10) / 10 : 0;
   }
 
   const hours = Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);

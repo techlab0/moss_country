@@ -22,6 +22,9 @@ interface DayRow {
   payPay: number;
   card: number;
   qr: number;
+  visitors: number;
+  workshopTotal: number;
+  note: string;
 }
 
 interface MonthlySummary {
@@ -47,6 +50,9 @@ interface WeekdayRow {
   total: number;
   businessDays: number;
   avg: number;
+  visitors: number;
+  visitorDays: number;
+  visitorAvg: number;
 }
 
 interface HourRow {
@@ -240,6 +246,53 @@ export default function MonthlySalesPage() {
     }));
   }, [report]);
 
+  // ワークショップが立つ日（イベント日）は売上の山になりやすいので、日別で並べて確かめられるようにする
+  const workshopDays = useMemo(
+    () => chartData.filter(day => day.workshopTotal > 0),
+    [chartData]
+  );
+
+  const workshopMonthTotal = useMemo(
+    () => chartData.reduce((sum, day) => sum + day.workshopTotal, 0),
+    [chartData]
+  );
+
+  // 「前半は強かった」といった感触を数字で確かめられるようにする
+  const halfComparison = useMemo(() => {
+    if (chartData.length === 0) return null;
+    const first = chartData.filter(day => Number(day.date.slice(8, 10)) <= 15);
+    const second = chartData.filter(day => Number(day.date.slice(8, 10)) > 15);
+    const sum = (rows: typeof chartData, key: 'total' | 'workshopTotal' | 'visitors') =>
+      rows.reduce((acc, row) => acc + row[key], 0);
+    return {
+      firstTotal: sum(first, 'total'),
+      secondTotal: sum(second, 'total'),
+      firstWorkshop: sum(first, 'workshopTotal'),
+      secondWorkshop: sum(second, 'workshopTotal'),
+      firstVisitors: sum(first, 'visitors'),
+      secondVisitors: sum(second, 'visitors'),
+      firstDays: first.filter(row => row.total > 0).length,
+      secondDays: second.filter(row => row.total > 0).length,
+    };
+  }, [chartData]);
+
+  // 前半と後半の差が何で説明できるのかを、条件文ではなく実数から言い切る
+  const halfInsight = useMemo(() => {
+    if (!halfComparison) return null;
+    const { firstTotal, secondTotal, firstWorkshop, secondWorkshop } = halfComparison;
+    const totalDiff = firstTotal - secondTotal;
+    const workshopDiff = firstWorkshop - secondWorkshop;
+    const larger = Math.max(firstTotal, secondTotal);
+    // 差が小さいうちは無理に理由づけしない
+    if (larger <= 0 || Math.abs(totalDiff) < larger * 0.05) return { kind: 'even' as const };
+    const strongHalf = totalDiff > 0 ? '前半' : '後半';
+    const gap = Math.abs(totalDiff);
+    // ワークショップが同じ向きに効いているか、逆に足を引っ張っているか
+    const sameDirection = totalDiff > 0 === workshopDiff > 0 && workshopDiff !== 0;
+    const share = sameDirection ? Math.round((Math.abs(workshopDiff) / gap) * 100) : 0;
+    return { kind: 'gap' as const, strongHalf, gap, workshopGap: Math.abs(workshopDiff), share, sameDirection };
+  }, [halfComparison]);
+
   const hasAnySales = (summary?.grandTotal || 0) !== 0 || (summary?.storeTotal || 0) > 0;
 
   const weekdayData = useMemo(
@@ -266,6 +319,12 @@ export default function MonthlySalesPage() {
     const candidates = weekdayData.filter(row => row.businessDays > 0);
     if (candidates.length === 0) return null;
     return candidates.reduce((best, row) => (row.avg > best.avg ? row : best));
+  }, [weekdayData]);
+
+  const bestVisitorWeekday = useMemo(() => {
+    const candidates = weekdayData.filter(row => row.visitorDays > 0);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((best, row) => (row.visitorAvg > best.visitorAvg ? row : best));
   }, [weekdayData]);
 
   const bestHour = useMemo(() => {
@@ -496,6 +555,181 @@ export default function MonthlySalesPage() {
                   </InsightNote>
                 )}
               </div>
+
+              {/* 曜日別の平均来客数 */}
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="font-medium text-gray-900 mb-1">曜日別の平均来客数</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  来店者数を記録した日だけで平均しています。未入力の日は平均に含めません。
+                </p>
+                {weekdayData.every(row => row.visitorDays === 0) ? (
+                  <p className="text-sm text-gray-400">
+                    来店者数の記録がありません。集計・履歴タブの「来店者数」を入力すると表示されます。
+                  </p>
+                ) : (
+                  <>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}名`} width={50} />
+                          <Tooltip
+                            formatter={(value) => [`${Number(value)}名`, '平均来客数']}
+                            labelFormatter={(label) => {
+                              const row = weekdayData.find(d => d.label === label);
+                              return `${label}曜日（${row?.visitorDays || 0}日分・のべ${row?.visitors || 0}名）`;
+                            }}
+                          />
+                          <Bar dataKey="visitorAvg" name="平均来客数" fill="#6B8E5A" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {bestVisitorWeekday && bestWeekday && (
+                      <InsightNote>
+                        人が最も多いのは<strong className="text-gray-700">{bestVisitorWeekday.label}曜日</strong>
+                        （平均 {bestVisitorWeekday.visitorAvg}名）です。
+                        {bestVisitorWeekday.label !== bestWeekday.label ? (
+                          <>
+                            売上が最も高い{bestWeekday.label}曜日とはずれています。
+                            人は来ているのに売上につながっていない曜日は、接客や導線、
+                            持ち帰りやすい価格帯の品を置くことで伸ばせる余地があります。
+                          </>
+                        ) : (
+                          <>
+                            売上が最も高い曜日と一致しています。人を増やせばそのまま売上に効く曜日なので、
+                            集客の告知はこの曜日に寄せるのが効率的です。
+                          </>
+                        )}
+                      </InsightNote>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* ワークショップ（イベント日）の寄与 */}
+              <div className="bg-white shadow rounded-lg p-4">
+                <h2 className="font-medium text-gray-900 mb-1">ワークショップの日別売上</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  店頭の明細でワークショップに分類された金額です（割引前の定価ベース）。
+                  イベントを開いた日に山ができます。
+                </p>
+                {workshopDays.length === 0 ? (
+                  <p className="text-sm text-gray-400">この月はワークショップの明細がありません</p>
+                ) : (
+                  <>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={1} />
+                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `¥${v.toLocaleString()}`} width={70} />
+                          <Tooltip
+                            formatter={(value) => [`¥${Number(value).toLocaleString()}`, 'ワークショップ']}
+                            labelFormatter={(label) => {
+                              const row = chartData.find(d => d.label === label);
+                              return row?.note
+                                ? `${monthLabel(month)}${label}日 — ${row.note}`
+                                : `${monthLabel(month)}${label}日`;
+                            }}
+                          />
+                          <Bar dataKey="workshopTotal" name="ワークショップ" fill="#C08A2E" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      開催のあった日: {workshopDays.length}日 / 月間合計 ¥{workshopMonthTotal.toLocaleString()}
+                      {summary.grandTotal > 0 && (
+                        <>（総売上の {Math.round((workshopMonthTotal / summary.grandTotal) * 100)}%）</>
+                      )}
+                    </p>
+                    <InsightNote>
+                      山になっている日が、実際に売上を押し上げた日です。日付にメモを残しておくと、
+                      グラフに触れたときイベント名まで確認できます。開催日を増やすか、
+                      1回あたりの定員や単価を上げるかは、下の前半・後半の比較と合わせて判断してください。
+                    </InsightNote>
+                  </>
+                )}
+              </div>
+
+              {/* 前半と後半の比較 */}
+              {halfComparison && (
+                <div className="bg-white shadow rounded-lg p-4">
+                  <h2 className="font-medium text-gray-900 mb-1">前半（1〜15日）と後半（16日〜）の比較</h2>
+                  <p className="text-xs text-gray-500 mb-3">
+                    月の途中で勢いが変わっていないかを見ます。差が大きいときは、その期間に何をしたかを振り返る手がかりになります。
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-gray-500">
+                          <th className="text-left font-medium py-2 pr-4"></th>
+                          <th className="text-right font-medium py-2 px-2 whitespace-nowrap">前半</th>
+                          <th className="text-right font-medium py-2 pl-2 whitespace-nowrap">後半</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        <tr>
+                          <td className="py-2 pr-4 text-gray-700 whitespace-nowrap">総売上</td>
+                          <td className="py-2 px-2 text-right font-medium whitespace-nowrap">¥{halfComparison.firstTotal.toLocaleString()}</td>
+                          <td className="py-2 pl-2 text-right font-medium whitespace-nowrap">¥{halfComparison.secondTotal.toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 pr-4 text-gray-700 whitespace-nowrap">ワークショップ</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap">¥{halfComparison.firstWorkshop.toLocaleString()}</td>
+                          <td className="py-2 pl-2 text-right whitespace-nowrap">¥{halfComparison.secondWorkshop.toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 pr-4 text-gray-700 whitespace-nowrap">来店者数</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap">{halfComparison.firstVisitors.toLocaleString()}名</td>
+                          <td className="py-2 pl-2 text-right whitespace-nowrap">{halfComparison.secondVisitors.toLocaleString()}名</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 pr-4 text-gray-700 whitespace-nowrap">営業日数</td>
+                          <td className="py-2 px-2 text-right whitespace-nowrap">{halfComparison.firstDays}日</td>
+                          <td className="py-2 pl-2 text-right whitespace-nowrap">{halfComparison.secondDays}日</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  {halfInsight?.kind === 'even' && (
+                    <InsightNote>
+                      前半と後半で大きな差はありません。月を通して同じペースで売れています。
+                    </InsightNote>
+                  )}
+                  {halfInsight?.kind === 'gap' && (
+                    <InsightNote>
+                      <strong className="text-gray-700">{halfInsight.strongHalf}</strong>のほうが
+                      ¥{halfInsight.gap.toLocaleString()} 多く売れています。
+                      {!halfInsight.sameDirection ? (
+                        <>
+                          ワークショップはこの差を説明しません。物販や来客数など、別の要因を確かめてください。
+                        </>
+                      ) : halfInsight.share >= 100 ? (
+                        <>
+                          ワークショップの差だけで ¥{halfInsight.workshopGap.toLocaleString()} あり、差の全額を上回ります。
+                          つまり伸びの正体はイベントで、物販はむしろ落ちています。開催日を増やすのが最も確実な打ち手です。
+                          同時に、イベントの無い日の売り方を別途てこ入れする余地があります。
+                        </>
+                      ) : halfInsight.share >= 50 ? (
+                        <>
+                          そのうち ¥{halfInsight.workshopGap.toLocaleString()}（差の {halfInsight.share}%）が
+                          ワークショップによるものです。伸びの主因はイベントなので、開催日を増やすのが最も効きます。
+                        </>
+                      ) : halfInsight.share > 0 ? (
+                        <>
+                          ワークショップの寄与は ¥{halfInsight.workshopGap.toLocaleString()}（差の {halfInsight.share}%）で、
+                          残りは物販や来客数の差です。イベントの当日に何が一緒に売れたかを、売れ筋ランキングで確かめてください。
+                        </>
+                      ) : (
+                        <>
+                          ワークショップの差はほとんどありません。物販や来客数の側に理由があります。
+                        </>
+                      )}
+                    </InsightNote>
+                  )}
+                </div>
+              )}
 
               {/* 時間帯別の売上 */}
               <div className="bg-white shadow rounded-lg p-4">
