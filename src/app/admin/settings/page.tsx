@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   SiteSettingsData,
   NavLink,
+  isMaintenancePath,
   maintenanceTargetPages,
   snsPlatformLabels,
 } from '@/lib/siteSettingsDefaults';
@@ -373,6 +374,8 @@ export default function SettingsPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-1">ページ別の準備中設定</h2>
               <p className="text-sm text-gray-600 mb-4">
                 チェックしたページは「このページは現在準備中です」と表示され、一般ユーザーは閲覧できなくなります（管理者ログイン中は閲覧可能）。
+                配下のページ（例: /shop なら個別の商品ページ）もまとめて準備中になり、ヘッダー・フッターのリンクも自動的に非表示になります。
+                解除すれば元の表示設定に戻るため、リンク側のチェックを手で操作する必要はありません。
               </p>
               <ul className="divide-y border rounded-md">
                 {maintenanceTargetPages.map(page => (
@@ -456,6 +459,7 @@ export default function SettingsPage() {
             title="ヘッダー・ハンバーガーのリンク"
             description="サイト上部とスマホのハンバーガーメニューに表示されるリンクです（並び順=表示順）"
             links={siteSettings.headerLinks}
+            maintenancePages={siteSettings.maintenancePages}
             onUpdate={(i, patch) => updateNavLink('headerLinks', i, patch)}
             onMove={(i, d) => moveNavLink('headerLinks', i, d)}
             onAdd={() => addNavLink('headerLinks')}
@@ -465,6 +469,7 @@ export default function SettingsPage() {
             title="フッター サイトマップ"
             description="フッターの「サイトマップ」欄に表示されるリンクです"
             links={siteSettings.footerSitemapLinks}
+            maintenancePages={siteSettings.maintenancePages}
             onUpdate={(i, patch) => updateNavLink('footerSitemapLinks', i, patch)}
             onMove={(i, d) => moveNavLink('footerSitemapLinks', i, d)}
             onAdd={() => addNavLink('footerSitemapLinks')}
@@ -474,6 +479,7 @@ export default function SettingsPage() {
             title="フッター 規約関連リンク"
             description="フッター最下部の規約関連リンクです"
             links={siteSettings.footerLegalLinks}
+            maintenancePages={siteSettings.maintenancePages}
             onUpdate={(i, patch) => updateNavLink('footerLegalLinks', i, patch)}
             onMove={(i, d) => moveNavLink('footerLegalLinks', i, d)}
             onAdd={() => addNavLink('footerLegalLinks')}
@@ -759,6 +765,7 @@ function NavLinkListEditor({
   title,
   description,
   links,
+  maintenancePages,
   onUpdate,
   onMove,
   onAdd,
@@ -767,6 +774,7 @@ function NavLinkListEditor({
   title: string;
   description: string;
   links: NavLink[];
+  maintenancePages: string[];
   onUpdate: (index: number, patch: Partial<NavLink>) => void;
   onMove: (index: number, delta: number) => void;
   onAdd: () => void;
@@ -784,7 +792,11 @@ function NavLinkListEditor({
         </button>
       </div>
       <ul className="space-y-2">
-        {links.map((link, index) => (
+        {links.map((link, index) => {
+          // 準備中のページへのリンクは、保存された表示設定に関わらずサイト上では隠れる。
+          // なぜ消えているのか管理画面から分かるようにバッジで示す。
+          const hiddenByMaintenance = isMaintenancePath(link.href, maintenancePages);
+          return (
           <li
             key={index}
             className="flex items-center gap-2 rounded-md border border-gray-200 p-2 sm:border-0 sm:p-0"
@@ -813,13 +825,20 @@ function NavLinkListEditor({
                 placeholder="表示名"
                 className="w-full sm:w-32 sm:shrink-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
               />
-              <input
-                type="text"
-                value={link.href}
-                onChange={(e) => onUpdate(index, { href: e.target.value })}
-                placeholder="/path または https://..."
-                className="w-full sm:flex-1 min-w-0 px-2 py-2 text-sm border border-gray-300 rounded-md"
-              />
+              <div className="w-full sm:flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={link.href}
+                  onChange={(e) => onUpdate(index, { href: e.target.value })}
+                  placeholder="/path または https://..."
+                  className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md"
+                />
+                {hiddenByMaintenance && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    このページは準備中のため、サイト上では非表示になります
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
@@ -829,7 +848,7 @@ function NavLinkListEditor({
                   onChange={(e) => onUpdate(index, { isVisible: e.target.checked })}
                   className="w-4 h-4"
                 />
-                表示
+                {hiddenByMaintenance ? <span className="text-amber-700">準備中</span> : '表示'}
               </label>
               <button
                 onClick={() => onRemove(index)}
@@ -840,7 +859,8 @@ function NavLinkListEditor({
               </button>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );

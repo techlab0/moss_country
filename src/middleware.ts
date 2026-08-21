@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getAdminSessionFromRequest, getAdminJwtSecretKey } from '@/lib/auth';
+import { isMaintenancePath } from '@/lib/siteSettingsDefaults';
 
 // メンテナンス通過クッキー（署名付きJWT）が有効かどうかを検証する。
 // 鍵未設定や検証失敗は「未認証」として扱う（例外を外に漏らさない）。
@@ -72,6 +73,7 @@ export async function middleware(request: NextRequest) {
   const { isEnabled: isMaintenanceMode, maintenancePages } = await getMaintenanceState(request);
 
   // ページ別メンテナンス（準備中表示）: サイト設定で指定されたパスは準備中ページに差し替える。
+  // 「/shop」を準備中にしたら「/shop/商品スラッグ」のような配下のページもまとめて止める。
   // 管理者ログイン中は内容確認のためそのまま閲覧できる。
   const isPublicPage =
     !pathname.startsWith('/admin') &&
@@ -80,7 +82,7 @@ export async function middleware(request: NextRequest) {
     pathname !== '/maintenance' &&
     pathname !== '/page-unavailable' &&
     !pathname.includes('.');
-  if (isPublicPage && maintenancePages.includes(pathname)) {
+  if (isPublicPage && isMaintenancePath(pathname, maintenancePages)) {
     const session = await getAdminSessionFromRequest(request);
     if (!session) {
       return NextResponse.rewrite(new URL('/page-unavailable', request.url));

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { linkifyKeyword } from '@/lib/linkifyKeyword';
-import { defaultSiteSettings, SiteSettingsData, SnsPlatform, snsPlatformLabels } from '@/lib/siteSettingsDefaults';
+import { defaultSiteSettings, isNavLinkVisible, SiteSettingsData, SnsPlatform, snsPlatformLabels } from '@/lib/siteSettingsDefaults';
 
 // SNSアイコン（platformキーで参照。URLや表示/非表示は管理画面のサイト設定から変更できる）
 const snsIconPaths: Record<SnsPlatform, string> = {
@@ -77,7 +77,7 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-4">
               {settings.footerSitemapLinks
-                .filter(link => link.isVisible !== false)
+                .filter(link => isNavLinkVisible(link, settings.maintenancePages))
                 .map(link => (
                   <li key={`${link.href}-${link.label}`}>
                     <Link href={link.href} className="text-emerald-600 hover:text-white transition-colors duration-200">
@@ -143,7 +143,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex flex-wrap space-x-6 mt-4 md:mt-0 gap-y-2">
               {settings.footerLegalLinks
-                .filter(link => link.isVisible !== false)
+                .filter(link => isNavLinkVisible(link, settings.maintenancePages))
                 .map(link => (
                   <Link
                     key={`${link.href}-${link.label}`}

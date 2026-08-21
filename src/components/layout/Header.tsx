@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
-import { defaultSiteSettings, NavLink } from '@/lib/siteSettingsDefaults';
+import { defaultSiteSettings, isNavLinkVisible, NavLink } from '@/lib/siteSettingsDefaults';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { cart } = useCart();
   // 管理画面のサイト設定で保存されたリンク構成を反映する（保存がなければ従来の構成）
   const [links, setLinks] = useState<NavLink[]>(defaultSiteSettings.headerLinks);
+  // 準備中のページへのリンクは自動的に隠す（管理者ログイン中も一般ユーザーと同じ見え方にする）
+  const [maintenancePages, setMaintenancePages] = useState<string[]>([]);
 
   useEffect(() => {
     fetch('/api/site-settings')
@@ -18,6 +20,9 @@ export const Header: React.FC = () => {
         if (data?.settings?.headerLinks?.length) {
           setLinks(data.settings.headerLinks);
         }
+        if (Array.isArray(data?.settings?.maintenancePages)) {
+          setMaintenancePages(data.settings.maintenancePages);
+        }
       })
       .catch(() => {
         // 取得失敗時はデフォルト構成のまま表示する
@@ -25,7 +30,7 @@ export const Header: React.FC = () => {
   }, []);
 
   const navigation = links
-    .filter(link => link.isVisible !== false)
+    .filter(link => isNavLinkVisible(link, maintenancePages))
     .map(link => ({ name: link.label, href: link.href }));
 
   return (

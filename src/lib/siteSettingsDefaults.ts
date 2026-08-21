@@ -53,6 +53,33 @@ export const maintenanceTargetPages: Array<{ path: string; label: string }> = [
   { path: '/faq', label: 'FAQ' },
 ];
 
+/**
+ * 指定パスが準備中（ページ別メンテナンス）の対象かどうか。
+ *
+ * 「/shop」を準備中にしたら「/shop/商品スラッグ」のような配下のページもすべて対象にする。
+ * 区切りを「/」に限定しているのは、「/shopping」のような別ページを巻き込まないため。
+ */
+export function isMaintenancePath(pathname: string, maintenancePages: string[]): boolean {
+  return maintenancePages.some((page) => {
+    if (!page.startsWith('/')) return false;
+    const base = page.endsWith('/') ? page.slice(0, -1) : page;
+    return pathname === base || pathname.startsWith(`${base}/`);
+  });
+}
+
+/**
+ * ヘッダー/フッターに実際に表示するリンクかどうか。
+ *
+ * 準備中のページへのリンクは、保存された表示設定を書き換えずにその場で隠す。
+ * こうしておくと準備中を解除した時点で元の表示設定に自動で戻り、
+ * 「準備中にするたびに表示チェックを手で外して、解除時に戻し忘れる」事故を防げる。
+ * 管理者ログイン中も同じ見え方にする（一般ユーザーとの差で誤解しないため）。
+ */
+export function isNavLinkVisible(link: NavLink, maintenancePages: string[]): boolean {
+  if (link.isVisible === false) return false;
+  return !isMaintenancePath(link.href, maintenancePages);
+}
+
 export const defaultSiteSettings: SiteSettingsData = {
   headerLinks: [
     { label: 'ホーム', href: '/', isVisible: true },
