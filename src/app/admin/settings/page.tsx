@@ -619,7 +619,7 @@ function ShippingSettingsEditor({
     onChange({ ...settings, [key]: value });
 
   const scalarFields: { key: keyof ShippingSettings; label: string; suffix: string }[] = [
-    { key: 'freeShippingThreshold', label: '送料割引の対象となる小計', suffix: '円以上' },
+    { key: 'freeShippingThreshold', label: '送料無料・送料割引の対象となる小計', suffix: '円以上' },
     { key: 'shippingDiscount', label: '送料割引額', suffix: '円' },
     { key: 'expressSurcharge', label: '速達加算', suffix: '円' },
     { key: 'fragileSurcharge', label: '割れ物加算', suffix: '円' },
@@ -729,6 +729,26 @@ function ShippingSettingsEditor({
       {/* 割引・加算・梱包設定 */}
       <div className="bg-white shadow-sm rounded-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">割引・加算・梱包の設定</h2>
+        <div className="flex items-center justify-between gap-4 p-4 mb-5 border border-emerald-200 bg-emerald-50 rounded-md">
+          <div>
+            <h3 className="font-medium text-gray-900">
+              {settings.freeShippingThreshold.toLocaleString()}円以上送料無料
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              有効にすると、設定した対象小計以上の注文は送料が0円になります。
+            </p>
+            <p className="text-xs text-gray-500 mt-1">※重量物は別途送料をいただく可能性がございます。</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={settings.thresholdFreeShippingEnabled}
+              onChange={(e) => onChange({ ...settings, thresholdFreeShippingEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+          </label>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {scalarFields.map((f) => (
             <div key={f.key}>

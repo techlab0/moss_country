@@ -115,6 +115,10 @@ function validateSettings(
         yamato: carriers.yamato ?? d.carriers.yamato,
       },
       freeShippingMode: typeof input.freeShippingMode === 'boolean' ? input.freeShippingMode : d.freeShippingMode,
+      thresholdFreeShippingEnabled:
+        typeof input.thresholdFreeShippingEnabled === 'boolean'
+          ? input.thresholdFreeShippingEnabled
+          : d.thresholdFreeShippingEnabled,
       freeShippingThreshold: nonNegative(input.freeShippingThreshold, d.freeShippingThreshold),
       shippingDiscount: nonNegative(input.shippingDiscount, d.shippingDiscount),
       expressSurcharge: nonNegative(input.expressSurcharge, d.expressSurcharge),

@@ -113,7 +113,7 @@ export default async function LegalPage() {
                     <dd className="text-gray-900">
                       商品の重量・サイズ・お届け先に応じて配送料が決定されます。<br />
                       配送料は注文確認画面でご確認いただけます。
-                      {shippingNote && (<><br />{shippingNote}。</>)}
+                      {shippingNote && (<><br /><span className="whitespace-pre-line">{shippingNote}</span></>)}
                     </dd>
                   </div>
                   <div>

@@ -250,7 +250,7 @@ export default function CartPage() {
                   <div className="text-stone-400 text-sm mt-4 p-3 bg-stone-800/50 rounded-lg">
                     <p className="mb-2">💡 配送料は次のステップで計算されます</p>
                     <p className="text-xs">札幌から商品サイズ・重量・お届け先により正確な配送料を計算します。
-                    {shippingNote && (<><br />{shippingNote}。</>)}</p>
+                    {shippingNote && (<><br /><span className="whitespace-pre-line">{shippingNote}</span></>)}</p>
                   </div>
                 </div>
 

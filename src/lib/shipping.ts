@@ -50,6 +50,7 @@ export interface ShippingSettings {
   zones: ShippingZone[];
   carriers: Record<CarrierId, CarrierTable>;
   freeShippingMode: boolean; // サイト全体を送料無料にする（全商品を送料込み価格で販売する運用）
+  thresholdFreeShippingEnabled: boolean; // 指定小計以上の注文を送料無料にする
   freeShippingThreshold: number; // この小計以上で割引を適用（円）
   shippingDiscount: number; // 割引額（円）
   expressSurcharge: number; // 速達加算（円）
@@ -66,10 +67,13 @@ export interface ShippingSettings {
  * - 割引なし: 空文字（呼び出し側は何も表示しない）
  */
 export function formatShippingDiscountNote(
-  settings: Pick<ShippingSettings, 'freeShippingMode' | 'freeShippingThreshold' | 'shippingDiscount'>
+  settings: Pick<ShippingSettings, 'freeShippingMode' | 'thresholdFreeShippingEnabled' | 'freeShippingThreshold' | 'shippingDiscount'>
 ): string {
   if (settings.freeShippingMode) {
     return '全国送料無料';
+  }
+  if (settings.thresholdFreeShippingEnabled && settings.freeShippingThreshold > 0) {
+    return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料無料\n※重量物は別途送料をいただく可能性がございます。`;
   }
   if (settings.shippingDiscount > 0 && settings.freeShippingThreshold > 0) {
     return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料${settings.shippingDiscount.toLocaleString()}円引き`;
@@ -226,7 +230,12 @@ export function resolveShippingFee(
   if (hasFragile) surcharge += settings.fragileSurcharge;
 
   const gross = rate.price + surcharge;
-  const discount = subtotal >= settings.freeShippingThreshold ? settings.shippingDiscount : 0;
+  const thresholdReached = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
+  const discount = thresholdReached
+    ? settings.thresholdFreeShippingEnabled
+      ? gross
+      : settings.shippingDiscount
+    : 0;
   const fee = Math.max(0, gross - discount);
 
   return {
@@ -340,8 +349,9 @@ export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
     yamato: { label: '宅急便（ヤマト運輸）', sizeTiers: YAMATO_TIERS, rates: YAMATO_RATES },
   },
   freeShippingMode: false,
-  freeShippingThreshold: 10000,
-  shippingDiscount: 500,
+  thresholdFreeShippingEnabled: true,
+  freeShippingThreshold: 8000,
+  shippingDiscount: 0,
   expressSurcharge: 330,
   fragileSurcharge: 200,
   packagingBufferCm: 5,
@@ -364,6 +374,10 @@ function mergeWithDefaults(doc: Partial<ShippingSettings> | null | undefined): S
       yamato: mergeCarrier(carriers?.yamato, d.carriers.yamato),
     },
     freeShippingMode: typeof doc.freeShippingMode === 'boolean' ? doc.freeShippingMode : d.freeShippingMode,
+    thresholdFreeShippingEnabled:
+      typeof doc.thresholdFreeShippingEnabled === 'boolean'
+        ? doc.thresholdFreeShippingEnabled
+        : d.thresholdFreeShippingEnabled,
     freeShippingThreshold: numOr(doc.freeShippingThreshold, d.freeShippingThreshold),
     shippingDiscount: numOr(doc.shippingDiscount, d.shippingDiscount),
     expressSurcharge: numOr(doc.expressSurcharge, d.expressSurcharge),
