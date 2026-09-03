@@ -51,5 +51,7 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
   assert.ok(adminPage.includes("get('page')"), 'URLから編集対象ページを選べる');
-  assert.ok(adminLayout.includes("href: '/admin/pages?page=mobileWorkshop'"), '管理メニューに専用入口を表示する');
+  const dedicatedPage = await readFile(resolve(projectRoot, 'src/app/admin/mobile-workshop/page.tsx'), 'utf8');
+  assert.ok(adminLayout.includes("href: '/admin/mobile-workshop'"), '管理メニューに専用入口を表示する');
+  assert.ok(dedicatedPage.includes('fixedPageId="mobileWorkshop"'), '専用画面は出張ワークショップだけを表示する');
 });

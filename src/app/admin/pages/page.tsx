@@ -19,9 +19,14 @@ interface ImageOverride {
   previewUrl?: string;
 }
 
-export default function AdminPagesPage() {
+interface PageContentEditorProps {
+  fixedPageId?: string;
+}
+
+export function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
   const pageIds = Object.keys(pageContentRegistry);
-  const [pageId, setPageId] = useState(pageIds[0]);
+  const initialPageId = fixedPageId && pageContentRegistry[fixedPageId] ? fixedPageId : pageIds[0];
+  const [pageId, setPageId] = useState(initialPageId);
   const [textValues, setTextValues] = useState<Record<string, string>>({});
   const [imageOverrides, setImageOverrides] = useState<Record<string, ImageOverride>>({});
   const [savedImagePreviews, setSavedImagePreviews] = useState<Record<string, string>>({});
@@ -33,11 +38,12 @@ export default function AdminPagesPage() {
   const page = pageContentRegistry[pageId];
 
   useEffect(() => {
+    if (fixedPageId) return;
     const requestedPage = new URLSearchParams(window.location.search).get('page');
     if (requestedPage && pageContentRegistry[requestedPage]) {
       setPageId(requestedPage);
     }
-  }, []);
+  }, [fixedPageId]);
 
   const loadPage = useCallback(async (targetPageId: string) => {
     setLoading(true);
@@ -149,26 +155,30 @@ export default function AdminPagesPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">ページ編集</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {fixedPageId ? page.title : 'ページ編集'}
+        </h1>
         <p className="text-gray-600 mt-2">
           公開ページの文言・画像を編集します。ページのデザインはそのまま、内容だけが差し替わります。
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-4">
-        <label className="block text-sm text-gray-600 mb-1">編集するページ</label>
-        <select
-          value={pageId}
-          onChange={(e) => setPageId(e.target.value)}
-          className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
-        >
-          {pageIds.map(id => (
-            <option key={id} value={id}>
-              {pageContentRegistry[id].title}（{pageContentRegistry[id].path}）
-            </option>
-          ))}
-        </select>
-      </div>
+      {!fixedPageId && (
+        <div className="bg-white shadow rounded-lg p-4">
+          <label className="block text-sm text-gray-600 mb-1">編集するページ</label>
+          <select
+            value={pageId}
+            onChange={(e) => setPageId(e.target.value)}
+            className="w-full px-3 py-3 text-lg border border-gray-300 rounded-md"
+          >
+            {pageIds.map(id => (
+              <option key={id} value={id}>
+                {pageContentRegistry[id].title}（{pageContentRegistry[id].path}）
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {message && (
         <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
@@ -268,4 +278,8 @@ export default function AdminPagesPage() {
       )}
     </div>
   );
+}
+
+export default function AdminPagesPage() {
+  return <PageContentEditor />;
 }

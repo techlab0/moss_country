@@ -18,7 +18,7 @@ const navigation = [
   { name: 'ワークショップ予約', href: '/admin/workshop-bookings', icon: '🗓️' },
   { name: 'ブログ・ニュース管理', href: '/admin/blog', icon: '📝' },
   { name: 'ページ編集', href: '/admin/pages', icon: '📄' },
-  { name: '出張ワークショップ編集', href: '/admin/pages?page=mobileWorkshop', icon: '🚚' },
+  { name: '出張ワークショップ編集', href: '/admin/mobile-workshop', icon: '🚚' },
   { name: '画像管理', href: '/admin/images', icon: '🖼️' },
   { name: 'サイト設定', href: '/admin/settings', icon: '⚙️' },
   { name: 'FAQ管理', href: '/admin/faqs', icon: '❓' },
