@@ -23,7 +23,7 @@ interface PageContentEditorProps {
   fixedPageId?: string;
 }
 
-export function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
+function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
   const pageIds = Object.keys(pageContentRegistry);
   const initialPageId = fixedPageId && pageContentRegistry[fixedPageId] ? fixedPageId : pageIds[0];
   const [pageId, setPageId] = useState(initialPageId);

@@ -1,7 +1,5 @@
-'use client';
-
-import { PageContentEditor } from '@/app/admin/pages/page';
+import { redirect } from 'next/navigation';
 
 export default function AdminMobileWorkshopPage() {
-  return <PageContentEditor fixedPageId="mobileWorkshop" />;
+  redirect('/admin/pages?page=mobileWorkshop');
 }

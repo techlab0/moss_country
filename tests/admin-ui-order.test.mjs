@@ -53,5 +53,5 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(adminPage.includes("get('page')"), 'URLから編集対象ページを選べる');
   const dedicatedPage = await readFile(resolve(projectRoot, 'src/app/admin/mobile-workshop/page.tsx'), 'utf8');
   assert.ok(adminLayout.includes("href: '/admin/mobile-workshop'"), '管理メニューに専用入口を表示する');
-  assert.ok(dedicatedPage.includes('fixedPageId="mobileWorkshop"'), '専用画面は出張ワークショップだけを表示する');
+  assert.ok(dedicatedPage.includes("redirect('/admin/pages?page=mobileWorkshop')"), '専用画面は出張ワークショップ編集へ転送する');
 });
