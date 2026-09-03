@@ -32,6 +32,13 @@ export default function AdminPagesPage() {
 
   const page = pageContentRegistry[pageId];
 
+  useEffect(() => {
+    const requestedPage = new URLSearchParams(window.location.search).get('page');
+    if (requestedPage && pageContentRegistry[requestedPage]) {
+      setPageId(requestedPage);
+    }
+  }, []);
+
   const loadPage = useCallback(async (targetPageId: string) => {
     setLoading(true);
     setMessage('');

@@ -41,6 +41,8 @@ test('サイドメニューの画像管理をページ編集とサイト設定�
 test('出張ワークショップをページ編集の対象として公開ページに反映する', async () => {
   const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
   const publicPage = await readFile(resolve(projectRoot, 'src/app/workshop/mobile/page.tsx'), 'utf8');
+  const adminPage = await readFile(resolve(projectRoot, 'src/app/admin/pages/page.tsx'), 'utf8');
+  const adminLayout = await readFile(resolve(projectRoot, 'src/components/admin/AdminLayout.tsx'), 'utf8');
 
   assert.ok(registry.includes('mobileWorkshop: {'), '出張ワークショップの編集定義が必要');
   assert.ok(registry.includes("path: '/workshop/mobile'"), '公開ページのパスを登録する');
@@ -48,4 +50,6 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(registry.includes('importantNotes'), '注意事項を編集対象に含める');
   assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
+  assert.ok(adminPage.includes("get('page')"), 'URLから編集対象ページを選べる');
+  assert.ok(adminLayout.includes("href: '/admin/pages?page=mobileWorkshop'"), '管理メニューに専用入口を表示する');
 });
