@@ -292,7 +292,7 @@ export default function ProductsPage() {
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                充実のラインナップ
+                さまざまな商品を取り揃えおります
               </p>
             </div>
           </div>
