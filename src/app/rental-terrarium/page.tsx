@@ -7,6 +7,14 @@ import { usePageContent } from '@/hooks/usePageContent';
 
 const lines = (value: string) => value.split('\n').map(line => line.trim()).filter(Boolean);
 const rows = (value: string) => lines(value).map(line => line.split('｜').map(cell => cell.trim()));
+const planImageKeys = [
+  'planImageMini',
+  'planImageSmall',
+  'planImageMedium',
+  'planImageLarge',
+  'planImagePremium',
+  'planImageOrderMade',
+];
 
 const sectionTitle = 'text-2xl md:text-4xl font-bold text-[#173b27] tracking-tight';
 
@@ -62,7 +70,7 @@ export default function RentalTerrariumPage() {
         <Container>
           <p className="text-sm font-bold tracking-[0.2em] text-[#557962]">{t('longTermEyebrow')}</p><h2 className={`${sectionTitle} mt-3`}>{t('longTermTitle')}</h2>
           <p className="mt-5 whitespace-pre-line leading-7">{t('longTermLead')}</p>
-          <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6] bg-white"><table className="w-full min-w-[620px] text-left"><thead className="bg-[#e5ebe6] text-[#173b27]"><tr><th className="p-4">プラン</th><th className="p-4">サイズ目安</th><th className="p-4">月額料金（税込）</th></tr></thead><tbody>{longTermPlans.map(row => <tr key={row[0]} className="border-t border-[#d6ddd7]">{row.map(cell => <td key={cell} className="p-4">{cell}</td>)}</tr>)}</tbody></table></div>
+          <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6] bg-white"><table className="w-full min-w-[700px] text-left"><thead className="bg-[#e5ebe6] text-[#173b27]"><tr><th className="p-4">写真</th><th className="p-4">プラン</th><th className="p-4">サイズ目安</th><th className="p-4">月額料金（税込）</th></tr></thead><tbody>{longTermPlans.map((row, index) => { const imageKey = planImageKeys[index]; const imageSrc = imageKey ? img(imageKey) : ''; return <tr key={`${row[0]}-${index}`} className="border-t border-[#d6ddd7]"><td className="w-28 p-3">{imageSrc ? <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-[#eef2ed]"><Image src={imageSrc} alt={imgAlt(imageKey, `${row[0]}サイズのレンタルテラリウム`)} fill className="object-cover" sizes="80px" /></div> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-[#eef2ed] text-center text-xs text-[#718078]">画像<br />未設定</div>}</td>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className="p-4">{cell}</td>)}</tr>; })}</tbody></table></div>
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl bg-white p-7 shadow-sm"><h3 className="text-xl font-bold text-[#173b27]">{t('includedTitle')}</h3><ul className="mt-5 space-y-3 leading-7">{lines(t('includedServices')).map(item => <li key={item}>・{item}</li>)}</ul></div>
             <div className="rounded-2xl bg-[#dfe9df] p-7"><h3 className="text-xl font-bold text-[#173b27]">{t('optionsTitle')}</h3><ul className="mt-5 space-y-3 leading-7">{options.map(([name, description], index) => <li key={`${name}-${index}`}><strong>{name}：</strong>{description}</li>)}</ul><p className="mt-4 whitespace-pre-line text-sm text-[#526257]">{t('optionsNote')}</p></div>
@@ -73,7 +81,7 @@ export default function RentalTerrariumPage() {
       <section className="bg-white py-20 md:py-28">
         <Container>
           <p className="text-sm font-bold tracking-[0.2em] text-[#557962]">{t('shortTermEyebrow')}</p><h2 className={`${sectionTitle} mt-3`}>{t('shortTermTitle')}</h2><p className="mt-5 whitespace-pre-line leading-7">{t('shortTermLead')}</p>
-          <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6]"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#e5ebe6] text-[#173b27]"><tr><th className="p-4">プラン</th><th className="p-4">サイズ</th><th className="p-4">1週間</th><th className="p-4">2週間</th><th className="p-4">1か月</th></tr></thead><tbody>{shortTermPlans.map(row => <tr key={row[0]} className="border-t border-[#d6ddd7]">{row.map(cell => <td key={cell} className="p-4">{cell}</td>)}</tr>)}</tbody></table></div>
+          <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6]"><table className="w-full min-w-[850px] text-left"><thead className="bg-[#e5ebe6] text-[#173b27]"><tr><th className="p-4">写真</th><th className="p-4">プラン</th><th className="p-4">サイズ</th><th className="p-4">1週間</th><th className="p-4">2週間</th><th className="p-4">1か月</th></tr></thead><tbody>{shortTermPlans.map((row, index) => { const imageKey = planImageKeys[index]; const imageSrc = imageKey ? img(imageKey) : ''; return <tr key={`${row[0]}-${index}`} className="border-t border-[#d6ddd7]"><td className="w-28 p-3">{imageSrc ? <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-[#eef2ed]"><Image src={imageSrc} alt={imgAlt(imageKey, `${row[0]}サイズのレンタルテラリウム`)} fill className="object-cover" sizes="80px" /></div> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-[#eef2ed] text-center text-xs text-[#718078]">画像<br />未設定</div>}</td>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className="p-4">{cell}</td>)}</tr>; })}</tbody></table></div>
           <p className="mt-4 whitespace-pre-line text-sm text-[#5a665e]">{t('shortTermNote')}</p>
         </Container>
       </section>
