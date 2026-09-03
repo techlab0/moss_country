@@ -27,6 +27,7 @@ export interface SiteSettingsData {
   businessDays: string;
   copyrightText: string;
   maintenancePages: string[];
+  craftMossRentalVisibilityConfigured?: boolean;
   allowIndexing: boolean;
 }
 
@@ -46,6 +47,7 @@ export const maintenanceTargetPages: Array<{ path: string; label: string }> = [
   { path: '/moss-guide', label: '苔図鑑' },
   { path: '/workshop', label: 'ワークショップ' },
   { path: '/workshop/mobile', label: '出張ワークショップ' },
+  { path: '/craft-moss-rental', label: 'クラフトモスレンタル' },
   { path: '/story', label: 'ストーリー' },
   { path: '/store', label: '店舗情報' },
   { path: '/blog', label: 'ブログ' },
@@ -115,7 +117,7 @@ export const defaultSiteSettings: SiteSettingsData = {
   businessHours: '11:00 - 20:00',
   businessDays: '不定休（カレンダーをご確認ください）',
   copyrightText: '© 2024 MOSS COUNTRY. All rights reserved.',
-  maintenancePages: [],
+  maintenancePages: ['/craft-moss-rental'],
   allowIndexing: false,
 };
 
@@ -134,7 +136,10 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
     businessHours: saved.businessHours ?? defaultSiteSettings.businessHours,
     businessDays: saved.businessDays ?? defaultSiteSettings.businessDays,
     copyrightText: saved.copyrightText ?? defaultSiteSettings.copyrightText,
-    maintenancePages: saved.maintenancePages ?? [],
+    maintenancePages: saved.craftMossRentalVisibilityConfigured === true
+      ? saved.maintenancePages ?? []
+      : Array.from(new Set([...(saved.maintenancePages ?? []), '/craft-moss-rental'])),
+    craftMossRentalVisibilityConfigured: saved.craftMossRentalVisibilityConfigured === true,
     allowIndexing: saved.allowIndexing === true,
   };
 }

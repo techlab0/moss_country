@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getMaintenanceSettings, writeClient } from '@/lib/sanity';
 import { DEFAULT_PURCHASE_LOCKED_MESSAGE } from '@/lib/purchaseLock';
+import { mergeSiteSettings } from '@/lib/siteSettingsDefaults';
 
 /**
  * メンテナンスモードの状態を返す（ミドルウェア用・認証不要）
@@ -18,14 +19,14 @@ export async function GET() {
       // ミドルウェアが毎リクエスト参照するため、Nextデータキャッシュ(revalidate:60 + tags:['maintenance'])
       // に載せてSanityの非CDN API Requests消費を抑える。準備中ページの変更は
       // 管理画面の保存時に revalidateTag('maintenance') で即座に反映される。
-      writeClient.fetch<{ maintenancePages?: string[] } | null>(
-        `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages }`,
+      writeClient.fetch<{ maintenancePages?: string[]; craftMossRentalVisibilityConfigured?: boolean } | null>(
+        `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages, craftMossRentalVisibilityConfigured }`,
         {},
         { next: { revalidate: 60, tags: ['maintenance'] } }
       ),
     ]);
     const isEnabled = settings?.isEnabled === true;
-    const maintenancePages = (siteSettings?.maintenancePages || []).filter(
+    const maintenancePages = mergeSiteSettings(siteSettings).maintenancePages.filter(
       (p): p is string => typeof p === 'string' && p.startsWith('/')
     );
     const purchaseLocked = settings?.purchaseLocked === true;
@@ -35,7 +36,7 @@ export async function GET() {
     console.warn('Failed to fetch maintenance status:', error);
     return NextResponse.json({
       isEnabled: false,
-      maintenancePages: [],
+      maintenancePages: ['/craft-moss-rental'],
       purchaseLocked: false,
       purchaseLockedMessage: DEFAULT_PURCHASE_LOCKED_MESSAGE,
     });

@@ -85,3 +85,16 @@ test('ブログの新規作成と編集でアイキャッチ画像を変更で�
   }
   assert.ok(editPage.includes('featuredImage: formData.featuredImage ?? null'), '画像削除を記事保存へ反映する');
 });
+
+test('クラフトモスレンタルを編集でき、表示・非表示を切り替えられる', async () => {
+  const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const settings = await readFile(resolve(projectRoot, 'src/lib/siteSettingsDefaults.ts'), 'utf8');
+  const publicPage = await readFile(resolve(projectRoot, 'src/app/craft-moss-rental/page.tsx'), 'utf8');
+
+  assert.ok(registry.includes('craftMossRental: {'), 'クラフトモスレンタルの編集定義が必要');
+  assert.ok(registry.includes("path: '/craft-moss-rental'"), '公開ページのパスを登録する');
+  assert.ok(settings.includes("{ path: '/craft-moss-rental', label: 'クラフトモスレンタル' }"), '表示切替の対象に追加する');
+  assert.ok(settings.includes("maintenancePages: ['/craft-moss-rental']"), '初期状態は非表示にする');
+  assert.ok(publicPage.includes("usePageContent('craftMossRental')"), '公開ページで編集内容を読み込む');
+  assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像を編集可能にする');
+});

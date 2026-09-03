@@ -84,6 +84,13 @@ export const siteSettings = defineType({
       of: [{ type: 'string' }],
     }),
     defineField({
+      name: 'craftMossRentalVisibilityConfigured',
+      title: 'クラフトモスレンタル公開設定済み',
+      type: 'boolean',
+      hidden: true,
+      initialValue: false,
+    }),
+    defineField({
       name: 'allowIndexing',
       title: '検索エンジンのインデックスを許可',
       description: 'オンにするとrobots.txtがクロールを許可し、sitemapを公開します',
