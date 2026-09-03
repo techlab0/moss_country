@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { BlogPost } from '@/types/sanity';
+import { urlFor } from '@/lib/sanity';
+import { compressImageForUpload } from '@/lib/imageCompress';
+
+interface SanityImageRef {
+  _type: 'image';
+  _key?: string;
+  asset: { _type?: string; _ref?: string; url?: string };
+}
 
 /** Sanityのブロックコンテンツ。プレーンテキスト化に必要な部分だけを表現する */
 interface PortableTextBlock {
@@ -20,7 +28,7 @@ interface BlogFormData {
   category: string;
   tags: string[];
   isPublished: boolean;
-  featuredImage?: string;
+  featuredImage?: SanityImageRef;
 }
 
 export default function EditBlogPostPage() {
@@ -43,6 +51,8 @@ export default function EditBlogPostPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [slugError, setSlugError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [featuredImagePreview, setFeaturedImagePreview] = useState('');
 
   const categories = [
     { value: 'news', label: 'お知らせ' },
@@ -89,7 +99,9 @@ export default function EditBlogPostPage() {
         category: post.category || 'other',
         tags: post.tags || [],
         isPublished: post.isPublished || false,
+        featuredImage: post.featuredImage as SanityImageRef | undefined,
       });
+      setFeaturedImagePreview(post.featuredImage ? urlFor(post.featuredImage).width(800).height(450).url() : '');
       
       setLoading(false);
     } catch (err) {
@@ -161,6 +173,33 @@ export default function EditBlogPostPage() {
     }));
   };
 
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    setError('');
+    try {
+      const uploadFile = await compressImageForUpload(file);
+      const uploadData = new FormData();
+      uploadData.append('file', uploadFile);
+      const response = await fetch('/api/admin/images/upload', { method: 'POST', body: uploadData });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '画像のアップロードに失敗しました');
+      }
+      const data = await response.json();
+      setFormData(prev => ({ ...prev, featuredImage: data.image }));
+      setFeaturedImagePreview(data.thumbnailUrl || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '画像のアップロードに失敗しました');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeFeaturedImage = () => {
+    setFormData(prev => ({ ...prev, featuredImage: undefined }));
+    setFeaturedImagePreview('');
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -191,6 +230,7 @@ export default function EditBlogPostPage() {
         category: formData.category,
         tags: formData.tags,
         isPublished: formData.isPublished,
+        featuredImage: formData.featuredImage ?? null,
         // 簡単なマークダウンをSanityのblock形式に変換
         content: formData.content.split('\n\n').filter(p => p.trim()).map((paragraph, index) => ({
           _type: 'block',
@@ -427,6 +467,37 @@ export default function EditBlogPostPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">アイキャッチ画像</h2>
+          {featuredImagePreview && (
+            <div className="mb-4">
+              <img src={featuredImagePreview} alt="アイキャッチ画像のプレビュー" className="h-48 w-full max-w-md rounded-lg border object-cover" />
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="cursor-pointer rounded-md bg-moss-green px-4 py-2 text-sm font-medium text-white hover:bg-moss-green/90">
+              {uploadingImage ? 'アップロード中...' : featuredImagePreview ? '画像を変更' : '画像を選択'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={uploadingImage}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            {featuredImagePreview && (
+              <button type="button" onClick={removeFeaturedImage} className="text-sm text-red-600 underline hover:text-red-800">
+                画像を削除
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">JPEG・PNG・WebP（最大4MB）。大きな画像はアップロード前に自動で縮小されます。</p>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">

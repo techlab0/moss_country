@@ -72,3 +72,16 @@ test('レンタルテラリウムをページ編集の対象として公開ペ�
   assert.ok(publicPage.includes("t('longTermPlans')"), '長期料金表の上書きを公開ページへ反映する');
   assert.ok(publicPage.includes('planImageKeys'), '各サイズ写真を料金表へ反映する');
 });
+
+test('ブログの新規作成と編集でアイキャッチ画像を変更できる', async () => {
+  const newPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/new/page.tsx'), 'utf8');
+  const editPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/[id]/edit/page.tsx'), 'utf8');
+
+  for (const source of [newPage, editPage]) {
+    assert.ok(source.includes('アイキャッチ画像'), 'アイキャッチ画像欄を表示する');
+    assert.ok(source.includes("'/api/admin/images/upload'"), '認証済み画像APIでアップロードする');
+    assert.ok(source.includes('featuredImage: data.image'), 'アップロード画像を記事データへ設定する');
+    assert.ok(source.includes('画像を削除'), '画像を削除できる');
+  }
+  assert.ok(editPage.includes('featuredImage: formData.featuredImage ?? null'), '画像削除を記事保存へ反映する');
+});
