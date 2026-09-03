@@ -917,6 +917,8 @@ export default function CheckoutPage() {
                         {shippingSettings.thresholdFreeShippingEnabled && (
                           <p className="text-xs text-stone-500">
                             ※重量物は別途送料をいただく可能性がございます。
+                            <br />
+                            ※重量物により別途送料をいただく場合は、メールまたはお電話にてご連絡し、ご承諾後に配送いたします。
                           </p>
                         )}
                         <div className="flex justify-between text-stone-400 text-sm">
