@@ -292,7 +292,7 @@ export default function ProductsPage() {
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                すべての商品は職人が一つひとつ手作りで制作しています
+                充実のラインナップ
               </p>
             </div>
           </div>
