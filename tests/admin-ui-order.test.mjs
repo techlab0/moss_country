@@ -37,3 +37,15 @@ test('サイドメニューの画像管理をページ編集とサイト設定�
   assert.ok(pagesAt < imagesAt, '画像管理はページ編集より後に表示する');
   assert.ok(imagesAt < settingsAt, '画像管理はサイト設定より前に表示する');
 });
+
+test('出張ワークショップをページ編集の対象として公開ページに反映する', async () => {
+  const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const publicPage = await readFile(resolve(projectRoot, 'src/app/workshop/mobile/page.tsx'), 'utf8');
+
+  assert.ok(registry.includes('mobileWorkshop: {'), '出張ワークショップの編集定義が必要');
+  assert.ok(registry.includes("path: '/workshop/mobile'"), '公開ページのパスを登録する');
+  assert.ok(registry.includes('`menu${number}Image`'), 'メニュー画像を編集対象に含める');
+  assert.ok(registry.includes('importantNotes'), '注意事項を編集対象に含める');
+  assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
+  assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
+});

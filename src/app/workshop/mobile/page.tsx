@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
+import { defaultBackgroundImages } from '@/lib/imageUtils';
+import { usePageContent } from '@/hooks/usePageContent';
 
 const mobileWorkshopMenus = [
   {
@@ -189,10 +190,56 @@ const bookingSteps = [
 ];
 
 export default function MobileWorkshopPage() {
+  const { t, img, imgAlt } = usePageContent('mobileWorkshop');
   const [isMobile, setIsMobile] = useState(false);
-  const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['workshop'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['workshop'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['workshop-mobile'].src);
+
+  const editableMenus = mobileWorkshopMenus.map((menu, index) => {
+    const number = index + 1;
+    return {
+      ...menu,
+      name: t(`menu${number}Name`),
+      dimensions: t(`menu${number}Dimensions`),
+      price: t(`menu${number}Price`),
+      description: t(`menu${number}Desc`),
+      image: img(`menu${number}Image`),
+      imageAlt: imgAlt(`menu${number}Image`, t(`menu${number}Name`)),
+      time: t(`menu${number}Time`),
+    };
+  });
+  const editableScenes = eventScenes.map((scene, index) => ({
+    ...scene,
+    title: t(`scene${index + 1}Title`),
+    description: t(`scene${index + 1}Desc`),
+  }));
+  const editableFeatures = features.map((feature, index) => ({
+    ...feature,
+    title: t(`feature${index + 1}Title`),
+    description: t(`feature${index + 1}Desc`),
+  }));
+  const editablePricingBasics = pricingBasics.map((item, index) => ({
+    label: t(`price${index + 1}Label`),
+    value: t(`price${index + 1}Value`),
+  }));
+  const editableAssistanceFees = assistanceFees.map((item, index) => ({
+    people: t(`assist${index + 1}People`),
+    fee: t(`assist${index + 1}Fee`),
+  }));
+  const editableFigurePlans = figurePlans.map((plan, index) => ({
+    name: t(`figure${index + 1}Name`),
+    price: t(`figure${index + 1}Price`),
+    notes: t(`figure${index + 1}Notes`).split('\n').filter(Boolean),
+  }));
+  const editableCancellationFees = cancellationFees.map((item, index) => ({
+    timing: t(`cancel${index + 1}Timing`),
+    fee: t(`cancel${index + 1}Fee`),
+  }));
+  const editableBookingSteps = bookingSteps.map((item, index) => ({
+    ...item,
+    title: t(`step${index + 1}Title`),
+    description: t(`step${index + 1}Desc`),
+  }));
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -201,19 +248,6 @@ export default function MobileWorkshopPage() {
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  useEffect(() => {
-    fetch(`/api/images/hero?page=workshop`)
-      .then(res => res.json())
-      .then((imageInfo) => {
-        if (imageInfo?.src && !imageInfo.error) {
-          setHeroImageUrl(imageInfo.src);
-        }
-      })
-      .catch((error) => {
-        console.warn('Failed to load hero image, using default:', error);
-      });
   }, []);
 
   useEffect(() => {
@@ -258,7 +292,7 @@ export default function MobileWorkshopPage() {
       <section
         className="py-20 relative min-h-screen flex items-center"
         style={{
-          backgroundImage: `url('${heroImageUrl}')`,
+          backgroundImage: `url('${img('heroImage')}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -268,15 +302,14 @@ export default function MobileWorkshopPage() {
           <div className="text-center">
             <p className="text-lg md:text-xl text-white/80 mb-4 tracking-widest">MOSS COUNTRY</p>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              出張ワークショップ
+              {t('heroTitle')}
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
             <p className="text-xl text-white/90 max-w-3xl mx-auto mb-4">
-              あなたのイベント会場に、苔テラリウムの体験をお届けします。
+              {t('heroLead1')}
             </p>
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-              マルシェやフェスティバル、企業イベント、学校行事など、
-              さまざまな場所で本格的なテラリウム制作を体験いただけます。
+              {t('heroLead2')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
@@ -307,7 +340,7 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                出張ワークショップとは
+                {t('aboutTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
             </div>
@@ -320,20 +353,20 @@ export default function MobileWorkshopPage() {
                   <div className="grid md:grid-cols-2 gap-8 items-center">
                     <div>
                       <img
-                        src="/images/workshop/mosscountry_workshop.png"
-                        alt="出張ワークショップの様子"
+                        src={img('aboutImage')}
+                        alt={imgAlt('aboutImage', '出張ワークショップの様子')}
                         className="w-full h-auto rounded-lg"
                       />
                     </div>
                     <div>
                       <p className="text-gray-700 text-lg leading-relaxed mb-4">
-                        Moss Countryの出張ワークショップは、イベント会場やご指定の場所に職人が直接お伺いし、苔テラリウムの制作体験を提供するサービスです。
+                        {t('aboutText1')}
                       </p>
                       <p className="text-gray-700 text-lg leading-relaxed mb-4">
-                        材料や道具はすべて持参するため、会場側のご準備は最小限。テーブルとスペースがあれば、どこでも開催可能です。
+                        {t('aboutText2')}
                       </p>
                       <p className="text-gray-700 text-lg leading-relaxed">
-                        イベント主催者様も、一般のお客様も、お気軽にご相談ください。人数やご予算に合わせた最適なプランをご提案いたします。
+                        {t('aboutText3')}
                       </p>
                     </div>
                   </div>
@@ -350,17 +383,17 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                こんなシーンで活躍しています
+                {t('scenesTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                さまざまなイベントや場所でワークショップを開催しています
+                {t('scenesLead')}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:gap-8">
-            {eventScenes.map((scene, index) => (
+            {editableScenes.map((scene, index) => (
               <Card key={index} className="hover:transform hover:scale-105 transition-all duration-300">
                 <CardHeader className="!p-3 md:!p-6">
                   {/* 2列にすると横幅が足りないため、狭い画面ではアイコンを文章の上に積む */}
@@ -388,11 +421,11 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                選べるワークショップメニュー
+                {t('menusTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                持ち運びしやすいサイズを中心にご用意しています
+                {t('menusLead')}
               </p>
             </div>
           </div>
@@ -400,12 +433,12 @@ export default function MobileWorkshopPage() {
           {/* ワークショップページのプランカードと同じ密度・同じ並びに揃える
               （スマホで2列、価格はタイトルの下） */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-            {mobileWorkshopMenus.map((menu) => (
+            {editableMenus.map((menu) => (
               <Card key={menu.id} className="hover:transform hover:scale-105 transition-all duration-300">
                 <div className="overflow-hidden">
                   <img
                     src={menu.image}
-                    alt={menu.name}
+                    alt={menu.imageAlt}
                     className="w-full h-auto object-contain"
                   />
                 </div>
@@ -429,9 +462,7 @@ export default function MobileWorkshopPage() {
           <div className="text-center mt-8">
             <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
               <p className="text-white text-sm">
-                ※ 出張ワークショップの基本材料費は1名あたり1,500円です。<br />
-                ※ 上記以外のメニューもご相談に応じて対応可能です。<br />
-                ※ 容器・内容の変更により追加費用が発生する場合があります。
+                <span className="whitespace-pre-line">{t('menusNote')}</span>
               </p>
             </div>
           </div>
@@ -445,11 +476,11 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                料金・開催条件
+                {t('pricingTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
               <p className="text-lg text-gray-100">
-                出張ワークショップの基本料金と人数ごとの目安です
+                {t('pricingLead')}
               </p>
             </div>
           </div>
@@ -457,11 +488,11 @@ export default function MobileWorkshopPage() {
           <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <Card>
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">基本料金</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('basicPricingTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <div className="divide-y divide-gray-200">
-                  {pricingBasics.map((item) => (
+                  {editablePricingBasics.map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-4 py-4">
                       <span className="text-gray-600">{item.label}</span>
                       <span className="text-right text-lg font-semibold text-gray-900">{item.value}</span>
@@ -473,7 +504,7 @@ export default function MobileWorkshopPage() {
 
             <Card>
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">運営補助費</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('assistanceTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -481,7 +512,7 @@ export default function MobileWorkshopPage() {
                     <div className="px-4 py-3">参加人数</div>
                     <div className="px-4 py-3 text-right">加算額</div>
                   </div>
-                  {assistanceFees.map((item) => (
+                  {editableAssistanceFees.map((item) => (
                     <div key={item.people} className="grid grid-cols-2 border-t border-gray-200 bg-white">
                       <div className="px-4 py-3 text-gray-700">{item.people}</div>
                       <div className="px-4 py-3 text-right font-semibold text-gray-900">{item.fee}</div>
@@ -493,14 +524,14 @@ export default function MobileWorkshopPage() {
 
             <Card className="lg:col-span-2">
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">フィギュアについて</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('figureTitle')}</h3>
                 <p className="text-gray-600 mt-2">
-                  作品の完成度や制作の楽しさを考慮し、フィギュア付きでの開催を基本としております。
+                  {t('figureLead')}
                 </p>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {figurePlans.map((plan) => (
+                  {editableFigurePlans.map((plan) => (
                     <div key={plan.name} className="rounded-lg bg-gray-50 p-4">
                       <p className="font-semibold text-moss-green">{plan.name}</p>
                       <p className="text-lg font-semibold text-gray-900 mt-1">{plan.price}</p>
@@ -517,11 +548,11 @@ export default function MobileWorkshopPage() {
 
             <Card className="lg:col-span-2">
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">開催条件</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('hostingTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {hostingConditions.map((condition) => (
+                  {t('hostingConditions').split('\n').filter(Boolean).map((condition) => (
                     <div key={condition} className="rounded-lg bg-gray-50 p-4 text-gray-700 leading-relaxed">
                       {condition}
                     </div>
@@ -532,11 +563,11 @@ export default function MobileWorkshopPage() {
 
             <Card>
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">キャンセル料</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('cancellationTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {cancellationFees.map((item) => (
+                  {editableCancellationFees.map((item) => (
                     <div key={item.timing} className="flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4">
                       <span className="text-gray-700">{item.timing}</span>
                       <span className="text-lg font-semibold text-gray-900">{item.fee}</span>
@@ -544,19 +575,18 @@ export default function MobileWorkshopPage() {
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-gray-600 leading-relaxed">
-                  キャンセル料は、講師料・材料費・運営補助費・交通費等を含む総額を基準として算出いたします。
-                  資材準備・人員確保等のため、上記の規定とさせていただいております。
+                  <span className="whitespace-pre-line">{t('cancellationNote')}</span>
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">所要時間・設備目安</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('facilityTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  {facilityGuides.map((guide) => (
+                  {t('facilityGuides').split('\n').filter(Boolean).map((guide) => (
                     <li key={guide} className="rounded-lg bg-gray-50 p-4 text-gray-700 leading-relaxed">
                       {guide}
                     </li>
@@ -567,18 +597,18 @@ export default function MobileWorkshopPage() {
 
             <Card className="lg:col-span-2">
               <CardHeader>
-                <h3 className="text-2xl font-bold text-moss-green">補足事項・注意事項</h3>
+                <h3 className="text-2xl font-bold text-moss-green">{t('importantTitle')}</h3>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {importantNotes.map((note) => (
+                  {t('importantNotes').split('\n').filter(Boolean).map((note) => (
                     <p key={note} className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700 leading-relaxed">
                       {note}
                     </p>
                   ))}
                 </div>
                 <p className="mt-5 text-sm text-gray-600">
-                  上記内容は目安です。会場条件・安全配慮・スタッフ状況により調整する場合がございます。
+                  {t('importantFooter')}
                 </p>
               </CardContent>
             </Card>
@@ -593,14 +623,14 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                出張ワークショップの特徴
+                {t('featuresTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
-            {features.map((feature, index) => (
+            {editableFeatures.map((feature, index) => (
               <div key={index} className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
                 <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
                   {feature.icon}
@@ -623,7 +653,7 @@ export default function MobileWorkshopPage() {
           <div className="text-center mb-16">
             <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                ご依頼の流れ
+                {t('stepsTitle')}
               </h2>
               <div className="w-24 h-1 bg-white mx-auto mb-0"></div>
             </div>
@@ -631,7 +661,7 @@ export default function MobileWorkshopPage() {
 
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {bookingSteps.map((item, index) => (
+              {editableBookingSteps.map((item, index) => (
                 <div key={index} className="text-center">
                   <div className="w-16 h-16 bg-moss-green rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-white font-bold text-xl">{item.step}</span>
@@ -650,13 +680,13 @@ export default function MobileWorkshopPage() {
         <Container>
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              出張ワークショップのご相談、お気軽にどうぞ
+              {t('ctaTitle')}
             </h2>
             <p className="text-xl mb-4 opacity-90 max-w-2xl mx-auto">
-              イベント主催者の方も、個人でのお問い合わせも大歓迎です。
+              {t('ctaLead1')}
             </p>
             <p className="text-lg mb-8 opacity-80 max-w-2xl mx-auto">
-              「こんなイベントでできる？」「予算はどれくらい？」など、まずはお気軽にご連絡ください。
+              {t('ctaLead2')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
@@ -678,7 +708,7 @@ export default function MobileWorkshopPage() {
             </div>
             <div className="mt-6">
               <p className="text-sm opacity-80">
-                ※ 出張範囲・交通費等についてはお問い合わせ時にご相談ください
+                {t('ctaNote')}
               </p>
             </div>
           </div>

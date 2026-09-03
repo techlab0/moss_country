@@ -205,6 +205,121 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'ctaLead', label: 'CTAセクション リード文', type: 'textarea', default: 'どの商品があなたに合うかわからない場合は、お気軽にお問い合わせください。専門スタッフがあなたのライフスタイルに合った最適なテラリウムをご提案します。' },
     ],
   },
+  mobileWorkshop: {
+    title: '出張ワークショップページ',
+    path: '/workshop/mobile',
+    fields: [
+      { key: 'heroTitle', label: 'ヒーロー 見出し', type: 'text', default: '出張ワークショップ' },
+      { key: 'heroImage', label: 'ヒーロー 画像', type: 'image', default: '/images/hero/workshop-hero.jpg' },
+      { key: 'heroLead1', label: 'ヒーロー リード文1', type: 'textarea', default: 'あなたのイベント会場に、苔テラリウムの体験をお届けします。' },
+      { key: 'heroLead2', label: 'ヒーロー リード文2', type: 'textarea', default: 'マルシェやフェスティバル、企業イベント、学校行事など、\nさまざまな場所で本格的なテラリウム制作を体験いただけます。' },
+      { key: 'aboutTitle', label: 'サービス紹介 見出し', type: 'text', default: '出張ワークショップとは' },
+      { key: 'aboutImage', label: 'サービス紹介 画像', type: 'image', default: '/images/workshop/mosscountry_workshop.png' },
+      { key: 'aboutText1', label: 'サービス紹介 本文1', type: 'textarea', default: 'Moss Countryの出張ワークショップは、イベント会場やご指定の場所に職人が直接お伺いし、苔テラリウムの制作体験を提供するサービスです。' },
+      { key: 'aboutText2', label: 'サービス紹介 本文2', type: 'textarea', default: '材料や道具はすべて持参するため、会場側のご準備は最小限。テーブルとスペースがあれば、どこでも開催可能です。' },
+      { key: 'aboutText3', label: 'サービス紹介 本文3', type: 'textarea', default: 'イベント主催者様も、一般のお客様も、お気軽にご相談ください。人数やご予算に合わせた最適なプランをご提案いたします。' },
+      { key: 'scenesTitle', label: '利用シーン 見出し', type: 'text', default: 'こんなシーンで活躍しています' },
+      { key: 'scenesLead', label: '利用シーン 説明', type: 'textarea', default: 'さまざまなイベントや場所でワークショップを開催しています' },
+      { key: 'scene1Title', label: '利用シーン1 見出し', type: 'text', default: 'マルシェ・フェスティバル' },
+      { key: 'scene1Desc', label: '利用シーン1 説明', type: 'textarea', default: '地域のマルシェやフェスティバルで、来場者が気軽に参加できるワークショップブースを設置します。' },
+      { key: 'scene2Title', label: '利用シーン2 見出し', type: 'text', default: '企業イベント・福利厚生' },
+      { key: 'scene2Desc', label: '利用シーン2 説明', type: 'textarea', default: '社内レクリエーションやチームビルディングに。社員の皆様のリフレッシュや交流の場として好評です。' },
+      { key: 'scene3Title', label: '利用シーン3 見出し', type: 'text', default: '学校・教育施設' },
+      { key: 'scene3Desc', label: '利用シーン3 説明', type: 'textarea', default: '小学校や児童館、PTA行事などで自然と触れ合う体験学習として。お子様の創造力を育みます。' },
+      { key: 'scene4Title', label: '利用シーン4 見出し', type: 'text', default: '結婚式・パーティー' },
+      { key: 'scene4Desc', label: '利用シーン4 説明', type: 'textarea', default: '結婚式の余興やパーティーのアクティビティとして。ゲストの思い出に残る特別な体験を演出します。' },
+      { key: 'menusTitle', label: 'メニュー 見出し', type: 'text', default: '選べるワークショップメニュー' },
+      { key: 'menusLead', label: 'メニュー 説明', type: 'textarea', default: '持ち運びしやすいサイズを中心にご用意しています' },
+      ...[1, 2, 3].flatMap((number) => {
+        const defaults = [
+          ['ガラスキャニスターSS', '6cm × 11cm', '基本容器', '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。', '/images/workshop/glass-canister-ss.JPG', '約90分'],
+          ['ガラスボールS', '10cm × 8cm', '応相談', '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。', '/images/workshop/glass-ball-s.JPG', '約120分'],
+          ['ポップジャー', '11cm × 6cm', '応相談', 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。', '/images/workshop/pop-jar.JPG', '約120分'],
+        ][number - 1];
+        return [
+          { key: `menu${number}Name`, label: `メニュー${number} 名称`, type: 'text' as const, default: defaults[0] },
+          { key: `menu${number}Dimensions`, label: `メニュー${number} サイズ`, type: 'text' as const, default: defaults[1] },
+          { key: `menu${number}Price`, label: `メニュー${number} 価格`, type: 'text' as const, default: defaults[2] },
+          { key: `menu${number}Desc`, label: `メニュー${number} 説明`, type: 'textarea' as const, default: defaults[3] },
+          { key: `menu${number}Image`, label: `メニュー${number} 画像`, type: 'image' as const, default: defaults[4] },
+          { key: `menu${number}Time`, label: `メニュー${number} 所要時間`, type: 'text' as const, default: defaults[5] },
+        ];
+      }),
+      { key: 'menusNote', label: 'メニュー 補足', type: 'textarea', default: '※ 出張ワークショップの基本材料費は1名あたり1,500円です。\n※ 上記以外のメニューもご相談に応じて対応可能です。\n※ 容器・内容の変更により追加費用が発生する場合があります。' },
+      { key: 'pricingTitle', label: '料金・開催条件 見出し', type: 'text', default: '料金・開催条件' },
+      { key: 'pricingLead', label: '料金・開催条件 説明', type: 'textarea', default: '出張ワークショップの基本料金と人数ごとの目安です' },
+      { key: 'basicPricingTitle', label: '基本料金 見出し', type: 'text', default: '基本料金' },
+      { key: 'assistanceTitle', label: '運営補助費 見出し', type: 'text', default: '運営補助費' },
+      ...['講師料|30,000円／日', '材料費|1名あたり 1,500円', '交通費|実費', '基本容器サイズ|縦11cm × 横6cm'].flatMap((item, index) => {
+        const [label, value] = item.split('|');
+        return [
+          { key: `price${index + 1}Label`, label: `基本料金${index + 1} 項目`, type: 'text' as const, default: label },
+          { key: `price${index + 1}Value`, label: `基本料金${index + 1} 金額・内容`, type: 'text' as const, default: value },
+        ];
+      }),
+      ...['〜20名|加算なし', '21〜30名|+10,000円', '31〜40名|+20,000円', '41〜50名|+30,000円'].flatMap((item, index) => {
+        const [people, fee] = item.split('|');
+        return [
+          { key: `assist${index + 1}People`, label: `運営補助費${index + 1} 人数`, type: 'text' as const, default: people },
+          { key: `assist${index + 1}Fee`, label: `運営補助費${index + 1} 加算額`, type: 'text' as const, default: fee },
+        ];
+      }),
+      { key: 'figureLead', label: 'フィギュア 説明', type: 'textarea', default: '作品の完成度や制作の楽しさを考慮し、フィギュア付きでの開催を基本としております。' },
+      { key: 'figureTitle', label: 'フィギュア 見出し', type: 'text', default: 'フィギュアについて' },
+      { key: 'figure1Name', label: 'フィギュアプラン1 名称', type: 'text', default: '通常プラン' },
+      { key: 'figure1Price', label: 'フィギュアプラン1 料金', type: 'text', default: 'フィギュア代 200〜500円（税込）／個' },
+      { key: 'figure1Notes', label: 'フィギュアプラン1 詳細（1行1項目）', type: 'textarea', default: '希望者のみお選びいただけます\n種類によって価格が異なります\n使用数に応じて追加精算となります' },
+      { key: 'figure2Name', label: 'フィギュアプラン2 名称', type: 'text', default: '法人・団体向け おまとめプラン' },
+      { key: 'figure2Price', label: 'フィギュアプラン2 料金', type: 'text', default: '材料費 2,000円（税込）／名（フィギュア代込み）' },
+      { key: 'figure2Notes', label: 'フィギュアプラン2 詳細（1行1項目）', type: 'textarea', default: '会計を簡略化したい場合におすすめです\n対象フィギュアから自由に選択可能\n追加精算不要でスムーズにご精算いただけます' },
+      { key: 'hostingConditions', label: '開催条件（1行1項目）', type: 'textarea', default: '最小開催人数の定めはございません。講師料・材料費・交通費をお支払いいただければ開催いたします。\n1回あたり最大10名までを目安とし、1日最大2回まで開催可能です（原則20名まで）。\n20名以上での開催は、内容・運営体制を相談の上決定します。\n開催可能な最大人数は50名までです。51名以上での開催は承っておりません。\n少人数プランもございます。詳細はお問い合わせください。\nご相談時のスタッフ人数に応じて、開催可能な人数が変動する場合がございます。' },
+      { key: 'hostingTitle', label: '開催条件 見出し', type: 'text', default: '開催条件' },
+      { key: 'cancellationTitle', label: 'キャンセル料 見出し', type: 'text', default: 'キャンセル料' },
+      ...['開催日の14日前以降|料金の30%', '開催日の7日前以降|料金の50%', '前日〜当日|料金の100%'].flatMap((item, index) => {
+        const [timing, fee] = item.split('|');
+        return [
+          { key: `cancel${index + 1}Timing`, label: `キャンセル料${index + 1} 時期`, type: 'text' as const, default: timing },
+          { key: `cancel${index + 1}Fee`, label: `キャンセル料${index + 1} 割合`, type: 'text' as const, default: fee },
+        ];
+      }),
+      { key: 'cancellationNote', label: 'キャンセル料 補足', type: 'textarea', default: 'キャンセル料は、講師料・材料費・運営補助費・交通費等を含む総額を基準として算出いたします。\n資材準備・人員確保等のため、上記の規定とさせていただいております。' },
+      { key: 'facilityGuides', label: '所要時間・設備目安（1行1項目）', type: 'textarea', default: '制作の所要時間は60〜120分です。容器・人数・内容により前後します。\n準備は約60分、撤収は約60分を目安としています。\n会議テーブル（180cm）1台につき、余裕を持って2名までを目安としています。\n対象年齢は小学生以上です。小学生は保護者同伴で参加可能です。' },
+      { key: 'facilityTitle', label: '所要時間・設備目安 見出し', type: 'text', default: '所要時間・設備目安' },
+      { key: 'importantNotes', label: '補足事項・注意事項（1行1項目）', type: 'textarea', default: 'ワークショップ中の怪我、衣服の汚れ等につきましては、一切責任を負いかねますのでご了承ください。\n制作後の管理環境や経年変化により、植物の状態が変化する場合がございます。\n記録・広報を目的として、制作風景を撮影させていただく場合がございます。\n天候不良、災害、交通機関の影響等により開催が困難な場合、日程変更または中止をご相談させていただく場合がございます。\nお支払いは開催日前までの事前精算をお願いしております。内容追加や人数変更等により発生した追加費用は後日精算をお願いいたします（請求書払いもご相談可能です）。' },
+      { key: 'importantTitle', label: '補足事項・注意事項 見出し', type: 'text', default: '補足事項・注意事項' },
+      { key: 'importantFooter', label: '補足事項・注意事項 末尾文', type: 'textarea', default: '上記内容は目安です。会場条件・安全配慮・スタッフ状況により調整する場合がございます。' },
+      { key: 'featuresTitle', label: '特徴セクション 見出し', type: 'text', default: '出張ワークショップの特徴' },
+      ...[1, 2, 3, 4].flatMap((number) => {
+        const defaults = [
+          ['準備はすべてお任せ', '材料・道具・テーブルクロスなど必要なものはすべて持参します。会場のご準備は最小限でOKです。'],
+          ['経験豊富な職人が出向', '店舗と同じクオリティの指導を、あなたの会場で。丁寧なサポートで初めての方も安心です。'],
+          ['人数・内容を柔軟に対応', '少人数のプライベートイベントから大人数のフェスまで。ご要望に合わせたプランをご提案します。'],
+          ['完成作品はお持ち帰り', '作った作品はその場でお持ち帰りいただけます。イベントの素敵な記念品になります。'],
+        ][number - 1];
+        return [
+          { key: `feature${number}Title`, label: `特徴${number} 見出し`, type: 'text' as const, default: defaults[0] },
+          { key: `feature${number}Desc`, label: `特徴${number} 説明`, type: 'textarea' as const, default: defaults[1] },
+        ];
+      }),
+      ...[1, 2, 3, 4].flatMap((number) => {
+        const defaults = [
+          ['お問い合わせ', 'お電話・メール・フォームからお気軽にご連絡ください'],
+          ['お打ち合わせ', '日程・人数・会場・ご予算などをヒアリングします'],
+          ['お見積り・準備', '最適なプランをご提案。材料の準備を進めます'],
+          ['当日開催', '会場にお伺いし、楽しいワークショップを開催！'],
+        ][number - 1];
+        return [
+          { key: `step${number}Title`, label: `ご依頼の流れ${number} 見出し`, type: 'text' as const, default: defaults[0] },
+          { key: `step${number}Desc`, label: `ご依頼の流れ${number} 説明`, type: 'textarea' as const, default: defaults[1] },
+        ];
+      }),
+      { key: 'stepsTitle', label: 'ご依頼の流れ 見出し', type: 'text', default: 'ご依頼の流れ' },
+      { key: 'ctaTitle', label: 'お問い合わせ 見出し', type: 'text', default: '出張ワークショップのご相談、お気軽にどうぞ' },
+      { key: 'ctaLead1', label: 'お問い合わせ 説明1', type: 'textarea', default: 'イベント主催者の方も、個人でのお問い合わせも大歓迎です。' },
+      { key: 'ctaLead2', label: 'お問い合わせ 説明2', type: 'textarea', default: '「こんなイベントでできる？」「予算はどれくらい？」など、まずはお気軽にご連絡ください。' },
+      { key: 'ctaNote', label: 'お問い合わせ 補足', type: 'textarea', default: '※ 出張範囲・交通費等についてはお問い合わせ時にご相談ください' },
+    ],
+  },
   workshop: {
     title: 'ワークショップページ',
     path: '/workshop',
