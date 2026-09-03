@@ -73,7 +73,7 @@ export function formatShippingDiscountNote(
     return '全国送料無料';
   }
   if (settings.thresholdFreeShippingEnabled && settings.freeShippingThreshold > 0) {
-    return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料無料\n※重量物は別途送料をいただく可能性がございます。\n※重量物により別途送料をいただく場合は、メールまたはお電話にてご連絡し、ご承諾後に配送いたします。`;
+    return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料無料\n※重量物は別途送料をいただく可能性がございます。\n※重量物により別途送料をいただく場合はメールまたはお電話にてご連絡しご承諾後に配送いたします`;
   }
   if (settings.shippingDiscount > 0 && settings.freeShippingThreshold > 0) {
     return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料${settings.shippingDiscount.toLocaleString()}円引き`;
