@@ -431,6 +431,27 @@ export default function ProductsPage() {
             <p className="text-lg text-gray-900 mb-8 text-center">
               MOSS COUNTRYのテラリウムは、忙しい方でも簡単にお手入れできるよう設計されています。
             </p>
+
+            <figure className="max-w-4xl mx-auto mb-10">
+              <a
+                href="/images/products/moss-terrarium-care-guide.png"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block overflow-hidden rounded-2xl border border-moss-green/30 bg-[#f7f3e8] shadow-lg transition-transform hover:scale-[1.01] focus-visible:scale-[1.01]"
+                aria-label="苔テラリウムの管理ガイドを拡大して表示"
+              >
+                <img
+                  src="/images/products/moss-terrarium-care-guide.png"
+                  alt="苔テラリウムの管理ガイド。適した温度と光、水やり、日常のお手入れ、カビや変色への対処方法を図解しています"
+                  width={1054}
+                  height={1492}
+                  className="w-full h-auto"
+                />
+              </a>
+              <figcaption className="mt-3 text-center text-sm text-gray-700">
+                画像をタップすると拡大できます。詳しい項目は下の説明でも確認できます。
+              </figcaption>
+            </figure>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {careGuide.map((item, index) => (
