@@ -55,3 +55,17 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(adminLayout.includes("href: '/admin/mobile-workshop'"), '管理メニューに専用入口を表示する');
   assert.ok(dedicatedPage.includes("redirect('/admin/pages?page=mobileWorkshop')"), '専用画面は出張ワークショップ編集へ転送する');
 });
+
+test('レンタルテラリウムをページ編集の対象として公開ページに反映する', async () => {
+  const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const publicPage = await readFile(resolve(projectRoot, 'src/app/rental-terrarium/page.tsx'), 'utf8');
+
+  assert.ok(registry.includes('rentalTerrarium: {'), 'レンタルテラリウムの編集定義が必要');
+  assert.ok(registry.includes("path: '/rental-terrarium'"), '公開ページのパスを登録する');
+  assert.ok(registry.includes("key: 'longTermPlans'"), '長期料金表を編集対象に含める');
+  assert.ok(registry.includes("key: 'shortTermPlans'"), '短期料金表を編集対象に含める');
+  assert.ok(registry.includes("key: 'terms'"), '契約条件を編集対象に含める');
+  assert.ok(publicPage.includes("usePageContent('rentalTerrarium')"), '公開ページで保存内容を読み込む');
+  assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像の上書きを公開ページへ反映する');
+  assert.ok(publicPage.includes("t('longTermPlans')"), '長期料金表の上書きを公開ページへ反映する');
+});
