@@ -87,15 +87,15 @@ export const mossSpecies = defineType({
       fields: [
         {
           name: 'beginnerFriendly',
-          title: '初心者適応度',
+          title: '難易度',
           type: 'number',
           options: {
             list: [
-              { title: '★☆☆☆☆（とても難しい）', value: 1 },
-              { title: '★★☆☆☆（難しい）', value: 2 },
+              { title: '★★★★★（とても難しい）', value: 1 },
+              { title: '★★★★☆（難しい）', value: 2 },
               { title: '★★★☆☆（普通）', value: 3 },
-              { title: '★★★★☆（育てやすい）', value: 4 },
-              { title: '★★★★★（とても育てやすい）', value: 5 },
+              { title: '★★☆☆☆（育てやすい）', value: 4 },
+              { title: '★☆☆☆☆（とても育てやすい）', value: 5 },
             ]
           },
           validation: Rule => Rule.required(),
@@ -324,7 +324,7 @@ export const mossSpecies = defineType({
       by: [{ field: 'sortOrder', direction: 'asc' }],
     },
     {
-      title: '初心者適応度（高い順）',
+      title: '難易度（簡単な順）',
       name: 'beginnerFriendlyDesc',
       by: [{ field: 'characteristics.beginnerFriendly', direction: 'desc' }],
     },
@@ -343,10 +343,11 @@ export const mossSpecies = defineType({
     },
     prepare(selection) {
       const { title, category, beginnerFriendly } = selection
-      const stars = '★'.repeat(beginnerFriendly || 0) + '☆'.repeat(5 - (beginnerFriendly || 0))
+      const difficulty = beginnerFriendly ? 6 - beginnerFriendly : 0
+      const stars = '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty)
       return {
         title,
-        subtitle: `${category} | 初心者度: ${stars}`,
+        subtitle: `${category} | 難易度: ${stars}`,
       }
     },
   },

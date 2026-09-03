@@ -137,7 +137,9 @@ export default function MossGuidePage() {
 
   // 星評価の表示
   const renderStars = (rating: number) => {
-    return '★'.repeat(rating) + '☆'.repeat(5 - rating)
+    if (rating < 1 || rating > 5) return '☆☆☆☆☆'
+    const difficulty = Math.max(1, Math.min(5, 6 - rating))
+    return '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty)
   }
 
   // カテゴリー日本語名
@@ -255,11 +257,11 @@ export default function MossGuidePage() {
                     className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
                   >
                     <option value="all">全ての難易度</option>
-                    <option value="5">★★★★★ とても簡単</option>
-                    <option value="4">★★★★☆ 簡単</option>
+                    <option value="5">★☆☆☆☆ とても簡単</option>
+                    <option value="4">★★☆☆☆ 簡単</option>
                     <option value="3">★★★☆☆ 普通</option>
-                    <option value="2">★★☆☆☆ 難しい</option>
-                    <option value="1">★☆☆☆☆ とても難しい</option>
+                    <option value="2">★★★★☆ 難しい</option>
+                    <option value="1">★★★★★ とても難しい</option>
                   </select>
                 </div>
               </div>
@@ -352,7 +354,7 @@ export default function MossGuidePage() {
                         )}
                       </div>
                       
-                      {/* 初心者適応度 */}
+                      {/* 難易度（星が少ないほど簡単） */}
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
                         <span className="text-xs font-medium text-amber-600">
                           {renderStars(species.characteristics.beginnerFriendly)}

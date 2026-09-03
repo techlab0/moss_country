@@ -95,7 +95,8 @@ export default function AdminMossGuidePage() {
   };
 
   const getDifficultyConfig = (difficulty: number) => {
-    const stars = '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
+    const starCount = Math.max(1, Math.min(5, 6 - difficulty));
+    const stars = '★'.repeat(starCount) + '☆'.repeat(5 - starCount);
     switch (difficulty) {
       case 5:
         return { label: `${stars} とても簡単`, color: 'bg-green-100 text-green-800' };

@@ -528,11 +528,11 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 }))}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value={1}>★☆☆☆☆ とても難しい</option>
-                <option value={2}>★★☆☆☆ 難しい</option>
+                <option value={1}>★★★★★ とても難しい</option>
+                <option value={2}>★★★★☆ 難しい</option>
                 <option value={3}>★★★☆☆ 普通</option>
-                <option value={4}>★★★★☆ 育てやすい</option>
-                <option value={5}>★★★★★ とても育てやすい</option>
+                <option value={4}>★★☆☆☆ 育てやすい</option>
+                <option value={5}>★☆☆☆☆ とても育てやすい</option>
               </select>
             </div>
             <div>

@@ -76,7 +76,9 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
 
   // 星評価の表示
   const renderStars = (rating: number) => {
-    return '★'.repeat(rating) + '☆'.repeat(5 - rating)
+    if (rating < 1 || rating > 5) return '☆☆☆☆☆'
+    const difficulty = Math.max(1, Math.min(5, 6 - rating))
+    return '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty)
   }
 
   // カテゴリー日本語名
