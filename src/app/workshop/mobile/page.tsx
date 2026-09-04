@@ -166,7 +166,7 @@ const bookingSteps = [
 ];
 
 export default function MobileWorkshopPage() {
-  const { t, img, imgAlt } = usePageContent('mobileWorkshop');
+  const { t, img, imgAlt, imgStyle } = usePageContent('mobileWorkshop');
   const [isMobile, setIsMobile] = useState(false);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['workshop'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['workshop-mobile'].src);
@@ -180,6 +180,7 @@ export default function MobileWorkshopPage() {
       price: t(`menu${number}Price`),
       description: t(`menu${number}Desc`),
       image: img(`menu${number}Image`),
+      imageStyle: imgStyle(`menu${number}Image`),
       imageAlt: imgAlt(`menu${number}Image`, t(`menu${number}Name`)),
       time: t(`menu${number}Time`),
     };
@@ -270,7 +271,7 @@ export default function MobileWorkshopPage() {
         style={{
           backgroundImage: `url('${img('heroImage')}')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: imgStyle('heroImage').objectPosition,
         }}
       >
         <div className="absolute inset-0 bg-black/50" />
@@ -332,6 +333,7 @@ export default function MobileWorkshopPage() {
                         src={img('aboutImage')}
                         alt={imgAlt('aboutImage', '出張ワークショップの様子')}
                         className="w-full h-auto rounded-lg"
+                        style={imgStyle('aboutImage')}
                       />
                     </div>
                     <div>
@@ -414,6 +416,7 @@ export default function MobileWorkshopPage() {
                 <div className="overflow-hidden">
                   <img
                     src={menu.image}
+                    style={menu.imageStyle}
                     alt={menu.imageAlt}
                     className="w-full h-auto object-contain"
                   />

@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const doc = await writeClient.fetch(
-      `*[_type == "pageContent" && _id == $id][0]{ texts[]{ key, value }, images[]{ key, image, alt } }`,
+      `*[_type == "pageContent" && _id == $id][0]{ texts[]{ key, value }, images[]{ key, image, alt, positionX, positionY } }`,
       { id: `pageContent-${pageId}` }
     );
 
@@ -52,7 +52,7 @@ export async function PUT(
 
     const body = await request.json();
     const textsInput: Array<{ key?: string; value?: string }> = Array.isArray(body.texts) ? body.texts : [];
-    const imagesInput: Array<{ key?: string; image?: object; alt?: string }> = Array.isArray(body.images) ? body.images : [];
+    const imagesInput: Array<{ key?: string; image?: object; alt?: string; positionX?: number; positionY?: number }> = Array.isArray(body.images) ? body.images : [];
 
     const texts = textsInput
       .filter(t => t.key && validKeys.has(t.key) && typeof t.value === 'string')
@@ -60,7 +60,15 @@ export async function PUT(
 
     const images = imagesInput
       .filter(img => img.key && validKeys.has(img.key) && img.image)
-      .map(img => ({ _type: 'imageOverride', _key: img.key as string, key: img.key, image: img.image, alt: img.alt || '' }));
+      .map(img => ({
+        _type: 'imageOverride',
+        _key: img.key as string,
+        key: img.key,
+        image: img.image,
+        alt: img.alt || '',
+        positionX: Math.min(100, Math.max(0, typeof img.positionX === 'number' ? img.positionX : 50)),
+        positionY: Math.min(100, Math.max(0, typeof img.positionY === 'number' ? img.positionY : 50)),
+      }));
 
     const saved = await writeClient.createOrReplace({
       _id: `pageContent-${pageId}`,

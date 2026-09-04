@@ -116,3 +116,17 @@ test('フッターのサイトマップにレンタルテラリウムを追加�
   assert.ok(settings.includes('rentalTerrariumSitemapConfigured'), '既存設定にも一度だけリンクを追加する');
   assert.ok(adminApi.includes('rentalTerrariumSitemapConfigured: true'), '管理画面で保存後は表示設定を尊重する');
 });
+
+test('ページ編集画像の表示位置を調整して公開ページへ反映できる', async () => {
+  const editor = await readFile(resolve(projectRoot, 'src/app/admin/pages/page.tsx'), 'utf8');
+  const schema = await readFile(resolve(projectRoot, 'sanity/schemas/pageContent.ts'), 'utf8');
+  const publicApi = await readFile(resolve(projectRoot, 'src/app/api/page-content/route.ts'), 'utf8');
+  const hook = await readFile(resolve(projectRoot, 'src/hooks/usePageContent.ts'), 'utf8');
+
+  assert.ok(editor.includes('横位置：'), '横位置を調整する操作が必要');
+  assert.ok(editor.includes('縦位置：'), '縦位置を調整する操作が必要');
+  assert.ok(schema.includes("name: 'positionX'"), '横位置をSanityへ保存する');
+  assert.ok(schema.includes("name: 'positionY'"), '縦位置をSanityへ保存する');
+  assert.ok(publicApi.includes('positionX'), '公開APIが表示位置を返す');
+  assert.ok(hook.includes('imgStyle'), '公開ページへ表示位置を適用する');
+});

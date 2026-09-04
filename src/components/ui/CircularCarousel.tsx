@@ -9,6 +9,7 @@ interface CarouselItem {
   title: string;
   description: string;
   image: string;
+  imageStyle?: React.CSSProperties;
   category: string;
   price?: string;
   link?: string;
@@ -229,6 +230,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
                 <div className="h-48 [@media(max-height:720px)]:h-40 overflow-hidden">
                   <ImagePlaceholder
                     src={item.image}
+                    style={item.imageStyle}
                     alt={item.title}
                     width={400}
                     height={300}

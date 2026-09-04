@@ -9,6 +9,7 @@ interface ImagePlaceholderProps {
   height: number;
   className?: string;
   priority?: boolean;
+  style?: React.CSSProperties;
 }
 
 export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({
@@ -18,6 +19,7 @@ export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({
   height,
   className = '',
   priority = false,
+  style,
 }) => {
   // 画像パスが指定されている場合は Image コンポーネントを使用
   // 指定されていない場合はデフォルト画像を使用
@@ -31,7 +33,7 @@ export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({
       height={height}
       className={className}
       priority={priority}
-      style={{ objectFit: 'cover' }}
+      style={{ objectFit: 'cover', ...style }}
     />
   );
 };

@@ -17,7 +17,7 @@ const planMeta = [
 
 export default function WorkshopPage() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
-  const { t, img } = usePageContent('workshop');
+  const { t, img, imgStyle } = usePageContent('workshop');
   const workshopSizes = planMeta.map((meta, i) => ({
     ...meta,
     name: t(`plan${i + 1}Name`),
@@ -25,6 +25,7 @@ export default function WorkshopPage() {
     duration: t(`plan${i + 1}Duration`),
     description: t(`plan${i + 1}Desc`),
     image: img(`plan${i + 1}Image`),
+    imageStyle: imgStyle(`plan${i + 1}Image`),
   }));
   const testimonials = [1, 2, 3].map(i => ({
     name: t(`testimonial${i}Name`),
@@ -215,6 +216,7 @@ export default function WorkshopPage() {
                     src={size.image}
                     alt={size.name}
                     className="w-full h-auto object-contain"
+                    style={size.imageStyle}
                   />
                 </div>
                 <CardHeader className="!p-3 md:!p-6">
@@ -460,6 +462,7 @@ export default function WorkshopPage() {
                     src={img('mobileBannerImage')}
                     alt="出張ワークショップ"
                     className="w-full h-full object-cover"
+                    style={imgStyle('mobileBannerImage')}
                   />
                 </div>
               </div>

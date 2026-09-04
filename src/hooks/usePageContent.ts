@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { registryDefaults } from '@/lib/pageContentRegistry';
 
 interface PageImages {
-  [key: string]: { src: string; alt: string };
+  [key: string]: { src: string; alt: string; positionX?: number; positionY?: number };
 }
 
 /**
@@ -58,6 +58,13 @@ export function usePageContent(pageId: string) {
     [images]
   );
 
+  const imgStyle = useCallback(
+    (key: string) => ({
+      objectPosition: `${images[key]?.positionX ?? 50}% ${images[key]?.positionY ?? 50}%`,
+    }),
+    [images]
+  );
+
   // 上書きが保存されている場合のみ値を返す（レスポンシブな改行など、
   // デフォルト時は元のJSXをそのまま使いたい箇所向け）
   const ov = useCallback(
@@ -65,5 +72,5 @@ export function usePageContent(pageId: string) {
     [texts]
   );
 
-  return { t, img, imgAlt, ov };
+  return { t, img, imgAlt, imgStyle, ov };
 }

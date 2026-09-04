@@ -82,9 +82,10 @@ const NOISE_TEXTURE =
 
 interface SceneBackdropProps {
   img: (key: string) => string;
+  imgStyle: (key: string) => { objectPosition: string };
 }
 
-export function SceneBackdrop({ img }: SceneBackdropProps) {
+export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hairlineRef = useRef<HTMLDivElement>(null);
@@ -288,6 +289,10 @@ export function SceneBackdrop({ img }: SceneBackdropProps) {
       data-testid="scene-backdrop"
       className="fixed inset-0 z-0 pointer-events-none"
     >
+      <style>{SCENES.map(scene => `
+        [data-scene-layer="${scene.id}"] img { object-position: ${imgStyle(scene.imageKey).objectPosition}; }
+        @media (max-width: 767px) { [data-scene-layer="${scene.id}"] img { object-position: ${imgStyle(scene.mobileImageKey).objectPosition}; } }
+      `).join('\n')}</style>
       {/* 常に黒のベースレイヤー（遷移中も緑・継ぎ目が絶対に見えない） */}
       <div className="absolute inset-0 bg-[#050505]" />
 
@@ -323,7 +328,7 @@ export function SceneBackdrop({ img }: SceneBackdropProps) {
                   loading="eager"
                   fetchPriority="high"
                   className="object-cover"
-                  style={{ ...imgProps.style, objectPosition: scene.position }}
+                  style={{ ...imgProps.style }}
                 />
               </picture>
             );

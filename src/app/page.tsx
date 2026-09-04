@@ -14,7 +14,7 @@ import { usePageContent } from '@/hooks/usePageContent';
 
 export default function Home() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
-  const { t, img, ov } = usePageContent('home');
+  const { t, img, imgStyle, ov } = usePageContent('home');
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['main'].src);
 
   // ヒーロー画像を取得（エラー時はデフォルト画像を維持）
@@ -36,7 +36,7 @@ export default function Home() {
     <div className="relative bg-[#050505]">
       <HomeScrollJourney>
         {/* 全シーン共通の固定背景ステージ（黒ベース＋シーンごとのテラリウム画像） */}
-        <SceneBackdrop img={img} />
+        <SceneBackdrop img={img} imgStyle={imgStyle} />
 
         {/* Hero Section（relative必須: 固定背景ステージより前面に描画するため） */}
         <div data-home-screen="regular" className="relative">
@@ -57,6 +57,7 @@ export default function Home() {
               title: t('carousel1Title'),
               description: t('carousel1Desc'),
               image: img('carousel1Image'),
+              imageStyle: imgStyle('carousel1Image'),
               category: 'Terrarium',
               link: '/shop'
             },
@@ -65,6 +66,7 @@ export default function Home() {
               title: t('carousel2Title'),
               description: t('carousel2Desc'),
               image: img('carousel2Image'),
+              imageStyle: imgStyle('carousel2Image'),
               category: 'Moss Ball',
               link: '/shop'
             },
@@ -73,6 +75,7 @@ export default function Home() {
               title: t('carousel3Title'),
               description: t('carousel3Desc'),
               image: img('carousel3Image'),
+              imageStyle: imgStyle('carousel3Image'),
               category: 'Tools',
               link: '/shop'
             },
@@ -81,6 +84,7 @@ export default function Home() {
               title: t('carousel4Title'),
               description: t('carousel4Desc'),
               image: img('carousel4Image'),
+              imageStyle: imgStyle('carousel4Image'),
               category: 'Workshop',
               link: '/workshop'
             },
@@ -88,7 +92,7 @@ export default function Home() {
         />
 
         {/* ワークショップ案内 */}
-        <WorkshopSection t={t} ov={ov} img={img} />
+        <WorkshopSection t={t} ov={ov} img={img} imgStyle={imgStyle} />
 
         {/* ECサイト誘導CTA */}
         <CTASection ov={ov} />

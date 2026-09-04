@@ -9,7 +9,7 @@ const lines = (value: string) => value.split('\n').map(line => line.trim()).filt
 const rows = (value: string) => lines(value).map(line => line.split('｜').map(cell => cell.trim()));
 
 export default function CraftMossRentalPage() {
-  const { t, img, imgAlt } = usePageContent('craftMossRental');
+  const { t, img, imgAlt, imgStyle } = usePageContent('craftMossRental');
   const prices = rows(t('priceRows'));
   const deliveryFees = rows(t('deliveryRows'));
   const contractTerms = rows(t('contractRows'));
@@ -34,7 +34,7 @@ export default function CraftMossRentalPage() {
       </nav>
 
       <section className="relative flex min-h-[72vh] items-end overflow-hidden">
-        <Image src={img('heroImage')} alt={imgAlt('heroImage', 'クラフトモスを使った空間装飾')} fill priority className="object-cover" sizes="100vw" />
+        <Image src={img('heroImage')} alt={imgAlt('heroImage', 'クラフトモスを使った空間装飾')} fill priority className="object-cover" style={imgStyle('heroImage')} sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
         <Container className="relative z-10 pb-16 pt-36 md:pb-24">
           <p className="text-sm font-semibold tracking-[0.28em] text-emerald-100">{t('heroEyebrow')}</p>
@@ -48,7 +48,7 @@ export default function CraftMossRentalPage() {
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div><h2 className="text-3xl font-bold text-[#173b27] md:text-5xl">{t('aboutTitle')}</h2><p className="mt-6 whitespace-pre-line leading-8">{t('aboutLead')}</p></div>
-            <div className="relative aspect-[16/10] overflow-hidden rounded-[2rem]"><Image src={img('aboutImage')} alt={imgAlt('aboutImage', 'クラフトモス作品')} fill className="object-cover" sizes="(min-width: 1024px) 50vw, 100vw" /></div>
+            <div className="relative aspect-[16/10] overflow-hidden rounded-[2rem]"><Image src={img('aboutImage')} alt={imgAlt('aboutImage', 'クラフトモス作品')} fill className="object-cover" style={imgStyle('aboutImage')} sizes="(min-width: 1024px) 50vw, 100vw" /></div>
           </div>
           <div className="mt-12 grid grid-cols-3 divide-x divide-[#b9c8bc] rounded-2xl border border-[#c4cec6] bg-[#eaf0ea] py-7 text-center text-lg font-bold text-[#28523a] md:text-2xl">
             <p>水やり 0</p><p>日光 0</p><p>日常のお手入れ 0</p>

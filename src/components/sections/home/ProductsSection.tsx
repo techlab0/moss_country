@@ -10,6 +10,7 @@ export interface ProductsSectionItem {
   title: string;
   description: string;
   image: string;
+  imageStyle?: React.CSSProperties;
   category: string;
   link: string;
 }

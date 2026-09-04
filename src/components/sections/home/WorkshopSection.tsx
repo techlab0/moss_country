@@ -11,9 +11,10 @@ interface WorkshopSectionProps {
   t: (key: string) => string;
   ov: (key: string) => string | undefined;
   img: (key: string) => string;
+  imgStyle: (key: string) => React.CSSProperties;
 }
 
-export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
+export function WorkshopSection({ t, ov, img, imgStyle }: WorkshopSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const imageWrapRef = useRef<HTMLDivElement>(null);
   const textBlockRef = useRef<HTMLDivElement>(null);
@@ -129,6 +130,7 @@ export function WorkshopSection({ t, ov, img }: WorkshopSectionProps) {
                 alt="テラリウム制作の様子 - 職人による丁寧な指導"
                 width={800}
                 height={600}
+                style={imgStyle('workshopImage')}
                 className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
               />
             </div>

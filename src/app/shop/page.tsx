@@ -22,16 +22,18 @@ const careGuideMeta = [
 
 export default function ProductsPage() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
-  const { t, img } = usePageContent('products');
+  const { t, img, imgStyle } = usePageContent('products');
   const terrariumCategories = [1, 2, 3, 4].map(i => ({
     name: t(`terrarium${i}Name`),
     description: t(`terrarium${i}Desc`),
     image: img(`terrarium${i}Image`),
+    imageStyle: imgStyle(`terrarium${i}Image`),
   }));
   const supplyCategories = [1, 2, 3, 4].map(i => ({
     name: t(`supply${i}Name`),
     description: t(`supply${i}Desc`),
     image: img(`supply${i}Image`),
+    imageStyle: imgStyle(`supply${i}Image`),
   }));
   const careGuide = careGuideMeta.map((meta, i) => ({
     title: t(`care${i + 1}Title`),
@@ -234,6 +236,7 @@ export default function ProductsPage() {
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
                       <img
                         src={category.image}
+                        style={category.imageStyle}
                         alt={category.name}
                         className="w-full h-full object-cover"
                       />
@@ -268,6 +271,7 @@ export default function ProductsPage() {
                     <div className="w-full aspect-video rounded-lg overflow-hidden mx-auto mb-4">
                       <img
                         src={category.image}
+                        style={category.imageStyle}
                         alt={category.name}
                         className="w-full h-full object-cover"
                       />

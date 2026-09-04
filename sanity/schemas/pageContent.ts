@@ -43,6 +43,8 @@ export const pageContent = defineType({
             defineField({ name: 'key', title: 'キー', type: 'string', validation: (Rule) => Rule.required() }),
             defineField({ name: 'image', title: '画像', type: 'image', options: { hotspot: true } }),
             defineField({ name: 'alt', title: '代替テキスト', type: 'string' }),
+            defineField({ name: 'positionX', title: '表示位置（横）', type: 'number', initialValue: 50, validation: (Rule) => Rule.min(0).max(100) }),
+            defineField({ name: 'positionY', title: '表示位置（縦）', type: 'number', initialValue: 50, validation: (Rule) => Rule.min(0).max(100) }),
           ],
           preview: { select: { title: 'key', media: 'image' } },
         },

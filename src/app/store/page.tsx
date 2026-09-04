@@ -450,11 +450,12 @@ function FAQSection() {
 
 export default function StorePage() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
-  const { t, img } = usePageContent('store');
+  const { t, img, imgStyle } = usePageContent('store');
   const facilities = [1, 2].map(i => ({
     name: t(`facility${i}Name`),
     description: t(`facility${i}Desc`),
     image: img(`facility${i}Image`),
+    imageStyle: imgStyle(`facility${i}Image`),
   }));
   const services = [1, 2, 3, 4].map(i => ({
     title: t(`service${i}Title`),
@@ -746,6 +747,7 @@ export default function StorePage() {
                   <div className="relative overflow-hidden">
                     <img 
                       src={facility.image} 
+                      style={facility.imageStyle}
                       alt={facility.name}
                       className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -838,6 +840,7 @@ export default function StorePage() {
                 src={img('galleryImage')}
                 alt="店舗の様子"
                 className="w-full h-auto object-cover"
+                style={imgStyle('galleryImage')}
               />
             </div>
           </div>

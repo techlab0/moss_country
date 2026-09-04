@@ -17,6 +17,8 @@ interface ImageOverride {
   image: SanityImageRef;
   alt: string;
   previewUrl?: string;
+  positionX: number;
+  positionY: number;
 }
 
 interface PageContentEditorProps {
@@ -71,7 +73,12 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
       const nextImages: Record<string, ImageOverride> = {};
       for (const img of adminData.content?.images || []) {
         if (img.key && img.image) {
-          nextImages[img.key] = { image: img.image, alt: img.alt || '' };
+          nextImages[img.key] = {
+            image: img.image,
+            alt: img.alt || '',
+            positionX: typeof img.positionX === 'number' ? img.positionX : 50,
+            positionY: typeof img.positionY === 'number' ? img.positionY : 50,
+          };
         }
       }
       setImageOverrides(nextImages);
@@ -109,7 +116,7 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
       const data = await response.json();
       setImageOverrides(prev => ({
         ...prev,
-        [field.key]: { image: data.image, alt: '', previewUrl: data.thumbnailUrl },
+        [field.key]: { image: data.image, alt: '', previewUrl: data.thumbnailUrl, positionX: 50, positionY: 50 },
       }));
     } catch (err) {
       alert(err instanceof Error ? err.message : '画像のアップロードに失敗しました');
@@ -132,6 +139,8 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
         key,
         image: ov.image,
         alt: ov.alt,
+        positionX: ov.positionX,
+        positionY: ov.positionY,
       }));
 
       const response = await fetch(`/api/admin/page-content/${pageId}`, {
@@ -241,11 +250,13 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                   />
                 )}
                 {field.type === 'image' && (
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                     <img
                       src={imageOverrides[field.key]?.previewUrl || savedImagePreviews[field.key] || field.default}
                       alt={field.label}
-                      className="w-32 h-20 object-cover rounded-md border"
+                      className="w-64 h-40 object-cover rounded-md border"
+                      style={{ objectPosition: `${imageOverrides[field.key]?.positionX ?? 50}% ${imageOverrides[field.key]?.positionY ?? 50}%` }}
                     />
                     <label className="text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer">
                       {uploadingKey === field.key ? 'アップロード中...' : '画像を変更'}
@@ -261,6 +272,20 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                         }}
                       />
                     </label>
+                    </div>
+                    {imageOverrides[field.key] && (
+                      <div className="grid gap-3 rounded-md bg-gray-50 p-3 sm:grid-cols-2">
+                        <label className="text-xs text-gray-700">
+                          横位置：{imageOverrides[field.key].positionX}%
+                          <input type="range" min="0" max="100" value={imageOverrides[field.key].positionX} onChange={(e) => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionX: Number(e.target.value) } }))} className="mt-1 w-full" />
+                        </label>
+                        <label className="text-xs text-gray-700">
+                          縦位置：{imageOverrides[field.key].positionY}%
+                          <input type="range" min="0" max="100" value={imageOverrides[field.key].positionY} onChange={(e) => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionY: Number(e.target.value) } }))} className="mt-1 w-full" />
+                        </label>
+                        <button type="button" onClick={() => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionX: 50, positionY: 50 } }))} className="text-left text-xs text-gray-500 underline sm:col-span-2">表示位置を中央に戻す</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

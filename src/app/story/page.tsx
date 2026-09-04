@@ -15,7 +15,7 @@ const timelineMeta = [
 
 export default function StoryPage() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言）
-  const { t, img } = usePageContent('story');
+  const { t, img, imgStyle } = usePageContent('story');
   const timeline = timelineMeta.map((meta, i) => ({
     ...meta,
     title: t(`timeline${i + 1}Title`),
@@ -295,6 +295,7 @@ export default function StoryPage() {
                   src={img('craftsmanshipImage')}
                   alt="立桶賢による職人技術と北海道の苔テラリウム制作"
                   width={600}
+                  style={imgStyle('craftsmanshipImage')}
                   height={500}
                   className="w-full h-full object-cover relative z-10"
                 />
@@ -355,6 +356,7 @@ export default function StoryPage() {
                   src={img('futureVisionImage')}
                   alt="MOSS COUNTRY ロゴサイン - 未来への展望"
                   width={600}
+                  style={imgStyle('futureVisionImage')}
                   height={500}
                   className="w-full h-full object-contain relative z-10 p-8"
                 />
