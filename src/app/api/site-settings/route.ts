@@ -13,7 +13,7 @@ export async function GET() {
         footerLegalLinks[]{ label, href, isVisible },
         snsLinks[]{ platform, url, isVisible },
         footerTagline, businessHours, businessDays, copyrightText, maintenancePages,
-        craftMossRentalVisibilityConfigured
+        craftMossRentalVisibilityConfigured, rentalTerrariumSitemapConfigured
       }`
     );
 

@@ -28,6 +28,7 @@ export interface SiteSettingsData {
   copyrightText: string;
   maintenancePages: string[];
   craftMossRentalVisibilityConfigured?: boolean;
+  rentalTerrariumSitemapConfigured?: boolean;
   allowIndexing: boolean;
 }
 
@@ -95,6 +96,7 @@ export const defaultSiteSettings: SiteSettingsData = {
     { label: '苔図鑑', href: '/moss-guide', isVisible: true },
     { label: 'ワークショップ', href: '/workshop', isVisible: true },
     { label: '出張ワークショップ', href: '/workshop/mobile', isVisible: true },
+    { label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true },
     { label: 'ストーリー', href: '/story', isVisible: true },
     { label: '店舗情報', href: '/store', isVisible: true },
     { label: 'ブログ', href: '/blog', isVisible: true },
@@ -127,9 +129,15 @@ export const defaultSiteSettings: SiteSettingsData = {
  */
 export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | undefined): SiteSettingsData {
   if (!saved) return defaultSiteSettings;
+  const savedSitemapLinks = saved.footerSitemapLinks?.length
+    ? saved.footerSitemapLinks
+    : defaultSiteSettings.footerSitemapLinks;
+  const footerSitemapLinks = saved.rentalTerrariumSitemapConfigured === true || savedSitemapLinks.some(link => link.href === '/rental-terrarium')
+    ? savedSitemapLinks
+    : [...savedSitemapLinks, { label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true }];
   return {
     headerLinks: saved.headerLinks?.length ? saved.headerLinks : defaultSiteSettings.headerLinks,
-    footerSitemapLinks: saved.footerSitemapLinks?.length ? saved.footerSitemapLinks : defaultSiteSettings.footerSitemapLinks,
+    footerSitemapLinks,
     footerLegalLinks: saved.footerLegalLinks?.length ? saved.footerLegalLinks : defaultSiteSettings.footerLegalLinks,
     snsLinks: saved.snsLinks?.length ? saved.snsLinks : defaultSiteSettings.snsLinks,
     footerTagline: saved.footerTagline ?? defaultSiteSettings.footerTagline,
@@ -140,6 +148,7 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
       ? saved.maintenancePages ?? []
       : Array.from(new Set([...(saved.maintenancePages ?? []), '/craft-moss-rental'])),
     craftMossRentalVisibilityConfigured: saved.craftMossRentalVisibilityConfigured === true,
+    rentalTerrariumSitemapConfigured: saved.rentalTerrariumSitemapConfigured === true,
     allowIndexing: saved.allowIndexing === true,
   };
 }

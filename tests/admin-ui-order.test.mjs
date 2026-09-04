@@ -107,3 +107,12 @@ test('クラフトモスレンタルを編集でき、表示・非表示を切�
     'クラフトモスの選択タブを先に表示する',
   );
 });
+
+test('フッターのサイトマップにレンタルテラリウムを追加する', async () => {
+  const settings = await readFile(resolve(projectRoot, 'src/lib/siteSettingsDefaults.ts'), 'utf8');
+  const adminApi = await readFile(resolve(projectRoot, 'src/app/api/admin/site-settings/route.ts'), 'utf8');
+
+  assert.ok(settings.includes("{ label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true }"), '既定のサイトマップにリンクを追加する');
+  assert.ok(settings.includes('rentalTerrariumSitemapConfigured'), '既存設定にも一度だけリンクを追加する');
+  assert.ok(adminApi.includes('rentalTerrariumSitemapConfigured: true'), '管理画面で保存後は表示設定を尊重する');
+});

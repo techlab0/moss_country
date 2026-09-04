@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const moduleUrl = pathToFileURL(resolve('src/lib/siteSettingsDefaults.ts')).href;
-const { isMaintenancePath, isNavLinkVisible } = await import(moduleUrl);
+const { isMaintenancePath, isNavLinkVisible, mergeSiteSettings } = await import(moduleUrl);
 
 test('準備中ページ本体とその配下をまとめて対象にする', () => {
   const pages = ['/shop'];
@@ -47,4 +47,21 @@ test('準備中を解除すれば元の表示設定に戻る', () => {
 test('外部リンクは準備中の影響を受けない', () => {
   const link = { label: 'Instagram', href: 'https://www.instagram.com/moss.country/', isVisible: true };
   assert.equal(isNavLinkVisible(link, ['/shop']), true);
+});
+
+test('既存のサイト設定へレンタルテラリウムのリンクを一度だけ補う', () => {
+  const merged = mergeSiteSettings({
+    footerSitemapLinks: [{ label: '商品', href: '/shop', isVisible: true }],
+    craftMossRentalVisibilityConfigured: true,
+  });
+  assert.equal(merged.footerSitemapLinks.filter(link => link.href === '/rental-terrarium').length, 1);
+});
+
+test('管理画面で設定済みならレンタルテラリウムを非表示・削除できる', () => {
+  const merged = mergeSiteSettings({
+    footerSitemapLinks: [{ label: '商品', href: '/shop', isVisible: true }],
+    craftMossRentalVisibilityConfigured: true,
+    rentalTerrariumSitemapConfigured: true,
+  });
+  assert.equal(merged.footerSitemapLinks.some(link => link.href === '/rental-terrarium'), false);
 });
