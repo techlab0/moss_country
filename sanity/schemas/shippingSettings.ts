@@ -76,6 +76,7 @@ export const shippingSettings = defineType({
     defineField({ name: 'freeShippingMode', title: 'サイト全体を送料無料にする', type: 'boolean', initialValue: false }),
     defineField({ name: 'thresholdFreeShippingEnabled', title: '指定金額以上を送料無料にする', type: 'boolean', initialValue: true }),
     defineField({ name: 'freeShippingThreshold', title: '送料無料・送料割引の対象となる小計(円)', type: 'number' }),
+    defineField({ name: 'outsideHokkaidoFreeShippingThreshold', title: '北海道外の送料無料対象小計(円)', type: 'number', initialValue: 10000 }),
     defineField({ name: 'shippingDiscount', title: '送料割引額(円)', type: 'number' }),
     defineField({ name: 'expressSurcharge', title: '速達加算(円)', type: 'number' }),
     defineField({ name: 'fragileSurcharge', title: '割れ物加算(円)', type: 'number' }),

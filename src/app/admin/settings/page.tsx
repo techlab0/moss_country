@@ -620,6 +620,7 @@ function ShippingSettingsEditor({
 
   const scalarFields: { key: keyof ShippingSettings; label: string; suffix: string }[] = [
     { key: 'freeShippingThreshold', label: '送料無料・送料割引の対象となる小計', suffix: '円以上' },
+    { key: 'outsideHokkaidoFreeShippingThreshold', label: '北海道外の送料無料対象となる小計', suffix: '円以上' },
     { key: 'shippingDiscount', label: '送料割引額', suffix: '円' },
     { key: 'expressSurcharge', label: '速達加算', suffix: '円' },
     { key: 'fragileSurcharge', label: '割れ物加算', suffix: '円' },
@@ -732,10 +733,11 @@ function ShippingSettingsEditor({
         <div className="flex items-center justify-between gap-4 p-4 mb-5 border border-emerald-200 bg-emerald-50 rounded-md">
           <div>
             <h3 className="font-medium text-gray-900">
-              {settings.freeShippingThreshold.toLocaleString()}円以上送料無料
+              北海道内{settings.freeShippingThreshold.toLocaleString()}円以上・北海道外
+              {settings.outsideHokkaidoFreeShippingThreshold.toLocaleString()}円以上送料無料
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              有効にすると、設定した対象小計以上の注文は送料が0円になります。
+              有効にすると、配送先に応じた対象小計以上の注文は送料が0円になります。
             </p>
             <p className="text-xs text-gray-500 mt-1">※重量物は別途送料をいただく可能性がございます。</p>
             <p className="text-xs text-gray-500 mt-1">

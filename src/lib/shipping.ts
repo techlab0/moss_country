@@ -52,6 +52,7 @@ export interface ShippingSettings {
   freeShippingMode: boolean; // サイト全体を送料無料にする（全商品を送料込み価格で販売する運用）
   thresholdFreeShippingEnabled: boolean; // 指定小計以上の注文を送料無料にする
   freeShippingThreshold: number; // この小計以上で割引を適用（円）
+  outsideHokkaidoFreeShippingThreshold: number; // 北海道外の送料無料対象小計（円）
   shippingDiscount: number; // 割引額（円）
   expressSurcharge: number; // 速達加算（円）
   fragileSurcharge: number; // 割れ物加算（円）
@@ -67,13 +68,18 @@ export interface ShippingSettings {
  * - 割引なし: 空文字（呼び出し側は何も表示しない）
  */
 export function formatShippingDiscountNote(
-  settings: Pick<ShippingSettings, 'freeShippingMode' | 'thresholdFreeShippingEnabled' | 'freeShippingThreshold' | 'shippingDiscount'>
+  settings: Pick<ShippingSettings, 'freeShippingMode' | 'thresholdFreeShippingEnabled' | 'freeShippingThreshold' | 'shippingDiscount'> &
+    Partial<Pick<ShippingSettings, 'outsideHokkaidoFreeShippingThreshold'>>
 ): string {
   if (settings.freeShippingMode) {
     return '全国送料無料';
   }
   if (settings.thresholdFreeShippingEnabled && settings.freeShippingThreshold > 0) {
-    return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料無料\n※重量物は別途送料をいただく可能性がございます。\n※重量物により別途送料をいただく場合はメールまたはお電話にてご連絡しご承諾後に配送いたします`;
+    const outsideThreshold = settings.outsideHokkaidoFreeShippingThreshold ?? settings.freeShippingThreshold;
+    const thresholdNote = outsideThreshold === settings.freeShippingThreshold
+      ? `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料無料`
+      : `北海道内は${settings.freeShippingThreshold.toLocaleString()}円以上、北海道外は${outsideThreshold.toLocaleString()}円以上のご購入で送料無料`;
+    return `${thresholdNote}\n※重量物は別途送料をいただく可能性がございます。\n※重量物により別途送料をいただく場合はメールまたはお電話にてご連絡しご承諾後に配送いたします`;
   }
   if (settings.shippingDiscount > 0 && settings.freeShippingThreshold > 0) {
     return `${settings.freeShippingThreshold.toLocaleString()}円以上のご購入で送料${settings.shippingDiscount.toLocaleString()}円引き`;
@@ -230,7 +236,11 @@ export function resolveShippingFee(
   if (hasFragile) surcharge += settings.fragileSurcharge;
 
   const gross = rate.price + surcharge;
-  const thresholdReached = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
+  const freeShippingThreshold = prefecture === '北海道'
+    ? settings.freeShippingThreshold
+    : settings.outsideHokkaidoFreeShippingThreshold;
+  const appliedThreshold = settings.thresholdFreeShippingEnabled ? freeShippingThreshold : settings.freeShippingThreshold;
+  const thresholdReached = appliedThreshold > 0 && subtotal >= appliedThreshold;
   const discount = thresholdReached
     ? settings.thresholdFreeShippingEnabled
       ? gross
@@ -351,6 +361,7 @@ export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
   freeShippingMode: false,
   thresholdFreeShippingEnabled: true,
   freeShippingThreshold: 8000,
+  outsideHokkaidoFreeShippingThreshold: 10000,
   shippingDiscount: 0,
   expressSurcharge: 330,
   fragileSurcharge: 200,
@@ -379,6 +390,10 @@ function mergeWithDefaults(doc: Partial<ShippingSettings> | null | undefined): S
         ? doc.thresholdFreeShippingEnabled
         : d.thresholdFreeShippingEnabled,
     freeShippingThreshold: numOr(doc.freeShippingThreshold, d.freeShippingThreshold),
+    outsideHokkaidoFreeShippingThreshold: numOr(
+      doc.outsideHokkaidoFreeShippingThreshold,
+      d.outsideHokkaidoFreeShippingThreshold,
+    ),
     shippingDiscount: numOr(doc.shippingDiscount, d.shippingDiscount),
     expressSurcharge: numOr(doc.expressSurcharge, d.expressSurcharge),
     fragileSurcharge: numOr(doc.fragileSurcharge, d.fragileSurcharge),

@@ -120,6 +120,10 @@ function validateSettings(
           ? input.thresholdFreeShippingEnabled
           : d.thresholdFreeShippingEnabled,
       freeShippingThreshold: nonNegative(input.freeShippingThreshold, d.freeShippingThreshold),
+      outsideHokkaidoFreeShippingThreshold: nonNegative(
+        input.outsideHokkaidoFreeShippingThreshold,
+        d.outsideHokkaidoFreeShippingThreshold,
+      ),
       shippingDiscount: nonNegative(input.shippingDiscount, d.shippingDiscount),
       expressSurcharge: nonNegative(input.expressSurcharge, d.expressSurcharge),
       fragileSurcharge: nonNegative(input.fragileSurcharge, d.fragileSurcharge),

@@ -93,6 +93,37 @@ test('対象小計が8,000円以上なら計算結果の送料も0円になる',
   assert.equal(result.fee, 0);
 });
 
+test('北海道外は10,000円以上で送料無料になる', () => {
+  const belowThreshold = resolveShippingFee(
+    [{ quantity: 1 }],
+    '東京都',
+    9_999,
+    {},
+    DEFAULT_SHIPPING_SETTINGS,
+  );
+  const atThreshold = resolveShippingFee(
+    [{ quantity: 1 }],
+    '東京都',
+    10_000,
+    {},
+    DEFAULT_SHIPPING_SETTINGS,
+  );
+
+  assert.equal(belowThreshold.ok, true);
+  assert.equal(belowThreshold.discount, 0);
+  assert.equal(belowThreshold.fee, belowThreshold.baseFee);
+  assert.equal(atThreshold.ok, true);
+  assert.equal(atThreshold.discount, atThreshold.baseFee);
+  assert.equal(atThreshold.fee, 0);
+});
+
+test('送料無料案内に北海道内と北海道外の基準額を表示する', () => {
+  const note = formatShippingDiscountNote(DEFAULT_SHIPPING_SETTINGS);
+
+  assert.match(note, /北海道内は8,000円以上/);
+  assert.match(note, /北海道外は10,000円以上/);
+});
+
 test('顧客向け画面に誤った固定文言を再導入しない', async () => {
   const customerFacingFiles = [
     'src/app/cart/page.tsx',
