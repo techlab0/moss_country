@@ -31,6 +31,19 @@ export default function RentalTerrariumPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f3eb] text-[#26362d]">
+      <nav aria-label="レンタルサービスの選択" className="border-b border-[#c4cec6] bg-white py-5 shadow-sm">
+        <Container>
+          <p className="mb-3 text-center text-sm font-bold tracking-wide text-[#557962]">レンタルサービスを選択</p>
+          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3">
+            <Link href="/craft-moss-rental" className="rounded-xl border-2 border-[#557962] bg-[#edf3ed] px-3 py-4 text-center font-bold text-[#173b27] transition hover:bg-[#dfe9df] sm:text-lg">
+              クラフトモスレンタル
+            </Link>
+            <span aria-current="page" className="rounded-xl border-2 border-[#173b27] bg-[#173b27] px-3 py-4 text-center font-bold text-white sm:text-lg">
+              テラリウムレンタル
+            </span>
+          </div>
+        </Container>
+      </nav>
       <section className="relative min-h-[78vh] overflow-hidden flex items-end">
         <Image src={img('heroImage')} alt={imgAlt('heroImage', '深い緑の苔と植物で構成された大型苔テラリウム')} fill priority className="object-cover" sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />

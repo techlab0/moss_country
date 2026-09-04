@@ -19,6 +19,19 @@ export default function CraftMossRentalPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f2e9] text-[#26362d]">
+      <nav aria-label="レンタルサービスの選択" className="border-b border-[#c4cec6] bg-white py-5 shadow-sm">
+        <Container>
+          <p className="mb-3 text-center text-sm font-bold tracking-wide text-[#557962]">レンタルサービスを選択</p>
+          <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3">
+            <span aria-current="page" className="rounded-xl border-2 border-[#173b27] bg-[#173b27] px-3 py-4 text-center font-bold text-white sm:text-lg">
+              クラフトモスレンタル
+            </span>
+            <Link href="/rental-terrarium" className="rounded-xl border-2 border-[#557962] bg-[#edf3ed] px-3 py-4 text-center font-bold text-[#173b27] transition hover:bg-[#dfe9df] sm:text-lg">
+              テラリウムレンタル
+            </Link>
+          </div>
+        </Container>
+      </nav>
       <section className="relative flex min-h-[72vh] items-end overflow-hidden">
         <Image src={img('heroImage')} alt={imgAlt('heroImage', 'クラフトモスを使った空間装飾')} fill priority className="object-cover" sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/15" />

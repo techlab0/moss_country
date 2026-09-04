@@ -97,4 +97,13 @@ test('クラフトモスレンタルを編集でき、表示・非表示を切�
   assert.ok(settings.includes("maintenancePages: ['/craft-moss-rental']"), '初期状態は非表示にする');
   assert.ok(publicPage.includes("usePageContent('craftMossRental')"), '公開ページで編集内容を読み込む');
   assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像を編集可能にする');
+  assert.ok(publicPage.includes('レンタルサービスを選択'), 'レンタルサービスの切替を表示する');
+  assert.ok(publicPage.includes('href="/rental-terrarium"'), 'テラリウムレンタルへ戻れる');
+
+  const terrariumPage = await readFile(resolve(projectRoot, 'src/app/rental-terrarium/page.tsx'), 'utf8');
+  assert.ok(terrariumPage.includes('href="/craft-moss-rental"'), 'クラフトモスレンタルへ移動できる');
+  assert.ok(
+    terrariumPage.indexOf('クラフトモスレンタル') < terrariumPage.indexOf('テラリウムレンタル'),
+    'クラフトモスの選択タブを先に表示する',
+  );
 });
