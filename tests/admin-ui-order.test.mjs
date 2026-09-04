@@ -103,8 +103,8 @@ test('クラフトモスレンタルを編集でき、表示・非表示を切�
   const terrariumPage = await readFile(resolve(projectRoot, 'src/app/rental-terrarium/page.tsx'), 'utf8');
   assert.ok(terrariumPage.includes('href="/craft-moss-rental"'), 'クラフトモスレンタルへ移動できる');
   assert.ok(
-    terrariumPage.indexOf('クラフトモスレンタル') < terrariumPage.indexOf('テラリウムレンタル'),
-    'クラフトモスの選択タブを先に表示する',
+    terrariumPage.indexOf('苔テラリウムレンタル') < terrariumPage.indexOf('クラフトモスレンタル'),
+    '苔テラリウムを左、クラフトモスを右に表示する',
   );
 });
 
