@@ -59,12 +59,12 @@ export async function PUT(
       .map(t => ({ _type: 'textOverride', _key: t.key as string, key: t.key, value: t.value }));
 
     const images = imagesInput
-      .filter(img => img.key && validKeys.has(img.key) && img.image)
+      .filter(img => img.key && validKeys.has(img.key) && (img.image || img.positionX !== 50 || img.positionY !== 50))
       .map(img => ({
         _type: 'imageOverride',
         _key: img.key as string,
         key: img.key,
-        image: img.image,
+        ...(img.image ? { image: img.image } : {}),
         alt: img.alt || '',
         positionX: Math.min(100, Math.max(0, typeof img.positionX === 'number' ? img.positionX : 50)),
         positionY: Math.min(100, Math.max(0, typeof img.positionY === 'number' ? img.positionY : 50)),

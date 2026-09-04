@@ -8,11 +8,13 @@ import { generateProductSlug } from '@/lib/slugUtils';
 import { suggestReadingFromName } from '@/lib/productSort';
 import { SalesItemPicker } from '@/components/admin/SalesItemPicker';
 import { compressImageForUpload } from '@/lib/imageCompress';
+import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 
 interface SanityImageRef {
   _type: 'image';
   _key?: string;
   asset: { _type: 'reference'; _ref: string };
+  hotspot?: { _type?: string; x?: number; y?: number; height?: number; width?: number };
 }
 
 interface ImageWithPreview {
@@ -112,7 +114,7 @@ export default function EditProductPage() {
           Array.isArray(imgs)
             ? imgs
                 .filter((i) => i?.asset?._ref)
-                .map((i) => ({ image: { _type: i._type, _key: i._key, asset: i.asset }, previewUrl: i.url }))
+                .map((i) => ({ image: { _type: i._type, _key: i._key, asset: i.asset, hotspot: i.hotspot }, previewUrl: i.url }))
             : []
         );
       })
@@ -300,13 +302,14 @@ export default function EditProductPage() {
             {images.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {images.map((item, index) => (
-                  <div key={item.image._key ?? index} className="relative">
-                    <div className="w-20 h-20 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                  <div key={item.image._key ?? index} className="relative w-64">
+                    <div className="w-64 h-40 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
                       {item.previewUrl ? (
                         <img
                           src={item.previewUrl}
                           alt={`画像${index + 1}`}
                           className="w-full h-full object-cover"
+                          style={{ objectPosition: imageObjectPosition(item.image) }}
                         />
                       ) : (
                         <span className="text-xs text-gray-500">画像{index + 1}</span>
@@ -319,6 +322,7 @@ export default function EditProductPage() {
                     >
                       ×
                     </button>
+                    <ImagePositionControls image={item.image} onChange={(image) => setImages(prev => prev.map((entry, i) => i === index ? { ...entry, image } : entry))} />
                   </div>
                 ))}
               </div>

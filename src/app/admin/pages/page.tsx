@@ -14,7 +14,7 @@ interface SanityImageRef {
 }
 
 interface ImageOverride {
-  image: SanityImageRef;
+  image?: SanityImageRef;
   alt: string;
   previewUrl?: string;
   positionX: number;
@@ -72,7 +72,7 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
 
       const nextImages: Record<string, ImageOverride> = {};
       for (const img of adminData.content?.images || []) {
-        if (img.key && img.image) {
+        if (img.key) {
           nextImages[img.key] = {
             image: img.image,
             alt: img.alt || '',
@@ -85,7 +85,8 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
 
       const previews: Record<string, string> = {};
       for (const [key, value] of Object.entries(publicData.images || {})) {
-        previews[key] = (value as { src: string }).src;
+        const src = (value as { src?: string }).src;
+        if (src) previews[key] = src;
       }
       setSavedImagePreviews(previews);
     } catch (err) {
@@ -159,6 +160,19 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateImagePosition = (key: string, next: Partial<Pick<ImageOverride, 'positionX' | 'positionY'>>) => {
+    setImageOverrides(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        alt: prev[key]?.alt || '',
+        positionX: prev[key]?.positionX ?? 50,
+        positionY: prev[key]?.positionY ?? 50,
+        ...next,
+      },
+    }));
   };
 
   return (
@@ -273,19 +287,17 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                       />
                     </label>
                     </div>
-                    {imageOverrides[field.key] && (
-                      <div className="grid gap-3 rounded-md bg-gray-50 p-3 sm:grid-cols-2">
+                    <div className="grid gap-3 rounded-md bg-gray-50 p-3 sm:grid-cols-2">
                         <label className="text-xs text-gray-700">
-                          横位置：{imageOverrides[field.key].positionX}%
-                          <input type="range" min="0" max="100" value={imageOverrides[field.key].positionX} onChange={(e) => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionX: Number(e.target.value) } }))} className="mt-1 w-full" />
+                          横位置：{imageOverrides[field.key]?.positionX ?? 50}%
+                          <input type="range" min="0" max="100" value={imageOverrides[field.key]?.positionX ?? 50} onChange={(e) => updateImagePosition(field.key, { positionX: Number(e.target.value) })} className="mt-1 w-full" />
                         </label>
                         <label className="text-xs text-gray-700">
-                          縦位置：{imageOverrides[field.key].positionY}%
-                          <input type="range" min="0" max="100" value={imageOverrides[field.key].positionY} onChange={(e) => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionY: Number(e.target.value) } }))} className="mt-1 w-full" />
+                          縦位置：{imageOverrides[field.key]?.positionY ?? 50}%
+                          <input type="range" min="0" max="100" value={imageOverrides[field.key]?.positionY ?? 50} onChange={(e) => updateImagePosition(field.key, { positionY: Number(e.target.value) })} className="mt-1 w-full" />
                         </label>
-                        <button type="button" onClick={() => setImageOverrides(prev => ({ ...prev, [field.key]: { ...prev[field.key], positionX: 50, positionY: 50 } }))} className="text-left text-xs text-gray-500 underline sm:col-span-2">表示位置を中央に戻す</button>
+                        <button type="button" onClick={() => updateImagePosition(field.key, { positionX: 50, positionY: 50 })} className="text-left text-xs text-gray-500 underline sm:col-span-2">表示位置を中央に戻す</button>
                       </div>
-                    )}
                   </div>
                 )}
               </div>

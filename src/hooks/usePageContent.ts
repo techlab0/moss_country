@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { registryDefaults } from '@/lib/pageContentRegistry';
 
 interface PageImages {
-  [key: string]: { src: string; alt: string; positionX?: number; positionY?: number };
+  [key: string]: { src?: string; alt: string; positionX?: number; positionY?: number };
 }
 
 /**
@@ -48,7 +48,7 @@ export function usePageContent(pageId: string) {
   );
 
   const img = useCallback(
-    (key: string): string => images[key]?.src ?? defaults[key] ?? '',
+    (key: string): string => images[key]?.src || defaults[key] || '',
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [images, pageId]
   );

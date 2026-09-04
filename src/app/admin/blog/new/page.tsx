@@ -4,6 +4,7 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { compressImageForUpload } from '@/lib/imageCompress';
+import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 
 interface SanityImageRef {
   _type: 'image';
@@ -362,7 +363,8 @@ export default function NewBlogPostPage() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">アイキャッチ画像</h2>
           {featuredImagePreview && (
             <div className="mb-4">
-              <img src={featuredImagePreview} alt="アイキャッチ画像のプレビュー" className="h-48 w-full max-w-md rounded-lg border object-cover" />
+              <img src={featuredImagePreview} alt="アイキャッチ画像のプレビュー" className="h-48 w-full max-w-md rounded-lg border object-cover" style={{ objectPosition: imageObjectPosition(formData.featuredImage) }} />
+              {formData.featuredImage && <ImagePositionControls image={formData.featuredImage} onChange={(featuredImage) => setFormData(prev => ({ ...prev, featuredImage }))} />}
             </div>
           )}
           <div className="flex flex-wrap items-center gap-3">

@@ -130,3 +130,20 @@ test('ページ編集画像の表示位置を調整して公開ページへ反�
   assert.ok(publicApi.includes('positionX'), '公開APIが表示位置を返す');
   assert.ok(hook.includes('imgStyle'), '公開ページへ表示位置を適用する');
 });
+
+test('各画像管理画面で画像の表示位置を調整できる', async () => {
+  const files = [
+    'src/app/admin/images/page.tsx',
+    'src/app/admin/products/new/page.tsx',
+    'src/app/admin/products/[id]/edit/page.tsx',
+    'src/app/admin/blog/new/page.tsx',
+    'src/app/admin/blog/[id]/edit/page.tsx',
+    'src/app/admin/moss-guide/new/page.tsx',
+    'src/app/admin/moss-guide/[id]/edit/page.tsx',
+  ];
+  const contents = await Promise.all(files.map(file => readFile(resolve(projectRoot, file), 'utf8')));
+
+  for (const content of contents) {
+    assert.ok(content.includes('ImagePositionControls'), '共通の画像位置調整を表示する');
+  }
+});

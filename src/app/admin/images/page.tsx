@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { urlFor } from '@/lib/sanity';
 import type { SanityImage } from '@/types/sanity';
+import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 
 type PageType = 'main' | 'products' | 'workshop' | 'story' | 'store' | 'mossGuide' | 'blog' | 'contact';
 type ImageType = 'hero' | 'background';
@@ -409,8 +410,13 @@ export default function ImageManagePage() {
                           src={imageUrl}
                           alt={`${info.name} ヒーロー画像`}
                           className="w-full h-full object-cover"
+                          style={{ objectPosition: imageObjectPosition(image) }}
                         />
                       </div>
+                      {image && <>
+                        <ImagePositionControls image={image} onChange={(nextImage) => setHeroSettings(prev => ({ ...(prev || {}), [page]: { ...prev?.[page], image: nextImage } }))} />
+                        <Button onClick={() => updateHeroImage(page, heroSettings?.[page]?.image as SanityImage)} disabled={saving} variant="outline" size="sm">表示位置を保存</Button>
+                      </>}
                       <div className="flex items-center justify-between gap-2">
                         <input
                           type="text"
@@ -522,8 +528,11 @@ export default function ImageManagePage() {
                               src={pcImageUrl}
                               alt={`${info.name} PC背景画像`}
                               className="w-full h-full object-cover"
+                              style={{ objectPosition: imageObjectPosition(pcImage) }}
                             />
                           </div>
+                          {pcImage && <ImagePositionControls image={pcImage} onChange={(nextImage) => setBackgroundSettings(prev => ({ ...(prev || {}), [page]: { ...prev?.[page], image: nextImage } }))} />}
+                          <Button onClick={() => pcImage && updateBackgroundImage(page, pcImage, false)} disabled={saving} variant="outline" size="sm">表示位置を保存</Button>
                           <Button
                             onClick={() => removeImage(page, 'background', false)}
                             variant="outline"
@@ -568,8 +577,11 @@ export default function ImageManagePage() {
                               src={mobileImageUrl}
                               alt={`${info.name} モバイル背景画像`}
                               className="w-full h-full object-cover"
+                              style={{ objectPosition: imageObjectPosition(mobileImage) }}
                             />
                           </div>
+                          {mobileImage && <ImagePositionControls image={mobileImage} onChange={(nextImage) => setBackgroundSettings(prev => ({ ...(prev || {}), [page]: { ...prev?.[page], imageMobile: nextImage } }))} />}
+                          <Button onClick={() => mobileImage && updateBackgroundImage(page, mobileImage, true)} disabled={saving} variant="outline" size="sm">表示位置を保存</Button>
                           <Button
                             onClick={() => removeImage(page, 'background', true)}
                             variant="outline"

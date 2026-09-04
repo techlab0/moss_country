@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { urlFor } from '@/lib/sanity';
 import type { MossSpeciesImage } from '@/types/sanity';
+import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 
 interface EditMossSpeciesPageProps {
@@ -441,6 +442,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                         width={300}
                         height={300}
                         className="w-full h-full object-cover"
+                        style={{ objectPosition: imageObjectPosition(image) }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -451,6 +453,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   {image.caption && (
                     <p className="text-sm text-gray-600 mb-2">{image.caption}</p>
                   )}
+                  <ImagePositionControls image={image} onChange={(nextImage) => setImages(prev => prev.map((entry, i) => i === index ? nextImage : entry))} />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}

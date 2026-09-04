@@ -24,17 +24,21 @@ export async function GET(request: NextRequest) {
       if (t.key && typeof t.value === 'string') texts[t.key] = t.value;
     }
 
-    const images: Record<string, { src: string; alt: string; positionX: number; positionY: number }> = {};
+    const images: Record<string, { src?: string; alt: string; positionX: number; positionY: number }> = {};
     for (const img of doc?.images || []) {
-      if (!img.key || !img.image) continue;
+      if (!img.key) continue;
+      const base = {
+        alt: img.alt || '',
+        positionX: typeof img.positionX === 'number' ? img.positionX : 50,
+        positionY: typeof img.positionY === 'number' ? img.positionY : 50,
+      };
+      if (!img.image) {
+        images[img.key] = base;
+        continue;
+      }
       try {
         const src = urlFor(img.image).width(1600).url();
-        images[img.key] = {
-          src,
-          alt: img.alt || '',
-          positionX: typeof img.positionX === 'number' ? img.positionX : 50,
-          positionY: typeof img.positionY === 'number' ? img.positionY : 50,
-        };
+        images[img.key] = { ...base, src };
       } catch {
         // 画像URLの生成に失敗した場合はその画像だけスキップ（デフォルトで表示される）
       }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 import type { MossSpeciesImage } from '@/types/sanity';
+import { ImagePositionControls } from '@/components/admin/ImagePositionControls';
 
 /**
  * ネストした文字列配列（practicalAdvice.difficultyPoints など）を差し替える。
@@ -373,6 +374,7 @@ export default function NewMossSpeciesPage() {
                   {image.caption && (
                     <p className="text-sm text-gray-600 mb-2">{image.caption}</p>
                   )}
+                  <ImagePositionControls image={image} onChange={(nextImage) => setImages(prev => prev.map((entry, i) => i === index ? nextImage : entry))} />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
