@@ -1,7 +1,7 @@
 // 公開ページの「管理画面から編集できる文言・画像」の定義（中央レジストリ）。
 // - key: ページ内での識別子（Sanityの pageContent ドキュメントの上書きキーと対応）
 // - label: 管理画面に表示する項目名
-// - type: text(1行) / textarea(複数行) / image(画像)
+// - type: text(1行) / textarea(複数行) / image(画像) / boolean(表示切替) / workshopPlan(予約プラン紐づけ)
 // - default: 現在のハードコード文言（上書きが保存されていない場合はこの値で表示される）
 //
 // ここに定義されたページ・フィールドだけが /admin/pages の編集対象になる。
@@ -11,7 +11,7 @@
 export interface ContentField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'image';
+  type: 'text' | 'textarea' | 'image' | 'boolean' | 'workshopPlan';
   default: string;
 }
 
@@ -425,31 +425,43 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'heroTitle', label: 'ヒーロー見出し', type: 'text', default: '自分の手で作る、特別なテラリウム体験' },
       { key: 'heroLead', label: 'ヒーロー リード文', type: 'textarea', default: '経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。親御さんにもお手伝いいただくことで小さなお子様も参加可能です。' },
       { key: 'plan1Name', label: 'プラン1 名称', type: 'text', default: 'ガラスキャニスターSS' },
+      { key: 'plan1Visible', label: 'プラン1を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan1BookingPlanId', label: 'プラン1に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan1Price', label: 'プラン1 価格', type: 'text', default: '¥2,500' },
       { key: 'plan1Duration', label: 'プラン1 所要時間', type: 'text', default: '約90分' },
       { key: 'plan1Desc', label: 'プラン1 説明', type: 'textarea', default: '手のひらサイズの小さな苔の世界。初めての方にも気軽に楽しめる癒しの一本です。' },
       { key: 'plan1Image', label: 'プラン1 画像', type: 'image', default: '/images/workshop/glass-canister-ss.JPG' },
       { key: 'plan2Name', label: 'プラン2 名称', type: 'text', default: 'ガラスボールS' },
+      { key: 'plan2Visible', label: 'プラン2を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan2BookingPlanId', label: 'プラン2に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan2Price', label: 'プラン2 価格', type: 'text', default: '¥4,000' },
       { key: 'plan2Duration', label: 'プラン2 所要時間', type: 'text', default: '約120分' },
       { key: 'plan2Desc', label: 'プラン2 説明', type: 'textarea', default: '丸いガラスの中に広がる小さな苔の森。日常に緑を添える、柔らかな印象のテラリウムです。' },
       { key: 'plan2Image', label: 'プラン2 画像', type: 'image', default: '/images/workshop/glass-ball-s.JPG' },
       { key: 'plan3Name', label: 'プラン3 名称', type: 'text', default: 'ポップジャー' },
+      { key: 'plan3Visible', label: 'プラン3を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan3BookingPlanId', label: 'プラン3に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan3Price', label: 'プラン3 価格', type: 'text', default: '¥5,000' },
       { key: 'plan3Duration', label: 'プラン3 所要時間', type: 'text', default: '約120分' },
       { key: 'plan3Desc', label: 'プラン3 説明', type: 'textarea', default: 'ころんと可愛い形の容器に、立体的な苔の世界。インテリアにも映える明るい雰囲気です。' },
       { key: 'plan3Image', label: 'プラン3 画像', type: 'image', default: '/images/workshop/pop-jar.JPG' },
       { key: 'plan4Name', label: 'プラン4 名称', type: 'text', default: 'ガラスボールM' },
+      { key: 'plan4Visible', label: 'プラン4を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan4BookingPlanId', label: 'プラン4に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan4Price', label: 'プラン4 価格', type: 'text', default: '¥8,500' },
       { key: 'plan4Duration', label: 'プラン4 所要時間', type: 'text', default: '' },
       { key: 'plan4Desc', label: 'プラン4 説明', type: 'textarea', default: '【所要時間：120~180分】存在感あるサイズに豊かな景色を凝縮。苔の奥行きや地形の変化をじっくり楽しめます。' },
       { key: 'plan4Image', label: 'プラン4 画像', type: 'image', default: '/images/workshop/glass-ball-m.JPG' },
       { key: 'plan5Name', label: 'プラン5 名称', type: 'text', default: 'ガラスボール・ボックスLL' },
+      { key: 'plan5Visible', label: 'プラン5を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan5BookingPlanId', label: 'プラン5に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan5Price', label: 'プラン5 価格', type: 'text', default: '¥25,000' },
       { key: 'plan5Duration', label: 'プラン5 所要時間', type: 'text', default: '' },
       { key: 'plan5Desc', label: 'プラン5 説明', type: 'textarea', default: '※他ワークショップ参加経験者限定。\n※【2週間前予約必須】1~2日間で完成' },
       { key: 'plan5Image', label: 'プラン5 画像', type: 'image', default: '/images/workshop/glass-ball-box-ll.JPG' },
       { key: 'plan6Name', label: 'プラン6 名称', type: 'text', default: '崖景のテラリウム' },
+      { key: 'plan6Visible', label: 'プラン6を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan6BookingPlanId', label: 'プラン6に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan6Price', label: 'プラン6 価格', type: 'text', default: '¥6,000' },
       { key: 'plan6Duration', label: 'プラン6 所要時間', type: 'text', default: '' },
       { key: 'plan6Desc', label: 'プラン6 説明', type: 'textarea', default: '岩肌と苔が織りなす、崖のような立体構造。小さな容器に自然の迫力と静けさを閉じ込めました。' },

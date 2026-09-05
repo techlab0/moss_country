@@ -26,7 +26,8 @@ export default function WorkshopPage() {
     description: t(`plan${i + 1}Desc`),
     image: img(`plan${i + 1}Image`),
     imageStyle: imgStyle(`plan${i + 1}Image`),
-  }));
+    isVisible: t(`plan${i + 1}Visible`) !== 'false',
+  })).filter(plan => plan.isVisible);
   const testimonials = [1, 2, 3].map(i => ({
     name: t(`testimonial${i}Name`),
     age: t(`testimonial${i}Age`),

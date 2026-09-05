@@ -25,6 +25,11 @@ interface PageContentEditorProps {
   fixedPageId?: string;
 }
 
+interface WorkshopPlanOption {
+  _id: string;
+  title: string;
+}
+
 function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
   const pageIds = Object.keys(pageContentRegistry);
   const initialPageId = fixedPageId && pageContentRegistry[fixedPageId] ? fixedPageId : pageIds[0];
@@ -36,6 +41,7 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState('');
   const [message, setMessage] = useState('');
+  const [workshopPlans, setWorkshopPlans] = useState<WorkshopPlanOption[]>([]);
 
   const page = pageContentRegistry[pageId];
 
@@ -99,6 +105,17 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
   useEffect(() => {
     loadPage(pageId);
   }, [pageId, loadPage]);
+
+  useEffect(() => {
+    if (pageId !== 'workshop') {
+      setWorkshopPlans([]);
+      return;
+    }
+    fetch('/api/admin/workshop-plans')
+      .then(res => (res.ok ? res.json() : { plans: [] }))
+      .then(data => setWorkshopPlans(Array.isArray(data.plans) ? data.plans : []))
+      .catch(() => setWorkshopPlans([]));
+  }, [pageId]);
 
   const handleUpload = async (field: ContentField, file: File) => {
     setUploadingKey(field.key);
@@ -262,6 +279,39 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
+                )}
+                {field.type === 'boolean' && (
+                  <label className="inline-flex items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={(textValues[field.key] ?? field.default) !== 'false'}
+                      onChange={(e) => setTextValues(prev => ({
+                        ...prev,
+                        [field.key]: e.target.checked ? 'true' : 'false',
+                      }))}
+                      className="h-5 w-5 rounded border-gray-300 text-moss-green focus:ring-moss-green"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {(textValues[field.key] ?? field.default) !== 'false' ? '表示中' : '非表示'}
+                    </span>
+                  </label>
+                )}
+                {field.type === 'workshopPlan' && (
+                  <div className="space-y-1">
+                    <select
+                      value={textValues[field.key] ?? field.default}
+                      onChange={(e) => setTextValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
+                    >
+                      <option value="">予約プランと連動しない</option>
+                      {workshopPlans.map(plan => (
+                        <option key={plan._id} value={plan._id}>{plan.title}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500">
+                      対応する予約プランを選ぶと、上の表示設定が予約画面にも連動します。
+                    </p>
+                  </div>
                 )}
                 {field.type === 'image' && (
                   <div className="space-y-4">

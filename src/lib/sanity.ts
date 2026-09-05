@@ -2,6 +2,7 @@ import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies, HeroImageSettings, BackgroundImageSettings } from '@/types/sanity'
 import { generateSEOFriendlySlug } from '@/lib/slugUtils'
+import { hiddenWorkshopPlanIdsFromOverrides } from '@/lib/workshopPlanVisibility'
 
 export const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
@@ -27,10 +28,24 @@ export function urlFor(source: SanityImage) {
   return builder.image(source)
 }
 
+async function getHiddenWorkshopPlanIds(): Promise<string[]> {
+  try {
+    const overrides: Array<{ key?: string; value?: string }> = await client.fetch(
+      `*[_type == "pageContent" && _id == "pageContent-workshop"][0].texts[]{ key, value }`
+    ) || []
+    return hiddenWorkshopPlanIdsFromOverrides(overrides)
+  } catch (error) {
+    // 公開設定を取得できない場合は予約受付を不用意に止めず、従来どおり全プランを表示する。
+    console.warn('Failed to fetch workshop visibility settings:', error)
+    return []
+  }
+}
+
 // Simple Workshop queries
 export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
   try {
-    return await client.fetch(`
+    const [workshops, hiddenIds] = await Promise.all([
+      client.fetch(`
       *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
         _id,
         title,
@@ -38,7 +53,10 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
         price,
         duration
       }
-    `)
+      `),
+      getHiddenWorkshopPlanIds(),
+    ])
+    return (workshops as SimpleWorkshop[]).filter(workshop => !hiddenIds.includes(workshop._id))
   } catch (error) {
     console.warn('Failed to fetch workshops from Sanity:', error)
     return []
@@ -50,6 +68,8 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
 // 再計算は「Sanityの正規データ」を参照できれば十分で、注文の在庫確認のような即時性は不要なため）。
 export async function getSimpleWorkshopById(id: string): Promise<SimpleWorkshop | null> {
   try {
+    const hiddenIds = await getHiddenWorkshopPlanIds()
+    if (hiddenIds.includes(id)) return null
     const workshop = await client.fetch(
       `*[_type == "simpleWorkshop" && _id == $id && !(_id in path("drafts.**"))][0]{
         _id,
