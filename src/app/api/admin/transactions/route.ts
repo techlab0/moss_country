@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       notes,
       source: isHistorical ? 'historical' : undefined,
     });
+    let inventoryWarnings: Array<{ itemName: string; message: string }> = [];
 
     // 過去の手書き記録の一括入力では、来店者数・購入組数は集計タブの手動欄で別途管理するため、
     // 取引作成のたびに加算すると二重加算になってしまう。そのためカウンタ加算はスキップする。
@@ -67,9 +68,11 @@ export async function POST(request: NextRequest) {
       // EC商品が紐づく明細の在庫を引き落とす（過去分の一括入力では、その時点の販売は
       // 既に現物が出ているため在庫は動かさない）。失敗しても会計は成立させる。
       try {
-        await applyStoreSaleInventory(lineItems, `店頭会計 ${transaction._id}`);
+        const inventoryResult = await applyStoreSaleInventory(lineItems, `店頭会計 ${transaction._id}`);
+        inventoryWarnings = inventoryResult.warnings;
       } catch (inventoryError) {
         console.error('店頭会計の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
+        inventoryWarnings = [{ itemName: '販売商品', message: '在庫更新処理でエラーが発生しました' }];
       }
     }
 
@@ -81,7 +84,7 @@ export async function POST(request: NextRequest) {
       // upsertTransactionRow内部で既にログ済みのため、ここでは握りつぶすのみ
     }
 
-    return NextResponse.json({ transaction });
+    return NextResponse.json({ transaction, inventoryWarnings });
   } catch (error) {
     console.error('店頭取引登録エラー:', error);
     const message = error instanceof Error ? error.message : '取引の登録に失敗しました';

@@ -63,3 +63,21 @@ test('在庫管理画面は管理APIの実データと変更理由を使い、�
   assert.match(inventoryPage, /在庫変更理由/);
   assert.doesNotMatch(inventoryPage, /mock-1|モックログデータ|prompt\(/);
 });
+
+test('店頭売上で在庫連動できない商品を管理画面へ警告する', async () => {
+  const [inventoryLink, transactionRoute, transactionEditRoute, salesPage] = await Promise.all([
+    source('src/lib/storeInventory.ts'),
+    source('src/app/api/admin/transactions/route.ts'),
+    source('src/app/api/admin/transactions/[id]/route.ts'),
+    source('src/app/admin/sales/page.tsx'),
+  ]);
+
+  assert.match(inventoryLink, /StoreInventoryResult/);
+  assert.match(inventoryLink, /売上項目に紐づく商品が設定されていません/);
+  assert.match(inventoryLink, /同じ売上項目に商品が.*紐づいているため/);
+  assert.match(inventoryLink, /if \(applied\)/);
+  assert.match(transactionRoute, /inventoryWarnings/);
+  assert.match(transactionEditRoute, /inventoryWarnings/);
+  assert.match(salesPage, /在庫に反映されませんでした/);
+  assert.match(salesPage, /商品管理の「売上明細の項目」を確認してください/);
+});

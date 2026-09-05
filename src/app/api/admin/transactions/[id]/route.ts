@@ -103,19 +103,22 @@ export async function PATCH(
 
     const transaction = await writeClient.patch(id).set(updates).commit();
     await adjustDailyCounters(existing.date, visitorDelta, groupDelta);
+    let inventoryWarnings: Array<{ itemName: string; message: string }> = [];
 
     // 明細を差し替えた場合は、旧明細分の在庫を戻してから新明細分を引き落とす。
     // 過去分の一括入力（source: 'historical'）は登録時に在庫を動かしていないため対象外。
     if (lineItemsChanged && existing.source !== 'historical') {
       try {
         await revertStoreSaleInventory(existing.lineItems || [], `店頭会計の修正 ${id}`);
-        await applyStoreSaleInventory((updates.lineItems as StoreInventoryLine[]) || [], `店頭会計の修正 ${id}`);
+        const inventoryResult = await applyStoreSaleInventory((updates.lineItems as StoreInventoryLine[]) || [], `店頭会計の修正 ${id}`);
+        inventoryWarnings = inventoryResult.warnings;
       } catch (inventoryError) {
         console.error('店頭会計修正時の在庫調整に失敗しました（棚卸しで調整してください）:', inventoryError);
+        inventoryWarnings = [{ itemName: '販売商品', message: '在庫更新処理でエラーが発生しました' }];
       }
     }
 
-    return NextResponse.json({ transaction });
+    return NextResponse.json({ transaction, inventoryWarnings });
   } catch (error) {
     console.error('店頭取引更新エラー:', error);
     const message = error instanceof Error ? error.message : '取引の更新に失敗しました';

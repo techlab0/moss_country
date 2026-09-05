@@ -16,6 +16,7 @@ import { InventoryService } from '@/lib/inventory';
 export interface StoreInventoryLine {
   salesItem?: { _ref?: string } | null;
   salesItemId?: string;
+  name?: string;
   quantity?: number;
 }
 
@@ -23,6 +24,17 @@ interface InventoryTarget {
   productId: string;
   productName: string;
   quantity: number;
+}
+
+export interface StoreInventoryWarning {
+  salesItemId?: string;
+  itemName: string;
+  message: string;
+}
+
+export interface StoreInventoryResult {
+  updated: Array<{ productId: string; productName: string; quantity: number }>;
+  warnings: StoreInventoryWarning[];
 }
 
 function lineSalesItemId(line: StoreInventoryLine): string | undefined {
@@ -33,15 +45,20 @@ function lineSalesItemId(line: StoreInventoryLine): string | undefined {
  * 明細から在庫を動かす対象（商品IDと数量）を解決する。
  * 同じ売上項目が複数行に分かれていた場合は数量を合算する。
  */
-async function resolveTargets(lines: StoreInventoryLine[]): Promise<InventoryTarget[]> {
+async function resolveTargets(lines: StoreInventoryLine[]): Promise<{
+  targets: InventoryTarget[];
+  warnings: StoreInventoryWarning[];
+}> {
   const quantityBySalesItem = new Map<string, number>();
+  const nameBySalesItem = new Map<string, string>();
   for (const line of lines) {
     const salesItemId = lineSalesItemId(line);
     const quantity = Math.floor(Math.max(0, line.quantity || 0));
     if (!salesItemId || quantity <= 0) continue;
     quantityBySalesItem.set(salesItemId, (quantityBySalesItem.get(salesItemId) || 0) + quantity);
+    if (line.name) nameBySalesItem.set(salesItemId, line.name);
   }
-  if (quantityBySalesItem.size === 0) return [];
+  if (quantityBySalesItem.size === 0) return { targets: [], warnings: [] };
 
   const products: Array<{ _id: string; name: string; salesItemId: string }> = await writeClient.fetch(
     `*[_type == "product" && salesItem._ref in $ids]{ _id, name, "salesItemId": salesItem._ref }`,
@@ -57,35 +74,58 @@ async function resolveTargets(lines: StoreInventoryLine[]): Promise<InventoryTar
   }
 
   const targets: InventoryTarget[] = [];
+  const warnings: StoreInventoryWarning[] = [];
   for (const [salesItemId, quantity] of quantityBySalesItem) {
     const candidates = productsBySalesItem.get(salesItemId);
     if (!candidates || candidates.length !== 1) {
+      const itemName = nameBySalesItem.get(salesItemId) || salesItemId;
       if (candidates && candidates.length > 1) {
         console.warn(
           `在庫連動をスキップ: 売上項目 ${salesItemId} に商品が${candidates.length}件紐づいているため対象を特定できません`
         );
+        warnings.push({
+          salesItemId,
+          itemName,
+          message: `同じ売上項目に商品が${candidates.length}件紐づいているため、対象を特定できません`,
+        });
+      } else {
+        warnings.push({
+          salesItemId,
+          itemName,
+          message: '売上項目に紐づく商品が設定されていません',
+        });
       }
       continue;
     }
     targets.push({ productId: candidates[0]._id, productName: candidates[0].name, quantity });
   }
 
-  return targets;
+  return { targets, warnings };
 }
 
 /** 店頭で売れた分の在庫を減らす */
 export async function applyStoreSaleInventory(
   lines: StoreInventoryLine[],
   reasonLabel: string
-): Promise<void> {
-  const targets = await resolveTargets(lines);
+): Promise<StoreInventoryResult> {
+  const { targets, warnings } = await resolveTargets(lines);
+  const updated: StoreInventoryResult['updated'] = [];
   for (const target of targets) {
-    await InventoryService.recordStoreSale(
+    const applied = await InventoryService.recordStoreSale(
       target.productId,
       target.quantity,
       `店頭販売 - ${target.productName} ${target.quantity}個（${reasonLabel}）`
     );
+    if (applied) {
+      updated.push(target);
+    } else {
+      warnings.push({
+        itemName: target.productName,
+        message: '在庫が0、または在庫更新処理に失敗したため反映されませんでした',
+      });
+    }
   }
+  return { updated, warnings };
 }
 
 /** 取り消し・返金・修正時に、減らした在庫を戻す */
@@ -93,7 +133,7 @@ export async function revertStoreSaleInventory(
   lines: StoreInventoryLine[],
   reasonLabel: string
 ): Promise<void> {
-  const targets = await resolveTargets(lines);
+  const { targets } = await resolveTargets(lines);
   for (const target of targets) {
     await InventoryService.restockProduct(
       target.productId,

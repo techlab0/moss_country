@@ -656,11 +656,21 @@ function EntryTab({
           const data = await response.json().catch(() => ({}));
           throw new Error(data.error || '登録に失敗しました');
         }
+        const data = await response.json() as {
+          inventoryWarnings?: Array<{ itemName: string; message: string }>;
+        };
         onRegistered(
           lineItems.length > 0
             ? `登録しました（${methodLabels[method]} ¥${finalTotal.toLocaleString()}）`
             : `来店のみ登録しました（${visitors}名）`
         );
+        if (data.inventoryWarnings?.length) {
+          alert(
+            `売上は登録されましたが、次の商品は在庫に反映されませんでした。\n\n${data.inventoryWarnings
+              .map((warning) => `・${warning.itemName}：${warning.message}`)
+              .join('\n')}\n\n商品管理の「売上明細の項目」を確認してください。`
+          );
+        }
         resetForm();
       }
     } catch (err) {
@@ -1377,7 +1387,17 @@ function SummaryTab({
         const resData = await response.json().catch(() => ({}));
         throw new Error(resData.error || '更新に失敗しました');
       }
+      const resData = await response.json() as {
+        inventoryWarnings?: Array<{ itemName: string; message: string }>;
+      };
       onMessage('更新しました');
+      if (resData.inventoryWarnings?.length) {
+        alert(
+          `売上は更新されましたが、次の商品は在庫に反映されませんでした。\n\n${resData.inventoryWarnings
+            .map((warning) => `・${warning.itemName}：${warning.message}`)
+            .join('\n')}\n\n商品管理の「売上明細の項目」を確認してください。`
+        );
+      }
       await loadDay(date);
     } catch (err) {
       alert(err instanceof Error ? err.message : '更新に失敗しました');
