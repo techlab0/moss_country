@@ -79,6 +79,8 @@ interface ChargeView {
   paidAt?: string;
   visitorCount?: number;
   lineItems?: LineItemView[];
+  inventoryProcessed?: boolean;
+  inventoryWarnings?: Array<{ itemName: string; message: string }>;
 }
 
 interface MethodCell {
@@ -138,6 +140,7 @@ interface QrFlowState {
   posLaunchUrl?: string; // POSアプリ起動決済時のみ（square-commerce-v1://）
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   lineItems: LineItemView[];
+  inventoryWarnings?: Array<{ itemName: string; message: string }>;
 }
 
 interface EditLine {
@@ -688,8 +691,14 @@ function EntryTab({
         const response = await fetch(`/api/admin/in-store-charge/${chargeId}`);
         if (!response.ok) return;
         const data = await response.json();
-        if (data.charge.status !== 'pending') {
-          setQrFlow(prev => (prev ? { ...prev, status: data.charge.status } : prev));
+        // 新規会計は在庫処理が終わるまで待ち、決済済み表示と警告を同時に反映する。
+        // inventoryProcessed未設定の旧会計は、従来どおりstatusだけで完了扱いにする。
+        if (data.charge.status !== 'pending' && data.charge.inventoryProcessed !== false) {
+          setQrFlow(prev => (prev ? {
+            ...prev,
+            status: data.charge.status,
+            inventoryWarnings: data.charge.inventoryWarnings || [],
+          } : prev));
           if (pollRef.current) clearInterval(pollRef.current);
         }
       } catch {
@@ -708,7 +717,11 @@ function EntryTab({
         if (!response.ok) return;
         const data = await response.json();
         if (data.status === 'paid') {
-          setQrFlow(prev => (prev ? { ...prev, status: 'paid' } : prev));
+          setQrFlow(prev => (prev ? {
+            ...prev,
+            status: 'paid',
+            inventoryWarnings: data.inventoryWarnings || [],
+          } : prev));
           if (pollRef.current) clearInterval(pollRef.current);
         } else if (data.status === 'failed') {
           // PayPay側で失敗・期限切れ等が確定した場合、Sanity側のchargeも正式にキャンセルして組数を戻す
@@ -887,6 +900,19 @@ function EntryTab({
               <span className="text-3xl">✓</span>
             </div>
             <p className="text-emerald-600 font-medium">支払いが完了しました</p>
+            {!!qrFlow.inventoryWarnings?.length && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-left text-sm text-amber-900">
+                <p className="font-bold">売上は登録されましたが、在庫に反映できなかった商品があります。</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  {qrFlow.inventoryWarnings.map((warning, index) => (
+                    <li key={`${warning.itemName}-${index}`}>
+                      {warning.itemName}：{warning.message}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2">在庫数と、商品管理の「売上明細の項目」を確認してください。</p>
+              </div>
+            )}
             <button onClick={handleQrDone} className="w-full py-4 bg-moss-green text-white text-lg font-medium rounded-md hover:bg-moss-green/90">
               新しい会計を開始
             </button>
@@ -1783,6 +1809,16 @@ function SummaryTab({
                       <p className="text-xs text-red-600 font-medium mt-0.5">
                         割引: −¥{(charge.discountAmount || 0).toLocaleString()}（小計 ¥{(charge.subtotal || 0).toLocaleString()}）
                       </p>
+                    )}
+                    {!!charge.inventoryWarnings?.length && (
+                      <div className="mt-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        <p className="font-bold">在庫に反映できなかった商品があります</p>
+                        {charge.inventoryWarnings.map((warning, index) => (
+                          <p key={`${warning.itemName}-${index}`} className="mt-1">
+                            ・{warning.itemName}：{warning.message}
+                          </p>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="text-right shrink-0">

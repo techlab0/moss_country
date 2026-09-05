@@ -16,7 +16,11 @@ export async function GET(
 
     const { id } = await params;
     const charge = await writeClient.fetch(
-      `*[_id == $id][0]{ _id, amount, description, status, createdAt, paidAt, lineItems[]{ name, quantity, amount } }`,
+      `*[_id == $id][0]{
+        _id, amount, description, status, createdAt, paidAt, inventoryProcessed,
+        inventoryWarnings[]{ itemName, message },
+        lineItems[]{ name, quantity, amount }
+      }`,
       { id }
     );
 

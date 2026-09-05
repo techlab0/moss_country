@@ -153,6 +153,7 @@ export async function GET(
       writeClient.fetch(
         `*[_type == "inStoreCharge" && createdAt >= $start && createdAt < $end] | order(createdAt desc) {
           _id, amount, subtotal, discountAmount, description, status, createdAt, paidAt, visitorCount, method,
+          inventoryProcessed, inventoryWarnings[]{ itemName, message },
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { start, end }

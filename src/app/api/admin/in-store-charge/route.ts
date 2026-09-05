@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       lineItems,
       method: mode,
       status: 'pending',
+      inventoryProcessed: false,
+      inventoryWarnings: [],
       createdAt: new Date().toISOString(),
     });
 

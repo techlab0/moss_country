@@ -239,7 +239,11 @@ export class InventoryService {
    * 減らせる分だけ減らして0で止める（マイナス在庫はストアフロントの在庫判定を壊すため）。
    * データのずれは月末の棚卸しで目視調整する運用。
    */
-  static async recordStoreSale(productId: string, quantity: number, reason: string): Promise<boolean> {
+  static async recordStoreSale(
+    productId: string,
+    quantity: number,
+    reason: string
+  ): Promise<{ requested: number; applied: number; error?: boolean }> {
     try {
       const product = await client.fetch(
         `*[_type == "product" && _id == $productId][0]{ stockQuantity }`,
@@ -249,7 +253,7 @@ export class InventoryService {
       const applied = Math.min(quantity, currentStock);
       if (applied <= 0) {
         console.warn(`店頭販売の在庫引き落としをスキップ: ${productId} - 在庫が0のため`);
-        return false;
+        return { requested: quantity, applied: 0 };
       }
 
       await client
@@ -266,10 +270,10 @@ export class InventoryService {
         reason,
       });
 
-      return true;
+      return { requested: quantity, applied };
     } catch (error) {
       console.error('店頭販売の在庫引き落としエラー:', error);
-      return false;
+      return { requested: quantity, applied: 0, error: true };
     }
   }
 

@@ -65,19 +65,31 @@ test('在庫管理画面は管理APIの実データと変更理由を使い、�
 });
 
 test('店頭売上で在庫連動できない商品を管理画面へ警告する', async () => {
-  const [inventoryLink, transactionRoute, transactionEditRoute, salesPage] = await Promise.all([
+  const [inventoryService, inventoryLink, transactionRoute, transactionEditRoute, chargeRoute, paypayStatus, squareWebhook, posCallback, salesPage] = await Promise.all([
+    source('src/lib/inventory.ts'),
     source('src/lib/storeInventory.ts'),
     source('src/app/api/admin/transactions/route.ts'),
     source('src/app/api/admin/transactions/[id]/route.ts'),
+    source('src/app/api/admin/in-store-charge/[id]/route.ts'),
+    source('src/app/api/admin/in-store-charge/[id]/paypay-status/route.ts'),
+    source('src/app/api/webhooks/square/route.ts'),
+    source('src/app/api/pos/callback/route.ts'),
     source('src/app/admin/sales/page.tsx'),
   ]);
 
+  assert.match(inventoryService, /requested: number; applied: number/);
   assert.match(inventoryLink, /StoreInventoryResult/);
   assert.match(inventoryLink, /売上項目に紐づく商品が設定されていません/);
   assert.match(inventoryLink, /同じ売上項目に商品が.*紐づいているため/);
-  assert.match(inventoryLink, /if \(applied\)/);
+  assert.match(inventoryLink, /result\.applied < result\.requested/);
+  assert.match(inventoryLink, /在庫不足でした/);
   assert.match(transactionRoute, /inventoryWarnings/);
   assert.match(transactionEditRoute, /inventoryWarnings/);
+  assert.match(chargeRoute, /inventoryWarnings/);
+  assert.match(paypayStatus, /storeInventoryResultFields/);
+  assert.match(squareWebhook, /storeInventoryResultFields/);
+  assert.match(posCallback, /storeInventoryResultFields/);
   assert.match(salesPage, /在庫に反映されませんでした/);
+  assert.match(salesPage, /在庫に反映できなかった商品があります/);
   assert.match(salesPage, /商品管理の「売上明細の項目」を確認してください/);
 });

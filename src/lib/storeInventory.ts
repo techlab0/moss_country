@@ -37,6 +37,25 @@ export interface StoreInventoryResult {
   warnings: StoreInventoryWarning[];
 }
 
+/** inStoreChargeへ保存できるSanity形式に変換する */
+export function storeInventoryResultFields(result: StoreInventoryResult) {
+  return {
+    inventoryProcessed: true,
+    inventoryWarnings: result.warnings.map((warning, index) => ({
+      _key: `inventory-warning-${index}`,
+      itemName: warning.itemName,
+      message: warning.message,
+    })),
+  };
+}
+
+export function storeInventoryFailureFields() {
+  return storeInventoryResultFields({
+    updated: [],
+    warnings: [{ itemName: '販売商品', message: '在庫更新処理でエラーが発生しました' }],
+  });
+}
+
 function lineSalesItemId(line: StoreInventoryLine): string | undefined {
   return line.salesItemId || line.salesItem?._ref || undefined;
 }
@@ -111,17 +130,23 @@ export async function applyStoreSaleInventory(
   const { targets, warnings } = await resolveTargets(lines);
   const updated: StoreInventoryResult['updated'] = [];
   for (const target of targets) {
-    const applied = await InventoryService.recordStoreSale(
+    const result = await InventoryService.recordStoreSale(
       target.productId,
       target.quantity,
       `店頭販売 - ${target.productName} ${target.quantity}個（${reasonLabel}）`
     );
-    if (applied) {
-      updated.push(target);
-    } else {
+    if (result.applied > 0) {
+      updated.push({ ...target, quantity: result.applied });
+    }
+    if (result.applied < result.requested) {
+      const shortage = result.requested - result.applied;
       warnings.push({
         itemName: target.productName,
-        message: '在庫が0、または在庫更新処理に失敗したため反映されませんでした',
+        message: result.error
+          ? '在庫更新処理でエラーが発生したため反映されませんでした'
+          : result.applied === 0
+            ? `販売数${result.requested}個を反映できませんでした（現在庫0個）`
+            : `販売数${result.requested}個のうち${result.applied}個だけ反映され、${shortage}個は在庫不足でした`,
       });
     }
   }

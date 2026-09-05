@@ -135,6 +135,24 @@ export const inStoreCharge = defineType({
     }),
     defineField({ name: 'createdAt', title: '作成日時', type: 'datetime' }),
     defineField({ name: 'paidAt', title: '支払い日時', type: 'datetime' }),
+    defineField({
+      name: 'inventoryProcessed',
+      title: '在庫反映処理済み',
+      type: 'boolean',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'inventoryWarnings',
+      title: '在庫反映の警告',
+      type: 'array',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'itemName', title: '商品名', type: 'string' }),
+          defineField({ name: 'message', title: '内容', type: 'string' }),
+        ],
+      }],
+    }),
   ],
   preview: {
     select: { title: 'amount', subtitle: 'status' },

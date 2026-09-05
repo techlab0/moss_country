@@ -3,7 +3,13 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { getQrPaymentStatus } from '@/lib/paypay';
 import { syncChargeToSheetById } from '@/lib/salesBackup';
-import { applyStoreSaleInventory, type StoreInventoryLine } from '@/lib/storeInventory';
+import {
+  applyStoreSaleInventory,
+  storeInventoryFailureFields,
+  storeInventoryResultFields,
+  type StoreInventoryLine,
+  type StoreInventoryWarning,
+} from '@/lib/storeInventory';
 
 // PayPay動的QR決済の状況を確定させるための明示ポーリングエンドポイント。
 // Squareのwebhook（/api/webhooks/square）に相当する仕組みがPayPayには無いため、
@@ -24,10 +30,13 @@ export async function GET(
       status: string;
       paypayMerchantPaymentId?: string;
       lineItems?: StoreInventoryLine[];
+      inventoryProcessed?: boolean;
+      inventoryWarnings?: StoreInventoryWarning[];
     } | null = await writeClient.fetch(
       `*[_type == "inStoreCharge" && _id == $id][0]{
-        _id, status, paypayMerchantPaymentId,
-        lineItems[]{ quantity, "salesItemId": salesItem._ref }
+        _id, status, paypayMerchantPaymentId, inventoryProcessed,
+        inventoryWarnings[]{ itemName, message },
+        lineItems[]{ name, quantity, "salesItemId": salesItem._ref }
       }`,
       { id }
     );
@@ -38,7 +47,11 @@ export async function GET(
 
     // 既に確定済みなら再度PayPayへ問い合わせず、そのまま返す（冪等）
     if (charge.status !== 'pending') {
-      return NextResponse.json({ status: charge.status });
+      return NextResponse.json({
+        status: charge.status,
+        inventoryProcessed: charge.inventoryProcessed,
+        inventoryWarnings: charge.inventoryWarnings || [],
+      });
     }
 
     if (!charge.paypayMerchantPaymentId) {
@@ -55,9 +68,14 @@ export async function GET(
       // EC商品が紐づく明細の在庫を引き落とす。ここへ来るのは status が pending の場合だけなので
       // 二重に引き落とされることはない。失敗しても決済確定は覆さない。
       try {
-        await applyStoreSaleInventory(charge.lineItems || [], `店頭QR決済 ${id}`);
+        const inventoryResult = await applyStoreSaleInventory(charge.lineItems || [], `店頭QR決済 ${id}`);
+        await writeClient.patch(id).set(storeInventoryResultFields(inventoryResult)).commit();
+        charge.inventoryWarnings = inventoryResult.warnings;
       } catch (inventoryError) {
         console.error('店頭QR決済の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
+        const failureFields = storeInventoryFailureFields();
+        await writeClient.patch(id).set(failureFields).commit();
+        charge.inventoryWarnings = failureFields.inventoryWarnings;
       }
 
       // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
@@ -67,7 +85,11 @@ export async function GET(
       } catch {
         // syncChargeToSheetById内部で既にログ済みのため、ここでは握りつぶすのみ
       }
-      return NextResponse.json({ status: 'paid' });
+      return NextResponse.json({
+        status: 'paid',
+        inventoryProcessed: true,
+        inventoryWarnings: charge.inventoryWarnings || [],
+      });
     }
 
     if (result.status === 'FAILED' || result.status === 'CANCELED' || result.status === 'EXPIRED') {

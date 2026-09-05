@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { getPaymentByPosTransactionId, convertToSquareAmount } from '@/lib/square';
 import { syncChargeToSheetById } from '@/lib/salesBackup';
-import { applyStoreSaleInventory } from '@/lib/storeInventory';
+import { applyStoreSaleInventory, storeInventoryFailureFields, storeInventoryResultFields } from '@/lib/storeInventory';
 
 // Square POS API（square-commerce-v1:// ディープリンク）の callback_url。
 // 決済後、Square POSアプリがこのURLを開いて結果（transaction_id, status, state）を返す。
@@ -69,7 +69,7 @@ async function handle(request: NextRequest): Promise<NextResponse> {
   const charge = await writeClient.fetch(
     `*[_id == $id && _type == "inStoreCharge"][0]{
       _id, amount, status, method,
-      lineItems[]{ quantity, "salesItemId": salesItem._ref }
+      lineItems[]{ name, quantity, "salesItemId": salesItem._ref }
     }`,
     { id: chargeId }
   );
@@ -119,9 +119,11 @@ async function handle(request: NextRequest): Promise<NextResponse> {
 
     // EC商品が紐づく明細の在庫を引き落とす。失敗しても決済確定は覆さない。
     try {
-      await applyStoreSaleInventory(charge.lineItems || [], `店頭タッチ決済 ${chargeId}`);
+      const inventoryResult = await applyStoreSaleInventory(charge.lineItems || [], `店頭タッチ決済 ${chargeId}`);
+      await writeClient.patch(chargeId).set(storeInventoryResultFields(inventoryResult)).commit();
     } catch (inventoryError) {
       console.error('店頭タッチ決済の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
+      await writeClient.patch(chargeId).set(storeInventoryFailureFields()).commit();
     }
 
     // バックアップ用Googleスプレッドシート同期（await-and-swallow。Cronの保険が無いため
