@@ -30,8 +30,12 @@ export const Header: React.FC = () => {
   }, []);
 
   const navigation = links
-    .filter(link => isNavLinkVisible(link, maintenancePages))
+    // 商品は右上の固定タブとして表示するため、通常ナビ内では重複させない
+    .filter(link => link.href !== '/shop' && isNavLinkVisible(link, maintenancePages))
     .map(link => ({ name: link.label, href: link.href }));
+  const savedShopLink = links.find(link => link.href === '/shop');
+  const shopLink = savedShopLink || { label: '商品', href: '/shop', isVisible: true };
+  const showShopLink = isNavLinkVisible(shopLink, maintenancePages);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -61,6 +65,14 @@ export const Header: React.FC = () => {
 
           {/* Cart Icon + Mobile menu button（カートはスマホでもハンバーガーの左に常時表示する） */}
           <div className="flex items-center">
+            {showShopLink && (
+              <Link
+                href="/shop"
+                className="mr-1 rounded-md px-3 py-2 text-sm font-bold text-moss-green hover:bg-moss-green/10 transition-colors duration-200 sm:text-base"
+              >
+                商品
+              </Link>
+            )}
             <Link href="/cart" className="relative p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-700 hover:text-moss-green transition-colors duration-200">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 2.4M17 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
