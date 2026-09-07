@@ -96,6 +96,18 @@ test('ブログの新規作成と編集でアイキャッチ画像を変更で�
   assert.ok(editPage.includes('featuredImage: formData.featuredImage ?? null'), '画像削除を記事保存へ反映する');
 });
 
+test('ブログ編集で既存本文を取得し、本文欠損時は概要を表示する', async () => {
+  const sanity = await readFile(resolve(projectRoot, 'src/lib/sanity.ts'), 'utf8');
+  const detailPage = await readFile(resolve(projectRoot, 'src/app/blog/[slug]/page.tsx'), 'utf8');
+  const adminQueryStart = sanity.indexOf('export async function getAllBlogPosts');
+  const adminQueryEnd = sanity.indexOf('export async function createBlogPost', adminQueryStart);
+
+  assert.ok(adminQueryStart >= 0 && adminQueryEnd > adminQueryStart, '管理画面の記事取得処理が必要');
+  assert.ok(sanity.slice(adminQueryStart, adminQueryEnd).includes('content,'), '編集時に既存本文を取得する');
+  assert.ok(detailPage.includes('const hasBody = Array.isArray(post.content)'), '本文の有無を判定する');
+  assert.ok(detailPage.includes('{post.excerpt}'), '本文が空なら概要文を救済表示する');
+});
+
 test('クラフトモスレンタルを編集でき、表示・非表示を切り替えられる', async () => {
   const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
   const settings = await readFile(resolve(projectRoot, 'src/lib/siteSettingsDefaults.ts'), 'utf8');

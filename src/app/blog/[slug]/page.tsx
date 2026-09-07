@@ -20,6 +20,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound()
   }
 
+  const hasBody = Array.isArray(post.content) && post.content.length > 0
+
   return (
     <div 
       className="min-h-screen py-8 site-page-tone"
@@ -73,7 +75,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">
             <div className="prose prose-lg max-w-none">
-              {post.content && (
+              {hasBody ? (
                 <PortableText
                 value={post.content}
                 components={{
@@ -107,6 +109,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   },
                 }}
                 />
+              ) : post.excerpt ? (
+                <p className="mb-4 leading-relaxed whitespace-pre-line text-gray-700">{post.excerpt}</p>
+              ) : (
+                <p className="text-gray-500">本文は現在準備中です。</p>
               )}
             </div>
           </div>

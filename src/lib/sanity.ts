@@ -293,6 +293,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
         title,
         slug,
         excerpt,
+        content,
         featuredImage,
         category,
         tags,
