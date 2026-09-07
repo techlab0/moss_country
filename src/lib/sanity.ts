@@ -310,6 +310,32 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   }
 }
 
+// 管理画面の記事編集用。CDNキャッシュを介さず、本文を含む最新の1件を取得する。
+export async function getBlogPostById(id: string): Promise<BlogPost | null> {
+  try {
+    return await writeClient.fetch(
+      `*[_type == "blogPost" && _id == $id][0] {
+        _id,
+        _type,
+        title,
+        slug,
+        excerpt,
+        content,
+        featuredImage,
+        category,
+        tags,
+        publishedAt,
+        isPublished,
+        author
+      }`,
+      { id }
+    )
+  } catch (error) {
+    console.warn(`Failed to fetch blog post from Sanity (id: ${id}):`, error)
+    return null
+  }
+}
+
 export async function createBlogPost(data: Partial<BlogPost>): Promise<BlogPost> {
   const doc = {
     _type: 'blogPost',

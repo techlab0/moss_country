@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateBlogPost, deleteBlogPost } from '@/lib/sanity';
+import { getBlogPostById, updateBlogPost, deleteBlogPost } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await verifyAdminSession(request);
+    if (!session) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const post = await getBlogPostById(id);
+    if (!post) {
+      return NextResponse.json({ error: '記事が見つかりません' }, { status: 404 });
+    }
+
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error('Failed to fetch blog post:', error);
+    return NextResponse.json({ error: '記事の取得に失敗しました' }, { status: 500 });
+  }
+}
 
 export async function PATCH(
   request: NextRequest,

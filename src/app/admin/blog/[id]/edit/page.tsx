@@ -54,6 +54,7 @@ export default function EditBlogPostPage() {
   const [slugError, setSlugError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [featuredImagePreview, setFeaturedImagePreview] = useState('');
+  const [contentChanged, setContentChanged] = useState(false);
 
   const categories = [
     { value: 'news', label: 'お知らせ' },
@@ -66,16 +67,11 @@ export default function EditBlogPostPage() {
 
   const fetchPost = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/blog');
+      const response = await fetch(`/api/admin/blog/${postId}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch posts');
+        throw new Error('記事の取得に失敗しました');
       }
-      const posts: BlogPost[] = await response.json();
-      const post = posts.find(p => p._id === postId);
-      
-      if (!post) {
-        throw new Error('Post not found');
-      }
+      const post: BlogPost = await response.json();
 
       setOriginalPost(post);
       
@@ -103,6 +99,7 @@ export default function EditBlogPostPage() {
         featuredImage: post.featuredImage as SanityImageRef | undefined,
       });
       setFeaturedImagePreview(post.featuredImage ? urlFor(post.featuredImage).width(800).height(450).url() : '');
+      setContentChanged(false);
       
       setLoading(false);
     } catch (err) {
@@ -124,6 +121,10 @@ export default function EditBlogPostPage() {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
+
+      if (name === 'content') {
+        setContentChanged(true);
+      }
       
       // スラッグが変更された場合はエラーをクリア
       if (name === 'slug') {
@@ -221,6 +222,14 @@ export default function EditBlogPostPage() {
         throw new Error('スラッグの重複エラーを解決してください');
       }
 
+      if (contentChanged && !formData.content.trim()) {
+        const confirmed = window.confirm('本文が空です。既存の本文を削除して保存しますか？');
+        if (!confirmed) {
+          setSaving(false);
+          return;
+        }
+      }
+
       const updatePayload = {
         title: formData.title,
         slug: {
@@ -232,21 +241,23 @@ export default function EditBlogPostPage() {
         tags: formData.tags,
         isPublished: formData.isPublished,
         featuredImage: formData.featuredImage ?? null,
-        // 簡単なマークダウンをSanityのblock形式に変換
-        content: formData.content.split('\n\n').filter(p => p.trim()).map((paragraph, index) => ({
-          _type: 'block',
-          _key: `block-${index}`,
-          style: 'normal',
-          markDefs: [],
-          children: [
-            {
-              _type: 'span',
-              _key: `span-${index}`,
-              text: paragraph,
-              marks: [],
-            },
-          ],
-        })),
+        // 本文欄を変更していない場合は送信せず、Sanity上の既存本文を保持する。
+        ...(contentChanged ? {
+          content: formData.content.split('\n\n').filter(p => p.trim()).map((paragraph, index) => ({
+            _type: 'block',
+            _key: `block-${index}`,
+            style: 'normal',
+            markDefs: [],
+            children: [
+              {
+                _type: 'span',
+                _key: `span-${index}`,
+                text: paragraph,
+                marks: [],
+              },
+            ],
+          })),
+        } : {}),
         publishedAt: formData.isPublished && !originalPost?.isPublished 
           ? new Date().toISOString() 
           : originalPost?.publishedAt,

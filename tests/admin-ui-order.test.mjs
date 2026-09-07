@@ -99,11 +99,18 @@ test('ブログの新規作成と編集でアイキャッチ画像を変更で�
 test('ブログ編集で既存本文を取得し、本文欠損時は概要を表示する', async () => {
   const sanity = await readFile(resolve(projectRoot, 'src/lib/sanity.ts'), 'utf8');
   const detailPage = await readFile(resolve(projectRoot, 'src/app/blog/[slug]/page.tsx'), 'utf8');
+  const editPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/[id]/edit/page.tsx'), 'utf8');
+  const adminDetailApi = await readFile(resolve(projectRoot, 'src/app/api/admin/blog/[id]/route.ts'), 'utf8');
   const adminQueryStart = sanity.indexOf('export async function getAllBlogPosts');
   const adminQueryEnd = sanity.indexOf('export async function createBlogPost', adminQueryStart);
 
   assert.ok(adminQueryStart >= 0 && adminQueryEnd > adminQueryStart, '管理画面の記事取得処理が必要');
   assert.ok(sanity.slice(adminQueryStart, adminQueryEnd).includes('content,'), '編集時に既存本文を取得する');
+  assert.ok(sanity.includes('export async function getBlogPostById'), '記事1件を最新状態で取得する');
+  assert.ok(adminDetailApi.includes('export async function GET'), '記事編集用の詳細取得APIが必要');
+  assert.ok(editPage.includes('`/api/admin/blog/${postId}`'), '編集画面では対象記事だけを取得する');
+  assert.ok(editPage.includes('...(contentChanged ? {'), '本文を変更した場合だけ本文を保存対象にする');
+  assert.ok(editPage.includes("window.confirm('本文が空です。"), '本文削除時は確認を表示する');
   assert.ok(detailPage.includes('const hasBody = Array.isArray(post.content)'), '本文の有無を判定する');
   assert.ok(detailPage.includes('{post.excerpt}'), '本文が空なら概要文を救済表示する');
 });
