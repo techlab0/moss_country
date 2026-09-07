@@ -56,13 +56,14 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(dedicatedPage.includes("redirect('/admin/pages?page=mobileWorkshop')"), '専用画面は出張ワークショップ編集へ転送する');
 });
 
-test('ヘッダー右上に商品ページへの固定タブを表示する', async () => {
+test('ヘッダーの商品タブをホームの直後に表示する', async () => {
   const header = await readFile(resolve(projectRoot, 'src/components/layout/Header.tsx'), 'utf8');
 
   assert.ok(header.includes("savedShopLink = links.find(link => link.href === '/shop')"), '保存済みの商品リンク設定を引き継ぐ');
-  assert.ok(header.includes("href=\"/shop\""), '右上の商品タブは商品一覧へ移動する');
-  assert.ok(header.includes("link.href !== '/shop'"), '通常ナビの商品リンクと重複させない');
-  assert.ok(header.includes('showShopLink &&'), '準備中・非表示設定を商品タブにも反映する');
+  assert.ok(header.includes("homeIndex = navigation.findIndex(link => link.href === '/')"), 'ホームの位置を基準にする');
+  assert.ok(header.includes('homeIndex + 1'), '商品タブをホームの直後に挿入する');
+  assert.ok(header.includes("href: '/shop'"), '商品タブは商品一覧へ移動する');
+  assert.ok(header.includes("link.href !== '/shop'"), '保存済みの商品リンクと重複させない');
 });
 
 test('レンタルテラリウムをページ編集の対象として公開ページに反映する', async () => {
