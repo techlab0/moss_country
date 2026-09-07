@@ -27,7 +27,8 @@ export default defineType({
           { title: '予約', value: 'reserve' },
           { title: '予約解放', value: 'release' },
           { title: '購入確定', value: 'purchase' },
-          { title: '在庫補充', value: 'restock' }
+          { title: '在庫補充', value: 'restock' },
+          { title: '手動調整', value: 'adjustment' }
         ]
       },
       validation: (rule) => rule.required()
@@ -41,6 +42,16 @@ export default defineType({
       name: 'reason',
       title: '変更理由',
       type: 'string'
+    },
+    {
+      name: 'previousStock',
+      title: '変更前在庫数',
+      type: 'number'
+    },
+    {
+      name: 'newStock',
+      title: '変更後在庫数',
+      type: 'number'
     },
     {
       name: 'timestamp',
@@ -80,7 +91,8 @@ export default defineType({
         reserve: '予約',
         release: '解放',
         purchase: '購入',
-        restock: '補充'
+        restock: '補充',
+        adjustment: '手動調整'
       };
       
       return {
