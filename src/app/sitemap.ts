@@ -96,8 +96,11 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
 
   // Get blog posts with individual error handling
   try {
+    // ドキュメント型は blogPost。以前は存在しない "post" を指定していたため、
+    // ブログ記事が1件もサイトマップに載っていなかった。
+    // 未公開の下書きを載せないよう、公開ページと同じ isPublished の条件も合わせる。
     const blogPosts = await client.fetch(`
-      *[_type == "post" && defined(slug.current)] {
+      *[_type == "blogPost" && isPublished == true && defined(slug.current)] {
         slug,
         publishedAt,
         _updatedAt
