@@ -13,6 +13,7 @@ import {
   pickSearchConsoleSite,
   toMetricChange,
   toRankedRows,
+  validateGa4PropertyId,
   type Ga4Summary,
   type SearchConsoleSummary,
 } from './analyticsSummary';
@@ -52,7 +53,7 @@ function hasServiceAccount(): boolean {
 }
 
 export function isGa4Configured(): boolean {
-  return hasServiceAccount() && !!process.env.GA4_PROPERTY_ID;
+  return hasServiceAccount() && validateGa4PropertyId(process.env.GA4_PROPERTY_ID).ok;
 }
 
 export function isSearchConsoleConfigured(): boolean {
@@ -89,21 +90,24 @@ function describeGoogleError(error: unknown, serviceLabel: string): string {
 }
 
 async function fetchGa4(): Promise<AnalyticsSection<Ga4Summary>> {
-  if (!isGa4Configured()) {
+  if (!hasServiceAccount()) {
     return {
       status: 'not_configured',
       data: null,
-      message: hasServiceAccount()
-        ? '環境変数 GA4_PROPERTY_ID が未設定です。'
-        : 'Googleサービスアカウントの環境変数が未設定です。',
+      message: 'Googleサービスアカウントの環境変数が未設定です。',
     };
+  }
+
+  const propertyId = validateGa4PropertyId(process.env.GA4_PROPERTY_ID);
+  if (!propertyId.ok) {
+    return { status: 'not_configured', data: null, message: propertyId.reason };
   }
 
   try {
     const { google } = await import('googleapis');
     const auth = await createAuth(['https://www.googleapis.com/auth/analytics.readonly']);
     const analyticsdata = google.analyticsdata({ version: 'v1beta', auth });
-    const property = `properties/${process.env.GA4_PROPERTY_ID}`;
+    const property = `properties/${propertyId.propertyId}`;
     const ranges = buildDateRanges(SUMMARY_DAYS, new Date());
 
     // 合計値は当期間と前期間をまとめて1リクエストで取り、API呼び出し回数を抑える

@@ -9,7 +9,8 @@ import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const moduleUrl = pathToFileURL(resolve('src/lib/analyticsSummary.ts')).href;
-const { toMetricChange, toRankedRows, buildDateRanges, pickSearchConsoleSite } = await import(moduleUrl);
+const { toMetricChange, toRankedRows, buildDateRanges, pickSearchConsoleSite, validateGa4PropertyId } =
+  await import(moduleUrl);
 
 test('前期間比の変化率を求める', () => {
   assert.equal(toMetricChange(150, 100).changePercent, 50);
@@ -95,4 +96,24 @@ test('環境変数で明示されたサイトURLを最優先する', () => {
   );
   // 空文字は「未設定」として扱い、自動解決に任せる
   assert.equal(pickSearchConsoleSite(sites, 'mosscountry.com', '  '), 'sc-domain:mosscountry.com');
+});
+
+test('GA4のプロパティIDは数字のみを受け付ける', () => {
+  assert.deepEqual(validateGa4PropertyId('123456789'), { ok: true, propertyId: '123456789' });
+  assert.deepEqual(validateGa4PropertyId('  123456789  '), { ok: true, propertyId: '123456789' });
+});
+
+test('測定IDを設定した場合は取り違えと分かる理由を返す', () => {
+  // GTMなどで目にする G-XXXXXXXXXX を貼ってしまうのがよくある間違い
+  const result = validateGa4PropertyId('G-ABC1234567');
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /測定ID/);
+});
+
+test('未設定や不正な値は連携なしとして扱う', () => {
+  assert.equal(validateGa4PropertyId('').ok, false);
+  assert.equal(validateGa4PropertyId('   ').ok, false);
+  assert.equal(validateGa4PropertyId(null).ok, false);
+  assert.equal(validateGa4PropertyId(undefined).ok, false);
+  assert.equal(validateGa4PropertyId('properties/123').ok, false);
 });

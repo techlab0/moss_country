@@ -135,3 +135,35 @@ export function pickSearchConsoleSite(
 
   return prefixMatch ?? null;
 }
+
+/**
+ * GA4_PROPERTY_ID に設定された値を検証する。
+ *
+ * プロパティIDは数字のみ（例: 123456789）だが、GTMなどで目にする測定ID
+ * （G-XXXXXXXXXX）と取り違えやすい。そのまま Data API に渡すと意味の分かりにくい
+ * エラーになるため、ここで区別して管理画面に理由を返せるようにする。
+ */
+export function validateGa4PropertyId(value: string | null | undefined):
+  | { ok: true; propertyId: string }
+  | { ok: false; reason: string } {
+  const trimmed = (value ?? '').trim();
+
+  if (trimmed === '') {
+    return { ok: false, reason: '環境変数 GA4_PROPERTY_ID が未設定です。' };
+  }
+  if (/^G-/i.test(trimmed)) {
+    return {
+      ok: false,
+      reason:
+        'GA4_PROPERTY_ID に測定ID（G-から始まる値）が設定されています。「管理 > プロパティの詳細」にある数字のみのプロパティIDを設定してください。',
+    };
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return {
+      ok: false,
+      reason: 'GA4_PROPERTY_ID は数字のみのプロパティIDを設定してください。',
+    };
+  }
+
+  return { ok: true, propertyId: trimmed };
+}
