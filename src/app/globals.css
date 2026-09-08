@@ -135,6 +135,11 @@ body.admin-layout [class*="modal"] {
 body.admin-layout label {
   color: var(--color-form-text);
 }
+/* labelをボタンとして使っている箇所（画像の選択など）は、上のフォーム用の文字色が
+   .text-white より詳細度が高く白文字を打ち消してしまうため、明示指定を優先させる。 */
+body.admin-layout label.text-white {
+  color: #ffffff;
+}
 /* iOSのSafariはフォーム部品のフォントサイズが16px未満だとフォーカス時に自動でズームしてしまう。
    管理画面はほとんどの入力欄がtext-sm(14px)以下のため、フォーカス中だけ16px以上に引き上げて防ぐ。 */
 body.admin-layout input:focus,
