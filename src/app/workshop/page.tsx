@@ -487,9 +487,9 @@ export default function WorkshopPage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.open('https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6', '_blank')}
+                onClick={() => window.location.href = '/workshop/booking'}
               >
-                じゃらんで予約する
+                予約する
               </Button>
               <Button 
                 variant="ghost" 
@@ -502,7 +502,7 @@ export default function WorkshopPage() {
             </div>
             <div className="mt-6">
               <p className="text-sm opacity-80">
-                ※予約詳細はじゃらんまたはお問い合わせフォームよりお願いします
+                ※予約詳細は予約ページまたはお問い合わせフォームよりお願いします
               </p>
             </div>
           </div>
