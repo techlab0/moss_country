@@ -76,6 +76,24 @@ export function isMaintenancePath(pathname: string, maintenancePages: string[]):
 }
 
 /**
+ * サイトマップ(sitemap.xml)にそのURLを載せてよいかどうか。
+ *
+ * 準備中のページは元のURLのまま準備中の内容を返すため、サイトマップに残したままだと
+ * 検索エンジンに「中身の無いページ」を積極的に案内してしまう。
+ * ヘッダー/フッターのリンクと同じ判定を使い、準備中の解除で自動的に復帰させる。
+ */
+export function isSitemapUrlVisible(url: string, maintenancePages: string[]): boolean {
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    // 相対パスがそのまま渡された場合もパスとして扱う
+    pathname = url.startsWith('/') ? url : `/${url}`;
+  }
+  return !isMaintenancePath(pathname, maintenancePages);
+}
+
+/**
  * ヘッダー/フッターに実際に表示するリンクかどうか。
  *
  * 準備中のページへのリンクは、保存された表示設定を書き換えずにその場で隠す。

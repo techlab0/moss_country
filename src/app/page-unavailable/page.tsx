@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 // ページ別メンテナンス（準備中）の表示。
 // 管理画面のサイト設定で指定されたページにアクセスすると、ミドルウェアがこのページにrewriteする。
+
+// rewriteでは元のURLのまま準備中の内容を返すため、サイト全体の設定でインデックスを
+// 許可していると、準備中の中身が検索結果に載ってしまう。ページ単位で必ずnoindexにする。
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
+};
 export default function PageUnavailablePage() {
   return (
     <div className="bg-stone-950 min-h-screen pt-20 flex items-center justify-center px-4">

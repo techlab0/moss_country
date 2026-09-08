@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const moduleUrl = pathToFileURL(resolve('src/lib/siteSettingsDefaults.ts')).href;
-const { isMaintenancePath, isNavLinkVisible, mergeSiteSettings } = await import(moduleUrl);
+const { isMaintenancePath, isNavLinkVisible, isSitemapUrlVisible, mergeSiteSettings } = await import(moduleUrl);
 
 test('準備中ページ本体とその配下をまとめて対象にする', () => {
   const pages = ['/shop'];
@@ -64,4 +64,23 @@ test('管理画面で設定済みならレンタルテラリウムを非表示�
     rentalTerrariumSitemapConfigured: true,
   });
   assert.equal(merged.footerSitemapLinks.some(link => link.href === '/rental-terrarium'), false);
+});
+
+test('準備中のページはサイトマップから外す', () => {
+  const pages = ['/shop'];
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/shop', pages), false);
+  // 配下の詳細ページも一緒に外す
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/shop/moss-terrarium-01', pages), false);
+});
+
+test('準備中でないページはサイトマップに残る', () => {
+  const pages = ['/shop'];
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/', pages), true);
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/workshop/mobile', pages), true);
+  // 名前が前方一致するだけの別ページを巻き込まない
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/shopping', pages), true);
+});
+
+test('準備中の指定が無ければ何も外さない', () => {
+  assert.equal(isSitemapUrlVisible('https://mosscountry.com/shop', []), true);
 });

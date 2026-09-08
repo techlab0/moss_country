@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
-import { client } from '@/lib/sanity'
+import { client, writeClient } from '@/lib/sanity'
+import { isSitemapUrlVisible, mergeSiteSettings } from '@/lib/siteSettingsDefaults'
 
 async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://mosscountry.com'
@@ -29,6 +30,12 @@ async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/workshop/mobile`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/store`,
@@ -157,9 +164,31 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
   return dynamicRoutes
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = await getStaticRoutes()
-  const dynamicRoutes = await getDynamicRoutes()
+// 準備中に指定されたページを除外するための設定取得。
+// 取得に失敗しても除外なしで通常のサイトマップを返す（サイトマップ自体を欠損させない）。
+async function getMaintenancePages(): Promise<string[]> {
+  try {
+    const saved = await writeClient.fetch(
+      `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages, craftMossRentalVisibilityConfigured }`,
+      {},
+      { next: { revalidate: 60, tags: ['maintenance'] } }
+    )
+    return mergeSiteSettings(saved).maintenancePages
+  } catch (error) {
+    console.warn('sitemap: 準備中ページの設定取得に失敗しました。除外なしで出力します:', error)
+    return []
+  }
+}
 
-  return [...staticRoutes, ...dynamicRoutes]
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [staticRoutes, dynamicRoutes, maintenancePages] = await Promise.all([
+    getStaticRoutes(),
+    getDynamicRoutes(),
+    getMaintenancePages(),
+  ])
+
+  // 準備中のページと、その配下の詳細ページ（例: /shop を準備中にしたときの /shop/商品）を除く
+  return [...staticRoutes, ...dynamicRoutes].filter((route) =>
+    isSitemapUrlVisible(route.url, maintenancePages)
+  )
 }
