@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
+import { imageObjectPosition } from '@/lib/imagePosition'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -62,11 +63,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {post.featuredImage && (
               <div className="aspect-video overflow-hidden rounded-lg mt-8 mb-8">
                 <Image
-                  src={urlFor(post.featuredImage).width(800).height(450).url()}
+                  src={urlFor(post.featuredImage).width(1200).url()}
                   alt={post.title}
                   width={800}
                   height={450}
                   className="w-full h-full object-cover"
+                  style={{ objectPosition: imageObjectPosition(post.featuredImage) }}
                 />
               </div>
             )}

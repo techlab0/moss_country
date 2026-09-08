@@ -42,6 +42,11 @@ import {
   isValidWorkshopIdempotencyKey,
   validateWorkshopCustomerInput,
 } from '@/lib/workshopBookingSafety';
+import {
+  defaultWorkshopEmailBody,
+  getWorkshopEmailSettings,
+  renderWorkshopEmailTemplate,
+} from '@/lib/workshopEmailSettings';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PAYMENT_METHODS: WorkshopBookingPaymentMethod[] = ['credit_card', 'on_site', 'paypay'];
@@ -167,54 +172,6 @@ async function cancelSquarePaymentByIdempotencyKey(idempotencyKey: string): Prom
     console.error('Square決済の成否不明状態を解消中に通信エラーが発生しました:', error);
     return false;
   }
-}
-
-function buildConfirmationEmailBody(params: {
-  bookingNumber: string;
-  planName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  partySize: number;
-  total: number;
-  paymentMethod: string;
-  paymentStatus: string;
-  customerName: string;
-}): string {
-  const paymentLabel =
-    params.paymentMethod === 'credit_card'
-      ? params.paymentStatus === 'paid'
-        ? 'クレジットカード（決済完了）'
-        : 'クレジットカード（決済処理中）'
-      : params.paymentMethod === 'paypay'
-        ? params.paymentStatus === 'paid'
-          ? 'PayPay（決済完了）'
-          : 'PayPay（お支払い手続き中）'
-        : '現地精算（当日店舗にてお支払いください）';
-
-  return [
-    `${params.customerName} 様`,
-    '',
-    'MOSS COUNTRY ワークショップのご予約を承りました。',
-    '',
-    `予約番号: ${params.bookingNumber}`,
-    `プラン: ${params.planName}`,
-    `日時: ${params.date} ${params.startTime}〜${params.endTime}`,
-    `人数: ${params.partySize}名`,
-    `金額: ¥${params.total.toLocaleString('ja-JP')}`,
-    `お支払い方法: ${paymentLabel}`,
-    '',
-    '【キャンセルポリシー】',
-    '2日前まで: 無料',
-    '前日: 参加費の30%',
-    '当日: 参加費の50%',
-    '体調不良・悪天候・交通機関の乱れなど、やむを得ない事情によるキャンセルはキャンセル料をいただきません。',
-    'お手数ですが、お早めにご連絡ください。',
-    '',
-    'ご不明な点がございましたら本メールへ返信にてお問い合わせください。',
-    '',
-    'MOSS COUNTRY',
-  ].join('\n');
 }
 
 function bookingMatchesRequest(
@@ -657,7 +614,7 @@ export async function POST(request: NextRequest) {
     // on_site は payment_status: 'pending' のまま（当日店頭で精算）。
 
     // ---- 確認メール送信（顧客・店舗。失敗しても例外を投げない sendMail のためtry不要） ----
-    const emailBody = buildConfirmationEmailBody({
+    const emailVariables = {
       bookingNumber,
       planName: plan.title,
       date,
@@ -668,7 +625,11 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       paymentStatus,
       customerName,
-    });
+    };
+    const defaultEmailBody = defaultWorkshopEmailBody(emailVariables);
+    const emailSettings = await getWorkshopEmailSettings();
+    const customerEmailSubject = renderWorkshopEmailTemplate(emailSettings.subject, emailVariables);
+    const customerEmailBody = renderWorkshopEmailTemplate(emailSettings.body, emailVariables);
     // じゃらんは在庫を外部から操作できず、満枠になってもACTIVITY BOARDでは売れ続ける。
     // 閉じ忘れるとオーバーブッキングになるため、店舗宛メールに対応の要否を添える。
     // 空き枠を確認できなくても予約自体は成立させる（メールの一文が減るだけ）。
@@ -685,15 +646,15 @@ export async function POST(request: NextRequest) {
 
     const storeEmailBody = jalanWarning ? `${jalanWarning}
 
-${emailBody}` : emailBody;
+${defaultEmailBody}` : defaultEmailBody;
 
     await Promise.all([
       sendMail({
         to: customerEmail,
         // MAIL_FROM が noreply 系でも返信が店舗に届くようにする
         replyTo: STORE_EMAIL,
-        subject: `【MOSS COUNTRY】ワークショップご予約確認（${bookingNumber}）`,
-        text: emailBody,
+        subject: customerEmailSubject,
+        text: customerEmailBody,
       }),
       sendMail({
         to: STORE_EMAIL,

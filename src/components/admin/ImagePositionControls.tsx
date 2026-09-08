@@ -1,13 +1,11 @@
 'use client';
 
+export { imageObjectPosition } from '@/lib/imagePosition';
+
 export interface PositionableSanityImage {
   _type: 'image';
   asset: object;
   hotspot?: { _type?: string; x?: number; y?: number; height?: number; width?: number };
-}
-
-export function imageObjectPosition(image?: PositionableSanityImage): string {
-  return `${Math.round((image?.hotspot?.x ?? 0.5) * 100)}% ${Math.round((image?.hotspot?.y ?? 0.5) * 100)}%`;
 }
 
 export function ImagePositionControls<T extends PositionableSanityImage>({

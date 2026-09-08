@@ -56,6 +56,23 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(dedicatedPage.includes("redirect('/admin/pages?page=mobileWorkshop')"), '専用画面は出張ワークショップ編集へ転送する');
 });
 
+test('ワークショップ予約の自動返信メールを管理画面から編集できる', async () => {
+  const adminPage = await readFile(resolve(projectRoot, 'src/app/admin/workshop-bookings/page.tsx'), 'utf8');
+  const settingsApi = await readFile(resolve(projectRoot, 'src/app/api/admin/workshop-email-settings/route.ts'), 'utf8');
+  const bookingApi = await readFile(resolve(projectRoot, 'src/app/api/workshop/book/route.ts'), 'utf8');
+  const settingsLib = await readFile(resolve(projectRoot, 'src/lib/workshopEmailSettings.ts'), 'utf8');
+
+  assert.ok(adminPage.includes("label: '自動返信メール'"), '予約管理に自動返信メールタブを表示する');
+  assert.ok(adminPage.includes("fetch('/api/admin/workshop-email-settings'"), '管理画面から設定APIを利用する');
+  assert.ok(settingsApi.includes('verifyAdminSession'), '設定APIは管理者認証を必須にする');
+  assert.ok(settingsApi.includes('件名と本文は必須です'), '空のメール設定を保存させない');
+  assert.ok(settingsLib.includes("WORKSHOP_EMAIL_SETTINGS_KEY = 'workshop_confirmation_email'"), '既存の設定ストアへ保存する');
+  assert.ok(settingsLib.includes("'{{bookingNumber}}'"), '予約情報の差し込み文字を用意する');
+  assert.ok(bookingApi.includes('customerEmailSubject'), '顧客メールへ編集した件名を反映する');
+  assert.ok(bookingApi.includes('customerEmailBody'), '顧客メールへ編集した本文を反映する');
+  assert.ok(bookingApi.includes('defaultEmailBody'), '店舗通知メールは既定の本文を維持する');
+});
+
 test('ヘッダーの商品タブをホームの直後に表示する', async () => {
   const header = await readFile(resolve(projectRoot, 'src/components/layout/Header.tsx'), 'utf8');
 
@@ -94,6 +111,19 @@ test('ブログの新規作成と編集でアイキャッチ画像を変更で�
     assert.ok(source.includes('画像を削除'), '画像を削除できる');
   }
   assert.ok(editPage.includes('featuredImage: formData.featuredImage ?? null'), '画像削除を記事保存へ反映する');
+});
+
+test('ブログのアイキャッチ画像へ管理画面で指定した表示位置を反映する', async () => {
+  const listPage = await readFile(resolve(projectRoot, 'src/app/blog/page.tsx'), 'utf8');
+  const detailPage = await readFile(resolve(projectRoot, 'src/app/blog/[slug]/page.tsx'), 'utf8');
+  const positionHelper = await readFile(resolve(projectRoot, 'src/lib/imagePosition.ts'), 'utf8');
+
+  for (const source of [listPage, detailPage]) {
+    assert.ok(source.includes('imageObjectPosition(post.featuredImage)'), '保存した画像位置を公開画像へ反映する');
+  }
+  assert.ok(!listPage.includes('.width(400).height(300)'), '一覧画像を表示前に固定比率で切り抜かない');
+  assert.ok(!detailPage.includes('.width(800).height(450)'), '詳細画像を表示前に固定比率で切り抜かない');
+  assert.ok(positionHelper.includes('Math.min(1, Math.max(0'), '画像位置を有効範囲内に制限する');
 });
 
 test('ブログ編集で既存本文を取得し、本文欠損時は概要を表示する', async () => {

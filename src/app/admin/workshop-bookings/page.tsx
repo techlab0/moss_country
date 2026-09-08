@@ -9,9 +9,9 @@ import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 // （営業日データは受付枠の受付可否を決める前提条件として参照する）。
 // これに加えて「Gmail連携」タブを持つ（予約通知メールの読み取り設定・調査用）。
 
-type TabKey = 'bookings' | 'slots' | 'plans' | 'calendar' | 'gmail';
+type TabKey = 'bookings' | 'slots' | 'plans' | 'calendar' | 'email' | 'gmail';
 
-const TAB_KEYS: TabKey[] = ['bookings', 'slots', 'plans', 'calendar', 'gmail'];
+const TAB_KEYS: TabKey[] = ['bookings', 'slots', 'plans', 'calendar', 'email', 'gmail'];
 
 // Gmail連携のOAuthコールバックは ?tab=gmail を付けて戻ってくるため、初期タブをURLから決める。
 // useSearchParams はSuspense境界を要求するので、ここでは初期化時に一度だけlocationを読む。
@@ -31,12 +31,13 @@ export default function WorkshopBookingsPage() {
       </div>
 
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex flex-wrap gap-x-8">
           {[
             { key: 'bookings' as const, label: '予約一覧' },
             { key: 'slots' as const, label: '受付枠設定' },
             { key: 'plans' as const, label: 'プラン設定' },
             { key: 'calendar' as const, label: 'Googleカレンダー' },
+            { key: 'email' as const, label: '自動返信メール' },
             { key: 'gmail' as const, label: 'Gmail連携' },
           ].map((tab) => (
             <button
@@ -58,6 +59,7 @@ export default function WorkshopBookingsPage() {
       {activeTab === 'slots' && <SlotSettingsTab />}
       {activeTab === 'plans' && <PlanSettingsTab />}
       {activeTab === 'calendar' && <GoogleCalendarTab />}
+      {activeTab === 'email' && <EmailSettingsTab />}
       {activeTab === 'gmail' && <GmailIntegrationTab />}
     </div>
   );
@@ -1172,6 +1174,150 @@ function SlotSettingsTab() {
             変更を破棄
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ===================== 自動返信メールタブ =====================
+
+interface EmailSettings {
+  subject: string;
+  body: string;
+}
+
+const EMAIL_PLACEHOLDERS = [
+  ['{{customerName}}', 'お客様名'],
+  ['{{bookingNumber}}', '予約番号'],
+  ['{{planName}}', 'プラン名'],
+  ['{{date}}', '予約日'],
+  ['{{startTime}}', '開始時刻'],
+  ['{{endTime}}', '終了時刻'],
+  ['{{partySize}}', '人数'],
+  ['{{total}}', '金額'],
+  ['{{paymentLabel}}', 'お支払い方法'],
+] as const;
+
+function EmailSettingsTab() {
+  const [settings, setSettings] = useState<EmailSettings>({ subject: '', body: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/admin/workshop-email-settings');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '設定の取得に失敗しました');
+      setSettings(data.settings);
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '設定の取得に失敗しました' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  const saveSettings = async () => {
+    if (!settings.subject.trim() || !settings.body.trim()) {
+      setNotice({ type: 'error', text: '件名と本文を入力してください。' });
+      return;
+    }
+    setSaving(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/admin/workshop-email-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '設定の保存に失敗しました');
+      setSettings(data.settings);
+      setNotice({ type: 'success', text: '自動返信メールを保存しました。次回の予約から反映されます。' });
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '設定の保存に失敗しました' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetSettings = async () => {
+    if (!confirm('自動返信メールを初期の文章へ戻しますか？')) return;
+    setSaving(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/admin/workshop-email-settings', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '初期設定へ戻せませんでした');
+      setSettings(data.settings);
+      setNotice({ type: 'success', text: '初期の文章へ戻しました。' });
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : '初期設定へ戻せませんでした' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="py-12 text-center text-gray-500">読み込み中...</div>;
+
+  return (
+    <div className="space-y-6">
+      {notice && (
+        <div className={`rounded-md border p-4 text-sm ${notice.type === 'success' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {notice.text}
+        </div>
+      )}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="text-xl font-bold text-gray-800">予約確認の自動返信メール</h2>
+        <p className="mt-2 text-sm text-gray-600">お客様がサイトから予約を完了した際に、自動で送信されるメールです。</p>
+
+        <label className="mt-6 block text-sm font-medium text-gray-700">
+          件名
+          <input
+            value={settings.subject}
+            maxLength={200}
+            onChange={(event) => setSettings((current) => ({ ...current, subject: event.target.value }))}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-moss-green focus:ring-moss-green"
+          />
+        </label>
+
+        <label className="mt-5 block text-sm font-medium text-gray-700">
+          本文
+          <textarea
+            value={settings.body}
+            rows={20}
+            maxLength={10000}
+            onChange={(event) => setSettings((current) => ({ ...current, body: event.target.value }))}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-moss-green focus:ring-moss-green"
+          />
+        </label>
+
+        <div className="mt-5 rounded-md bg-gray-50 p-4">
+          <p className="text-sm font-medium text-gray-700">予約内容を自動挿入する文字</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {EMAIL_PLACEHOLDERS.map(([placeholder, label]) => (
+              <span key={placeholder} className="rounded bg-white px-2 py-1 text-xs text-gray-700 ring-1 ring-gray-200">
+                <code>{placeholder}</code>：{label}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">上記の文字は送信時に実際の予約情報へ置き換わります。</p>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button onClick={saveSettings} disabled={saving} className="rounded-md bg-moss-green px-4 py-2 text-sm font-medium text-white hover:bg-moss-dark disabled:opacity-50">
+            {saving ? '保存中...' : '自動返信メールを保存'}
+          </button>
+          <button onClick={resetSettings} disabled={saving} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            初期の文章へ戻す
+          </button>
+        </div>
       </div>
     </div>
   );

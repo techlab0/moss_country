@@ -10,6 +10,7 @@ import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { imageObjectPosition } from '@/lib/imagePosition'
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -243,11 +244,12 @@ export default function BlogPage() {
                       {post.featuredImage ? (
                         <div className="h-48 md:h-full overflow-hidden">
                           <Image
-                            src={urlFor(post.featuredImage).width(400).height(300).url()}
+                            src={urlFor(post.featuredImage).width(800).url()}
                             alt={post.title}
                             width={400}
                             height={300}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            style={{ objectPosition: imageObjectPosition(post.featuredImage) }}
                           />
                         </div>
                       ) : (
