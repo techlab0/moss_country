@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import type { MetricChange, RankedRow } from '@/lib/analyticsSummary';
 import type { SiteAnalyticsSummary as Summary } from '@/lib/siteAnalytics';
@@ -131,26 +131,33 @@ function NotReady({
 export function SiteAnalyticsSummary() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/admin/analytics/summary');
-        if (!res.ok) throw new Error('アクセス解析の取得に失敗しました');
-        const data = await res.json();
-        if (!cancelled) setSummary(data.summary);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : '取得に失敗しました');
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async (refresh: boolean) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/analytics/summary${refresh ? '?refresh=1' : ''}`);
+      if (!res.ok) throw new Error('アクセス解析の取得に失敗しました');
+      const data = await res.json();
+      setSummary(data.summary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '取得に失敗しました');
+    }
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load(false);
+      setIsLoading(false);
+    })();
+  }, [load]);
+
+  const refresh = async () => {
+    setIsRefreshing(true);
+    await load(true);
+    setIsRefreshing(false);
+  };
 
   if (isLoading) {
     return (
@@ -180,9 +187,20 @@ export function SiteAnalyticsSummary() {
     <div className="space-y-6">
       <div className="flex items-baseline justify-between flex-wrap gap-2">
         <h2 className="text-xl font-semibold text-gray-900">アクセス解析</h2>
-        <p className="text-sm text-gray-600">
-          過去{periodDays}日間（{range.startDate} 〜 {range.endDate}）・前の{periodDays}日間との比較
-        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-sm text-gray-600">
+            過去{periodDays}日間（{range.startDate} 〜 {range.endDate}）・前の{periodDays}日間との比較
+          </p>
+          {/* 取得結果は30分キャッシュされるため、Google側の設定直後に確認できる手段を用意する */}
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="text-sm px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {isRefreshing ? '更新中...' : '最新の状態に更新'}
+          </button>
+        </div>
       </div>
 
       <Card>

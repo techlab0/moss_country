@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { verifyAdminSession } from '@/lib/auth';
 import { getSiteAnalyticsSummary } from '@/lib/siteAnalytics';
 
@@ -9,6 +10,12 @@ export async function GET(request: NextRequest) {
   const session = await verifyAdminSession(request);
   if (!session) {
     return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  }
+
+  // 結果は30分キャッシュしているため、GoogleやVercel側の設定を変えた直後は
+  // 古い「未連携」の結果が返り続ける。?refresh=1 でキャッシュを破棄して取り直せるようにする。
+  if (request.nextUrl.searchParams.get('refresh') === '1') {
+    revalidateTag('site-analytics');
   }
 
   // 個々のサービスの失敗は summary の中で status として表現されるため、
