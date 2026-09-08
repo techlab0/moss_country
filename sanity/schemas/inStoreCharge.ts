@@ -153,6 +153,20 @@ export const inStoreCharge = defineType({
         ],
       }],
     }),
+    defineField({
+      name: 'inventoryApplied',
+      title: '実際に引き落とした在庫',
+      description: '在庫不足で一部しか引けない場合があるため、取消時に戻しすぎないよう実数を残す',
+      type: 'array',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'productId', title: '商品ID', type: 'string' }),
+          defineField({ name: 'productName', title: '商品名', type: 'string' }),
+          defineField({ name: 'quantity', title: '引き落とした数量', type: 'number' }),
+        ],
+      }],
+    }),
   ],
   preview: {
     select: { title: 'amount', subtitle: 'status' },

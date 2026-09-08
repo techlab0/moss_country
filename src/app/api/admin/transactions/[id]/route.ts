@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
-import { applyStoreSaleInventory, revertStoreSaleInventory, type StoreInventoryLine } from '@/lib/storeInventory';
+import {
+  applyStoreSaleInventory,
+  revertStoreSaleInventory,
+  storeInventoryResultFields,
+  type StoreInventoryAppliedLine,
+  type StoreInventoryLine,
+} from '@/lib/storeInventory';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
@@ -17,6 +23,7 @@ interface ExistingTransaction {
   discountValue?: number;
   // 在庫を戻すために、変更前の明細（売上項目と数量）も取得する
   lineItems?: StoreInventoryLine[];
+  inventoryApplied?: StoreInventoryAppliedLine[];
   source?: string;
 }
 
@@ -25,7 +32,8 @@ async function fetchExisting(id: string): Promise<ExistingTransaction | null> {
     `*[_type == "storeTransaction" && _id == $id][0]{
       _id, date, visitorCount, "itemCount": count(lineItems),
       subtotal, discountType, discountValue, source,
-      lineItems[]{ quantity, "salesItemId": salesItem._ref }
+      lineItems[]{ quantity, "salesItemId": salesItem._ref },
+      inventoryApplied[]{ productId, productName, quantity }
     }`,
     { id }
   );
@@ -109,9 +117,15 @@ export async function PATCH(
     // 過去分の一括入力（source: 'historical'）は登録時に在庫を動かしていないため対象外。
     if (lineItemsChanged && existing.source !== 'historical') {
       try {
-        await revertStoreSaleInventory(existing.lineItems || [], `店頭会計の修正 ${id}`);
+        await revertStoreSaleInventory(
+          existing.lineItems || [],
+          `店頭会計の修正 ${id}`,
+          existing.inventoryApplied ?? null
+        );
         const inventoryResult = await applyStoreSaleInventory((updates.lineItems as StoreInventoryLine[]) || [], `店頭会計の修正 ${id}`);
         inventoryWarnings = inventoryResult.warnings;
+        // 差し替え後に実際に引けた数量へ記録を更新する（次回の取消で戻しすぎないため）
+        await writeClient.patch(id).set(storeInventoryResultFields(inventoryResult)).commit();
       } catch (inventoryError) {
         console.error('店頭会計修正時の在庫調整に失敗しました（棚卸しで調整してください）:', inventoryError);
         inventoryWarnings = [{ itemName: '販売商品', message: '在庫更新処理でエラーが発生しました' }];
@@ -153,7 +167,11 @@ export async function DELETE(
     // 誤登録の取り消しなので、引き落とした在庫を戻す（過去分の一括入力は元々動かしていない）
     if (existing.source !== 'historical') {
       try {
-        await revertStoreSaleInventory(existing.lineItems || [], `店頭会計の削除 ${id}`);
+        await revertStoreSaleInventory(
+          existing.lineItems || [],
+          `店頭会計の削除 ${id}`,
+          existing.inventoryApplied ?? null
+        );
       } catch (inventoryError) {
         console.error('店頭会計削除時の在庫戻しに失敗しました（棚卸しで調整してください）:', inventoryError);
       }

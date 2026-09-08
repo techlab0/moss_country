@@ -93,3 +93,55 @@ test('店頭売上で在庫連動できない商品を管理画面へ警告す�
   assert.match(salesPage, /在庫に反映できなかった商品があります/);
   assert.match(salesPage, /商品管理の「売上明細の項目」を確認してください/);
 });
+
+test('店頭販売の取消は、実際に引き落とした数量だけを在庫へ戻す', async () => {
+  // 在庫不足のとき recordStoreSale は Math.min(要求数, 現在庫) しか引き落とせない。
+  // 取消時に要求数を戻すと差分が幻の在庫になり、オンラインで売り越す原因になる。
+  const storeInventory = await source('src/lib/storeInventory.ts');
+
+  assert.match(
+    storeInventory,
+    /export async function revertStoreSaleInventory\([\s\S]*?appliedLines\?: StoreInventoryAppliedLine\[\] \| null/,
+    'revertStoreSaleInventory は実際に引き落とした数量を受け取れること'
+  );
+  assert.match(
+    storeInventory,
+    /if \(appliedLines\) \{[\s\S]*?restockProduct\(/,
+    '記録がある場合はその数量で戻すこと'
+  );
+
+  // 実数は伝票に保存しないと取消時に参照できない
+  assert.match(storeInventory, /inventoryApplied: result\.updated\.map/);
+});
+
+test('取消・修正・削除のすべてで、保存済みの引き落とし実数を使う', async () => {
+  const [cancel, transactionById] = await Promise.all([
+    source('src/app/api/admin/in-store-charge/[id]/cancel/route.ts'),
+    source('src/app/api/admin/transactions/[id]/route.ts'),
+  ]);
+
+  // 返金
+  assert.match(cancel, /inventoryApplied\[\]\{ productId, productName, quantity \}/);
+  assert.match(cancel, /restoreChargeInventory\(charge\.lineItems, id, charge\.inventoryApplied \?\? null\)/);
+
+  // 修正・削除
+  assert.match(transactionById, /inventoryApplied\[\]\{ productId, productName, quantity \}/);
+  const revertCalls = transactionById.match(/revertStoreSaleInventory\(/g) || [];
+  assert.equal(revertCalls.length, 2, '修正と削除の2か所で在庫を戻すこと');
+  assert.equal(
+    (transactionById.match(/existing\.inventoryApplied \?\? null/g) || []).length,
+    2,
+    '2か所とも保存済みの実数を渡すこと'
+  );
+});
+
+test('引き落とし実数を保存する伝票側のスキーマがある', async () => {
+  const [charge, transaction] = await Promise.all([
+    source('sanity/schemas/inStoreCharge.ts'),
+    source('sanity/schemas/storeTransaction.ts'),
+  ]);
+  for (const schema of [charge, transaction]) {
+    assert.match(schema, /name: 'inventoryApplied'/);
+    assert.match(schema, /name: 'quantity', title: '引き落とした数量'/);
+  }
+});

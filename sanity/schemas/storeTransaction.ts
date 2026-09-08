@@ -66,6 +66,20 @@ export const storeTransaction = defineType({
     defineField({ name: 'total', title: '合計金額（割引後・実際に受け取った金額）', type: 'number' }),
     defineField({ name: 'notes', title: '備考（割引の理由など）', type: 'string' }),
     defineField({
+      name: 'inventoryApplied',
+      title: '実際に引き落とした在庫',
+      description: '在庫不足で一部しか引けない場合があるため、取消時に戻しすぎないよう実数を残す',
+      type: 'array',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'productId', title: '商品ID', type: 'string' }),
+          defineField({ name: 'productName', title: '商品名', type: 'string' }),
+          defineField({ name: 'quantity', title: '引き落とした数量', type: 'number' }),
+        ],
+      }],
+    }),
+    defineField({
       name: 'source',
       title: '登録元',
       type: 'string',

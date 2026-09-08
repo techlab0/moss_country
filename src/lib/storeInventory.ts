@@ -32,12 +32,18 @@ export interface StoreInventoryWarning {
   message: string;
 }
 
+export interface StoreInventoryAppliedLine {
+  productId: string;
+  productName: string;
+  quantity: number;
+}
+
 export interface StoreInventoryResult {
-  updated: Array<{ productId: string; productName: string; quantity: number }>;
+  updated: StoreInventoryAppliedLine[];
   warnings: StoreInventoryWarning[];
 }
 
-/** inStoreChargeへ保存できるSanity形式に変換する */
+/** inStoreCharge・storeTransactionへ保存できるSanity形式に変換する */
 export function storeInventoryResultFields(result: StoreInventoryResult) {
   return {
     inventoryProcessed: true,
@@ -45,6 +51,14 @@ export function storeInventoryResultFields(result: StoreInventoryResult) {
       _key: `inventory-warning-${index}`,
       itemName: warning.itemName,
       message: warning.message,
+    })),
+    // 在庫不足のときは要求数より少ない数しか引き落とせない。
+    // 取り消し時に要求数を戻すと在庫が水増しされるため、実際に引いた数を残しておく。
+    inventoryApplied: result.updated.map((line, index) => ({
+      _key: `inventory-applied-${index}`,
+      productId: line.productId,
+      productName: line.productName,
+      quantity: line.quantity,
     })),
   };
 }
@@ -153,11 +167,32 @@ export async function applyStoreSaleInventory(
   return { updated, warnings };
 }
 
-/** 取り消し・返金・修正時に、減らした在庫を戻す */
+/**
+ * 取り消し・返金・修正時に、減らした在庫を戻す。
+ *
+ * appliedLines には販売時に実際に引き落とせた数量を渡す。在庫不足で一部しか
+ * 引けなかった注文を取り消したときに、引いた数より多く戻して在庫を水増ししないため。
+ * appliedLines を記録していない過去の伝票では、明細から要求数を復元して戻す
+ * （従来の挙動。記録が無い以上これ以上正確にはできない）。
+ */
 export async function revertStoreSaleInventory(
   lines: StoreInventoryLine[],
-  reasonLabel: string
+  reasonLabel: string,
+  appliedLines?: StoreInventoryAppliedLine[] | null
 ): Promise<void> {
+  if (appliedLines) {
+    for (const line of appliedLines) {
+      const quantity = Math.floor(Math.max(0, line.quantity || 0));
+      if (!line.productId || quantity <= 0) continue;
+      await InventoryService.restockProduct(
+        line.productId,
+        quantity,
+        `店頭販売の取消 - ${line.productName} ${quantity}個（${reasonLabel}）`
+      );
+    }
+    return;
+  }
+
   const { targets } = await resolveTargets(lines);
   for (const target of targets) {
     await InventoryService.restockProduct(

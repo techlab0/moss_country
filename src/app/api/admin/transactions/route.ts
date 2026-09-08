@@ -3,7 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { DATE_PATTERN, todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
-import { applyStoreSaleInventory } from '@/lib/storeInventory';
+import { applyStoreSaleInventory, storeInventoryResultFields } from '@/lib/storeInventory';
 import { storeTransactionToTxRow } from '@/lib/salesBackup';
 import { upsertTransactionRow } from '@/lib/googleSheets';
 
@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
       try {
         const inventoryResult = await applyStoreSaleInventory(lineItems, `店頭会計 ${transaction._id}`);
         inventoryWarnings = inventoryResult.warnings;
+        // 取消・修正時に戻しすぎないよう、実際に引き落とせた数量を伝票に残す
+        await writeClient.patch(transaction._id).set(storeInventoryResultFields(inventoryResult)).commit();
       } catch (inventoryError) {
         console.error('店頭会計の在庫引き落としに失敗しました（棚卸しで調整してください）:', inventoryError);
         inventoryWarnings = [{ itemName: '販売商品', message: '在庫更新処理でエラーが発生しました' }];
