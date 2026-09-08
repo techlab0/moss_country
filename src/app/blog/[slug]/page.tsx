@@ -92,9 +92,31 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       </blockquote>
                     ),
                   },
+                  types: {
+                    // types を定義しないと本文中の画像ブロックは黙って描画されない
+                    image: ({ value }) => {
+                      let src: string
+                      try {
+                        // fit('max') は元画像より大きくしない。小さな画像を引き伸ばして
+                        // ぼやけさせたり、無駄に大きいファイルを配信したりしないため。
+                        src = urlFor(value).width(1200).fit('max').auto('format').url()
+                      } catch {
+                        return null
+                      }
+                      return (
+                        <img
+                          src={src}
+                          alt={value?.alt || ''}
+                          className="max-w-full h-auto rounded-lg my-6"
+                        />
+                      )
+                    },
+                  },
                   marks: {
                     strong: ({ children }) => <strong className="font-semibold text-moss-green">{children}</strong>,
-                    em: ({ children }) => <em className="italic">{children}</em>,
+                    // 日本語フォントには斜体の字形が無く、font-style では傾かない。
+                    // 実際に傾けるため globals.css の .text-slant（変形による斜体）を使う。
+                    em: ({ children }) => <em className="text-slant">{children}</em>,
                     link: ({ children, value }) => (
                       <a href={value.href} className="text-moss-green hover:underline" target="_blank" rel="noopener noreferrer">
                         {children}

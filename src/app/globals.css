@@ -353,7 +353,17 @@ body.admin-layout textarea:focus {
 .prose-admin h2 { font-size: 1.5rem; font-weight: 600; color: var(--moss-green, #2d5016); margin: 1.5rem 0 1rem; }
 .prose-admin h3 { font-size: 1.25rem; font-weight: 600; color: var(--moss-green, #2d5016); margin: 1.25rem 0 0.75rem; }
 .prose-admin strong { font-weight: 600; }
-.prose-admin em { font-style: italic; }
+/* 斜体（強調）の表示。
+   日本語フォントには斜体の字形が無く、font-style: italic / oblique では字が傾かない
+   （このサイトのHiragino Sans系のフォント指定では傾き量が通常と完全に同じになる）。
+   そのため変形で傾ける。italic も残すのは、欧文部分に本来の斜体字形を使わせるため。
+   inline-block にしないと変形が効かないが、長い文でも折り返せるよう幅は指定しない。 */
+.text-slant,
+.prose-admin em {
+  font-style: italic;
+  display: inline-block;
+  transform: skewX(-9deg);
+}
 .prose-admin a { color: var(--moss-green, #2d5016); text-decoration: underline; }
 .prose-admin ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
 .prose-admin ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
