@@ -4,6 +4,7 @@
 // 以前は layout.tsx が index:false を直書きしていたため、許可してもメタタグがnoindexのままだった。
 
 import assert from 'node:assert/strict';
+import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
@@ -63,6 +64,14 @@ test('SNSシェア用の説明文は検索結果用とは別に持つ', () => {
   const seo = mergeSeoSettings({ description: '検索向けの説明' });
   assert.equal(seo.description, '検索向けの説明');
   assert.equal(seo.ogDescription, defaultSeoSettings.ogDescription);
+});
+
+test('OGP画像の既定値はpublic配下に実在するファイルを指す', async () => {
+  // 以前 og-image.jpg が存在しないまま参照され、SNSシェア時に画像が404になっていた。
+  // 拡張子の付け替えなどで同じ状態に戻らないよう、既定値の実体をここで確認する。
+  const url = defaultSeoSettings.ogImageUrl;
+  assert.ok(url.startsWith('/images/'), 'public配下の相対パスであること');
+  await access(resolve('public', url.replace(/^\//, '')));
 });
 
 test('所有権確認コードは空欄のままにでき、ダミー値を出力しない', () => {

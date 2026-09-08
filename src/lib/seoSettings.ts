@@ -37,7 +37,7 @@ export const defaultSeoSettings: SeoSettings = {
   ],
   // SNSシェア時は検索向けの長い説明文ではなく、短いキャッチコピーを出す
   ogDescription: '小さなガラスの中に広がる、無限の自然の世界',
-  ogImageUrl: '/images/og-image.jpg',
+  ogImageUrl: '/images/og-image.png',
   twitterHandle: '@MossCountry',
   // 未入力のうちはメタタグ自体を出さない。ダミー文字列を出すとSearch Consoleの所有権確認が通らないため。
   googleSiteVerification: '',
