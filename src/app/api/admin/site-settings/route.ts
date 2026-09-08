@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { mergeSiteSettings, SiteSettingsData, NavLink, SnsLink } from '@/lib/siteSettingsDefaults';
+import { mergeSeoSettings, normalizeGtmContainerId, SeoSettings } from '@/lib/seoSettings';
 
 // 管理画面用: サイト設定（ヘッダー/フッター/ページ別メンテナンス）の取得・保存。
 
@@ -20,12 +21,18 @@ export async function GET(request: NextRequest) {
         footerLegalLinks[]{ label, href, isVisible },
         snsLinks[]{ platform, url, isVisible },
         footerTagline, businessHours, businessDays, copyrightText, maintenancePages, allowIndexing,
-        craftMossRentalVisibilityConfigured, rentalTerrariumSitemapConfigured
+        craftMossRentalVisibilityConfigured, rentalTerrariumSitemapConfigured,
+        seo {
+          siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
+          twitterHandle, googleSiteVerification, gtmContainerId
+        }
       }`
     );
 
     // デフォルトをマージして返す（管理画面には常に編集可能な全項目を表示する）
-    return NextResponse.json({ settings: mergeSiteSettings(saved) });
+    return NextResponse.json({
+      settings: { ...mergeSiteSettings(saved), seo: mergeSeoSettings(saved?.seo) },
+    });
   } catch (error) {
     console.error('サイト設定取得エラー:', error);
     return NextResponse.json({ error: 'サイト設定の取得に失敗しました' }, { status: 500 });
@@ -43,6 +50,27 @@ function sanitizeNavLinks(input: unknown, keyPrefix: string): Array<NavLink & { 
       href: l.href.trim(),
       isVisible: l.isVisible !== false,
     }));
+}
+
+// SEO設定は空文字も含めてそのまま保存し、読み出し時に mergeSeoSettings がデフォルトへ倒す。
+// GTMのIDだけは保存時点で形式を検証し、不正な値を全ページのscriptタグに載せない。
+function sanitizeSeo(input: unknown): SeoSettings {
+  const raw = (input ?? {}) as Partial<SeoSettings>;
+  const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+
+  return {
+    siteTitle: text(raw.siteTitle),
+    titleTemplate: text(raw.titleTemplate),
+    description: text(raw.description),
+    keywords: Array.isArray(raw.keywords)
+      ? raw.keywords.filter((k): k is string => typeof k === 'string').map((k) => k.trim()).filter((k) => k !== '')
+      : [],
+    ogDescription: text(raw.ogDescription),
+    ogImageUrl: text(raw.ogImageUrl),
+    twitterHandle: text(raw.twitterHandle),
+    googleSiteVerification: text(raw.googleSiteVerification),
+    gtmContainerId: normalizeGtmContainerId(text(raw.gtmContainerId)),
+  };
 }
 
 export async function PUT(request: NextRequest) {
@@ -82,14 +110,21 @@ export async function PUT(request: NextRequest) {
       craftMossRentalVisibilityConfigured: true,
       rentalTerrariumSitemapConfigured: true,
       allowIndexing: body.allowIndexing === true,
+      seo: sanitizeSeo(body.seo),
       updatedAt: new Date().toISOString(),
     });
 
     // 準備中ページ(maintenancePages)はミドルウェアの状態キャッシュにも載るため、
     // 保存時に 'maintenance' タグを破棄して準備中の切り替えを即時反映する
     revalidateTag('maintenance');
+    // ルートレイアウトのメタデータ（robots/title/OGP/GTM）のキャッシュも破棄し、
+    // インデックス許可の切り替えを保存直後のページ表示から反映させる
+    revalidateTag('site-settings');
 
-    return NextResponse.json({ settings: mergeSiteSettings(saved as Partial<SiteSettingsData>) });
+    const merged = mergeSiteSettings(saved as Partial<SiteSettingsData>);
+    return NextResponse.json({
+      settings: { ...merged, seo: mergeSeoSettings((saved as { seo?: Partial<SeoSettings> }).seo) },
+    });
   } catch (error) {
     console.error('サイト設定保存エラー:', error);
     return NextResponse.json({ error: 'サイト設定の保存に失敗しました' }, { status: 500 });

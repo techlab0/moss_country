@@ -9,6 +9,7 @@ import {
   snsPlatformLabels,
 } from '@/lib/siteSettingsDefaults';
 import type { ShippingSettings, CarrierId } from '@/lib/shipping';
+import { defaultSeoSettings, type SeoSettings } from '@/lib/seoSettings';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
@@ -22,7 +23,7 @@ type MaintenanceSettings = {
 const DEFAULT_PURCHASE_LOCKED_MESSAGE =
   '申し訳ございませんが、ただいまオンラインでのご注文を承ることができません。お手数ですが、お問い合わせよりご連絡ください。';
 
-type Tab = 'maintenance' | 'navigation' | 'shipping';
+type Tab = 'maintenance' | 'navigation' | 'seo' | 'shipping';
 
 type NavListKey = 'headerLinks' | 'footerSitemapLinks' | 'footerLegalLinks';
 
@@ -224,6 +225,12 @@ export default function SettingsPage() {
           className={`flex-1 px-1 py-3 text-xs sm:text-sm md:text-base font-medium whitespace-nowrap ${tab === 'navigation' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
           ヘッダー・フッター
+        </button>
+        <button
+          onClick={() => setTab('seo')}
+          className={`flex-1 px-1 py-3 text-xs sm:text-sm md:text-base font-medium whitespace-nowrap ${tab === 'seo' ? 'bg-moss-green text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          SEO・計測
         </button>
         <button
           onClick={() => setTab('shipping')}
@@ -574,6 +581,15 @@ export default function SettingsPage() {
         </>
       )}
 
+      {tab === 'seo' && siteSettings && (
+        <SeoSettingsEditor
+          seo={siteSettings.seo ?? defaultSeoSettings}
+          onChange={(next) => setSiteSettings(prev => (prev ? { ...prev, seo: next } : prev))}
+          onSave={handleSaveSiteSettings}
+          isSaving={isSaving}
+        />
+      )}
+
       {tab === 'shipping' && shippingSettings && (
         <ShippingSettingsEditor
           settings={shippingSettings}
@@ -582,6 +598,161 @@ export default function SettingsPage() {
           isSaving={isSaving}
         />
       )}
+    </div>
+  );
+}
+
+// サイト共通のメタデータと計測タグの編集。ここが未入力の項目は
+// src/lib/seoSettings.ts のデフォルト値で表示される。
+function SeoSettingsEditor({
+  seo,
+  onChange,
+  onSave,
+  isSaving,
+}: {
+  seo: SeoSettings;
+  onChange: (next: SeoSettings) => void;
+  onSave: () => void;
+  isSaving: boolean;
+}) {
+  const set = <K extends keyof SeoSettings>(key: K, value: SeoSettings[K]) => {
+    onChange({ ...seo, [key]: value });
+  };
+
+  const gtmId = seo.gtmContainerId.trim();
+  const isGtmIdValid = gtmId === '' || /^GTM-[A-Z0-9]{4,}$/.test(gtmId.toUpperCase());
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">サイト共通のメタデータ</h2>
+        <p className="text-sm text-gray-600">
+          検索結果やSNSシェア時に表示される情報です。空欄にすると初期値に戻ります。
+        </p>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">サイトタイトル</label>
+          <input
+            type="text"
+            value={seo.siteTitle}
+            onChange={(e) => set('siteTitle', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">ページタイトルの書式</label>
+          <input
+            type="text"
+            value={seo.titleTemplate}
+            onChange={(e) => set('titleTemplate', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">%s の位置に各ページのタイトルが入ります（例: %s | MOSS COUNTRY）</p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">サイト説明文</label>
+          <textarea
+            rows={3}
+            value={seo.description}
+            onChange={(e) => set('description', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">現在 {seo.description.length} 文字（検索結果には120文字程度まで表示されます）</p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">キーワード</label>
+          <textarea
+            rows={2}
+            value={seo.keywords.join(', ')}
+            onChange={(e) => set('keywords', e.target.value.split(',').map((k) => k.trim()).filter((k) => k !== ''))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">カンマ区切りで入力します</p>
+        </div>
+      </div>
+
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">SNSシェア表示</h2>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">SNSシェア時の説明文</label>
+          <textarea
+            rows={2}
+            value={seo.ogDescription}
+            onChange={(e) => set('ogDescription', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">検索結果用の説明文とは別の、短いキャッチコピーです</p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">OGP画像のURL</label>
+          <input
+            type="text"
+            value={seo.ogImageUrl}
+            onChange={(e) => set('ogImageUrl', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            SNSでシェアされたときの画像です（推奨サイズ 1200x630）。/images/ から始まるパスか、https:// のURLを入力します。
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Xのアカウント</label>
+          <input
+            type="text"
+            value={seo.twitterHandle}
+            onChange={(e) => set('twitterHandle', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">検索エンジン・計測タグ</h2>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Google Search Console 所有権確認コード</label>
+          <input
+            type="text"
+            value={seo.googleSiteVerification}
+            onChange={(e) => set('googleSiteVerification', e.target.value)}
+            placeholder="未設定"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Search Consoleで発行される content の値だけを入力します。空欄にするとメタタグを出力しません。
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Google Tag Manager コンテナID</label>
+          <input
+            type="text"
+            value={seo.gtmContainerId}
+            onChange={(e) => set('gtmContainerId', e.target.value)}
+            placeholder="GTM-XXXXXXX"
+            className={`w-full px-3 py-2 border rounded-md text-sm ${isGtmIdValid ? 'border-gray-300' : 'border-red-400'}`}
+          />
+          {isGtmIdValid ? (
+            <p className="text-xs text-gray-500 mt-1">空欄にすると計測タグを読み込みません。</p>
+          ) : (
+            <p className="text-xs text-red-600 mt-1">GTM-XXXXXXX の形式で入力してください。このまま保存すると未設定として扱われます。</p>
+          )}
+        </div>
+      </div>
+
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="w-full py-3 bg-moss-green text-white font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
+      >
+        {isSaving ? '保存中...' : 'SEO・計測設定を保存'}
+      </button>
     </div>
   );
 }

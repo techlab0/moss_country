@@ -3,6 +3,9 @@
 // なければここの値（従来のハードコード構成）で表示される。
 // Header / Footer / 管理画面の3箇所で共通利用する。
 
+// 型のみの参照。このモジュールはテストからNode単体で読み込むため、実行時依存を持たせない。
+import type { SeoSettings } from './seoSettings';
+
 export interface NavLink {
   label: string;
   href: string;
@@ -30,6 +33,8 @@ export interface SiteSettingsData {
   craftMossRentalVisibilityConfigured?: boolean;
   rentalTerrariumSitemapConfigured?: boolean;
   allowIndexing: boolean;
+  // SEO設定の既定値の解決は seoSettings.ts の mergeSeoSettings が担当する
+  seo?: SeoSettings;
 }
 
 export const snsPlatformLabels: Record<SnsPlatform, string> = {

@@ -12,6 +12,9 @@ import { PerformanceInit } from "@/components/PerformanceInit";
 import { InventoryNotifications } from "@/components/ui/InventoryNotifications";
 import { PageLoadingProvider } from "@/components/providers/PageLoadingProvider";
 import { StructuredData } from "@/components/seo/StructuredData";
+import { GoogleTagManagerScript, GoogleTagManagerNoScript } from "@/components/analytics/GoogleTagManager";
+import { getSiteMetadataSettings } from "@/lib/sanity";
+import { mergeSeoSettings, buildRobotsDirectives } from "@/lib/seoSettings";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,72 +26,67 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://mosscountry.com'),
-  title: {
-    default: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
-    template: '%s | MOSS COUNTRY',
-  },
-  description: 'MOSS COUNTRY（モスカントリー）は北海道初のカプセルテラリウム専門店。職人が手がける本格テラリウムと体験ワークショップを提供。小さなガラスの中に広がる、無限の自然の世界をお届けします。',
-  keywords: ['テラリウム', '苔テラリウム', 'カプセルテラリウム', '札幌', '北海道', 'ワークショップ', '癒し', 'インテリア', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー', '苔図鑑'],
-  authors: [{ name: 'MOSS COUNTRY' }],
-  publisher: 'MOSS COUNTRY',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    title: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
-    description: '小さなガラスの中に広がる、無限の自然の世界',
-    url: 'https://mosscountry.com',
-    siteName: 'MOSS COUNTRY',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'MOSS COUNTRY - 苔テラリウム',
-      },
-    ],
-    locale: 'ja_JP',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'MOSS COUNTRY - 北海道の苔テラリウム専門店',
-    description: '小さなガラスの中に広がる、無限の自然の世界',
-    images: ['/images/og-image.jpg'],
-    creator: '@MossCountry',
-    site: '@MossCountry',
-  },
-  robots: {
-    index: false,
-    follow: false,
-    noarchive: true,
-    nosnippet: true,
-    noimageindex: false,
-    nocache: true,
-    googleBot: {
-      index: false,
-      follow: false,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+// メタデータは管理画面（サイト設定 > SEO・計測）の保存値から組み立てる。
+// 特に robots は allowIndexing のトグルから導出する。以前はここで index:false を
+// 直書きしていたため、管理画面でインデックスを許可してもメタタグがnoindexのままだった。
+export async function generateMetadata(): Promise<Metadata> {
+  const { allowIndexing, seo: savedSeo } = await getSiteMetadataSettings();
+  const seo = mergeSeoSettings(savedSeo);
+
+  return {
+    metadataBase: new URL('https://mosscountry.com'),
+    title: {
+      default: seo.siteTitle,
+      template: seo.titleTemplate,
     },
-  },
-  verification: {
-    google: 'your-google-site-verification-code', // 後で実際の値に置き換え
-  },
-  icons: {
-    icon: [
-      { url: '/images/mosscountry-favicon-circle-transparent.png', sizes: '1024x1024', type: 'image/png' },
-      { url: '/favicon.ico', sizes: '16x16 24x24 32x32 48x48' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
-  },
-};
+    description: seo.description,
+    keywords: seo.keywords,
+    authors: [{ name: 'MOSS COUNTRY' }],
+    publisher: 'MOSS COUNTRY',
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
+    openGraph: {
+      title: seo.siteTitle,
+      description: seo.ogDescription,
+      url: 'https://mosscountry.com',
+      siteName: 'MOSS COUNTRY',
+      images: [
+        {
+          url: seo.ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: 'MOSS COUNTRY - 苔テラリウム',
+        },
+      ],
+      locale: 'ja_JP',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo.siteTitle,
+      description: seo.ogDescription,
+      images: [seo.ogImageUrl],
+      creator: seo.twitterHandle,
+      site: seo.twitterHandle,
+    },
+    robots: buildRobotsDirectives(allowIndexing),
+    // 未設定ならキー自体を渡さず、ダミー値のメタタグを出力しない
+    ...(seo.googleSiteVerification
+      ? { verification: { google: seo.googleSiteVerification } }
+      : {}),
+    icons: {
+      icon: [
+        { url: '/images/mosscountry-favicon-circle-transparent.png', sizes: '1024x1024', type: 'image/png' },
+        { url: '/favicon.ico', sizes: '16x16 24x24 32x32 48x48' },
+      ],
+      shortcut: '/favicon.ico',
+      apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -96,19 +94,24 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { seo: savedSeo } = await getSiteMetadataSettings();
+  const { gtmContainerId } = mergeSeoSettings(savedSeo);
+
   return (
     <html lang="ja">
       <head>
         <StructuredData />
+        <GoogleTagManagerScript containerId={gtmContainerId} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleTagManagerNoScript containerId={gtmContainerId} />
         <ErrorBoundary>
           <PageLoadingProvider maxLoadingTime={5000} minLoadingTime={800}>
             <CartProvider>

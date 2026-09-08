@@ -3,6 +3,7 @@ import imageUrlBuilder from '@sanity/image-url'
 import type { SimpleWorkshop, Product, BlogPost, FAQ, SanityImage, MossSpecies, HeroImageSettings, BackgroundImageSettings } from '@/types/sanity'
 import { generateSEOFriendlySlug } from '@/lib/slugUtils'
 import { hiddenWorkshopPlanIdsFromOverrides } from '@/lib/workshopPlanVisibility'
+import type { SeoSettings } from './seoSettings'
 
 export const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'z36tkqex',
@@ -735,5 +736,40 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
   } catch (error) {
     console.warn('Failed to fetch background image settings from Sanity:', error);
     return null;
+  }
+}
+
+// Site metadata / SEO settings
+// ルートレイアウトのgenerateMetadataから全ページ分呼ばれるため、無防備に叩くと
+// Sanityの非CDN API枠（月25万回）を一気に消費する。tags:['site-settings'] 付きの
+// Nextデータキャッシュに載せて呼び出しを抑えつつ、管理画面の保存時に
+// revalidateTag('site-settings') で破棄して設定変更を即時反映する。
+export async function getSiteMetadataSettings(): Promise<{
+  allowIndexing: boolean;
+  seo: Partial<SeoSettings> | null;
+}> {
+  try {
+    const settings: { allowIndexing?: boolean; seo?: Partial<SeoSettings> } | null =
+      await writeClient.fetch(
+        `*[_type == "siteSettings" && _id == "siteSettings"][0]{
+          allowIndexing,
+          seo {
+            siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
+            twitterHandle, googleSiteVerification, gtmContainerId
+          }
+        }`,
+        {},
+        { next: { revalidate: 300, tags: ['site-settings'] } }
+      );
+
+    return {
+      allowIndexing: settings?.allowIndexing === true,
+      seo: settings?.seo ?? null,
+    };
+  } catch (error) {
+    // 取得に失敗したときはインデックス拒否側に倒す。公開前のサイトが
+    // 一時的な通信エラーで検索エンジンに拾われる事故を防ぐため。
+    console.warn('サイトメタデータ設定の取得に失敗しました。デフォルトで表示します:', error);
+    return { allowIndexing: false, seo: null };
   }
 }
