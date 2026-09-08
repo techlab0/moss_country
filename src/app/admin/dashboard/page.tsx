@@ -5,6 +5,7 @@ import { RecentOrders } from '@/components/admin/RecentOrders';
 import { InventoryAlerts } from '@/components/admin/InventoryAlerts';
 import { CurrentUserInfo } from '@/components/admin/CurrentUserInfo';
 import { SecurityAlertsSummary } from '@/components/admin/SecurityAlertsSummary';
+import { SiteAnalyticsSummary } from '@/components/admin/SiteAnalyticsSummary';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 
@@ -26,6 +27,9 @@ export default function AdminDashboardPage() {
 
         {/* 統計情報 */}
         <DashboardStats />
+
+        {/* アクセス解析（GA4 / Search Console） */}
+        <SiteAnalyticsSummary />
 
         {/* ブログ・コンテンツ管理 */}
         <ContentManagementCards />

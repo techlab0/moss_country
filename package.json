@@ -10,6 +10,7 @@
     "test:shipping": "node --experimental-strip-types --test tests/shipping-note.test.mjs",
     "test:workshop": "node --experimental-strip-types --test tests/workshop-booking-safety.test.mjs tests/workshop-calendar-policy.test.mjs tests/workshop-plan-visibility.test.mjs",
     "test:admin-ui": "node --test tests/admin-ui-order.test.mjs",
+    "test:analytics": "node --experimental-strip-types --test tests/analytics-summary.test.mjs",
     "test:inventory": "node --experimental-strip-types --test tests/inventory-responsibility.test.mjs",
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs",
     "test:site-settings": "node --experimental-strip-types --test tests/maintenance-nav-visibility.test.mjs tests/seo-settings.test.mjs",
