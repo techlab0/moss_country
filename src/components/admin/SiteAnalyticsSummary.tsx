@@ -68,7 +68,52 @@ function RankedList({ title, rows, unit }: { title: string; rows: RankedRow[]; u
   );
 }
 
-function NotReady({ message, steps }: { message: string | null; steps: string[] }) {
+// 権限付与の画面に貼り付けるサービスアカウントのアドレスを、コピーしやすい形で出す。
+// Vercelの環境変数を機密扱いにしていると値を読み出せないため、ここから確認できるようにしている。
+function ServiceAccountHint({ email }: { email: string | null }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!email) return null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // クリップボードが使えない環境では、表示されている値を手で選択してもらう
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-amber-200">
+      <p className="text-xs text-amber-800">権限を付与するサービスアカウント:</p>
+      <div className="flex items-center gap-2 mt-1 flex-wrap">
+        <code className="text-xs bg-white border border-amber-300 rounded px-2 py-1 break-all text-gray-800">
+          {email}
+        </code>
+        <button
+          type="button"
+          onClick={copy}
+          className="text-xs px-2 py-1 border border-amber-400 rounded text-amber-900 hover:bg-amber-100"
+        >
+          {copied ? 'コピーしました' : 'コピー'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NotReady({
+  message,
+  steps,
+  serviceAccountEmail,
+}: {
+  message: string | null;
+  steps: string[];
+  serviceAccountEmail: string | null;
+}) {
   return (
     <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
       <p className="text-sm text-amber-900 font-medium">{message ?? '未連携です'}</p>
@@ -78,6 +123,7 @@ function NotReady({ message, steps }: { message: string | null; steps: string[] 
           <li key={step}>{step}</li>
         ))}
       </ol>
+      <ServiceAccountHint email={serviceAccountEmail} />
     </div>
   );
 }
@@ -161,9 +207,10 @@ export function SiteAnalyticsSummary() {
             </div>
           ) : (
             <NotReady
+              serviceAccountEmail={summary.serviceAccountEmail}
               message={ga4.message}
               steps={[
-                'Google Cloudで「Google Analytics Data API」を有効化する',
+                'Google Cloudで「Google Analytics Data API」を有効化する（Admin APIとは別物です）',
                 'GA4の「管理 > プロパティのアクセス管理」でサービスアカウントを閲覧者として追加する',
                 'Vercelの環境変数 GA4_PROPERTY_ID にGA4のプロパティIDを設定する',
               ]}
@@ -210,6 +257,7 @@ export function SiteAnalyticsSummary() {
             </div>
           ) : (
             <NotReady
+              serviceAccountEmail={summary.serviceAccountEmail}
               message={searchConsole.message}
               steps={[
                 'Google Cloudで「Google Search Console API」を有効化する',

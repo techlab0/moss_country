@@ -35,6 +35,12 @@ export interface AnalyticsSection<T> {
 }
 
 export interface SiteAnalyticsSummary {
+  /**
+   * 連携先のサービスアカウントのメールアドレス。
+   * 秘密情報は秘密鍵のほうで、このアドレスはGA4やSearch Consoleの権限付与画面に
+   * 貼り付けるためのもの。設定時にVercelの環境変数を見に行かなくて済むよう管理画面に出す。
+   */
+  serviceAccountEmail: string | null;
   periodDays: number;
   range: { startDate: string; endDate: string };
   ga4: AnalyticsSection<Ga4Summary>;
@@ -69,7 +75,9 @@ function describeGoogleError(error: unknown, serviceLabel: string): string {
   const message = error instanceof Error ? error.message : String(error);
 
   if (/API has not been used|is disabled|SERVICE_DISABLED/i.test(message)) {
-    return `${serviceLabel} のAPIがGoogle Cloudで有効化されていません。`;
+    // 「Analytics Admin API」と間違えやすいため、必要なAPI名をそのまま出す
+    const apiName = serviceLabel === 'Google Analytics' ? 'Google Analytics Data API' : 'Google Search Console API';
+    return `${apiName} がGoogle Cloudで有効化されていません。`;
   }
   if (/permission|403|PERMISSION_DENIED|does not have sufficient/i.test(message)) {
     return `サービスアカウントに ${serviceLabel} の閲覧権限がありません。`;
@@ -230,6 +238,7 @@ async function loadSummary(): Promise<SiteAnalyticsSummary> {
   const [ga4, searchConsole] = await Promise.all([fetchGa4(), fetchSearchConsole()]);
 
   return {
+    serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? null,
     periodDays: SUMMARY_DAYS,
     range: ranges.current,
     ga4,
