@@ -340,3 +340,19 @@ body.admin-layout textarea:focus {
   50% { stroke-dasharray: 90 125; stroke-dashoffset: -30; }
   100% { stroke-dasharray: 90 125; stroke-dashoffset: -124; }
 }
+
+/* 管理画面のリッチテキストエディタ内の見た目。
+   公開ページ(@portabletext/react)の描画に近づけ、書式の違いを編集中に確認できるようにする。 */
+.prose-admin:focus { outline: none; }
+.prose-admin p { margin-bottom: 1rem; line-height: 1.75; color: #374151; }
+.prose-admin h2 { font-size: 1.5rem; font-weight: 600; color: var(--moss-green, #2d5016); margin: 1.5rem 0 1rem; }
+.prose-admin h3 { font-size: 1.25rem; font-weight: 600; color: var(--moss-green, #2d5016); margin: 1.25rem 0 0.75rem; }
+.prose-admin strong { font-weight: 600; }
+.prose-admin em { font-style: italic; }
+.prose-admin a { color: var(--moss-green, #2d5016); text-decoration: underline; }
+.prose-admin ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.prose-admin ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+.prose-admin li { margin-bottom: 0.5rem; }
+.prose-admin blockquote { border-left: 4px solid var(--moss-green, #2d5016); padding-left: 1rem; font-style: italic; color: #4b5563; margin: 1.5rem 0; }
+.prose-admin img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; }
+.prose-admin img.ProseMirror-selectednode { outline: 3px solid var(--moss-green, #2d5016); }

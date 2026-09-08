@@ -8,18 +8,14 @@ import type { BlogPost } from '@/types/sanity';
 import { urlFor } from '@/lib/sanity';
 import { compressImageForUpload } from '@/lib/imageCompress';
 import { ImagePositionControls, imageDisplayScale, imageObjectPosition } from '@/components/admin/ImagePositionControls';
+import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { blocksToHtml, htmlToBlocks, isEmptyPortableText } from '@/lib/portableTextHtml';
 
 interface SanityImageRef {
   _type: 'image';
   _key?: string;
   asset: { _type?: string; _ref?: string; url?: string };
   displayScale?: number;
-}
-
-/** Sanityのブロックコンテンツ。プレーンテキスト化に必要な部分だけを表現する */
-interface PortableTextBlock {
-  _type: string;
-  children?: { text?: string }[];
 }
 
 interface BlogFormData {
@@ -76,18 +72,18 @@ export default function EditBlogPostPage() {
 
       setOriginalPost(post);
       
-      // Sanityのblock contentをプレーンテキストに変換
-      let contentText = '';
-      if (post.content && Array.isArray(post.content)) {
-        contentText = post.content
-          .filter((block: PortableTextBlock) => block._type === 'block')
-          .map((block: PortableTextBlock) =>
-            block.children
-              ?.map((child) => child.text || '')
-              .join('')
-          )
-          .join('\n\n') || '';
-      }
+      // 本文はエディタが扱えるHTMLへ変換する。
+      // 以前はプレーンテキストへ落としていたため、保存し直すと見出しや装飾が失われていた。
+      const contentText = blocksToHtml(
+        (post.content ?? []) as Parameters<typeof blocksToHtml>[0],
+        (image) => {
+          try {
+            return urlFor(image as never).width(1200).url();
+          } catch {
+            return null;
+          }
+        }
+      );
 
       setFormData({
         title: post.title || '',
@@ -223,7 +219,8 @@ export default function EditBlogPostPage() {
         throw new Error('スラッグの重複エラーを解決してください');
       }
 
-      if (contentChanged && !formData.content.trim()) {
+      const contentBlocks = htmlToBlocks(formData.content);
+      if (contentChanged && isEmptyPortableText(contentBlocks)) {
         const confirmed = window.confirm('本文が空です。既存の本文を削除して保存しますか？');
         if (!confirmed) {
           setSaving(false);
@@ -243,22 +240,7 @@ export default function EditBlogPostPage() {
         isPublished: formData.isPublished,
         featuredImage: formData.featuredImage ?? null,
         // 本文欄を変更していない場合は送信せず、Sanity上の既存本文を保持する。
-        ...(contentChanged ? {
-          content: formData.content.split('\n\n').filter(p => p.trim()).map((paragraph, index) => ({
-            _type: 'block',
-            _key: `block-${index}`,
-            style: 'normal',
-            markDefs: [],
-            children: [
-              {
-                _type: 'span',
-                _key: `span-${index}`,
-                text: paragraph,
-                marks: [],
-              },
-            ],
-          })),
-        } : {}),
+        ...(contentChanged ? { content: contentBlocks } : {}),
         publishedAt: formData.isPublished && !originalPost?.isPublished 
           ? new Date().toISOString() 
           : originalPost?.publishedAt,
@@ -523,18 +505,15 @@ export default function EditBlogPostPage() {
             <label htmlFor="content" className="block text-sm font-medium text-gray-700">
               記事内容
             </label>
-            <textarea
-              name="content"
-              id="content"
-              rows={12}
-              value={formData.content}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
-              placeholder="記事の本文を入力してください..."
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              改行2つで段落分けされます
-            </p>
+            <div className="mt-1">
+              <RichTextEditor
+                value={formData.content}
+                onChange={(html) => {
+                  setFormData(prev => ({ ...prev, content: html }));
+                  setContentChanged(true);
+                }}
+              />
+            </div>
           </div>
         </div>
 

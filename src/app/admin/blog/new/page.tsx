@@ -4,6 +4,8 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { compressImageForUpload } from '@/lib/imageCompress';
+import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { htmlToBlocks } from '@/lib/portableTextHtml';
 import { ImagePositionControls, imageDisplayScale, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 
 interface SanityImageRef {
@@ -168,23 +170,7 @@ export default function NewBlogPostPage() {
             _type: 'slug',
             current: formData.slug,
           },
-          // 簡単なマークダウンをSanityのblock形式に変換
-          content: [
-            {
-              _type: 'block',
-              _key: 'content',
-              style: 'normal',
-              markDefs: [],
-              children: [
-                {
-                  _type: 'span',
-                  _key: 'span',
-                  text: formData.content,
-                  marks: [],
-                },
-              ],
-            },
-          ],
+          content: htmlToBlocks(formData.content),
           publishedAt: new Date().toISOString(),
         }),
       });
@@ -401,18 +387,12 @@ export default function NewBlogPostPage() {
             <label htmlFor="content" className="block text-sm font-medium text-gray-700">
               記事内容
             </label>
-            <textarea
-              name="content"
-              id="content"
-              rows={12}
-              value={formData.content}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
-              placeholder="記事の本文を入力してください..."
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              基本的なテキスト入力に対応しています
-            </p>
+            <div className="mt-1">
+              <RichTextEditor
+                value={formData.content}
+                onChange={(html) => setFormData(prev => ({ ...prev, content: html }))}
+              />
+            </div>
           </div>
         </div>
 
