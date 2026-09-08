@@ -117,6 +117,9 @@ test('ブログのアイキャッチ画像へ管理画面で指定した表示�
   const listPage = await readFile(resolve(projectRoot, 'src/app/blog/page.tsx'), 'utf8');
   const detailPage = await readFile(resolve(projectRoot, 'src/app/blog/[slug]/page.tsx'), 'utf8');
   const positionHelper = await readFile(resolve(projectRoot, 'src/lib/imagePosition.ts'), 'utf8');
+  const newPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/new/page.tsx'), 'utf8');
+  const editPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/[id]/edit/page.tsx'), 'utf8');
+  const schema = await readFile(resolve(projectRoot, 'sanity/schemas/blogPost.ts'), 'utf8');
 
   for (const source of [listPage, detailPage]) {
     assert.ok(source.includes('imageObjectPosition(post.featuredImage)'), '保存した画像位置を公開画像へ反映する');
@@ -124,6 +127,12 @@ test('ブログのアイキャッチ画像へ管理画面で指定した表示�
   assert.ok(!listPage.includes('.width(400).height(300)'), '一覧画像を表示前に固定比率で切り抜かない');
   assert.ok(!detailPage.includes('.width(800).height(450)'), '詳細画像を表示前に固定比率で切り抜かない');
   assert.ok(positionHelper.includes('Math.min(1, Math.max(0'), '画像位置を有効範囲内に制限する');
+  assert.ok(positionHelper.includes('imageDisplayScale'), '画像サイズを有効範囲内に制限する');
+  assert.ok(newPage.includes('<ImagePositionControls allowScale'), '新規投稿で画像サイズを調整できる');
+  assert.ok(editPage.includes('<ImagePositionControls allowScale'), '記事編集で画像サイズを調整できる');
+  assert.ok(listPage.includes('imageDisplayScale(post.featuredImage)'), '一覧へ画像サイズを反映する');
+  assert.ok(detailPage.includes('imageDisplayScale(post.featuredImage)'), '詳細へ画像サイズを反映する');
+  assert.ok(schema.includes("name: 'displayScale'"), '画像ごとのサイズをSanityへ保存する');
 });
 
 test('ブログ編集で既存本文を取得し、本文欠損時は概要を表示する', async () => {

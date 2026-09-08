@@ -80,6 +80,15 @@ export const blogPost = defineType({
       options: {
         hotspot: true,
       },
+      fields: [
+        defineField({
+          name: 'displayScale',
+          title: '公開画面の画像サイズ（%）',
+          type: 'number',
+          initialValue: 100,
+          validation: Rule => Rule.min(50).max(150),
+        }),
+      ],
     }),
     defineField({
       name: 'category',

@@ -10,7 +10,7 @@ import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { imageObjectPosition } from '@/lib/imagePosition'
+import { imageDisplayScale, imageObjectPosition } from '@/lib/imagePosition'
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -242,14 +242,14 @@ export default function BlogPage() {
                     {/* 画像部分 */}
                     <div className="md:w-1/3 flex-shrink-0">
                       {post.featuredImage ? (
-                        <div className="h-48 md:h-full overflow-hidden">
+                        <div className="h-48 md:h-full overflow-hidden bg-stone-100">
                           <Image
                             src={urlFor(post.featuredImage).width(800).url()}
                             alt={post.title}
                             width={400}
                             height={300}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            style={{ objectPosition: imageObjectPosition(post.featuredImage) }}
+                            className="w-full h-full object-contain transition-transform duration-300"
+                            style={{ objectPosition: imageObjectPosition(post.featuredImage), transform: `scale(${imageDisplayScale(post.featuredImage) / 100})`, transformOrigin: imageObjectPosition(post.featuredImage) }}
                           />
                         </div>
                       ) : (

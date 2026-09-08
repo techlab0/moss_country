@@ -4,12 +4,13 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { compressImageForUpload } from '@/lib/imageCompress';
-import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
+import { ImagePositionControls, imageDisplayScale, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 
 interface SanityImageRef {
   _type: 'image';
   _key?: string;
   asset: { _type?: string; _ref?: string; url?: string };
+  displayScale?: number;
 }
 
 interface BlogFormData {
@@ -363,8 +364,10 @@ export default function NewBlogPostPage() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">アイキャッチ画像</h2>
           {featuredImagePreview && (
             <div className="mb-4">
-              <img src={featuredImagePreview} alt="アイキャッチ画像のプレビュー" className="h-48 w-full max-w-md rounded-lg border object-cover" style={{ objectPosition: imageObjectPosition(formData.featuredImage) }} />
-              {formData.featuredImage && <ImagePositionControls image={formData.featuredImage} onChange={(featuredImage) => setFormData(prev => ({ ...prev, featuredImage }))} />}
+              <div className="h-48 w-full max-w-md overflow-hidden rounded-lg border bg-stone-100">
+                <img src={featuredImagePreview} alt="アイキャッチ画像のプレビュー" className="h-full w-full object-contain" style={{ objectPosition: imageObjectPosition(formData.featuredImage), transform: `scale(${imageDisplayScale(formData.featuredImage) / 100})`, transformOrigin: imageObjectPosition(formData.featuredImage) }} />
+              </div>
+              {formData.featuredImage && <ImagePositionControls allowScale image={formData.featuredImage} onChange={(featuredImage) => setFormData(prev => ({ ...prev, featuredImage }))} />}
             </div>
           )}
           <div className="flex flex-wrap items-center gap-3">

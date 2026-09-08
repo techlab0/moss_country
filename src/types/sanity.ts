@@ -86,6 +86,7 @@ export interface BlogPost {
   featuredImage?: {
     _type: 'image'
     asset: SanityImageAsset
+    displayScale?: number
     hotspot?: {
       x: number
       y: number
