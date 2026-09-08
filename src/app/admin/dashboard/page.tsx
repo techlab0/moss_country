@@ -70,7 +70,7 @@ function ContentManagementCards() {
               </p>
               <div className="space-y-2">
                 <Link
-                  href="/admin/cms"
+                  href="/admin/blog"
                   className="block w-full px-4 py-2 text-center bg-moss-green text-white rounded-md hover:bg-moss-green/90 transition-colors text-sm font-medium"
                 >
                   記事の投稿・編集

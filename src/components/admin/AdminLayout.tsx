@@ -43,6 +43,20 @@ const siteNavigation = [
   { name: 'ブログ', href: '/blog', icon: '✍️' },
 ];
 
+// アクセス解析の外部サービス。管理画面から直接開けるようにしておく。
+// 数値のサマリーはダッシュボードに出るが、詳しく見るときはそれぞれの管理画面が必要になる。
+const externalTools = [
+  { name: 'Google Analytics', href: 'https://analytics.google.com/', icon: '📈' },
+  {
+    name: 'Search Console',
+    // ドメインプロパティ(sc-domain:)を直接開く。取り違えていてもプロパティ選択画面が出るだけ。
+    href: 'https://search.google.com/search-console?resource_id=sc-domain%3Amosscountry.com',
+    icon: '🔍',
+  },
+  { name: 'Google Tag Manager', href: 'https://tagmanager.google.com/', icon: '🏷️' },
+  { name: 'Microsoft Clarity', href: 'https://clarity.microsoft.com/projects', icon: '🎬' },
+];
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -162,6 +176,26 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <span className="mr-3 text-lg">{item.icon}</span>
                   {item.name}
                 </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* 外部の分析ツール（別タブで開く） */}
+          <p className="mt-6 mb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">アクセス解析</p>
+          <ul className="space-y-1">
+            {externalTools.map((item) => (
+              <li key={item.name}>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeSidebar}
+                  className="flex items-center px-4 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                >
+                  <span className="mr-3 text-lg">{item.icon}</span>
+                  <span className="flex-1">{item.name}</span>
+                  <span className="text-xs text-gray-400" aria-label="別タブで開く">↗</span>
+                </a>
               </li>
             ))}
           </ul>
