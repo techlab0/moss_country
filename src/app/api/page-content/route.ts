@@ -4,6 +4,14 @@ import type { SanityImage } from '@/types/sanity';
 
 // 公開ページ用: ページ文言・画像の上書き値を返す（認証不要）。
 // 保存されている上書きのみ返し、デフォルトとのマージはクライアント側（usePageContent）で行う。
+
+// 公開ページの表示ごとに呼ばれるため、キャッシュせずにいると
+// ページビューの数だけ関数が起動し、Vercelの実行時間を消費する。
+// 個人情報を含まない共通データなのでCDNに載せ、60秒は関数を起動せず配信する。
+const PUBLIC_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const page = request.nextUrl.searchParams.get('page') || '';
@@ -44,10 +52,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ texts, images });
+    return NextResponse.json({ texts, images }, { headers: PUBLIC_CACHE_HEADERS });
   } catch (error) {
     console.error('ページ文言取得エラー:', error);
-    // 取得に失敗してもページ表示は止めない（クライアントはデフォルト文言で表示する）
-    return NextResponse.json({ texts: {}, images: {} });
+    // 取得に失敗してもページ表示は止めない（クライアントはデフォルト文言で表示する）。
+    // 失敗結果を長くキャッシュすると復旧後も空のまま配信されるため、ここではキャッシュしない。
+    return NextResponse.json({ texts: {}, images: {} }, { headers: { 'Cache-Control': 'no-store' } });
   }
 }
