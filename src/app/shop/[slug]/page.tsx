@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getProductBySlug } from '@/lib/sanity'
 import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 import type { Product } from '@/types/sanity'
@@ -12,6 +13,39 @@ interface ProductPageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+// getProductBySlug は Next の fetch キャッシュ経由なので、
+// generateMetadata と本体で呼んでも Sanity へのリクエストは1回に重複排除される。
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const product = await getProductBySlug(slug)
+
+  if (!product) {
+    return { title: 'オンラインショップ' }
+  }
+
+  const name = String(product.name ?? '')
+  const description =
+    product.description?.replace(/\s+/g, ' ').trim().slice(0, 120) ||
+    `${name}の商品詳細ページ。北海道の苔テラリウム専門店 MOSS COUNTRY がひとつひとつ手作りしています。`
+
+  return {
+    title: name,
+    description,
+    openGraph: {
+      title: `${name} | MOSS COUNTRY`,
+      description,
+      url: `https://mosscountry.com/shop/${slug}`,
+    },
+    twitter: {
+      title: `${name} | MOSS COUNTRY`,
+      description,
+    },
+    alternates: {
+      canonical: `https://mosscountry.com/shop/${slug}`,
+    },
+  }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
@@ -11,6 +12,39 @@ interface BlogPostPageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getBlogPostBySlug(slug)
+
+  if (!post) {
+    return { title: 'ブログ・ニュース' }
+  }
+
+  const description =
+    post.excerpt?.replace(/\s+/g, ' ').trim().slice(0, 120) ||
+    `${post.title} | MOSS COUNTRY のブログ記事です。`
+
+  return {
+    title: post.title,
+    description,
+    openGraph: {
+      title: `${post.title} | MOSS COUNTRY`,
+      description,
+      url: `https://mosscountry.com/blog/${slug}`,
+      type: 'article',
+      publishedTime: post.publishedAt,
+      authors: post.author ? [post.author] : undefined,
+    },
+    twitter: {
+      title: `${post.title} | MOSS COUNTRY`,
+      description,
+    },
+    alternates: {
+      canonical: `https://mosscountry.com/blog/${slug}`,
+    },
+  }
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {

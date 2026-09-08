@@ -1,7 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ブログ・ニュース',
+  // 文字列だけを指定すると配下の詳細ページにルートの titleTemplate が継承されない。
+  // default はこのセグメント自身の値で、ルート側のテンプレートが後から適用される。
+  title: {
+    default: 'ブログ・ニュース',
+    template: '%s | MOSS COUNTRY',
+  },
   description: 'MOSS COUNTRYからの最新情報、イベント出店のお知らせ、テラリウムのお手入れ方法、新商品のご紹介などをお届けします。苔テラリウムの世界をもっと深く知ることができるコンテンツが満載です。',
   keywords: ['テラリウム', 'ブログ', 'ニュース', 'お手入れ', 'イベント', '新商品', '苔テラリウム', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー'],
   openGraph: {

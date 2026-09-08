@@ -1,7 +1,13 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ワークショップ',
+  // 文字列だけを指定すると配下セグメント（/workshop/mobile など）に
+  // ルートの titleTemplate が継承されない。default はこのセグメント自身の値で、
+  // ルート側のテンプレートが後から適用される。
+  title: {
+    default: 'ワークショップ',
+    template: '%s | MOSS COUNTRY',
+  },
   description: '自分の手で作る、特別なテラリウム体験。MOSS COUNTRYの職人が丁寧に指導する本格的なテラリウム制作ワークショップ。初心者からお子様まで、どなたでもお楽しみいただけます。',
   keywords: ['テラリウムワークショップ', '体験教室', 'テラリウム作り', '札幌', '北海道', '手作り体験', '親子参加', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー'],
   openGraph: {
