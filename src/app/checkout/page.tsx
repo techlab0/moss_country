@@ -31,7 +31,7 @@ function cartToShippingItems(items: Cart['items']): ShippingItem[] {
 }
 
 export default function CheckoutPage() {
-  const { cart, clearCart, getShippingMethods, setShippingMethod } = useCart();
+  const { cart, clearCart, getShippingMethods, setShippingMethod, isCartHydrated } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [isPostalCodeLoading, setIsPostalCodeLoading] = useState(false);
@@ -199,6 +199,14 @@ export default function CheckoutPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.shippingAddress.state, formData.shippingMethod, formData.shippingCarrier, cart.items, cart.subtotal, shippingSettings]);
+
+  // localStorage からのカート復元前は、中身があっても cart.items は空に見える。
+  // ここで「カートが空です」を描いてしまうと、復元後にページ全体が別物へ差し替わり、
+  // フッターが数画面ぶん下へ動く大きなレイアウトシフトになる。復元が済むまでは
+  // 1画面ぶんの高さだけ確保した無地のプレースホルダを置き、位置を動かさない。
+  if (!isCartHydrated) {
+    return <div className="bg-stone-950 min-h-screen pt-20" aria-hidden="true" />;
+  }
 
   // カートが空の場合のリダイレクト
   if (cart.items.length === 0 && !orderComplete) {

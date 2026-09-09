@@ -212,8 +212,11 @@ export default function BlogPage() {
       <div className="py-8">
         <Container>
 
+        {/* 取得後に記事カードが入る区画。先に高さを確保して、下のフッターが動かないようにする */}
         {isLoading ? (
-          <InlineLoading message="記事を読み込み中..." />
+          <div className="min-h-[70vh] flex items-start justify-center pt-12">
+            <InlineLoading message="記事を読み込み中..." />
+          </div>
         ) : filteredPosts.length === 0 ? (
           <div className="text-center py-12">
             {searchTerm || selectedCategory !== 'all' ? (

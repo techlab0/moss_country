@@ -148,7 +148,8 @@ export default function CartPage() {
   const {
     cart,
     updateQuantity,
-    removeFromCart
+    removeFromCart,
+    isCartHydrated
   } = useCart();
 
   // 送料割引の案内文は管理画面の送料設定から取得して表示（固定文言にしない）
@@ -169,6 +170,14 @@ export default function CartPage() {
       mounted = false;
     };
   }, []);
+
+  // localStorage からのカート復元前は、中身があっても cart.items は空に見える。
+  // ここで「カートが空です」を描いてしまうと、復元後にページ全体が別物へ差し替わり、
+  // フッターが数画面ぶん下へ動く大きなレイアウトシフトになる。復元が済むまでは
+  // 1画面ぶんの高さだけ確保した無地のプレースホルダを置き、位置を動かさない。
+  if (!isCartHydrated) {
+    return <div className="bg-stone-950 min-h-screen pt-20" aria-hidden="true" />;
+  }
 
   if (cart.items.length === 0) {
     return (

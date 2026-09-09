@@ -206,7 +206,8 @@ function StoreCalendar() {
   if (isLoading) {
     return (
       <div className="bg-amber-950/50 md:bg-amber-950/20 backdrop-blur-md p-6 rounded-3xl">
-        <div className="flex items-center justify-center py-20">
+        {/* 読み込み後に入るカレンダーとほぼ同じ高さを先に確保する */}
+        <div className="flex items-center justify-center min-h-[420px]">
           <div className="text-lg text-white">カレンダーを読み込み中...</div>
         </div>
       </div>
@@ -407,7 +408,8 @@ function FAQSection() {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="text-center text-white">FAQを読み込み中...</div>
+        {/* 読み込み後に入るFAQ一覧のぶんの高さを先に確保する */}
+        <div className="min-h-[360px] flex items-start justify-center pt-8 text-center text-white">FAQを読み込み中...</div>
       </div>
     );
   }

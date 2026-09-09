@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { Cart, CartItem, Product, ProductVariant, ShippingMethod } from '@/types/ecommerce';
 import { debounce } from '@/lib/debounce';
 
@@ -201,6 +201,13 @@ const cartReducer = (state: Cart, action: CartAction): Cart => {
 // コンテキストの型定義
 interface CartContextType {
   cart: Cart;
+  /**
+   * localStorage からのカート復元が終わったか。
+   * 復元前は cart.items が必ず空になるため、これを見ずに「カートが空です」を描画すると
+   * 中身のある利用者に一瞬だけ空カート画面を見せたあと本来の画面へ差し替わり、
+   * ページ全体が入れ替わるレイアウトシフト（CLS）になる。
+   */
+  isCartHydrated: boolean;
   addToCart: (product: Product, quantity: number, variant?: ProductVariant) => void;
   removeFromCart: (productId: string, variantKey?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantKey?: string) => void;
@@ -217,6 +224,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // カートプロバイダー
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialCart);
+  const [isCartHydrated, setIsCartHydrated] = useState(false);
 
   // 計算のメモ化
   const cartMemo = useMemo(() => ({
@@ -270,6 +278,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (clearError) {
         console.error('Failed to clear corrupted localStorage:', clearError);
       }
+    } finally {
+      // 復元の成否にかかわらず「判定が済んだ」ことを伝える
+      setIsCartHydrated(true);
     }
   }, []);
 
@@ -366,6 +377,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // メモ化されたコンテキスト値
   const contextValue = useMemo(() => ({
     cart: cartMemo,
+    isCartHydrated,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -374,7 +386,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getShippingMethods,
     isInCart,
     getCartItemQuantity
-  }), [cartMemo, addToCart, removeFromCart, updateQuantity, clearCart, setShippingMethod, getShippingMethods, isInCart, getCartItemQuantity]);
+  }), [cartMemo, isCartHydrated, addToCart, removeFromCart, updateQuantity, clearCart, setShippingMethod, getShippingMethods, isInCart, getCartItemQuantity]);
 
   return (
     <CartContext.Provider value={contextValue}>

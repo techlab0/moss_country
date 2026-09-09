@@ -36,7 +36,14 @@ export const LatestNews: React.FC = () => {
     return (
       <section data-home-screen="regular" data-scene-id="news" className="relative py-12 sm:py-16 md:py-24">
         <Container>
-          <InlineLoading message="新着情報を読み込み中..." />
+          {/*
+            デスクトップは [data-home-screen] 側で1画面高に固定されるが、モバイルは
+            min-height なので記事カードが入った瞬間にセクションが伸びて下がずれる。
+            見出しとカード5件ぶんに近い高さを先に確保しておく。
+          */}
+          <div className="min-h-[80vh] flex items-center justify-center">
+            <InlineLoading message="新着情報を読み込み中..." />
+          </div>
         </Container>
       </section>
     );
