@@ -105,13 +105,19 @@ export default async function RootLayout({
   return (
     <html lang="ja">
       <head>
-        <StructuredData />
         <GoogleTagManagerScript containerId={gtmContainerId} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleTagManagerNoScript containerId={gtmContainerId} />
+        {/*
+          JSON-LDはbodyに置く。手書きの<head>の中にinlineの<script>を置くと、
+          ハイドレーション時にReactが同じscriptをheadへもう一度挿入することがあり、
+          本番で構造化データが二重に出ていた（Search Consoleが同じ商品を2件検出）。
+          JSON-LDは文書内のどこにあってもGoogleが読むため、bodyが安全。
+        */}
+        <StructuredData />
         <ErrorBoundary>
           <PageLoadingProvider maxLoadingTime={5000} minLoadingTime={800}>
             <CartProvider>

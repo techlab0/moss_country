@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
+import { buildMetaDescription } from '@/lib/metaDescription'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import Image from 'next/image'
@@ -22,9 +23,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     return { title: 'ブログ・ニュース' }
   }
 
-  const description =
-    post.excerpt?.replace(/\s+/g, ' ').trim().slice(0, 120) ||
-    `${post.title} | MOSS COUNTRY のブログ記事です。`
+  // 抜粋が数十文字しかない記事があるため、足りない分は本文の冒頭で補う。
+  const description = buildMetaDescription([post.excerpt, post.content])
 
   return {
     title: post.title,

@@ -31,15 +31,11 @@ export function StructuredData() {
     "sameAs": [
       "https://instagram.com/moss_country"
     ],
+    // Productは載せない。価格(offers)・レビュー・評価のいずれも無いProductは
+    // Googleのリッチリザルト要件を満たさず「無効なアイテム」として検出される。
+    // 商品ページではない全ページに汎用の「テラリウム」を出しても検索結果には出ないため、
+    // ここではServiceのみを宣言する。個別商品の構造化データは商品詳細ページ側の役割。
     "makesOffer": [
-      {
-        "@type": "Offer",
-        "itemOffered": {
-          "@type": "Product",
-          "name": "テラリウム",
-          "description": "職人が手がける本格的なカプセルテラリウム"
-        }
-      },
       {
         "@type": "Offer",
         "itemOffered": {

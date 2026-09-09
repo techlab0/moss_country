@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getProductBySlug } from '@/lib/sanity'
+import { buildMetaDescription } from '@/lib/metaDescription'
 import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
@@ -26,9 +27,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const name = String(product.name ?? '')
-  const description =
-    product.description?.replace(/\s+/g, ' ').trim().slice(0, 120) ||
-    `${name}の商品詳細ページ。北海道の苔テラリウム専門店 MOSS COUNTRY がひとつひとつ手作りしています。`
+  // CMSの説明文は複数の商品で使い回されているものがあるため、
+  // 商品名と価格を先頭に置いて description がページごとに必ず異なるようにする。
+  const description = buildMetaDescription([
+    `${name}｜¥${Number(product.price ?? 0).toLocaleString('ja-JP')}`,
+    product.description,
+    '北海道・札幌の苔テラリウム専門店 モスカントリー（MOSS COUNTRY）の通販ページです。全国へお届けします。',
+  ])
 
   return {
     title: name,

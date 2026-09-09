@@ -1,24 +1,10 @@
 import type { Metadata } from 'next'
 import { getMossSpeciesBySlug } from '@/lib/sanity'
+import { buildMetaDescription } from '@/lib/metaDescription'
 
 interface MossGuideDetailLayoutProps {
   children: React.ReactNode
   params: Promise<{ slug: string }>
-}
-
-// Portable Text から冒頭の平文を取り出す。ブロック構造が想定外でも落とさない。
-function extractPlainText(blocks: unknown, maxLength = 120): string {
-  if (!Array.isArray(blocks)) return ''
-  const text = blocks
-    .map((block) => {
-      const children = (block as { children?: unknown })?.children
-      if (!Array.isArray(children)) return ''
-      return children.map((child) => String((child as { text?: unknown })?.text ?? '')).join('')
-    })
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text
 }
 
 export async function generateMetadata({ params }: MossGuideDetailLayoutProps): Promise<Metadata> {
@@ -32,9 +18,13 @@ export async function generateMetadata({ params }: MossGuideDetailLayoutProps): 
 
   const commonName = species.commonNames?.[0]
   const label = commonName && commonName !== species.name ? `${species.name}（${commonName}）` : species.name
-  const description =
-    extractPlainText(species.description) ||
-    `${species.name}の特徴、育成難易度、水分・光の条件など、テラリウムでの育て方をご紹介します。`
+  // description フィールドは全件が空で、解説は basicInfo に入っている。
+  // 名前を先頭に置くことで、basicInfo が未入力の苔でも説明文が他ページと重複しない。
+  const description = buildMetaDescription([
+    `${label}の特徴と育て方。`,
+    species.basicInfo,
+    '育成難易度・水分・光の条件まで、モスカントリー（MOSS COUNTRY）の苔図鑑がご紹介します。',
+  ])
 
   return {
     title: label,
