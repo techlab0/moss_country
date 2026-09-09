@@ -4,6 +4,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { mergeSiteSettings, SiteSettingsData, NavLink, SnsLink } from '@/lib/siteSettingsDefaults';
 import { mergeSeoSettings, normalizeGtmContainerId, SeoSettings } from '@/lib/seoSettings';
+import { sanitizePageSeo, type PageSeoEntry } from '@/lib/pageSeo';
 
 // 管理画面用: サイト設定（ヘッダー/フッター/ページ別メンテナンス）の取得・保存。
 
@@ -25,13 +26,18 @@ export async function GET(request: NextRequest) {
         seo {
           siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
           twitterHandle, googleSiteVerification, gtmContainerId
-        }
+        },
+        pageSeo[]{ path, description }
       }`
     );
 
     // デフォルトをマージして返す（管理画面には常に編集可能な全項目を表示する）
     return NextResponse.json({
-      settings: { ...mergeSiteSettings(saved), seo: mergeSeoSettings(saved?.seo) },
+      settings: {
+        ...mergeSiteSettings(saved),
+        seo: mergeSeoSettings(saved?.seo),
+        pageSeo: sanitizePageSeo((saved as { pageSeo?: unknown } | null)?.pageSeo),
+      },
     });
   } catch (error) {
     console.error('サイト設定取得エラー:', error);
@@ -111,6 +117,12 @@ export async function PUT(request: NextRequest) {
       rentalTerrariumSitemapConfigured: true,
       allowIndexing: body.allowIndexing === true,
       seo: sanitizeSeo(body.seo),
+      // 空欄のページは保存しない。読み出し時に pageSeo.ts の既定値へ倒れる。
+      pageSeo: sanitizePageSeo(body.pageSeo).map((entry: PageSeoEntry, i: number) => ({
+        _type: 'pageSeoEntry',
+        _key: `page-seo-${i}`,
+        ...entry,
+      })),
       updatedAt: new Date().toISOString(),
     });
 
@@ -123,7 +135,11 @@ export async function PUT(request: NextRequest) {
 
     const merged = mergeSiteSettings(saved as Partial<SiteSettingsData>);
     return NextResponse.json({
-      settings: { ...merged, seo: mergeSeoSettings((saved as { seo?: Partial<SeoSettings> }).seo) },
+      settings: {
+        ...merged,
+        seo: mergeSeoSettings((saved as { seo?: Partial<SeoSettings> }).seo),
+        pageSeo: sanitizePageSeo((saved as { pageSeo?: unknown }).pageSeo),
+      },
     });
   } catch (error) {
     console.error('サイト設定保存エラー:', error);

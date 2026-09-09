@@ -1,3 +1,4 @@
+import type { PageSeoEntry } from '@/lib/pageSeo';
 // サイト設定（ヘッダー/フッター/ハンバーガー/ページ別メンテナンス）のデフォルト値。
 // Sanityの siteSettings ドキュメントに保存値があればそちらが優先され、
 // なければここの値（従来のハードコード構成）で表示される。
@@ -35,6 +36,8 @@ export interface SiteSettingsData {
   allowIndexing: boolean;
   // SEO設定の既定値の解決は seoSettings.ts の mergeSeoSettings が担当する
   seo?: SeoSettings;
+  // ページ別のmeta description。未入力のページは pageSeo.ts の既定値が使われる
+  pageSeo?: PageSeoEntry[];
 }
 
 export const snsPlatformLabels: Record<SnsPlatform, string> = {

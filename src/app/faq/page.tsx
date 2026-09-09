@@ -1,25 +1,34 @@
 import type { Metadata } from 'next'
+import { getSiteMetadataSettings } from '@/lib/sanity'
+import { resolvePageDescription } from '@/lib/pageSeo'
 import { getFAQs } from '@/lib/sanity'
 import type { FAQ } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 
-export const metadata: Metadata = {
-  title: 'よくあるご質問',
-  description: '苔テラリウムのお手入れ、ご注文・配送、ワークショップのご予約など、MOSS COUNTRY によく寄せられるご質問と回答をまとめました。',
-  keywords: ['よくある質問', 'FAQ', 'お手入れ', '配送', '返品', 'ワークショップ', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー'],
-  openGraph: {
-    title: 'よくあるご質問 | MOSS COUNTRY',
-    description: 'お手入れ、ご注文・配送、ワークショップについてのよくあるご質問。',
-    url: 'https://mosscountry.com/faq',
-  },
-  twitter: {
-    title: 'よくあるご質問 | MOSS COUNTRY',
-    description: 'お手入れ、ご注文・配送、ワークショップについてのよくあるご質問。',
-  },
-  alternates: {
-    canonical: 'https://mosscountry.com/faq',
-  },
+// 説明文は管理画面（サイト設定 > SEO・計測）で上書きできる。
+// 未入力のあいだは src/lib/pageSeo.ts の既定値を使う。
+export async function generateMetadata(): Promise<Metadata> {
+  const { pageSeo } = await getSiteMetadataSettings()
+  const description = resolvePageDescription('/faq', pageSeo)
+
+  return {
+    title: 'よくあるご質問',
+    description,
+    keywords: ['よくある質問', 'FAQ', 'お手入れ', '配送', '返品', 'ワークショップ', 'MOSS COUNTRY', 'moss country', 'mosscountry', 'モスカントリー'],
+    openGraph: {
+      title: 'よくあるご質問 | MOSS COUNTRY',
+      description: 'お手入れ、ご注文・配送、ワークショップについてのよくあるご質問。',
+      url: 'https://mosscountry.com/faq',
+    },
+    twitter: {
+      title: 'よくあるご質問 | MOSS COUNTRY',
+      description: 'お手入れ、ご注文・配送、ワークショップについてのよくあるご質問。',
+    },
+    alternates: {
+      canonical: 'https://mosscountry.com/faq',
+    },
+  }
 }
 
 export default async function FAQPage() {

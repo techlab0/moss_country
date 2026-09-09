@@ -15,6 +15,7 @@
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs",
     "test:editor": "node --experimental-strip-types --test tests/portable-text-html.test.mjs",
     "test:site-settings": "node --experimental-strip-types --test tests/maintenance-nav-visibility.test.mjs tests/seo-settings.test.mjs",
+    "test:page-seo": "node --experimental-strip-types --test tests/page-seo.test.mjs",
     "test:jalan": "node --experimental-strip-types --test tests/jalan-booking-mail.test.mjs tests/jalan-import.test.mjs tests/jalan-slot-alerts.test.mjs tests/workshop-plan-display.test.mjs tests/request-params.test.mjs tests/linkify-keyword.test.mjs"
   },
   "dependencies": {

@@ -747,16 +747,24 @@ export async function getBackgroundImageSettings(): Promise<BackgroundImageSetti
 export async function getSiteMetadataSettings(): Promise<{
   allowIndexing: boolean;
   seo: Partial<SeoSettings> | null;
+  pageSeo: Array<{ path?: string | null; description?: string | null }> | null;
 }> {
   try {
-    const settings: { allowIndexing?: boolean; seo?: Partial<SeoSettings> } | null =
+    // ルートレイアウトと各ページのlayoutが同じクエリを呼ぶため、
+    // Nextのfetchキャッシュで1リクエストに重複排除される。
+    const settings: {
+      allowIndexing?: boolean;
+      seo?: Partial<SeoSettings>;
+      pageSeo?: Array<{ path?: string | null; description?: string | null }>;
+    } | null =
       await writeClient.fetch(
         `*[_type == "siteSettings" && _id == "siteSettings"][0]{
           allowIndexing,
           seo {
             siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
             twitterHandle, googleSiteVerification, gtmContainerId
-          }
+          },
+          pageSeo[]{ path, description }
         }`,
         {},
         { next: { revalidate: 300, tags: ['site-settings'] } }
@@ -765,11 +773,12 @@ export async function getSiteMetadataSettings(): Promise<{
     return {
       allowIndexing: settings?.allowIndexing === true,
       seo: settings?.seo ?? null,
+      pageSeo: settings?.pageSeo ?? null,
     };
   } catch (error) {
     // 取得に失敗したときはインデックス拒否側に倒す。公開前のサイトが
     // 一時的な通信エラーで検索エンジンに拾われる事故を防ぐため。
     console.warn('サイトメタデータ設定の取得に失敗しました。デフォルトで表示します:', error);
-    return { allowIndexing: false, seo: null };
+    return { allowIndexing: false, seo: null, pageSeo: null };
   }
 }

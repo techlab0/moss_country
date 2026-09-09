@@ -10,6 +10,7 @@ import {
 } from '@/lib/siteSettingsDefaults';
 import type { ShippingSettings, CarrierId } from '@/lib/shipping';
 import { defaultSeoSettings, type SeoSettings } from '@/lib/seoSettings';
+import { editablePages, type PageSeoEntry } from '@/lib/pageSeo';
 
 type MaintenanceSettings = {
   isEnabled: boolean;
@@ -583,6 +584,8 @@ export default function SettingsPage() {
 
       {tab === 'seo' && siteSettings && (
         <SeoSettingsEditor
+          pageSeo={siteSettings.pageSeo ?? []}
+          onPageSeoChange={(next) => setSiteSettings(prev => (prev ? { ...prev, pageSeo: next } : prev))}
           seo={siteSettings.seo ?? defaultSeoSettings}
           onChange={(next) => setSiteSettings(prev => (prev ? { ...prev, seo: next } : prev))}
           onSave={handleSaveSiteSettings}
@@ -607,16 +610,35 @@ export default function SettingsPage() {
 function SeoSettingsEditor({
   seo,
   onChange,
+  pageSeo,
+  onPageSeoChange,
   onSave,
   isSaving,
 }: {
   seo: SeoSettings;
   onChange: (next: SeoSettings) => void;
+  pageSeo: PageSeoEntry[];
+  onPageSeoChange: (next: PageSeoEntry[]) => void;
   onSave: () => void;
   isSaving: boolean;
 }) {
   const set = <K extends keyof SeoSettings>(key: K, value: SeoSettings[K]) => {
     onChange({ ...seo, [key]: value });
+  };
+
+  // 保存値が無いページは既定値をそのまま表示する（編集すればそれが上書きになる）
+  const descriptionFor = (path: string, autoDescription: string) =>
+    pageSeo.find((e) => e.path === path)?.description ?? autoDescription;
+
+  const setPageDescription = (path: string, autoDescription: string, value: string) => {
+    const others = pageSeo.filter((e) => e.path !== path);
+    const trimmed = value.trim();
+    // 既定値と同じものを保存すると、既定値を直したときに古い文言が残ってしまう
+    if (trimmed === '' || trimmed === autoDescription.trim()) {
+      onPageSeoChange(others);
+      return;
+    }
+    onPageSeoChange([...others, { path, description: value }]);
   };
 
   const gtmId = seo.gtmContainerId.trim();
@@ -672,6 +694,48 @@ function SeoSettingsEditor({
           />
           <p className="text-xs text-gray-500 mt-1">カンマ区切りで入力します</p>
         </div>
+      </div>
+
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">ページ別の説明文</h2>
+        <p className="text-sm text-gray-600">
+          検索結果に出る各ページの説明文です。初期値は自動で入っています。書き換えるとそのページだけ上書きされ、
+          「既定値に戻す」で自動の文面に戻ります。商品・ブログ記事・苔図鑑の各ページは、それぞれの内容から自動生成されます。
+        </p>
+
+        {editablePages.map((page) => {
+          const value = descriptionFor(page.path, page.autoDescription);
+          const isOverridden = pageSeo.some((e) => e.path === page.path);
+          return (
+            <div key={page.path}>
+              <div className="flex items-center justify-between mb-1 gap-2">
+                <label className="block text-sm text-gray-700">
+                  {page.label}
+                  <span className="ml-2 text-xs text-gray-400">{page.path}</span>
+                </label>
+                {isOverridden && (
+                  <button
+                    type="button"
+                    onClick={() => setPageDescription(page.path, page.autoDescription, '')}
+                    className="text-xs text-moss-green hover:underline whitespace-nowrap"
+                  >
+                    既定値に戻す
+                  </button>
+                )}
+              </div>
+              <textarea
+                rows={3}
+                value={value}
+                onChange={(e) => setPageDescription(page.path, page.autoDescription, e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                現在 {value.length} 文字（検索結果には120文字程度まで表示されます）
+                {isOverridden ? '・手動で設定中' : '・自動'}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">

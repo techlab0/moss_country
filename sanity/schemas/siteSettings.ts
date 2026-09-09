@@ -23,6 +23,23 @@ export const siteSettings = defineType({
   type: 'document',
   fields: [
     defineField({
+      name: 'pageSeo',
+      title: 'ページ別のmeta description',
+      description: '空欄のページはコード側の既定値が使われます',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'pageSeoEntry',
+          fields: [
+            defineField({ name: 'path', title: 'パス', type: 'string' }),
+            defineField({ name: 'description', title: '説明文', type: 'text', rows: 3 }),
+          ],
+          preview: { select: { title: 'path', subtitle: 'description' } },
+        },
+      ],
+    }),
+    defineField({
       name: 'headerLinks',
       title: 'ヘッダー・ハンバーガーのリンク',
       description: '並び順がそのまま表示順になります',
