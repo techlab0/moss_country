@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         current: finalSlug
       },
       description: data.description,
+      seoDescription: data.seoDescription,
       images: data.images || [], // フロントエンドからの画像データ
       characteristics: data.characteristics,
       basicInfo: data.basicInfo,

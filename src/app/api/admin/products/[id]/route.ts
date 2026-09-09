@@ -24,6 +24,7 @@ export async function GET(
         nameReading,
         slug,
         description,
+        seoDescription,
         price,
         category,
         images[] {

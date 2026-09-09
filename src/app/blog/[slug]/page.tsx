@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
-import { buildMetaDescription } from '@/lib/metaDescription'
+import { buildMetaDescription, normalizeDescription } from '@/lib/metaDescription'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import Image from 'next/image'
@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 
   // 抜粋が数十文字しかない記事があるため、足りない分は本文の冒頭で補う。
-  const description = buildMetaDescription([post.excerpt, post.content])
+  const description =
+    normalizeDescription(post.seoDescription) || buildMetaDescription([post.excerpt, post.content])
 
   return {
     title: post.title,

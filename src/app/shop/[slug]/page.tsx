@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getProductBySlug } from '@/lib/sanity'
-import { buildMetaDescription } from '@/lib/metaDescription'
+import { buildMetaDescription, normalizeDescription } from '@/lib/metaDescription'
 import { getShippingSettings, formatShippingDiscountNote } from '@/lib/shipping'
 import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
@@ -29,11 +29,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const name = String(product.name ?? '')
   // CMSの説明文は複数の商品で使い回されているものがあるため、
   // 商品名と価格を先頭に置いて description がページごとに必ず異なるようにする。
-  const description = buildMetaDescription([
-    `${name}｜¥${Number(product.price ?? 0).toLocaleString('ja-JP')}`,
-    product.description,
-    '北海道・札幌の苔テラリウム専門店 モスカントリー（MOSS COUNTRY）の通販ページです。全国へお届けします。',
-  ])
+  // 管理画面で説明文が入力されていればそれを最優先する
+  const description =
+    normalizeDescription(product.seoDescription) ||
+    buildMetaDescription([
+      `${name}｜¥${Number(product.price ?? 0).toLocaleString('ja-JP')}`,
+      product.description,
+      '北海道・札幌の苔テラリウム専門店 モスカントリー（MOSS COUNTRY）の通販ページです。全国へお届けします。',
+    ])
 
   return {
     title: name,

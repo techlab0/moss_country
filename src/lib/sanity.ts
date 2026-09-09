@@ -116,6 +116,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
       *[_type == "blogPost" && slug.current == $slug][0] {
         _id,
         title,
+        seoDescription,
         slug,
         excerpt,
         content,
@@ -181,6 +182,7 @@ export async function getProducts(limit = 20, offset = 0): Promise<Product[]> {
 
 // asset を展開して url と metadata を取得（画像最適化に必要）
 const productBySlugProjection = `{
+  seoDescription,
   _id,
   name,
   slug,
@@ -321,6 +323,7 @@ export async function getBlogPostById(id: string): Promise<BlogPost | null> {
         title,
         slug,
         excerpt,
+        seoDescription,
         content,
         featuredImage,
         category,
@@ -516,6 +519,7 @@ export async function getMossSpeciesBySlug(slug: string): Promise<MossSpecies | 
       *[_type == "mossSpecies" && slug.current == $slug && isVisible == true][0] {
         _id,
         name,
+        seoDescription,
         commonNames,
         slug,
         description,

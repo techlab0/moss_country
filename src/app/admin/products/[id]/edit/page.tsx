@@ -27,6 +27,7 @@ interface ProductFormData {
   nameReading: string;
   slug: string;
   description: string;
+  seoDescription: string;
   price: number;
   category: string;
   materials: string[];
@@ -56,6 +57,7 @@ export default function EditProductPage() {
     nameReading: '',
     slug: '',
     description: '',
+    seoDescription: '',
     price: 0,
     category: PRODUCT_CATEGORIES[0],
     materials: [],
@@ -91,6 +93,7 @@ export default function EditProductPage() {
           nameReading: String(product.nameReading ?? ''),
           slug: slugStr,
           description: String(product.description ?? ''),
+          seoDescription: String(product.seoDescription ?? ''),
           price: Number(product.price ?? 0),
           category: resolveCategory(product.category as string | undefined),
           materials: Array.isArray(product.materials) ? product.materials.map(String) : [],
@@ -171,6 +174,7 @@ export default function EditProductPage() {
         nameReading: formData.nameReading,
         slug: { _type: 'slug' as const, current: formData.slug },
         description: formData.description,
+        seoDescription: formData.seoDescription,
         price: formData.price,
         category: formData.category,
         materials: formData.materials,
@@ -350,6 +354,20 @@ export default function EditProductPage() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">検索結果の説明文</label>
+            <textarea
+              value={formData.seoDescription}
+              onChange={(e) => setFormData((prev) => ({ ...prev, seoDescription: e.target.value }))}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="空欄のままで構いません"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              空欄なら商品名・価格・商品説明から自動生成されます（現在 {formData.seoDescription.length} 文字）
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

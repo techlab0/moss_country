@@ -47,6 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       commonNames,
       slug,
       description,
+      seoDescription,
       images,
       characteristics,
       basicInfo,
@@ -139,6 +140,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         current: finalSlug
       },
       description: data.description,
+      seoDescription: data.seoDescription,
       images: data.images || [],
       characteristics: data.characteristics,
       basicInfo: data.basicInfo,

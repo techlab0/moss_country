@@ -44,6 +44,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
     slug: '',
     commonNames: [''],
     description: '',
+    seoDescription: '',
     characteristics: {
       beginnerFriendly: 3,
       waterRequirement: 'medium',
@@ -82,6 +83,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         slug: data.slug?.current || '',
         commonNames: data.commonNames?.length > 0 ? data.commonNames : [''],
         description: data.description || '',
+        seoDescription: data.seoDescription || '',
         characteristics: {
           beginnerFriendly: data.characteristics?.beginnerFriendly || 3,
           waterRequirement: data.characteristics?.waterRequirement || 'medium',
@@ -624,6 +626,27 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="生息地、外観、その他の特徴など、詳細説明で書ききれない基本的な情報を記載してください"
             />
+          </div>
+        </div>
+
+{/* 検索結果の説明文 */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">検索エンジン向け</h2>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              検索結果の説明文
+            </label>
+            <textarea
+              value={formData.seoDescription}
+              onChange={(e) => setFormData(prev => ({ ...prev, seoDescription: e.target.value }))}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-moss-green"
+              placeholder="空欄のままで構いません"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              空欄なら苔の名前と基本情報から自動生成されます（現在 {formData.seoDescription.length} 文字）
+            </p>
           </div>
         </div>
 

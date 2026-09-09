@@ -141,7 +141,8 @@ export const defaultSiteSettings: SiteSettingsData = {
     { platform: 'facebook', url: 'https://m.facebook.com/61570932690760/', isVisible: true },
     { platform: 'tiktok', url: 'https://www.tiktok.com/@moss.country', isVisible: true },
   ],
-  footerTagline: '小さなガラスの中に広がる、無限の自然の世界。北海道発、職人が手がける本格テラリウムをお届けします。',
+  footerTagline:
+    'Moss Country（モスカントリー）は、北海道・札幌の苔テラリウム専門店です。小さなガラスの中に広がる、無限の自然の世界。職人が手がける本格テラリウムをお届けします。',
   businessHours: '11:00 - 20:00',
   businessDays: '不定休（カレンダーをご確認ください）',
   copyrightText: '© 2024 MOSS COUNTRY. All rights reserved.',
@@ -153,6 +154,24 @@ export const defaultSiteSettings: SiteSettingsData = {
  * Sanityから取得した部分的な設定とデフォルトをマージする。
  * 配列は「保存されていれば保存値をそのまま使う」（要素単位のマージはしない）。
  */
+/**
+ * かつて既定値として配信していたフッター文言。
+ *
+ * これらと完全一致する保存値は「管理画面で一度も書き換えていない」とみなし、
+ * 現行の既定値へ差し替える。保存値は常に優先されるため、この扱いが無いと
+ * 既定値を直しても初期状態のままのサイトに反映されない。
+ * 利用者が意図的に旧文言をそのまま入力し直した場合だけは上書きになるが、
+ * 一字一句同じものを打ち直す状況は考えにくいため許容する。
+ */
+const supersededFooterTaglines = [
+  '小さなガラスの中に広がる、無限の自然の世界。北海道発、職人が手がける本格テラリウムをお届けします。',
+];
+
+function resolveFooterTagline(saved: string | undefined): string {
+  if (saved === undefined) return defaultSiteSettings.footerTagline;
+  return supersededFooterTaglines.includes(saved.trim()) ? defaultSiteSettings.footerTagline : saved;
+}
+
 export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | undefined): SiteSettingsData {
   if (!saved) return defaultSiteSettings;
   const savedSitemapLinks = saved.footerSitemapLinks?.length
@@ -166,7 +185,7 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
     footerSitemapLinks,
     footerLegalLinks: saved.footerLegalLinks?.length ? saved.footerLegalLinks : defaultSiteSettings.footerLegalLinks,
     snsLinks: saved.snsLinks?.length ? saved.snsLinks : defaultSiteSettings.snsLinks,
-    footerTagline: saved.footerTagline ?? defaultSiteSettings.footerTagline,
+    footerTagline: resolveFooterTagline(saved.footerTagline),
     businessHours: saved.businessHours ?? defaultSiteSettings.businessHours,
     businessDays: saved.businessDays ?? defaultSiteSettings.businessDays,
     copyrightText: saved.copyrightText ?? defaultSiteSettings.copyrightText,

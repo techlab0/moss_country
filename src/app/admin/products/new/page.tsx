@@ -26,6 +26,7 @@ interface ProductFormData {
   nameReading: string;
   slug: string;
   description: string;
+  seoDescription: string;
   price: number;
   category: string;
   materials: string[];
@@ -54,6 +55,7 @@ const NewProductPage = () => {
     nameReading: '',
     slug: '',
     description: '',
+    seoDescription: '',
     price: 0,
     category: PRODUCT_CATEGORIES[0],
     materials: [],
@@ -300,6 +302,22 @@ const NewProductPage = () => {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              検索結果の説明文
+            </label>
+            <textarea
+              value={formData.seoDescription}
+              onChange={(e) => setFormData(prev => ({ ...prev, seoDescription: e.target.value }))}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="空欄のままで構いません"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              空欄なら自動生成されます。検索結果には120文字程度まで表示されます。（現在 {formData.seoDescription.length} 文字）
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

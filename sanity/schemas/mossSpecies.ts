@@ -31,6 +31,13 @@ export const mossSpecies = defineType({
       validation: Rule => Rule.required()
     }),
     defineField({
+      name: 'seoDescription',
+      title: '検索結果の説明文',
+      description: '空欄なら本文などから自動生成されます（120文字程度まで表示されます）',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
       name: 'description',
       title: '詳細説明',
       type: 'array',

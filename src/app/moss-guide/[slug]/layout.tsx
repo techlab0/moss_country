@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getMossSpeciesBySlug } from '@/lib/sanity'
-import { buildMetaDescription } from '@/lib/metaDescription'
+import { buildMetaDescription, normalizeDescription } from '@/lib/metaDescription'
 
 interface MossGuideDetailLayoutProps {
   children: React.ReactNode
@@ -20,11 +20,13 @@ export async function generateMetadata({ params }: MossGuideDetailLayoutProps): 
   const label = commonName && commonName !== species.name ? `${species.name}（${commonName}）` : species.name
   // description フィールドは全件が空で、解説は basicInfo に入っている。
   // 名前を先頭に置くことで、basicInfo が未入力の苔でも説明文が他ページと重複しない。
-  const description = buildMetaDescription([
-    `${label}の特徴と育て方。`,
-    species.basicInfo,
-    '育成難易度・水分・光の条件まで、モスカントリー（MOSS COUNTRY）の苔図鑑がご紹介します。',
-  ])
+  const description =
+    normalizeDescription(species.seoDescription) ||
+    buildMetaDescription([
+      `${label}の特徴と育て方。`,
+      species.basicInfo,
+      '育成難易度・水分・光の条件まで、モスカントリー（MOSS COUNTRY）の苔図鑑がご紹介します。',
+    ])
 
   return {
     title: label,

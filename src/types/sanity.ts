@@ -10,6 +10,8 @@ export interface Product {
   _id: string
   _type: 'product'
   name: string
+  /** 管理画面で任意に設定する meta description。未入力なら自動生成する */
+  seoDescription?: string
   // あいうえお順の並び替え用ふりがな（ひらがな）。未入力の場合は name をフォールバックに使用する。
   nameReading?: string
   slug: {
@@ -72,6 +74,8 @@ export interface BlogPost {
   _id: string
   _type: 'blogPost'
   title: string
+  /** 管理画面で任意に設定する meta description。未入力なら自動生成する */
+  seoDescription?: string
   slug: {
     current: string
     _type: 'slug'
@@ -171,6 +175,8 @@ export interface MossSpecies {
   _id: string
   _type: 'mossSpecies'
   name: string
+  /** 管理画面で任意に設定する meta description。未入力なら自動生成する */
+  seoDescription?: string
   commonNames?: string[]
   slug: SanitySlug
   description: Array<{

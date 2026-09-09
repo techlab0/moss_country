@@ -22,6 +22,7 @@ interface BlogFormData {
   title: string;
   slug: string;
   excerpt: string;
+  seoDescription: string;
   content: string;
   category: string;
   tags: string[];
@@ -39,6 +40,7 @@ export default function EditBlogPostPage() {
     title: '',
     slug: '',
     excerpt: '',
+    seoDescription: '',
     content: '',
     category: 'other',
     tags: [],
@@ -89,6 +91,7 @@ export default function EditBlogPostPage() {
         title: post.title || '',
         slug: post.slug?.current || '',
         excerpt: post.excerpt || '',
+        seoDescription: post.seoDescription || '',
         content: contentText,
         category: post.category || 'other',
         tags: post.tags || [],
@@ -235,6 +238,7 @@ export default function EditBlogPostPage() {
           current: formData.slug,
         },
         excerpt: formData.excerpt,
+        seoDescription: formData.seoDescription,
         category: formData.category,
         tags: formData.tags,
         isPublished: formData.isPublished,
@@ -440,6 +444,24 @@ export default function EditBlogPostPage() {
               />
               <p className="mt-1 text-sm text-gray-500">
                 {formData.excerpt.length}/200文字
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="seoDescription" className="block text-sm font-medium text-gray-700">
+                検索結果の説明文
+              </label>
+              <textarea
+                name="seoDescription"
+                id="seoDescription"
+                rows={3}
+                value={formData.seoDescription}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                placeholder="空欄のままで構いません"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                空欄なら概要と本文から自動生成されます（現在 {formData.seoDescription.length} 文字）
               </p>
             </div>
 
