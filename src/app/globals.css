@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;700&family=Kalam:wght@300;400;700&family=Caveat:wght@400;500;600;700&family=Dancing+Script:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Lora:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap');
+/* Google Fontsの読み込みは廃止した。body/htmlの実際のfont-familyは下のシステムフォント
+   スタックで、Noto Sans JPやInter等はどのコンポーネントからも参照されていなかったため、
+   初回訪問時に8ファミリ分のCSSとフォントを取りに行くだけの純粋な待ち時間になっていた。 */
 
 @tailwind base;
 @tailwind components;

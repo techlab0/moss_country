@@ -30,7 +30,7 @@ const config: Config = {
         'form-placeholder': 'var(--color-form-placeholder)',
       },
       fontFamily: {
-        'sans': ['Noto Sans JP', 'system-ui', 'sans-serif'],
+        'sans': ['Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'system-ui', 'sans-serif'],
         'inter': ['Inter', 'system-ui', 'sans-serif'],
         'handwriting': ['Kalam', 'Caveat', 'Dancing Script', 'cursive'],
         'nature': ['Merriweather', 'Lora', 'Playfair Display', 'serif'],
