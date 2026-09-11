@@ -46,7 +46,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'priceAsc' | 'priceDesc'>('recommended');
+  const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'priceAsc' | 'priceDesc'>('name');
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['products'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['products'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['products-mobile'].src);
