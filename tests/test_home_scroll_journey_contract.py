@@ -24,6 +24,13 @@ class HomeScrollJourneyContractTests(unittest.TestCase):
         self.assertNotIn("window.scrollTo", journey)
         self.assertNotIn("transitionCurtain", journey)
 
+    def test_desktop_and_mobile_share_the_soft_background_transition(self) -> None:
+        backdrop = (ROOT / "src/components/sections/home/SceneBackdrop.tsx").read_text(encoding="utf-8")
+        self.assertIn("applySceneLayers(nextId, true)", backdrop)
+        self.assertIn("opacity 0.55s ease", backdrop)
+        self.assertNotIn("applySceneDesktop", backdrop)
+        self.assertNotIn("hairlineRef", backdrop)
+
     def test_regular_and_pinned_screens_share_the_same_navigation_axis(self) -> None:
         sources = "\n".join(
             path.read_text(encoding="utf-8")

@@ -2,15 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import { getImageProps } from 'next/image';
-import gsap from 'gsap';
 
 /**
  * 全シーン共通の固定背景ステージ。
  * - 最下層に常に黒（#050505）のベースレイヤーを敷き、遷移中も緑や継ぎ目が見えない
  * - 各シーン（[data-scene-id]を持つセクション）がビューポート中央に来ると、
  *   そのシーンに割り当てたテラリウム画像へ「黒と白」基調の遷移で切り替わる
- *   （旧背景が黒へ沈む 0.3s → 白いヘアラインが横切る 0.5s → 新背景が黒から浮かぶ 0.7s）
- * - コンテンツ側（[data-scene-content]）も同じタイミングで y+24px→0 のフェードイン
+ *   PC・モバイル共通の穏やかなクロスフェードで切り替わる
+ * - モバイルではコンテンツ側（[data-scene-content]）も到着時にフェードインする
  */
 
 interface SceneDefinition {
@@ -88,12 +87,9 @@ interface SceneBackdropProps {
 export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const hairlineRef = useRef<HTMLDivElement>(null);
   const activeIdRef = useRef<string | null>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
-    const hairline = hairlineRef.current;
     if (!rootRef.current) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -120,15 +116,14 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       return section?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
     };
 
-    // ── モバイル: 背景レイヤーの切替のみ担当。下スクロールはフェード、上は即時。
-    //    背景は常に現在シーンの画像を表示し、黒のまま取り残されない（GSAPタイムライン不使用）。
-    const applySceneMobile = (nextId: string | null, direction: 'up' | 'down') => {
+    // 背景レイヤーはPC・モバイルとも同じ穏やかなフェードで切り替える。
+    // 背景は常に現在シーンの画像を表示し、黒のまま取り残されない。
+    const applySceneLayers = (nextId: string | null, animate: boolean) => {
       if (nextId === activeIdRef.current) return;
       activeIdRef.current = nextId;
-      const animate = direction === 'down' && !reduceMotion;
 
       layerRefs.current.forEach((layer, id) => {
-        layer.style.transition = animate ? 'opacity 0.55s ease' : 'none';
+        layer.style.transition = animate && !reduceMotion ? 'opacity 0.55s ease' : 'none';
         layer.style.transform = 'none';
         layer.style.opacity = id === nextId ? '1' : '0';
       });
@@ -190,59 +185,6 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       }
     };
 
-    // ── デスクトップ: 黒 → 白ヘアライン → 画像の順で切り替わる高級感のある遷移
-    const applySceneDesktop = (nextId: string | null) => {
-      const previousId = activeIdRef.current;
-      if (nextId === previousId) return;
-      activeIdRef.current = nextId;
-
-      const previousLayer = previousId ? layerRefs.current.get(previousId) ?? null : null;
-      const nextLayer = nextId ? layerRefs.current.get(nextId) ?? null : null;
-      const nextContent = getContent(nextId);
-
-      timelineRef.current?.kill();
-
-      if (reduceMotion) {
-        layerRefs.current.forEach((layer, id) => {
-          gsap.set(layer, { opacity: id === nextId ? 1 : 0, scale: 1 });
-        });
-        if (nextContent) gsap.set(nextContent, { y: 0, opacity: 1 });
-        return;
-      }
-
-      const tl = gsap.timeline();
-      timelineRef.current = tl;
-
-      if (previousLayer) {
-        tl.to(previousLayer, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0);
-      }
-      if (hairline) {
-        tl.fromTo(
-          hairline,
-          { scaleX: 0, opacity: 0.6, transformOrigin: '0% 50%' },
-          { scaleX: 1, duration: 0.5, ease: 'power2.inOut' },
-          0.1,
-        );
-        tl.to(hairline, { opacity: 0, duration: 0.25, ease: 'power1.out' }, 0.62);
-      }
-      if (nextLayer) {
-        tl.fromTo(
-          nextLayer,
-          { opacity: 0, scale: 1.05 },
-          { opacity: 1, scale: 1, duration: 0.7, ease: 'power2.out' },
-          0.3,
-        );
-      }
-      if (nextContent) {
-        tl.fromTo(
-          nextContent,
-          { y: 24, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' },
-          0.3,
-        );
-      }
-    };
-
     let lastScrollY = window.scrollY;
     let scrollScheduled = false;
     const handleScroll = () => {
@@ -254,22 +196,18 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
         const direction: 'up' | 'down' = y >= lastScrollY ? 'down' : 'up';
         lastScrollY = y;
         const nextId = findActiveSceneId();
+        applySceneLayers(nextId, true);
         if (isMobile) {
-          applySceneMobile(nextId, direction);
           revealOnArrival(direction);
-        } else {
-          applySceneDesktop(nextId);
         }
       }, 80);
     };
 
     // 初期表示（下方向として扱う）
     const initialId = findActiveSceneId();
+    applySceneLayers(initialId, false);
     if (isMobile) {
       initMobileReveal();
-      applySceneMobile(initialId, 'down');
-    } else {
-      applySceneDesktop(initialId);
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -278,7 +216,6 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
-      timelineRef.current?.kill();
     };
   }, []);
 
@@ -352,12 +289,6 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       <div
         className="absolute inset-0"
         style={{ opacity: 0.035, backgroundImage: `url("${NOISE_TEXTURE}")` }}
-      />
-
-      {/* 遷移用の白いヘアライン */}
-      <div
-        ref={hairlineRef}
-        className="absolute left-0 right-0 top-1/2 h-px bg-white opacity-0"
       />
     </div>
   );

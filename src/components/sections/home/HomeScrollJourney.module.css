@@ -8,30 +8,13 @@
   z-index: 1;
 }
 
-@media (min-width: 768px) {
-  .journey :global([data-home-screen='regular']) {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    height: 100svh;
-    min-height: 100svh;
-    align-items: center;
-    isolation: isolate;
-    overflow: clip;
-  }
-}
-
-/* モバイルはスクロールを奪わない自由スクロール。ただし各シーンを最低でも1画面高にして
-   シーンごとの背景（SceneBackdrop）とスクロール連動の切替演出が噛み合うようにする。
-   高さは min-height（固定 height ではない）＋ overflow を切らないことで、
-   小さい端末で内容が縦にあふれても欠けないようにする。 */
-@media (max-width: 767px) {
-  .journey :global([data-home-screen='regular']) {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    min-height: 100svh;
-    align-items: center;
-    isolation: isolate;
-  }
+/* PC・モバイルとも標準の自由スクロールを使う。各シーンは最低1画面高を保ちつつ、
+   内容が多い場合は自然に伸びるため、固定高による窮屈さや内容の欠けが起きない。 */
+.journey :global([data-home-screen='regular']) {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  min-height: 100svh;
+  align-items: center;
+  isolation: isolate;
 }
