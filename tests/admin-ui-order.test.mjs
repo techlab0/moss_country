@@ -154,6 +154,31 @@ test('ブログ編集で既存本文を取得し、本文欠損時は概要を�
   assert.ok(detailPage.includes('{post.excerpt}'), '本文が空なら概要文を救済表示する');
 });
 
+test('ブログ記事ごとに任意の案内ボタンを設定して公開画面へ表示できる', async () => {
+  const newPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/new/page.tsx'), 'utf8');
+  const editPage = await readFile(resolve(projectRoot, 'src/app/admin/blog/[id]/edit/page.tsx'), 'utf8');
+  const detailPage = await readFile(resolve(projectRoot, 'src/app/blog/[slug]/page.tsx'), 'utf8');
+  const schema = await readFile(resolve(projectRoot, 'sanity/schemas/blogPost.ts'), 'utf8');
+  const sanity = await readFile(resolve(projectRoot, 'src/lib/sanity.ts'), 'utf8');
+  const createApi = await readFile(resolve(projectRoot, 'src/app/api/admin/blog/route.ts'), 'utf8');
+  const updateApi = await readFile(resolve(projectRoot, 'src/app/api/admin/blog/[id]/route.ts'), 'utf8');
+
+  for (const source of [newPage, editPage]) {
+    assert.ok(source.includes('記事下の案内ボタン'), '管理画面に案内ボタン設定欄を表示する');
+    assert.ok(source.includes('name="ctaLabel"'), 'ボタン文字を入力できる');
+    assert.ok(source.includes('name="ctaUrl"'), '移動先URLを入力できる');
+    assert.ok(source.includes('normalizeBlogCtaFields(formData)'), '保存前に入力内容を検証する');
+  }
+  assert.ok(schema.includes("name: 'ctaLabel'"), 'ボタン文字をSanityへ保存する');
+  assert.ok(schema.includes("name: 'ctaUrl'"), '移動先URLをSanityへ保存する');
+  assert.ok(sanity.includes('ctaLabel,'), '記事取得時にボタン文字を含める');
+  assert.ok(sanity.includes('ctaUrl,'), '記事取得時に移動先URLを含める');
+  assert.ok(createApi.includes('normalizeBlogCtaFields(data)'), '新規作成APIでもURLを検証する');
+  assert.ok(updateApi.includes('normalizeBlogCtaFields(data)'), '更新APIでもURLを検証する');
+  assert.ok(detailPage.includes('getBlogCta(post)'), '公開前にも保存値を検証する');
+  assert.ok(detailPage.includes('記事に関連するページはこちら'), '記事末尾に案内ボタンを表示する');
+});
+
 test('クラフトモスレンタルを編集でき、表示・非表示を切り替えられる', async () => {
   const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
   const settings = await readFile(resolve(projectRoot, 'src/lib/siteSettingsDefaults.ts'), 'utf8');

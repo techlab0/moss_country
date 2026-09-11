@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
 import { imageDisplayScale, imageObjectPosition } from '@/lib/imagePosition'
+import { getBlogCta } from '@/lib/blogCta'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -57,6 +58,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const hasBody = Array.isArray(post.content) && post.content.length > 0
+  const blogCta = getBlogCta(post)
+  const ctaClassName = 'inline-flex items-center justify-center rounded-lg bg-moss-green px-7 py-3.5 font-medium text-white shadow-lg transition-colors hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2'
 
   return (
     <div 
@@ -175,6 +178,28 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               )}
             </div>
           </div>
+
+          {blogCta && (
+            <div className="mb-8 rounded-lg bg-white/90 p-6 text-center shadow-sm backdrop-blur-sm">
+              <p className="mb-4 text-sm font-medium text-gray-600">記事に関連するページはこちら</p>
+              {blogCta.external ? (
+                <a
+                  href={blogCta.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={ctaClassName}
+                >
+                  {blogCta.label}
+                  <span aria-hidden="true" className="ml-2">→</span>
+                </a>
+              ) : (
+                <Link href={blogCta.url} className={ctaClassName}>
+                  {blogCta.label}
+                  <span aria-hidden="true" className="ml-2">→</span>
+                </Link>
+              )}
+            </div>
+          )}
 
           {post.tags && post.tags.length > 0 && (
             <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">

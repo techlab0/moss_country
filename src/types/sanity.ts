@@ -106,6 +106,9 @@ export interface BlogPost {
   }
   category?: string
   tags?: string[]
+  /** 記事末尾に表示する任意の案内ボタン。文字とURLが揃った場合だけ表示する */
+  ctaLabel?: string | null
+  ctaUrl?: string | null
   // Sanityスキーマ・GROQクエリ・書き込み処理はすべて isPublished を使っている。
   // ここだけ published になっており、管理画面の公開状態の判定が型と噛み合っていなかった。
   isPublished: boolean

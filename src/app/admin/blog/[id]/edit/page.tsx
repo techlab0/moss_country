@@ -10,6 +10,7 @@ import { compressImageForUpload } from '@/lib/imageCompress';
 import { ImagePositionControls, imageDisplayScale, imageObjectPosition } from '@/components/admin/ImagePositionControls';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { blocksToHtml, htmlToBlocks, isEmptyPortableText } from '@/lib/portableTextHtml';
+import { normalizeBlogCtaFields } from '@/lib/blogCta';
 
 interface SanityImageRef {
   _type: 'image';
@@ -27,6 +28,8 @@ interface BlogFormData {
   category: string;
   tags: string[];
   isPublished: boolean;
+  ctaLabel: string;
+  ctaUrl: string;
   featuredImage?: SanityImageRef;
 }
 
@@ -45,6 +48,8 @@ export default function EditBlogPostPage() {
     category: 'other',
     tags: [],
     isPublished: false,
+    ctaLabel: '',
+    ctaUrl: '',
   });
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -96,6 +101,8 @@ export default function EditBlogPostPage() {
         category: post.category || 'other',
         tags: post.tags || [],
         isPublished: post.isPublished || false,
+        ctaLabel: post.ctaLabel || '',
+        ctaUrl: post.ctaUrl || '',
         featuredImage: post.featuredImage as SanityImageRef | undefined,
       });
       setFeaturedImagePreview(post.featuredImage ? urlFor(post.featuredImage).width(800).height(450).url() : '');
@@ -222,6 +229,11 @@ export default function EditBlogPostPage() {
         throw new Error('スラッグの重複エラーを解決してください');
       }
 
+      const normalizedCta = normalizeBlogCtaFields(formData);
+      if (!normalizedCta.ok) {
+        throw new Error(normalizedCta.error);
+      }
+
       const contentBlocks = htmlToBlocks(formData.content);
       if (contentChanged && isEmptyPortableText(contentBlocks)) {
         const confirmed = window.confirm('本文が空です。既存の本文を削除して保存しますか？');
@@ -241,6 +253,7 @@ export default function EditBlogPostPage() {
         seoDescription: formData.seoDescription,
         category: formData.category,
         tags: formData.tags,
+        ...normalizedCta.fields,
         isPublished: formData.isPublished,
         featuredImage: formData.featuredImage ?? null,
         // 本文欄を変更していない場合は送信せず、Sanity上の既存本文を保持する。
@@ -537,6 +550,54 @@ export default function EditBlogPostPage() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-2">記事下の案内ボタン</h2>
+          <p className="mb-4 text-sm text-gray-600">
+            記事を読んだ方を、紹介した商品や予約などのページへ案内できます。両方空欄なら表示されません。
+          </p>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <label htmlFor="ctaLabel" className="block text-sm font-medium text-gray-700">
+                ボタンに表示する文字
+              </label>
+              <input
+                type="text"
+                name="ctaLabel"
+                id="ctaLabel"
+                maxLength={60}
+                value={formData.ctaLabel}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-moss-green focus:ring-moss-green sm:text-sm"
+                placeholder="例：この商品を見る"
+              />
+            </div>
+            <div>
+              <label htmlFor="ctaUrl" className="block text-sm font-medium text-gray-700">
+                移動先URL
+              </label>
+              <input
+                type="text"
+                name="ctaUrl"
+                id="ctaUrl"
+                value={formData.ctaUrl}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-moss-green focus:ring-moss-green sm:text-sm"
+                placeholder="例：/shop/商品名"
+              />
+              <p className="mt-1 text-xs text-gray-500">商品ページを開き、アドレス欄のURLをコピーして貼り付けられます。</p>
+            </div>
+          </div>
+          {formData.ctaLabel && formData.ctaUrl && (
+            <div className="mt-5 rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
+              <p className="mb-2 text-xs text-gray-500">表示イメージ</p>
+              <span className="inline-flex items-center rounded-lg bg-moss-green px-6 py-3 font-medium text-white shadow">
+                {formData.ctaLabel}
+                <span aria-hidden="true" className="ml-2">→</span>
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">

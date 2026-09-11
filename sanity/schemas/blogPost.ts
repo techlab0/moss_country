@@ -122,6 +122,24 @@ export const blogPost = defineType({
       },
     }),
     defineField({
+      name: 'ctaLabel',
+      title: '記事下の案内ボタンに表示する文字',
+      description: '例：この商品を見る（移動先URLと両方入力した場合だけ表示されます）',
+      type: 'string',
+      validation: Rule => Rule.max(60),
+    }),
+    defineField({
+      name: 'ctaUrl',
+      title: '記事下の案内ボタンの移動先URL',
+      description: '例：/shop/商品名 または https://mosscountry.com/shop/商品名',
+      type: 'string',
+      validation: Rule => Rule.custom((value) => {
+        if (!value) return true
+        if ((value.startsWith('/') && !value.startsWith('//')) || /^https:\/\//i.test(value)) return true
+        return '/ から始まるサイト内URL、または https:// URLを入力してください'
+      }),
+    }),
+    defineField({
       name: 'publishedAt',
       title: '公開日',
       type: 'datetime',

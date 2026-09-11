@@ -100,6 +100,8 @@ export async function getBlogPosts(limit = 10, offset = 0): Promise<BlogPost[]> 
         featuredImage,
         category,
         tags,
+        ctaLabel,
+        ctaUrl,
         publishedAt,
         author
       }
@@ -123,6 +125,8 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
         featuredImage,
         category,
         tags,
+        ctaLabel,
+        ctaUrl,
         publishedAt,
         author
       }
@@ -300,6 +304,8 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
         featuredImage,
         category,
         tags,
+        ctaLabel,
+        ctaUrl,
         publishedAt,
         isPublished,
         author,
@@ -328,6 +334,8 @@ export async function getBlogPostById(id: string): Promise<BlogPost | null> {
         featuredImage,
         category,
         tags,
+        ctaLabel,
+        ctaUrl,
         publishedAt,
         isPublished,
         author

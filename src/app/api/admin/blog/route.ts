@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAllBlogPosts, createBlogPost } from '@/lib/sanity';
 import { generateSEOFriendlySlug } from '@/lib/slugUtils';
 import { verifyAdminSession } from '@/lib/auth';
+import { normalizeBlogCtaFields } from '@/lib/blogCta';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+    const normalizedCta = normalizeBlogCtaFields(data);
+    if (!normalizedCta.ok) {
+      return NextResponse.json({ error: normalizedCta.error }, { status: 400 });
+    }
     
     // バリデーション
     if (!data.title || !data.excerpt) {
@@ -57,6 +62,7 @@ export async function POST(request: NextRequest) {
 
     const blogPost = await createBlogPost({
       ...data,
+      ...normalizedCta.fields,
       slug
     });
 

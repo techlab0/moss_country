@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBlogPostById, updateBlogPost, deleteBlogPost } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+import { normalizeBlogCtaFields } from '@/lib/blogCta';
 
 export async function GET(
   request: NextRequest,
@@ -37,10 +38,14 @@ export async function PATCH(
 
     const { id } = await params;
     const data = await request.json();
+    const normalizedCta = normalizeBlogCtaFields(data);
+    if (!normalizedCta.ok) {
+      return NextResponse.json({ error: normalizedCta.error }, { status: 400 });
+    }
     
     console.log('Updating blog post:', id, data);
     
-    const updatedPost = await updateBlogPost(id, data);
+    const updatedPost = await updateBlogPost(id, { ...data, ...normalizedCta.fields });
     return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Failed to update blog post:', error);
