@@ -9,7 +9,7 @@ import { getImageProps } from 'next/image';
  * - 各シーン（[data-scene-id]を持つセクション）がビューポート中央に来ると、
  *   そのシーンに割り当てたテラリウム画像へ「黒と白」基調の遷移で切り替わる
  *   PC・モバイル共通の穏やかなクロスフェードで切り替わる
- * - モバイルではコンテンツ側（[data-scene-content]）も到着時にフェードインする
+ * - PC・モバイル共通でコンテンツ側（[data-scene-content]）も到着時にフェードインする
  */
 
 interface SceneDefinition {
@@ -106,7 +106,6 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       return null;
     };
 
-    const isMobile = window.matchMedia('(max-width: 767px)').matches;
     // 一度表示したシーンのコンテンツは以後アニメーションし直さない（「表示させっぱなし」）
     const revealedContent = new Set<string>();
 
@@ -129,7 +128,7 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       });
     };
 
-    // ── モバイルのコンテンツ表示: 下スクロール中は各セクションを非表示にしておき、
+    // ── PC・モバイル共通のコンテンツ表示: 下スクロール中は各セクションを非表示にしておき、
     //    セクション上端がビューポートの80%ラインに達した瞬間にフェードで表示する。
     //    一度表示したら以後は出しっぱなし（上スクロールで消えない）。
     const sceneIds = SCENES.map((scene) => scene.id);
@@ -168,9 +167,9 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       }
     };
 
-    // 初期化（モバイルのみ）: ビューポートより下のセクションを事前に隠す。
+    // 初期化: ビューポートより下のセクションを事前に隠す。
     // JSでのみ隠すので、JSが動かない環境では通常表示のまま（コンテンツ喪失なし）。
-    const initMobileReveal = () => {
+    const initContentReveal = () => {
       for (const id of sceneIds) {
         const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
         const content = getContent(id);
@@ -197,18 +196,14 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
         lastScrollY = y;
         const nextId = findActiveSceneId();
         applySceneLayers(nextId, true);
-        if (isMobile) {
-          revealOnArrival(direction);
-        }
+        revealOnArrival(direction);
       }, 80);
     };
 
     // 初期表示（下方向として扱う）
     const initialId = findActiveSceneId();
     applySceneLayers(initialId, false);
-    if (isMobile) {
-      initMobileReveal();
-    }
+    initContentReveal();
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll, { passive: true });

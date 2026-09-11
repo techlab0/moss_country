@@ -13,21 +13,33 @@ JOURNEY_CSS = ROOT / "src/components/sections/home/HomeScrollJourney.module.css"
 
 
 class HomeScrollJourneyContractTests(unittest.TestCase):
-    def test_homepage_uses_native_free_scrolling(self) -> None:
+    def test_homepage_uses_smooth_free_scrolling_without_screen_snap(self) -> None:
         page = PAGE.read_text(encoding="utf-8")
         journey = JOURNEY.read_text(encoding="utf-8")
         self.assertIn("HomeScrollJourney", page)
         self.assertIn("data-home-journey", journey)
         self.assertIn('data-home-screen="regular"', page)
+        self.assertIn("new Lenis", journey)
         self.assertNotIn("handleWheel", journey)
         self.assertNotIn("preventDefault", journey)
         self.assertNotIn("window.scrollTo", journey)
         self.assertNotIn("transitionCurtain", journey)
 
+    def test_smoothing_only_dampens_desktop_wheel_input(self) -> None:
+        journey = JOURNEY.read_text(encoding="utf-8")
+        self.assertIn("(pointer: fine)", journey)
+        self.assertIn("reducedMotion.matches", journey)
+        self.assertIn("syncTouch: false", journey)
+        self.assertIn("lerp: 0.12", journey)
+        self.assertIn("wheelMultiplier: 0.65", journey)
+
     def test_desktop_and_mobile_share_the_soft_background_transition(self) -> None:
         backdrop = (ROOT / "src/components/sections/home/SceneBackdrop.tsx").read_text(encoding="utf-8")
         self.assertIn("applySceneLayers(nextId, true)", backdrop)
         self.assertIn("opacity 0.55s ease", backdrop)
+        self.assertIn("initContentReveal()", backdrop)
+        self.assertIn("revealOnArrival(direction)", backdrop)
+        self.assertNotIn("isMobile", backdrop)
         self.assertNotIn("applySceneDesktop", backdrop)
         self.assertNotIn("hairlineRef", backdrop)
 
