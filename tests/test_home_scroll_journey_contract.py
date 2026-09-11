@@ -43,6 +43,14 @@ class HomeScrollJourneyContractTests(unittest.TestCase):
         self.assertNotIn("applySceneDesktop", backdrop)
         self.assertNotIn("hairlineRef", backdrop)
 
+    def test_about_cards_finish_their_reveal_without_falling_behind_scroll(self) -> None:
+        about = (ROOT / "src/components/sections/home/AboutSection.tsx").read_text(encoding="utf-8")
+        self.assertIn("data-scene-content", about)
+        self.assertNotIn("cardInnerRefs", about)
+        self.assertNotIn("gsap.to(cardInners", about)
+        self.assertNotIn("trigger: inner", about)
+        self.assertNotIn("delay: index *", about)
+
     def test_regular_and_pinned_screens_share_the_same_navigation_axis(self) -> None:
         sources = "\n".join(
             path.read_text(encoding="utf-8")

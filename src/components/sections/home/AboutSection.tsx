@@ -35,7 +35,6 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const cardOuterRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const cardInnerRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const overrideTitle = ov('aboutTitle');
   const titleContent = overrideTitle !== undefined
@@ -54,11 +53,9 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
     const ctx = gsap.context(() => {
       const chars = heading.querySelectorAll<HTMLElement>('[data-about-char]');
       const cardOuters = cardOuterRefs.current.filter((el): el is HTMLDivElement => el !== null);
-      const cardInners = cardInnerRefs.current.filter((el): el is HTMLDivElement => el !== null);
 
       if (reduceMotion) {
         gsap.set(chars, { y: 0, opacity: 1 });
-        gsap.set(cardInners, { y: 0, opacity: 1 });
         gsap.set(cardOuters, { y: 0 });
         return;
       }
@@ -78,22 +75,8 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
         },
       });
 
-      // カード：下から重さのある出現（一度だけ再生、時差あり）
-      cardInners.forEach((inner, index) => {
-        gsap.set(inner, { y: 46, opacity: 0 });
-        gsap.to(inner, {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          ease: 'power2.out',
-          delay: index * 0.15,
-          scrollTrigger: {
-            trigger: inner,
-            start: 'top 88%',
-            once: true,
-          },
-        });
-      });
+      // カードの表示は親の data-scene-content にある共通フェードへ一本化する。
+      // 個別の待ち時間を重ねないため、速いスクロールでも3枚が同時に表示される。
 
       // カード：わずかな時差パララックス（スクロールに応じて-8〜8pxの縦ズレ、scrub）
       const centerIndex = (cardOuters.length - 1) / 2;
@@ -205,7 +188,6 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
               className="text-center group"
             >
               <div
-                ref={(el) => { cardInnerRefs.current[index] = el; }}
                 className={`backdrop-blur-sm rounded-2xl p-5 sm:p-6 md:p-6 border transition-all duration-300 ${card.bg} ${card.border}`}
               >
                 <h3 className={`text-xl sm:text-2xl md:text-3xl font-medium text-white mb-4 transition-colors duration-300 ${card.accentText}`}>{card.title}</h3>
