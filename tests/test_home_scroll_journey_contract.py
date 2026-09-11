@@ -22,6 +22,18 @@ class HomeScrollJourneyContractTests(unittest.TestCase):
         self.assertIn("handleWheel", journey)
         self.assertIn("transitionCurtain", journey)
 
+    def test_one_gesture_cannot_queue_another_screen_move(self) -> None:
+        journey = JOURNEY.read_text(encoding="utf-8")
+        self.assertIn("gestureActiveRef", journey)
+        self.assertIn("finishGestureAfterQuiet", journey)
+        self.assertNotIn("queuedDirectionRef", journey)
+
+    def test_screen_and_curtain_transitions_use_the_same_faster_duration(self) -> None:
+        journey = JOURNEY.read_text(encoding="utf-8")
+        journey_css = JOURNEY_CSS.read_text(encoding="utf-8")
+        self.assertIn("const SCREEN_TRAVEL_MS = 420", journey)
+        self.assertEqual(journey_css.count("420ms cubic-bezier"), 4)
+
     def test_regular_and_pinned_screens_share_the_same_navigation_axis(self) -> None:
         sources = "\n".join(
             path.read_text(encoding="utf-8")

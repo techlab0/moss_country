@@ -43,19 +43,19 @@
 }
 
 .transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainMain {
-  animation: curtain-down 680ms cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: curtain-down 420ms cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
 .transitionCurtain[data-transitioning='true'][data-direction='down'] .curtainAccent {
-  animation: accent-down 680ms cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: accent-down 420ms cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
 .transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainMain {
-  animation: curtain-up 680ms cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: curtain-up 420ms cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
 .transitionCurtain[data-transitioning='true'][data-direction='up'] .curtainAccent {
-  animation: accent-up 680ms cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: accent-up 420ms cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
 @keyframes curtain-down {
