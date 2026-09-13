@@ -122,22 +122,53 @@ export const blogPost = defineType({
       },
     }),
     defineField({
+      name: 'ctaLinks',
+      title: '記事下の案内ボタン',
+      description: '紹介した商品や予約などのページへ案内するボタン（最大5個）',
+      type: 'array',
+      validation: Rule => Rule.max(5),
+      of: [
+        {
+          type: 'object',
+          name: 'blogCtaLink',
+          title: '案内ボタン',
+          fields: [
+            defineField({
+              name: 'label',
+              title: 'ボタンに表示する文字',
+              type: 'string',
+              validation: Rule => Rule.required().max(60),
+            }),
+            defineField({
+              name: 'url',
+              title: '移動先URL',
+              description: '例：/shop/商品名 または https://mosscountry.com/shop/商品名',
+              type: 'string',
+              validation: Rule => Rule.required().custom((value) => {
+                if (!value) return true
+                if ((value.startsWith('/') && !value.startsWith('//')) || /^https:\/\//i.test(value)) return true
+                return '/ から始まるサイト内URL、または https:// URLを入力してください'
+              }),
+            }),
+          ],
+          preview: {
+            select: { title: 'label', subtitle: 'url' },
+          },
+        },
+      ],
+    }),
+    // 旧1個用フィールドは既存記事の読み取り互換性のため残す。新しい編集画面では使用しない。
+    defineField({
       name: 'ctaLabel',
-      title: '記事下の案内ボタンに表示する文字',
-      description: '例：この商品を見る（移動先URLと両方入力した場合だけ表示されます）',
+      title: '旧案内ボタン文字',
       type: 'string',
-      validation: Rule => Rule.max(60),
+      hidden: true,
     }),
     defineField({
       name: 'ctaUrl',
-      title: '記事下の案内ボタンの移動先URL',
-      description: '例：/shop/商品名 または https://mosscountry.com/shop/商品名',
+      title: '旧案内ボタンURL',
       type: 'string',
-      validation: Rule => Rule.custom((value) => {
-        if (!value) return true
-        if ((value.startsWith('/') && !value.startsWith('//')) || /^https:\/\//i.test(value)) return true
-        return '/ から始まるサイト内URL、または https:// URLを入力してください'
-      }),
+      hidden: true,
     }),
     defineField({
       name: 'publishedAt',

@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
 import { imageDisplayScale, imageObjectPosition } from '@/lib/imagePosition'
-import { getBlogCta } from '@/lib/blogCta'
+import { getBlogCtas } from '@/lib/blogCta'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -58,7 +58,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const hasBody = Array.isArray(post.content) && post.content.length > 0
-  const blogCta = getBlogCta(post)
+  const blogCtas = getBlogCtas(post)
   const ctaClassName = 'inline-flex items-center justify-center rounded-lg bg-moss-green px-7 py-3.5 font-medium text-white shadow-lg transition-colors hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2'
 
   return (
@@ -179,25 +179,28 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
           </div>
 
-          {blogCta && (
+          {blogCtas.length > 0 && (
             <div className="mb-8 rounded-lg bg-white/90 p-6 text-center shadow-sm backdrop-blur-sm">
               <p className="mb-4 text-sm font-medium text-gray-600">記事に関連するページはこちら</p>
-              {blogCta.external ? (
-                <a
-                  href={blogCta.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={ctaClassName}
-                >
-                  {blogCta.label}
-                  <span aria-hidden="true" className="ml-2">→</span>
-                </a>
-              ) : (
-                <Link href={blogCta.url} className={ctaClassName}>
-                  {blogCta.label}
-                  <span aria-hidden="true" className="ml-2">→</span>
-                </Link>
-              )}
+              <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {blogCtas.map((blogCta) => blogCta.external ? (
+                  <a
+                    key={blogCta.key}
+                    href={blogCta.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={ctaClassName}
+                  >
+                    {blogCta.label}
+                    <span aria-hidden="true" className="ml-2">→</span>
+                  </a>
+                ) : (
+                  <Link key={blogCta.key} href={blogCta.url} className={ctaClassName}>
+                    {blogCta.label}
+                    <span aria-hidden="true" className="ml-2">→</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

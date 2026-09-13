@@ -164,18 +164,22 @@ test('ブログ記事ごとに任意の案内ボタンを設定して公開画�
   const updateApi = await readFile(resolve(projectRoot, 'src/app/api/admin/blog/[id]/route.ts'), 'utf8');
 
   for (const source of [newPage, editPage]) {
-    assert.ok(source.includes('記事下の案内ボタン'), '管理画面に案内ボタン設定欄を表示する');
-    assert.ok(source.includes('name="ctaLabel"'), 'ボタン文字を入力できる');
-    assert.ok(source.includes('name="ctaUrl"'), '移動先URLを入力できる');
-    assert.ok(source.includes('normalizeBlogCtaFields(formData)'), '保存前に入力内容を検証する');
+    assert.ok(source.includes('<BlogCtaEditor'), '管理画面に複数ボタン編集欄を表示する');
+    assert.ok(source.includes('ctaLinks: formData.ctaLinks'), '複数ボタンを保存前に検証する');
   }
-  assert.ok(schema.includes("name: 'ctaLabel'"), 'ボタン文字をSanityへ保存する');
-  assert.ok(schema.includes("name: 'ctaUrl'"), '移動先URLをSanityへ保存する');
-  assert.ok(sanity.includes('ctaLabel,'), '記事取得時にボタン文字を含める');
-  assert.ok(sanity.includes('ctaUrl,'), '記事取得時に移動先URLを含める');
+  const editor = await readFile(resolve(projectRoot, 'src/components/admin/BlogCtaEditor.tsx'), 'utf8');
+  assert.ok(editor.includes('＋ ボタンを追加'), '案内ボタンを追加できる');
+  assert.ok(editor.includes('moveItem(index, -1)'), '案内ボタンを上へ移動できる');
+  assert.ok(editor.includes('moveItem(index, 1)'), '案内ボタンを下へ移動できる');
+  assert.ok(editor.includes('removeItem(index)'), '案内ボタンを削除できる');
+  assert.ok(schema.includes("name: 'ctaLinks'"), '複数ボタンをSanityへ保存する');
+  assert.ok(schema.includes('Rule.max(5)'), '保存数を5個までに制限する');
+  assert.ok(sanity.includes('ctaLinks,'), '記事取得時に複数ボタンを含める');
   assert.ok(createApi.includes('normalizeBlogCtaFields(data)'), '新規作成APIでもURLを検証する');
   assert.ok(updateApi.includes('normalizeBlogCtaFields(data)'), '更新APIでもURLを検証する');
-  assert.ok(detailPage.includes('getBlogCta(post)'), '公開前にも保存値を検証する');
+  assert.ok(editPage.includes('getBlogCtaInputs(post)'), '旧1個用設定を編集画面へ引き継ぐ');
+  assert.ok(detailPage.includes('getBlogCtas(post)'), '公開前にも複数の保存値を検証する');
+  assert.ok(detailPage.includes('blogCtas.map'), '複数ボタンを順番に表示する');
   assert.ok(detailPage.includes('記事に関連するページはこちら'), '記事末尾に案内ボタンを表示する');
 });
 

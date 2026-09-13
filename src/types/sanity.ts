@@ -106,7 +106,9 @@ export interface BlogPost {
   }
   category?: string
   tags?: string[]
-  /** 記事末尾に表示する任意の案内ボタン。文字とURLが揃った場合だけ表示する */
+  /** 記事末尾に表示する任意の案内ボタン（最大5個） */
+  ctaLinks?: Array<{ _key?: string; label?: string | null; url?: string | null }> | null
+  /** 旧1個用形式。既存記事の表示互換性のため読み取りを継続する */
   ctaLabel?: string | null
   ctaUrl?: string | null
   // Sanityスキーマ・GROQクエリ・書き込み処理はすべて isPublished を使っている。
