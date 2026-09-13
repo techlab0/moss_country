@@ -32,8 +32,8 @@ test('複数ボタンを入力順のまま正規化して旧形式を空にす�
     ok: true,
     fields: {
       ctaLinks: [
-        { _key: 'first', label: '商品を見る', url: '/shop/item' },
-        { _key: 'second', label: '予約する', url: '/workshop/booking' },
+        { _key: 'first', label: '商品を見る', url: '/shop/item', product: null },
+        { _key: 'second', label: '予約する', url: '/workshop/booking', product: null },
       ],
       ctaLabel: null,
       ctaUrl: null,
@@ -49,6 +49,29 @@ test('不完全なボタンと上限超過を保存させない', () => {
       url: `/shop/item-${index + 1}`,
     })),
   }).ok, false);
+});
+
+test('商品を選んだボタンは商品参照を保存しURL入力を不要にする', () => {
+  assert.deepEqual(normalizeBlogCtaFields({
+    ctaLinks: [{
+      _key: 'product-card',
+      label: 'この商品を見る',
+      url: '',
+      product: { _type: 'reference', _ref: 'product-123' },
+    }],
+  }), {
+    ok: true,
+    fields: {
+      ctaLinks: [{
+        _key: 'product-card',
+        label: 'この商品を見る',
+        url: null,
+        product: { _type: 'reference', _ref: 'product-123' },
+      }],
+      ctaLabel: null,
+      ctaUrl: null,
+    },
+  });
 });
 
 test('旧1個用設定を編集画面と公開画面で引き継ぐ', () => {
@@ -70,4 +93,41 @@ test('公開画面は有効な複数ボタンだけを表示する', () => {
       { _key: 'invalid', label: '危険なリンク', url: 'javascript:alert(1)' },
     ],
   }), [{ key: 'valid', label: '商品を見る', url: '/shop/item', external: false }]);
+});
+
+test('公開画面は展開された最新の商品情報から画像とURLを組み立てる', () => {
+  const image = { _type: 'image', asset: { _type: 'reference', _ref: 'image-123' } };
+  assert.deepEqual(getBlogCtas({
+    ctaLinks: [{
+      _key: 'product-card',
+      label: '商品を見る',
+      product: {
+        _id: 'product-123',
+        name: '森のテラリウム',
+        slug: { current: 'forest-terrarium' },
+        images: [image],
+        isVisible: true,
+      },
+    }],
+  }), [{
+    key: 'product-card',
+    label: '商品を見る',
+    url: '/shop/forest-terrarium',
+    external: false,
+    product: { id: 'product-123', name: '森のテラリウム', image },
+  }]);
+});
+
+test('非公開商品はブログの商品カードへ表示しない', () => {
+  assert.deepEqual(getBlogCtas({
+    ctaLinks: [{
+      label: '商品を見る',
+      product: {
+        _id: 'hidden-product',
+        name: '非公開商品',
+        slug: { current: 'hidden-product' },
+        isVisible: false,
+      },
+    }],
+  }), []);
 });

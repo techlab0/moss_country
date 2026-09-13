@@ -126,7 +126,18 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
         featuredImage,
         category,
         tags,
-        ctaLinks,
+        ctaLinks[] {
+          _key,
+          label,
+          url,
+          product->{
+            _id,
+            name,
+            slug,
+            images,
+            isVisible
+          }
+        },
         ctaLabel,
         ctaUrl,
         publishedAt,

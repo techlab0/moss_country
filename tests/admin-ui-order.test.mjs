@@ -172,14 +172,20 @@ test('ブログ記事ごとに任意の案内ボタンを設定して公開画�
   assert.ok(editor.includes('moveItem(index, -1)'), '案内ボタンを上へ移動できる');
   assert.ok(editor.includes('moveItem(index, 1)'), '案内ボタンを下へ移動できる');
   assert.ok(editor.includes('removeItem(index)'), '案内ボタンを削除できる');
+  assert.ok(editor.includes("fetch('/api/admin/products')"), '登録済み商品を選択肢として取得する');
+  assert.ok(editor.includes('商品ページと画像を自動表示'), '商品と画像の自動表示を選べる');
+  assert.ok(editor.includes('selected.thumbnailUrl'), '選択した商品画像を管理画面で確認できる');
   assert.ok(schema.includes("name: 'ctaLinks'"), '複数ボタンをSanityへ保存する');
+  assert.ok(schema.includes("name: 'product'"), '案内ボタンから商品を参照する');
   assert.ok(schema.includes('Rule.max(5)'), '保存数を5個までに制限する');
   assert.ok(sanity.includes('ctaLinks,'), '記事取得時に複数ボタンを含める');
+  assert.ok(sanity.includes('product->{'), '公開記事では最新の商品情報を展開する');
   assert.ok(createApi.includes('normalizeBlogCtaFields(data)'), '新規作成APIでもURLを検証する');
   assert.ok(updateApi.includes('normalizeBlogCtaFields(data)'), '更新APIでもURLを検証する');
   assert.ok(editPage.includes('getBlogCtaInputs(post)'), '旧1個用設定を編集画面へ引き継ぐ');
   assert.ok(detailPage.includes('getBlogCtas(post)'), '公開前にも複数の保存値を検証する');
   assert.ok(detailPage.includes('blogCtas.map'), '複数ボタンを順番に表示する');
+  assert.ok(detailPage.includes('blogCta.product.image'), '商品ページの画像をカードへ表示する');
   assert.ok(detailPage.includes('記事に関連するページはこちら'), '記事末尾に案内ボタンを表示する');
 });
 

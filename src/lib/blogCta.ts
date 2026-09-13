@@ -2,10 +2,24 @@ export const BLOG_CTA_LABEL_MAX_LENGTH = 60;
 export const BLOG_CTA_URL_MAX_LENGTH = 2048;
 export const BLOG_CTA_MAX_ITEMS = 5;
 
+export interface BlogCtaProductReference {
+  _type?: 'reference';
+  _ref?: string;
+}
+
+export interface BlogCtaProductProjection {
+  _id?: string;
+  name?: string;
+  slug?: { current?: string };
+  images?: unknown[];
+  isVisible?: boolean;
+}
+
 export interface BlogCtaInput {
   _key?: string;
   label?: string | null;
   url?: string | null;
+  product?: BlogCtaProductReference | BlogCtaProductProjection | null;
 }
 
 export interface BlogCtaFields {
@@ -20,6 +34,11 @@ export interface ResolvedBlogCta {
   label: string;
   url: string;
   external: boolean;
+  product?: {
+    id: string;
+    name: string;
+    image?: unknown;
+  };
 }
 
 type BlogCtaValidation =
@@ -49,31 +68,21 @@ function normalizedKey(value: unknown, index: number, usedKeys: Set<string>): st
     : `cta-${index + 1}`;
   let key = requested;
   let suffix = 2;
-  while (usedKeys.has(key)) {
-    key = `${requested}-${suffix++}`;
-  }
+  while (usedKeys.has(key)) key = `${requested}-${suffix++}`;
   usedKeys.add(key);
   return key;
 }
 
-function normalizeOneCta(item: BlogCtaInput, index: number, usedKeys: Set<string>): ResolvedBlogCta | string | null {
-  const label = typeof item?.label === 'string' ? item.label.trim() : '';
-  const rawUrl = typeof item?.url === 'string' ? item.url.trim() : '';
-  if (!label && !rawUrl) return null;
-  if (!label || !rawUrl) return `${index + 1}個目のボタンは、表示文字と移動先URLを両方入力してください`;
-  if (label.length > BLOG_CTA_LABEL_MAX_LENGTH) {
-    return `${index + 1}個目のボタン文字は${BLOG_CTA_LABEL_MAX_LENGTH}文字以内で入力してください`;
-  }
-  const url = normalizeBlogCtaUrl(rawUrl);
-  if (!url) {
-    return `${index + 1}個目の移動先URLは、/ から始まるサイト内URLまたは https:// URLを入力してください`;
-  }
-  return {
-    key: normalizedKey(item._key, index, usedKeys),
-    label,
-    url,
-    external: !url.startsWith('/'),
-  };
+function productReference(value: BlogCtaInput['product']): BlogCtaProductReference | null {
+  if (!value || typeof value !== 'object' || !('_ref' in value)) return null;
+  const ref = typeof value._ref === 'string' ? value._ref.trim() : '';
+  if (!ref || !/^[a-zA-Z0-9._-]+$/.test(ref)) return null;
+  return { _type: 'reference', _ref: ref };
+}
+
+function projectedProduct(value: BlogCtaInput['product']): BlogCtaProductProjection | null {
+  if (!value || typeof value !== 'object' || !('_id' in value)) return null;
+  return value;
 }
 
 export function normalizeBlogCtaFields(input: BlogCtaFields): BlogCtaValidation {
@@ -81,20 +90,44 @@ export function normalizeBlogCtaFields(input: BlogCtaFields): BlogCtaValidation 
   const hasLegacyLabel = Object.prototype.hasOwnProperty.call(input, 'ctaLabel');
   const hasLegacyUrl = Object.prototype.hasOwnProperty.call(input, 'ctaUrl');
   if (!hasLinks && !hasLegacyLabel && !hasLegacyUrl) return { ok: true, fields: {} };
+  if (hasLinks && input.ctaLinks != null && !Array.isArray(input.ctaLinks)) {
+    return { ok: false, error: '案内ボタンの形式が正しくありません' };
+  }
 
   const source: BlogCtaInput[] = hasLinks
-    ? (Array.isArray(input.ctaLinks) ? input.ctaLinks : [])
+    ? (input.ctaLinks || [])
     : [{ label: input.ctaLabel, url: input.ctaUrl }];
   if (source.length > BLOG_CTA_MAX_ITEMS) {
     return { ok: false, error: `案内ボタンは最大${BLOG_CTA_MAX_ITEMS}個まで設定できます` };
   }
 
   const usedKeys = new Set<string>();
-  const links: Array<{ _key: string; label: string; url: string }> = [];
+  const links: BlogCtaInput[] = [];
   for (let index = 0; index < source.length; index += 1) {
-    const result = normalizeOneCta(source[index], index, usedKeys);
-    if (typeof result === 'string') return { ok: false, error: result };
-    if (result) links.push({ _key: result.key, label: result.label, url: result.url });
+    const item = source[index];
+    const label = typeof item?.label === 'string' ? item.label.trim() : '';
+    const rawUrl = typeof item?.url === 'string' ? item.url.trim() : '';
+    const product = productReference(item?.product);
+    if (!label && !rawUrl && !product) continue;
+    if (!label) {
+      return { ok: false, error: `${index + 1}個目のボタンに表示する文字を入力してください` };
+    }
+    if (label.length > BLOG_CTA_LABEL_MAX_LENGTH) {
+      return { ok: false, error: `${index + 1}個目のボタン文字は${BLOG_CTA_LABEL_MAX_LENGTH}文字以内で入力してください` };
+    }
+    if (!product && !rawUrl) {
+      return { ok: false, error: `${index + 1}個目のボタンは、商品または移動先URLを設定してください` };
+    }
+    const url = product ? null : normalizeBlogCtaUrl(rawUrl);
+    if (!product && !url) {
+      return { ok: false, error: `${index + 1}個目の移動先URLは、/ から始まるサイト内URLまたは https:// URLを入力してください` };
+    }
+    links.push({
+      _key: normalizedKey(item._key, index, usedKeys),
+      label,
+      url,
+      product,
+    });
   }
 
   // 複数形式へ保存した時点で旧形式を空にし、表示の二重化を防ぐ。
@@ -107,6 +140,7 @@ export function getBlogCtaInputs(fields: BlogCtaFields): BlogCtaInput[] {
       _key: item._key || `cta-${index + 1}`,
       label: typeof item.label === 'string' ? item.label : '',
       url: typeof item.url === 'string' ? item.url : '',
+      product: item.product || null,
     }));
   }
   if (fields.ctaLabel || fields.ctaUrl) {
@@ -119,9 +153,41 @@ export function getBlogCtas(fields: BlogCtaFields): ResolvedBlogCta[] {
   const source = getBlogCtaInputs(fields);
   const usedKeys = new Set<string>();
   const links: ResolvedBlogCta[] = [];
+
   for (let index = 0; index < source.length; index += 1) {
-    const result = normalizeOneCta(source[index], index, usedKeys);
-    if (result && typeof result !== 'string') links.push(result);
+    const item = source[index];
+    const label = typeof item.label === 'string' ? item.label.trim() : '';
+    if (!label || label.length > BLOG_CTA_LABEL_MAX_LENGTH) continue;
+
+    const product = projectedProduct(item.product);
+    if (product) {
+      const slug = typeof product.slug?.current === 'string' ? product.slug.current.trim() : '';
+      const url = normalizeBlogCtaUrl(slug ? `/shop/${slug}` : '');
+      if (product.isVisible === false || !product._id || !product.name || !url) continue;
+      links.push({
+        key: normalizedKey(item._key, index, usedKeys),
+        label,
+        url,
+        external: false,
+        product: {
+          id: product._id,
+          name: product.name,
+          image: Array.isArray(product.images) ? product.images[0] : undefined,
+        },
+      });
+      continue;
+    }
+
+    // 商品参照があるのに展開できなかった場合は、削除・非公開商品の可能性があるため表示しない。
+    if (productReference(item.product)) continue;
+    const url = normalizeBlogCtaUrl(item.url);
+    if (!url) continue;
+    links.push({
+      key: normalizedKey(item._key, index, usedKeys),
+      label,
+      url,
+      external: !url.startsWith('/'),
+    });
   }
   return links;
 }

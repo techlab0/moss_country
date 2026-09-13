@@ -134,6 +134,16 @@ export const blogPost = defineType({
           title: '案内ボタン',
           fields: [
             defineField({
+              name: 'product',
+              title: '商品ページと画像を自動表示',
+              description: '商品を選ぶと、商品ページの現在の画像とURLを自動で使用します',
+              type: 'reference',
+              to: [{ type: 'product' }],
+              options: {
+                filter: 'isVisible != false',
+              },
+            }),
+            defineField({
               name: 'label',
               title: 'ボタンに表示する文字',
               type: 'string',
@@ -142,17 +152,25 @@ export const blogPost = defineType({
             defineField({
               name: 'url',
               title: '移動先URL',
-              description: '例：/shop/商品名 または https://mosscountry.com/shop/商品名',
+              description: '商品を選ばない場合に入力します。例：/workshop/booking',
               type: 'string',
-              validation: Rule => Rule.required().custom((value) => {
+              validation: Rule => Rule.custom((value) => {
                 if (!value) return true
                 if ((value.startsWith('/') && !value.startsWith('//')) || /^https:\/\//i.test(value)) return true
                 return '/ から始まるサイト内URL、または https:// URLを入力してください'
               }),
             }),
           ],
+          validation: Rule => Rule.custom((value) => {
+            const link = value as { product?: unknown; url?: string } | undefined
+            if (link?.product || link?.url) return true
+            return '商品または移動先URLを設定してください'
+          }),
           preview: {
-            select: { title: 'label', subtitle: 'url' },
+            select: { title: 'label', productName: 'product.name', url: 'url', media: 'product.images.0' },
+            prepare({ title, productName, url, media }) {
+              return { title, subtitle: productName || url, media }
+            },
           },
         },
       ],

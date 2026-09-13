@@ -107,7 +107,21 @@ export interface BlogPost {
   category?: string
   tags?: string[]
   /** 記事末尾に表示する任意の案内ボタン（最大5個） */
-  ctaLinks?: Array<{ _key?: string; label?: string | null; url?: string | null }> | null
+  ctaLinks?: Array<{
+    _key?: string
+    label?: string | null
+    url?: string | null
+    product?:
+      | { _type?: 'reference'; _ref?: string }
+      | {
+          _id?: string
+          name?: string
+          slug?: { current?: string }
+          images?: unknown[]
+          isVisible?: boolean
+        }
+      | null
+  }> | null
   /** 旧1個用形式。既存記事の表示互換性のため読み取りを継続する */
   ctaLabel?: string | null
   ctaUrl?: string | null
