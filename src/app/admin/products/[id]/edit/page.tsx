@@ -9,6 +9,7 @@ import { suggestReadingFromName } from '@/lib/productSort';
 import { SalesItemPicker } from '@/components/admin/SalesItemPicker';
 import { compressImageForUpload } from '@/lib/imageCompress';
 import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
+import { calculateProductProfit } from '@/lib/productProfit';
 
 interface SanityImageRef {
   _type: 'image';
@@ -29,6 +30,7 @@ interface ProductFormData {
   description: string;
   seoDescription: string;
   price: number;
+  costPrice?: number;
   category: string;
   materials: string[];
   careInstructions: string;
@@ -59,6 +61,7 @@ export default function EditProductPage() {
     description: '',
     seoDescription: '',
     price: 0,
+    costPrice: undefined,
     category: PRODUCT_CATEGORIES[0],
     materials: [],
     careInstructions: '',
@@ -67,6 +70,7 @@ export default function EditProductPage() {
     featured: false,
     salesItemId: null,
   });
+  const profit = calculateProductProfit(formData.price, formData.costPrice);
 
   useEffect(() => {
     if (!id) {
@@ -95,6 +99,7 @@ export default function EditProductPage() {
           description: String(product.description ?? ''),
           seoDescription: String(product.seoDescription ?? ''),
           price: Number(product.price ?? 0),
+          costPrice: typeof product.costPrice === 'number' ? product.costPrice : undefined,
           category: resolveCategory(product.category as string | undefined),
           materials: Array.isArray(product.materials) ? product.materials.map(String) : [],
           careInstructions: String(product.careInstructions ?? ''),
@@ -176,6 +181,7 @@ export default function EditProductPage() {
         description: formData.description,
         seoDescription: formData.seoDescription,
         price: formData.price,
+        costPrice: formData.costPrice ?? null,
         category: formData.category,
         materials: formData.materials,
         careInstructions: formData.careInstructions,
@@ -396,6 +402,35 @@ export default function EditProductPage() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">原価 (円・任意)</label>
+              <input
+                type="number"
+                value={formData.costPrice ?? ''}
+                onChange={(e) => setFormData((prev) => ({
+                  ...prev,
+                  costPrice: e.target.value === '' ? undefined : Number(e.target.value),
+                }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min={0}
+                placeholder="分かる場合だけ入力"
+              />
+              <p className="text-xs text-gray-500 mt-1">管理画面だけで使用し、公開ページには表示されません</p>
+            </div>
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-sm font-medium text-emerald-900">商品単体の目安利益</p>
+              {profit ? (
+                <p className={`mt-1 text-lg font-bold ${profit.profit >= 0 ? 'text-emerald-800' : 'text-red-700'}`}>
+                  ¥{Math.round(profit.profit).toLocaleString()}
+                  {profit.marginPercent !== null && (
+                    <span className="ml-2 text-sm font-normal">利益率 {profit.marginPercent.toFixed(1)}%</span>
+                  )}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-gray-600">原価を入力すると表示されます</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">販売価格－原価（手数料・送料・割引等は含みません）</p>
             </div>
           </div>
 

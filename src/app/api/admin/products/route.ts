@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
+import { parseOptionalCostPrice } from '@/lib/productProfit';
 
 // 商品一覧取得（useCdn: false で登録直後の商品も即時反映）
 export async function GET(request: NextRequest) {
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
         nameReading,
         slug,
         price,
+        costPrice,
         category,
         description,
         images,
@@ -62,6 +64,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const costPriceResult = parseOptionalCostPrice(body.costPrice);
+    if (!costPriceResult.ok) {
+      return NextResponse.json({ error: costPriceResult.reason }, { status: 400 });
+    }
 
     // スラッグは常に Sanity の slug 型 { current: string } で送る
     let slugCurrent =
@@ -99,6 +105,7 @@ export async function POST(request: NextRequest) {
       slug: _s,
       salesItem: _salesItem,
       salesItemId,
+      costPrice: _costPrice,
       stockQuantity: _stockQuantity,
       reserved: _reserved,
       inStock: _inStock,
@@ -108,6 +115,7 @@ export async function POST(request: NextRequest) {
       _type: 'product',
       ...rest,
       slug,
+      ...(costPriceResult.value !== undefined && { costPrice: costPriceResult.value }),
       ...(size && { size }),
       ...(salesItemId ? { salesItem: { _type: 'reference', _ref: salesItemId } } : {}),
       stockQuantity: 0,

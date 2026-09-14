@@ -8,6 +8,7 @@ import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 import { useSalesItems, SalesItemSelect } from '@/components/admin/SalesItemPicker';
 import { includesNormalized } from '@/lib/searchText';
+import { calculateProductProfit } from '@/lib/productProfit';
 
 interface ProductWithInventory extends Product {
   currentStock?: number;
@@ -454,7 +455,7 @@ export default function AdminProductsPage() {
                   カテゴリ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  価格
+                  価格・目安利益
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   在庫数
@@ -472,6 +473,7 @@ export default function AdminProductsPage() {
                 const statusConfig = getStatusConfig(product.status || 'in_stock');
                 const isVisible = product.isVisible !== false;
                 const isEditingRow = editingId === product._id;
+                const profit = calculateProductProfit(product.price, product.costPrice);
 
                 return (
                   <Fragment key={product._id}>
@@ -515,7 +517,18 @@ export default function AdminProductsPage() {
                         {product.category || '未分類'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{product.price.toLocaleString()}
+                        <div>販売 ¥{product.price.toLocaleString()}</div>
+                        {profit ? (
+                          <>
+                            <div className="text-xs text-gray-500">原価 ¥{(product.costPrice ?? 0).toLocaleString()}</div>
+                            <div className={`text-xs font-medium ${profit.profit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                              利益 ¥{Math.round(profit.profit).toLocaleString()}
+                              {profit.marginPercent !== null && `（${profit.marginPercent.toFixed(1)}%）`}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-500">原価 未入力</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="font-medium">{product.currentStock || 0}個</div>

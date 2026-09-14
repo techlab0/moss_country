@@ -46,6 +46,13 @@ export const product = defineType({
       validation: Rule => Rule.required().positive()
     }),
     defineField({
+      name: 'costPrice',
+      title: '原価（管理用）',
+      type: 'number',
+      description: '任意入力。公開ページには表示されず、管理画面の目安利益計算に使用します。',
+      validation: Rule => Rule.min(0)
+    }),
+    defineField({
       name: 'salesItem',
       title: '売上明細の項目（集計での商品名）',
       description: 'この商品がEC購入されたとき、売上集計の「商品別明細」でどの項目に合算するかを指定します。未設定の場合は商品名でそのまま表示されます。',

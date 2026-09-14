@@ -8,6 +8,7 @@ import { suggestReadingFromName } from '@/lib/productSort';
 import { SalesItemPicker, type SalesItem } from '@/components/admin/SalesItemPicker';
 import { compressImageForUpload } from '@/lib/imageCompress';
 import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
+import { calculateProductProfit } from '@/lib/productProfit';
 
 interface SanityImageRef {
   _type: 'image';
@@ -28,6 +29,7 @@ interface ProductFormData {
   description: string;
   seoDescription: string;
   price: number;
+  costPrice?: number;
   category: string;
   materials: string[];
   careInstructions: string;
@@ -57,6 +59,7 @@ const NewProductPage = () => {
     description: '',
     seoDescription: '',
     price: 0,
+    costPrice: undefined,
     category: PRODUCT_CATEGORIES[0],
     materials: [],
     careInstructions: '',
@@ -66,6 +69,7 @@ const NewProductPage = () => {
     featured: false,
     salesItemId: null,
   });
+  const profit = calculateProductProfit(formData.price, formData.costPrice);
   // 売上項目の選択によって商品名を自動入力した場合、その値を覚えておく。
   // 手入力された商品名を勝手に上書きしないための判定に使う。
   const [autoFilledName, setAutoFilledName] = useState<string | null>(null);
@@ -351,6 +355,39 @@ const NewProductPage = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                原価 (円・任意)
+              </label>
+              <input
+                type="number"
+                value={formData.costPrice ?? ''}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  costPrice: e.target.value === '' ? undefined : Number(e.target.value),
+                }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="0"
+                placeholder="分かる場合だけ入力"
+              />
+              <p className="text-xs text-gray-500 mt-1">管理画面だけで使用し、公開ページには表示されません</p>
+            </div>
+
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-sm font-medium text-emerald-900">商品単体の目安利益</p>
+              {profit ? (
+                <p className={`mt-1 text-lg font-bold ${profit.profit >= 0 ? 'text-emerald-800' : 'text-red-700'}`}>
+                  ¥{Math.round(profit.profit).toLocaleString()}
+                  {profit.marginPercent !== null && (
+                    <span className="ml-2 text-sm font-normal">利益率 {profit.marginPercent.toFixed(1)}%</span>
+                  )}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-gray-600">原価を入力すると表示されます</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">販売価格－原価（手数料・送料・割引等は含みません）</p>
             </div>
           </div>
 

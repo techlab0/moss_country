@@ -19,6 +19,8 @@ export interface Product {
     _type: 'slug'
   }
   price: number
+  /** 管理画面だけで使用する任意の原価。公開ページには表示しない。 */
+  costPrice?: number
   description?: string
   category: string
   images?: {

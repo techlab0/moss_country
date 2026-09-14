@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { client, writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { generateProductSlug, resolveUniqueSlug } from '@/lib/slugUtils';
+import { parseOptionalCostPrice } from '@/lib/productProfit';
 
 // 特定商品取得（useCdn: false で確実に取得。画像は url 付きで返す＝編集画面サムネイル用）
 export async function GET(
@@ -26,6 +27,7 @@ export async function GET(
         description,
         seoDescription,
         price,
+        costPrice,
         category,
         images[] {
           _type,
@@ -83,6 +85,11 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const costPriceResult = parseOptionalCostPrice(body.costPrice);
+    if ('costPrice' in body && !costPriceResult.ok) {
+      return NextResponse.json({ error: costPriceResult.reason }, { status: 400 });
+    }
+
     // 在庫変更は履歴を必ず残すため、在庫管理APIだけに集約する
     if ('stockQuantity' in body || 'reserved' in body || 'inStock' in body) {
       return NextResponse.json(
@@ -120,7 +127,7 @@ export async function PATCH(
 
     // salesItem は body.salesItemId（文字列、または未選択時は空文字/null）で来る想定。
     // ...body 経由で生の salesItem/salesItemId が二重に入らないよう除外し、明示的に反映する
-    const { salesItemId, salesItem: _rawSalesItem, ...restBody } = body;
+    const { salesItemId, salesItem: _rawSalesItem, costPrice: _rawCostPrice, ...restBody } = body;
     let patch = writeClient.patch(id).set({
       ...restBody,
       _updatedAt: new Date().toISOString(),
@@ -130,6 +137,13 @@ export async function PATCH(
         patch = patch.set({ salesItem: { _type: 'reference', _ref: salesItemId } });
       } else {
         patch = patch.unset(['salesItem']);
+      }
+    }
+    if ('costPrice' in body && costPriceResult.ok) {
+      if (costPriceResult.value === undefined) {
+        patch = patch.unset(['costPrice']);
+      } else {
+        patch = patch.set({ costPrice: costPriceResult.value });
       }
     }
     const product = await patch.commit();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const projectRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -249,4 +249,35 @@ test('各画像管理画面で画像の表示位置を調整できる', async ()
   for (const content of contents) {
     assert.ok(content.includes('ImagePositionControls'), '共通の画像位置調整を表示する');
   }
+});
+
+test('任意の原価から商品単体の目安利益を安全に表示できる', async () => {
+  const profitModuleUrl = pathToFileURL(resolve(projectRoot, 'src/lib/productProfit.ts')).href;
+  const { calculateProductProfit, parseOptionalCostPrice } = await import(profitModuleUrl);
+
+  assert.deepEqual(parseOptionalCostPrice(undefined), { ok: true, value: undefined });
+  assert.deepEqual(parseOptionalCostPrice('  '), { ok: true, value: undefined });
+  assert.deepEqual(parseOptionalCostPrice('1200'), { ok: true, value: 1200 });
+  assert.equal(parseOptionalCostPrice(-1).ok, false);
+  assert.equal(parseOptionalCostPrice('不明').ok, false);
+  assert.equal(parseOptionalCostPrice([]).ok, false);
+  assert.deepEqual(calculateProductProfit(3000, 1200), { profit: 1800, marginPercent: 60 });
+  assert.deepEqual(calculateProductProfit(1000, 1200), { profit: -200, marginPercent: -20 });
+  assert.equal(calculateProductProfit(3000, undefined), null);
+
+  const [schema, listPage, newPage, editPage, listApi, itemApi] = await Promise.all([
+    readFile(resolve(projectRoot, 'sanity/schemas/product.ts'), 'utf8'),
+    readFile(resolve(projectRoot, 'src/app/admin/products/page.tsx'), 'utf8'),
+    readFile(resolve(projectRoot, 'src/app/admin/products/new/page.tsx'), 'utf8'),
+    readFile(resolve(projectRoot, 'src/app/admin/products/[id]/edit/page.tsx'), 'utf8'),
+    readFile(resolve(projectRoot, 'src/app/api/admin/products/route.ts'), 'utf8'),
+    readFile(resolve(projectRoot, 'src/app/api/admin/products/[id]/route.ts'), 'utf8'),
+  ]);
+
+  assert.ok(schema.includes("name: 'costPrice'"), '商品に任意の原価を保存する');
+  assert.ok(listPage.includes('価格・目安利益'), '商品一覧で利益を確認できる');
+  assert.ok(newPage.includes('原価 (円・任意)'), '新規商品で原価を入力できる');
+  assert.ok(editPage.includes('原価 (円・任意)'), '既存商品で原価を入力・解除できる');
+  assert.ok(listApi.includes('parseOptionalCostPrice'), '新規登録APIで原価を検証する');
+  assert.ok(itemApi.includes("patch.unset(['costPrice'])"), '原価の空欄保存で既存値を解除する');
 });
