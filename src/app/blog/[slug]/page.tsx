@@ -9,6 +9,7 @@ import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
 import { imageDisplayScale, imageObjectPosition } from '@/lib/imagePosition'
 import { getBlogCtas } from '@/lib/blogCta'
+import { BlogShareButton } from '@/components/blog/BlogShareButton'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -178,6 +179,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               )}
             </div>
           </div>
+
+          <BlogShareButton title={post.title} />
 
           {blogCtas.length > 0 && (
             <div className="mb-8 rounded-lg bg-white/90 p-6 text-center shadow-sm backdrop-blur-sm">

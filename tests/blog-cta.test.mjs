@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -130,4 +131,17 @@ test('非公開商品はブログの商品カードへ表示しない', () => {
       },
     }],
   }), []);
+});
+
+test('ブログ記事は汎用の共有ボタンを表示し、非対応環境ではURLをコピーする', async () => {
+  const [button, detailPage] = await Promise.all([
+    readFile(new URL('../src/components/blog/BlogShareButton.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/blog/[slug]/page.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.ok(button.includes('navigator.share'), 'スマートフォンなどの共有機能を利用する');
+  assert.ok(button.includes('navigator.clipboard.writeText'), '共有非対応時はURLをコピーする');
+  assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
+  assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
+  assert.ok(detailPage.includes('<BlogShareButton title={post.title} />'), 'ブログ記事に共有ボタンを表示する');
 });
