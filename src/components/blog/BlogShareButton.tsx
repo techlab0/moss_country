@@ -4,9 +4,10 @@ import { useState } from 'react';
 
 interface BlogShareButtonProps {
   title: string;
+  url: string;
 }
 
-export function BlogShareButton({ title }: BlogShareButtonProps) {
+export function BlogShareButton({ title, url }: BlogShareButtonProps) {
   const [message, setMessage] = useState('');
 
   const copyUrl = async (url: string) => {
@@ -20,13 +21,12 @@ export function BlogShareButton({ title }: BlogShareButtonProps) {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
-
     if (navigator.share) {
       try {
         await navigator.share({
           title,
-          text: `${title}｜MOSS COUNTRY`,
+          // URL欄を無視する共有先でも記事へ移動できるよう、本文にも正式URLを含める。
+          text: `${title}｜MOSS COUNTRY\n${url}`,
           url,
         });
         setMessage('');

@@ -143,7 +143,9 @@ test('ブログ記事は汎用の共有ボタンを表示し、非対応環境�
   assert.ok(button.includes('navigator.clipboard.writeText'), '共有非対応時はURLをコピーする');
   assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
-  assert.ok(detailPage.includes('<BlogShareButton title={post.title} />'), 'ブログ記事に共有ボタンを表示する');
+  assert.ok(!button.includes('window.location.href'), 'ブラウザ上の不確実なURLを共有に使わない');
+  assert.ok(button.includes('MOSS COUNTRY\\n${url}'), '共有本文にも正式な記事URLを含める');
+  assert.ok(detailPage.includes('url={`https://mosscountry.com/blog/${encodeURIComponent(slug)}`}'), '該当記事の正式URLを共有ボタンへ渡す');
 });
 
 test('ブログの商品紹介カードは縦長画像を切り抜かずクールな枠内へ収める', async () => {
