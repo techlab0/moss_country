@@ -145,3 +145,14 @@ test('ブログ記事は汎用の共有ボタンを表示し、非対応環境�
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
   assert.ok(detailPage.includes('<BlogShareButton title={post.title} />'), 'ブログ記事に共有ボタンを表示する');
 });
+
+test('ブログの商品紹介カードは縦長画像を切り抜かずクールな枠内へ収める', async () => {
+  const detailPage = await readFile(new URL('../src/app/blog/[slug]/page.tsx', import.meta.url), 'utf8');
+
+  assert.ok(detailPage.includes(".width(900).fit('max')"), '商品画像の縦横比を保つ');
+  assert.ok(detailPage.includes('object-contain'), '商品画像全体を枠内に収める');
+  assert.ok(detailPage.includes('aspect-[4/5]'), '縦長の商品写真に合う表示枠を使う');
+  assert.ok(detailPage.includes('Related products'), '商品紹介を独立したセクションとして見せる');
+  assert.ok(detailPage.includes("bg-[#0d1711]/95"), '深いグリーンを基調にしたカード背景を使う');
+  assert.ok(!detailPage.includes("height(600).fit('crop')"), '横長への強制切り抜きを行わない');
+});

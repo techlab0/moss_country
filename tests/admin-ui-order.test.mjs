@@ -186,7 +186,7 @@ test('ブログ記事ごとに任意の案内ボタンを設定して公開画�
   assert.ok(detailPage.includes('getBlogCtas(post)'), '公開前にも複数の保存値を検証する');
   assert.ok(detailPage.includes('blogCtas.map'), '複数ボタンを順番に表示する');
   assert.ok(detailPage.includes('blogCta.product.image'), '商品ページの画像をカードへ表示する');
-  assert.ok(detailPage.includes('記事に関連するページはこちら'), '記事末尾に案内ボタンを表示する');
+  assert.ok(detailPage.includes('記事に登場した商品'), '記事末尾に商品案内を表示する');
 });
 
 test('クラフトモスレンタルを編集でき、表示・非表示を切り替えられる', async () => {

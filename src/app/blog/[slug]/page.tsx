@@ -61,6 +61,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const hasBody = Array.isArray(post.content) && post.content.length > 0
   const blogCtas = getBlogCtas(post)
   const ctaClassName = 'inline-flex items-center justify-center rounded-lg bg-moss-green px-7 py-3.5 font-medium text-white shadow-lg transition-colors hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2'
+  const productCtaClassName = 'inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 font-medium text-white transition-all hover:border-white hover:bg-white hover:text-[#17351f] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#111914]'
 
   return (
     <div 
@@ -183,31 +184,35 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <BlogShareButton title={post.title} />
 
           {blogCtas.length > 0 && (
-            <div className="mb-8 rounded-lg bg-white/90 p-6 text-center shadow-sm backdrop-blur-sm">
-              <p className="mb-4 text-sm font-medium text-gray-600">記事に関連するページはこちら</p>
-              <div className="flex flex-wrap items-stretch justify-center gap-4">
+            <div className="mb-8 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0d1711]/95 p-5 text-center shadow-2xl backdrop-blur-sm sm:p-8">
+              <div className="mb-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300/80">Related products</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-wide text-white">記事に登場した商品</h2>
+              </div>
+              <div className="flex flex-wrap items-stretch justify-center gap-5">
                 {blogCtas.map((blogCta) => blogCta.product ? (
-                  <div key={blogCta.key} className="flex w-full max-w-sm flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:w-[calc(50%-0.5rem)]">
-                    <Link href={blogCta.url} className="group block">
+                  <div key={blogCta.key} className="group flex w-full max-w-xs flex-col overflow-hidden rounded-[1.4rem] border border-white/10 bg-[#111914] shadow-[0_18px_45px_rgba(0,0,0,0.32)] transition duration-300 hover:-translate-y-1 hover:border-emerald-300/40 sm:w-[calc(50%-0.625rem)]">
+                    <Link href={blogCta.url} className="block bg-white">
                       {blogCta.product.image ? (
-                        <div className="aspect-[4/3] overflow-hidden bg-stone-100">
+                        <div className="aspect-[4/5] overflow-hidden bg-white p-3 sm:p-4">
                           <Image
-                            src={urlFor(blogCta.product.image as never).width(800).height(600).fit('crop').auto('format').url()}
+                            src={urlFor(blogCta.product.image as never).width(900).fit('max').auto('format').url()}
                             alt={blogCta.product.name}
-                            width={800}
-                            height={600}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                            width={900}
+                            height={1200}
+                            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
                           />
                         </div>
                       ) : (
-                        <div className="flex aspect-[4/3] items-center justify-center bg-stone-100 text-sm text-gray-400">商品画像は準備中です</div>
+                        <div className="flex aspect-[4/5] items-center justify-center bg-stone-100 text-sm text-gray-400">商品画像は準備中です</div>
                       )}
                     </Link>
-                    <div className="flex flex-1 flex-col p-4">
-                      <p className="mb-4 text-lg font-semibold text-gray-900">{blogCta.product.name}</p>
-                      <Link href={blogCta.url} className={`${ctaClassName} mt-auto`}>
+                    <div className="flex flex-1 flex-col bg-gradient-to-b from-[#18231b] to-[#0d1711] p-5">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-300/70">Moss Country</p>
+                      <p className="mb-5 text-lg font-semibold tracking-wide text-white">{blogCta.product.name}</p>
+                      <Link href={blogCta.url} className={`${productCtaClassName} mt-auto`}>
                         {blogCta.label}
-                        <span aria-hidden="true" className="ml-2">→</span>
+                        <span aria-hidden="true" className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
                       </Link>
                     </div>
                   </div>
