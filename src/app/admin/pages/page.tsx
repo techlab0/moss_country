@@ -292,7 +292,9 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                       className="h-5 w-5 rounded border-gray-300 text-moss-green focus:ring-moss-green"
                     />
                     <span className="text-sm text-gray-700">
-                      {(textValues[field.key] ?? field.default) !== 'false' ? '表示中' : '非表示'}
+                      {(textValues[field.key] ?? field.default) !== 'false'
+                        ? (field.booleanLabels?.true ?? '表示中')
+                        : (field.booleanLabels?.false ?? '非表示')}
                     </span>
                   </label>
                 )}

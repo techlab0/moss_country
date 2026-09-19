@@ -20,6 +20,26 @@ const planImageKeys = [
   'planImagePremium',
   'planImageOrderMade',
 ];
+const planAvailabilityKeys = [
+  'planAvailableMini',
+  'planAvailableSmall',
+  'planAvailableMedium',
+  'planAvailableLarge',
+  'planAvailablePremium',
+  'planAvailableOrderMade',
+];
+
+const AvailabilityBadge = ({ available }: { available: boolean }) => (
+  <span
+    className={`inline-flex whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold ${
+      available
+        ? 'bg-[#dfeee2] text-[#245437]'
+        : 'bg-[#ece7e2] text-[#755748]'
+    }`}
+  >
+    {available ? 'レンタル可能' : '現在レンタル不可'}
+  </span>
+);
 
 const sectionTitle =
   'text-2xl md:text-4xl font-bold text-[#173b27] tracking-tight';
@@ -182,23 +202,28 @@ export default function RentalTerrariumPage() {
             {t('longTermLead')}
           </p>
           <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6] bg-white">
-            <table className="w-full min-w-[700px] text-left">
+            <table className="w-full min-w-[820px] text-left">
               <thead className="bg-[#e5ebe6] text-[#173b27]">
                 <tr>
                   <th className="p-4">写真</th>
                   <th className="p-4">プラン</th>
                   <th className="p-4">サイズ目安</th>
                   <th className="p-4">月額料金（税込）</th>
+                  <th className="p-4">レンタル状況</th>
                 </tr>
               </thead>
               <tbody>
                 {longTermPlans.map((row, index) => {
                   const imageKey = planImageKeys[index];
                   const imageSrc = imageKey ? img(imageKey) : '';
+                  const availabilityKey = planAvailabilityKeys[index];
+                  const available = availabilityKey
+                    ? t(availabilityKey) !== 'false'
+                    : true;
                   return (
                     <tr
                       key={`${row[0]}-${index}`}
-                      className="border-t border-[#d6ddd7]"
+                      className={`border-t border-[#d6ddd7] ${available ? '' : 'bg-[#f5f2ef] text-[#6f756f]'}`}
                     >
                       <td className="w-28 p-3">
                         {imageSrc ? (
@@ -210,7 +235,7 @@ export default function RentalTerrariumPage() {
                                 `${row[0]}サイズのレンタルテラリウム`,
                               )}
                               fill
-                              className="object-cover"
+                              className={`object-cover ${available ? '' : 'grayscale opacity-60'}`}
                               style={imgStyle(imageKey)}
                               sizes="80px"
                             />
@@ -228,6 +253,9 @@ export default function RentalTerrariumPage() {
                           {cell}
                         </td>
                       ))}
+                      <td className="p-4">
+                        <AvailabilityBadge available={available} />
+                      </td>
                     </tr>
                   );
                 })}
@@ -275,7 +303,7 @@ export default function RentalTerrariumPage() {
             {t('shortTermLead')}
           </p>
           <div className="mt-8 overflow-x-auto rounded-2xl border border-[#c4cec6]">
-            <table className="w-full min-w-[850px] text-left">
+            <table className="w-full min-w-[980px] text-left">
               <thead className="bg-[#e5ebe6] text-[#173b27]">
                 <tr>
                   <th className="p-4">写真</th>
@@ -284,16 +312,21 @@ export default function RentalTerrariumPage() {
                   <th className="p-4">1週間</th>
                   <th className="p-4">2週間</th>
                   <th className="p-4">1か月</th>
+                  <th className="p-4">レンタル状況</th>
                 </tr>
               </thead>
               <tbody>
                 {shortTermPlans.map((row, index) => {
                   const imageKey = planImageKeys[index];
                   const imageSrc = imageKey ? img(imageKey) : '';
+                  const availabilityKey = planAvailabilityKeys[index];
+                  const available = availabilityKey
+                    ? t(availabilityKey) !== 'false'
+                    : true;
                   return (
                     <tr
                       key={`${row[0]}-${index}`}
-                      className="border-t border-[#d6ddd7]"
+                      className={`border-t border-[#d6ddd7] ${available ? '' : 'bg-[#f5f2ef] text-[#6f756f]'}`}
                     >
                       <td className="w-28 p-3">
                         {imageSrc ? (
@@ -305,7 +338,7 @@ export default function RentalTerrariumPage() {
                                 `${row[0]}サイズのレンタルテラリウム`,
                               )}
                               fill
-                              className="object-cover"
+                              className={`object-cover ${available ? '' : 'grayscale opacity-60'}`}
                               style={imgStyle(imageKey)}
                               sizes="80px"
                             />
@@ -323,6 +356,9 @@ export default function RentalTerrariumPage() {
                           {cell}
                         </td>
                       ))}
+                      <td className="p-4">
+                        <AvailabilityBadge available={available} />
+                      </td>
                     </tr>
                   );
                 })}

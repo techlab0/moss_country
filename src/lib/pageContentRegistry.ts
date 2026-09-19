@@ -13,6 +13,10 @@ export interface ContentField {
   label: string;
   type: 'text' | 'textarea' | 'image' | 'boolean' | 'workshopPlan';
   default: string;
+  booleanLabels?: {
+    true: string;
+    false: string;
+  };
 }
 
 export interface PageDefinition {
@@ -233,6 +237,12 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'planImageLarge', label: 'サイズ写真 Large', type: 'image', default: '' },
       { key: 'planImagePremium', label: 'サイズ写真 Premium', type: 'image', default: '' },
       { key: 'planImageOrderMade', label: 'サイズ写真 Order Made', type: 'image', default: '' },
+      { key: 'planAvailableMini', label: 'Miniのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
+      { key: 'planAvailableSmall', label: 'Smallのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
+      { key: 'planAvailableMedium', label: 'Mediumのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
+      { key: 'planAvailableLarge', label: 'Largeのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
+      { key: 'planAvailablePremium', label: 'Premiumのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
+      { key: 'planAvailableOrderMade', label: 'Order Madeのレンタル状況', type: 'boolean', default: 'true', booleanLabels: { true: 'レンタル可能', false: 'レンタル不可' } },
       { key: 'includedTitle', label: '料金に含まれるサービス 見出し', type: 'text', default: '料金に含まれるサービス' },
       { key: 'includedServices', label: '料金に含まれるサービス（1行につき1項目）', type: 'textarea', default: '苔テラリウム作品のレンタル\n月1回程度の状態確認、剪定、お手入れ、清掃、微調整\n必要に応じた補修と管理方法のサポート\n3か月に1度の新しい作品への交換' },
       { key: 'optionsTitle', label: 'オプション 見出し', type: 'text', default: 'オプション' },

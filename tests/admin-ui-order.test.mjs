@@ -85,6 +85,7 @@ test('ヘッダーの商品タブをホームの直後に表示する', async ()
 
 test('レンタルテラリウムをページ編集の対象として公開ページに反映する', async () => {
   const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const adminPage = await readFile(resolve(projectRoot, 'src/app/admin/pages/page.tsx'), 'utf8');
   const publicPage = await readFile(resolve(projectRoot, 'src/app/rental-terrarium/page.tsx'), 'utf8');
 
   assert.ok(registry.includes('rentalTerrarium: {'), 'レンタルテラリウムの編集定義が必要');
@@ -93,11 +94,18 @@ test('レンタルテラリウムをページ編集の対象として公開ペ�
   assert.ok(registry.includes("key: 'shortTermPlans'"), '短期料金表を編集対象に含める');
   assert.ok(registry.includes("key: 'planImageMini'"), 'Miniのサイズ写真を編集対象に含める');
   assert.ok(registry.includes("key: 'planImageOrderMade'"), 'Order Madeのサイズ写真を編集対象に含める');
+  assert.ok(registry.includes("key: 'planAvailableMini'"), 'Miniのレンタル状況を編集対象に含める');
+  assert.ok(registry.includes("key: 'planAvailableOrderMade'"), 'Order Madeのレンタル状況を編集対象に含める');
+  assert.ok(registry.includes("true: 'レンタル可能', false: 'レンタル不可'"), '管理画面にレンタル専用の状態表示を用意する');
+  assert.ok(adminPage.includes('field.booleanLabels?.true'), '有効時の専用ラベルを管理画面に表示する');
+  assert.ok(adminPage.includes('field.booleanLabels?.false'), '無効時の専用ラベルを管理画面に表示する');
   assert.ok(registry.includes("key: 'terms'"), '契約条件を編集対象に含める');
   assert.ok(publicPage.includes("usePageContent('rentalTerrarium')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像の上書きを公開ページへ反映する');
   assert.ok(publicPage.includes("t('longTermPlans')"), '長期料金表の上書きを公開ページへ反映する');
   assert.ok(publicPage.includes('planImageKeys'), '各サイズ写真を料金表へ反映する');
+  assert.ok(publicPage.includes('planAvailabilityKeys'), '各サイズのレンタル状況を料金表へ反映する');
+  assert.ok(publicPage.includes("'現在レンタル不可'"), 'レンタル不可の状態を公開ページに表示する');
 });
 
 test('ブログの新規作成と編集でアイキャッチ画像を変更できる', async () => {
