@@ -144,7 +144,9 @@ test('ブログ記事は汎用の共有ボタンを表示し、非対応環境�
   assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
   assert.ok(!button.includes('window.location.href'), 'ブラウザ上の不確実なURLを共有に使わない');
-  assert.ok(button.includes('MOSS COUNTRY\\n${url}'), '共有本文にも正式な記事URLを含める');
+  assert.ok(!button.includes('text:'), '携帯電話のコピーへタイトルなどの文章を混ぜない');
+  assert.ok(!button.includes('title,'), '携帯電話のコピーへ記事タイトルを混ぜない');
+  assert.match(button, /navigator\.share\(\{[\s\S]*?url,[\s\S]*?\}\)/, '共有機能には正式URLだけを渡す');
   assert.ok(detailPage.includes('url={`https://mosscountry.com/blog/${encodeURIComponent(slug)}`}'), '該当記事の正式URLを共有ボタンへ渡す');
 });
 

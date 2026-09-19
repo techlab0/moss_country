@@ -3,11 +3,10 @@
 import { useState } from 'react';
 
 interface BlogShareButtonProps {
-  title: string;
   url: string;
 }
 
-export function BlogShareButton({ title, url }: BlogShareButtonProps) {
+export function BlogShareButton({ url }: BlogShareButtonProps) {
   const [message, setMessage] = useState('');
 
   const copyUrl = async (url: string) => {
@@ -24,9 +23,8 @@ export function BlogShareButton({ title, url }: BlogShareButtonProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title,
-          // URL欄を無視する共有先でも記事へ移動できるよう、本文にも正式URLを含める。
-          text: `${title}｜MOSS COUNTRY\n${url}`,
+          // 携帯電話の「コピー」で文章ではなく純粋な記事URLだけが入るよう、
+          // title/textは渡さずURLだけを共有する。
           url,
         });
         setMessage('');

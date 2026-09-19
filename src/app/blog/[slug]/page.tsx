@@ -182,7 +182,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
 
           <BlogShareButton
-            title={post.title}
             url={`https://mosscountry.com/blog/${encodeURIComponent(slug)}`}
           />
 
