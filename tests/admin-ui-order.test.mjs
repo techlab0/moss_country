@@ -208,6 +208,10 @@ test('クラフトモスレンタルを編集でき、表示・非表示を切�
   assert.ok(settings.includes("maintenancePages: ['/craft-moss-rental']"), '初期状態は非表示にする');
   assert.ok(publicPage.includes("usePageContent('craftMossRental')"), '公開ページで編集内容を読み込む');
   assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像を編集可能にする');
+  assert.ok(registry.includes("key: 'priceAvailableFrame'"), '苔フレームのレンタル状況を編集対象に含める');
+  assert.ok(registry.includes("key: 'priceAvailableCustom'"), 'L以上のレンタル状況を編集対象に含める');
+  assert.ok(publicPage.includes('priceAvailabilityKeys'), '各サイズのレンタル状況を料金表へ反映する');
+  assert.ok(publicPage.includes("'現在レンタル不可'"), 'レンタル不可の状態を公開ページに表示する');
   assert.ok(publicPage.includes('レンタルサービスを選択'), 'レンタルサービスの切替を表示する');
   assert.ok(publicPage.includes('href="/rental-terrarium"'), 'テラリウムレンタルへ戻れる');
 

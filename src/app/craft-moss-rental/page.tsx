@@ -7,6 +7,24 @@ import { usePageContent } from '@/hooks/usePageContent';
 
 const lines = (value: string) => value.split('\n').map(line => line.trim()).filter(Boolean);
 const rows = (value: string) => lines(value).map(line => line.split('｜').map(cell => cell.trim()));
+const priceAvailabilityKeys = [
+  'priceAvailableFrame',
+  'priceAvailableWallS',
+  'priceAvailableWallL',
+  'priceAvailableCustom',
+];
+
+const AvailabilityBadge = ({ available }: { available: boolean }) => (
+  <span
+    className={`inline-flex whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold ${
+      available
+        ? 'bg-[#dfeee2] text-[#245437]'
+        : 'bg-[#ece7e2] text-[#755748]'
+    }`}
+  >
+    {available ? 'レンタル可能' : '現在レンタル不可'}
+  </span>
+);
 
 export default function CraftMossRentalPage() {
   const { t, img, imgAlt, imgStyle } = usePageContent('craftMossRental');
@@ -61,9 +79,41 @@ export default function CraftMossRentalPage() {
           <h2 className="text-3xl font-bold text-[#173b27] md:text-5xl">{t('pricesTitle')}</h2>
           <p className="mt-5 whitespace-pre-line leading-8 text-[#5b685f]">{t('pricesLead')}</p>
           <div className="mt-10 overflow-x-auto rounded-2xl border border-[#c4cec6]">
-            <table className="w-full min-w-[720px] border-collapse bg-white text-left">
-              <thead className="bg-[#315d45] text-white"><tr><th className="p-4">名称</th><th className="p-4">サイズ目安</th><th className="p-4">月額（税込）</th><th className="p-4">おすすめ設置場所</th></tr></thead>
-              <tbody>{prices.map(([name, size, price, place], index) => <tr key={`${name}-${index}`} className="border-t border-[#d4ddd6]"><th className="p-4 font-bold">{name}</th><td className="p-4">{size}</td><td className="p-4 font-bold text-[#315d45]">{price}</td><td className="p-4">{place}</td></tr>)}</tbody>
+            <table className="w-full min-w-[860px] border-collapse bg-white text-left">
+              <thead className="bg-[#315d45] text-white">
+                <tr>
+                  <th className="p-4">名称</th>
+                  <th className="p-4">サイズ目安</th>
+                  <th className="p-4">月額（税込）</th>
+                  <th className="p-4">おすすめ設置場所</th>
+                  <th className="p-4">レンタル状況</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prices.map(([name, size, price, place], index) => {
+                  const availabilityKey = priceAvailabilityKeys[index];
+                  const available = availabilityKey
+                    ? t(availabilityKey) !== 'false'
+                    : true;
+
+                  return (
+                    <tr
+                      key={`${name}-${index}`}
+                      className={`border-t border-[#d4ddd6] ${available ? '' : 'bg-[#f5f2ef] text-[#6f756f]'}`}
+                    >
+                      <th className="p-4 font-bold">{name}</th>
+                      <td className="p-4">{size}</td>
+                      <td className={`p-4 font-bold ${available ? 'text-[#315d45]' : 'text-[#6f756f]'}`}>
+                        {price}
+                      </td>
+                      <td className="p-4">{place}</td>
+                      <td className="p-4">
+                        <AvailabilityBadge available={available} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
           <p className="mt-4 whitespace-pre-line text-sm leading-7 text-[#637067]">{t('pricesNote')}</p>
