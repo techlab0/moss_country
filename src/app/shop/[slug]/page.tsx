@@ -191,6 +191,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </div>
                   )}
                 </div>
+                <p className="mt-4 text-sm text-gray-600">
+                  ※表記サイズは目安です。実際の商品とは多少異なる場合があります。
+                </p>
               </div>
             )}
 
