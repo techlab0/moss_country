@@ -6,8 +6,8 @@ import type { Product } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import { ProductActions } from '@/components/ui/ProductActions'
 import { ProductImageGallery } from '@/components/ui/ProductImageGallery'
+import { ShopBackLink } from '@/components/ui/ShopBackLink'
 import { getSafeImageUrl, getProductSlug, PRODUCT_IMAGE_FALLBACK_LOGO } from '@/lib/adapters'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface ProductPageProps {
@@ -118,9 +118,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Container>
         <div className="mb-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 inline-block">
-            <Link href="/shop" className="text-moss-green hover:underline font-medium">
-              ← 商品一覧に戻る
-            </Link>
+            <ShopBackLink className="text-moss-green hover:underline font-medium" />
           </div>
         </div>
 

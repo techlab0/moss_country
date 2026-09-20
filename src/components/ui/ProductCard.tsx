@@ -15,9 +15,10 @@ import type { Product } from '@/types/sanity';
 
 interface ProductCardProps {
   product: Product;
+  onViewDetails?: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewDetails }) => {
   const { addToCart, isInCart, getCartItemQuantity } = useCart();
   // 一覧では商品データ(product)に stockQuantity/reserved/lowStockThreshold が含まれるため、
   // それを preloaded として渡し、カードごとの在庫APIコールを完全に無くす（CPU/API消費削減）。
@@ -53,7 +54,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
 
   return (
     <Card className={`h-full flex flex-col md:hover:transform md:hover:scale-105 transition-all duration-300 relative overflow-hidden ${(!inventoryLoading && isOutOfStock) ? 'opacity-75' : ''}`}>
-      <Link href={`/shop/${getProductSlug(product)}`}>
+      <Link href={`/shop/${getProductSlug(product)}`} onClick={onViewDetails}>
         <div className="h-40 sm:h-56 md:h-64 overflow-hidden relative bg-stone-50 p-2 sm:p-3">
           {(() => {
             const firstImage = product.images?.[0];
@@ -159,7 +160,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
           <InventoryBadge productId={product._id} product={product} />
         </div>
 
-        <Link href={`/shop/${getProductSlug(product)}`}>
+        <Link href={`/shop/${getProductSlug(product)}`} onClick={onViewDetails}>
           <h3 className="text-sm sm:text-xl leading-snug font-semibold text-moss-green mb-2 hover:text-moss-green/80 transition-colors line-clamp-2">
             {product.name}
           </h3>
@@ -231,7 +232,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
             </>
           )}
 
-          <Link href={`/shop/${getProductSlug(product)}`}>
+          <Link href={`/shop/${getProductSlug(product)}`} onClick={onViewDetails}>
             <Button variant="ghost" className="w-full min-h-11 px-2 text-xs sm:px-4 sm:text-base border border-gray-300 hover:bg-gray-50">
               詳細を見る
             </Button>
@@ -257,7 +258,8 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product }) => {
   return prevProps.product._id === nextProps.product._id &&
          prevProps.product.inStock === nextProps.product.inStock &&
          prevProps.product.price === nextProps.product.price &&
-         prevProps.product.featured === nextProps.product.featured;
+         prevProps.product.featured === nextProps.product.featured &&
+         prevProps.onViewDetails === nextProps.onViewDetails;
 });
 
 ProductCard.displayName = 'ProductCard';

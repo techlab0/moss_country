@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container } from '@/components/layout/Container';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,12 @@ import { PRODUCT_CATEGORIES, resolveCategory } from '@/lib/productCategories';
 import type { Product } from '@/types/sanity';
 import { usePageContent } from '@/hooks/usePageContent';
 import { compareByReading } from '@/lib/productSort';
+import {
+  SHOP_RETURN_REQUEST_KEY,
+  SHOP_RETURN_STATE_KEY,
+  parseShopReturnState,
+  type ShopSortOption,
+} from '@/lib/shopReturnState';
 
 const careGuideMeta = [
   { list: ['本が読めるくらいの明るさがあればOK', '強い日差しには弱いので、直射日光は避けてください', '蛍光灯やLEDで生育が可能です'] },
@@ -46,7 +52,8 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'recommended' | 'name' | 'priceAsc' | 'priceDesc'>('name');
+  const [sortBy, setSortBy] = useState<ShopSortOption>('name');
+  const [restoreScrollY, setRestoreScrollY] = useState<number | null>(null);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['products'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['products'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['products-mobile'].src);
@@ -62,6 +69,46 @@ export default function ProductsPage() {
 
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // 商品詳細の「商品一覧に戻る」から戻った場合だけ、一覧を開く直前の状態へ戻す。
+  // 直接URLから一覧を開いた場合やヘッダーから移動した場合は通常どおり先頭を表示する。
+  useEffect(() => {
+    if (sessionStorage.getItem(SHOP_RETURN_REQUEST_KEY) !== 'true') return;
+
+    sessionStorage.removeItem(SHOP_RETURN_REQUEST_KEY);
+    const saved = parseShopReturnState(sessionStorage.getItem(SHOP_RETURN_STATE_KEY));
+    sessionStorage.removeItem(SHOP_RETURN_STATE_KEY);
+    if (!saved) return;
+
+    setSearchQuery(saved.searchQuery);
+    setInStockOnly(saved.inStockOnly);
+    setSelectedCategory(saved.selectedCategory);
+    setSortBy(saved.sortBy);
+    setRestoreScrollY(saved.scrollY);
+  }, []);
+
+  // 商品データと絞り込み状態が画面へ反映された後にスクロール位置を復元する。
+  useEffect(() => {
+    if (isLoading || restoreScrollY === null) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreScrollY, behavior: 'auto' });
+      setRestoreScrollY(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isLoading, restoreScrollY]);
+
+  const saveShopReturnState = useCallback(() => {
+    sessionStorage.setItem(SHOP_RETURN_STATE_KEY, JSON.stringify({
+      scrollY: window.scrollY,
+      searchQuery,
+      inStockOnly,
+      selectedCategory,
+      sortBy,
+      savedAt: Date.now(),
+    }));
+  }, [inStockOnly, searchQuery, selectedCategory, sortBy]);
 
   // 商品データを取得（API経由で登録直後の商品も即時反映）
   useEffect(() => {
@@ -411,7 +458,11 @@ export default function ProductsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
                           {filtered.map((product) => (
-                            <ProductCard key={product._id} product={product} />
+                            <ProductCard
+                              key={product._id}
+                              product={product}
+                              onViewDetails={saveShopReturnState}
+                            />
                           ))}
                         </div>
                       </div>
