@@ -81,6 +81,20 @@ export function filterToRegisteredMonths<T extends { date: string }>(
   return items.filter((item) => registeredMonths.has(item.date.slice(0, 7)));
 }
 
+/**
+ * 営業日カレンダーを登録済みの月に加え、受付枠を個別設定した日も警告対象にする。
+ * 個別設定した月全体を対象にすると未登録日が大量に並ぶため、その場合は設定日のみを追加する。
+ */
+export function filterToConfiguredSchedule<T extends { date: string }>(
+  items: readonly T[],
+  registeredMonths: ReadonlySet<string>,
+  overrideDates: ReadonlySet<string>
+): T[] {
+  return items.filter(
+    (item) => registeredMonths.has(item.date.slice(0, 7)) || overrideDates.has(item.date)
+  );
+}
+
 /** 1日の全枠が閉じている日付の一覧。日単位でまとめて表示するために使う */
 export function findFullyClosedDates(alerts: readonly SlotAlert[], slotsPerDay: number): string[] {
   const closedByDate = new Map<string, number>();

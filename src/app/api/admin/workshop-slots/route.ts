@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
 import { getWorkshopCalendarPolicy, CalendarUnavailableError } from '@/lib/workshopAvailability';
-import { isWorkshopBusinessDate } from '@/lib/workshopCalendarPolicy';
+import { isWorkshopBusinessDate, isWorkshopSlotEnabled } from '@/lib/workshopCalendarPolicy';
 import { getOverridesInRange, setOverride } from '@/lib/workshopSlotOverrides';
 import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import { getBookingsInDateRange } from '@/lib/workshopBookings';
@@ -96,8 +96,12 @@ export async function GET(request: NextRequest) {
         slots: WORKSHOP_SLOTS.map(slot => ({
           start: slot.start,
           end: slot.end,
-          // 営業日登録が前提。営業日の枠だけ、オーバーライドが無ければ既定でOPEN
-          isOpen: businessDay && (overrideMap.get(`${date}|${slot.start}`) ?? true),
+          // 明示的なON/OFFを優先し、未設定の場合だけ営業日を既定値として使う
+          isOpen: isWorkshopSlotEnabled(
+            calendarPolicy,
+            date,
+            overrideMap.get(`${date}|${slot.start}`)
+          ),
           booked: bookedBySlot.get(`${date}|${slot.start}`) || 0,
           capacity: CAPACITY_PER_SLOT,
         })),

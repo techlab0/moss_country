@@ -14,6 +14,7 @@ const {
   findSlotsToCloseOnJalan,
   findFullyClosedDates,
   filterToRegisteredMonths,
+  filterToConfiguredSchedule,
   buildJalanCloseWarning,
   findAlertForSlot,
   LOW_REMAINING_THRESHOLD,
@@ -157,4 +158,18 @@ test('登録済みの月は満席・残りわずかも含めてすべて残る',
 test('登録月が空なら何も警告しない', () => {
   const alerts = findSlotsToCloseOnJalan([slot('2026-08-26', '11:30', 'full')]);
   assert.deepEqual(filterToRegisteredMonths(alerts, new Set()), []);
+});
+
+test('営業日未登録の月でも受付枠を個別設定した日は警告対象にする', () => {
+  const alerts = findSlotsToCloseOnJalan([
+    slot('2026-10-10', '11:30', 'full'),
+    slot('2026-10-11', '11:30', 'closed', 0, '受付日として設定されていません'),
+  ]);
+  const filtered = filterToConfiguredSchedule(
+    alerts,
+    new Set(),
+    new Set(['2026-10-10'])
+  );
+
+  assert.deepEqual(filtered.map((alert) => alert.date), ['2026-10-10']);
 });

@@ -3,7 +3,7 @@
 --
 -- 既定は「営業日（calendar_events type='closed' でない）なら枠OPEN」。
 -- このテーブルには管理者が明示的に変更した枠だけが入る
--- （is_open=false で閉鎖、trueで再開＝行削除でも表現できるが実装はupsertに統一）。
+-- （is_open=false は営業日でも閉鎖、true は営業日未登録・休業表示の日でも受付開始）。
 --
 -- 顧客PIIは含まないが、予約可否ロジックの根拠データであり書き換えは管理操作のため、
 -- workshop_bookings（docs/sql/create-workshop-bookings-table.sql）と同様にservice_role専用でRLSを構成する。
@@ -48,4 +48,4 @@ CREATE OR REPLACE TRIGGER update_workshop_slot_overrides_updated_at
 
 COMMENT ON TABLE workshop_slot_overrides IS 'ワークショップ受付枠（WORKSHOP_SLOTS）ごとのON/OFFオーバーライド（管理者が明示的に変更した枠のみ格納。service_role専用）';
 COMMENT ON COLUMN workshop_slot_overrides.start_time IS 'WORKSHOP_SLOTSのstart（例: "11:30"）と一致させる';
-COMMENT ON COLUMN workshop_slot_overrides.is_open IS 'false=この日のこの枠を閉鎖 / true=明示的に再開（既定と同じ状態だが行としては残せる）';
+COMMENT ON COLUMN workshop_slot_overrides.is_open IS 'false=営業日でもこの枠を閉鎖 / true=営業日未登録・休業表示でもこの枠を受付開始';

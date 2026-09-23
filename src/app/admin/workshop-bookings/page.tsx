@@ -6,7 +6,7 @@ import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
-// （営業日データは受付枠の受付可否を決める前提条件として参照する）。
+// （営業日データは受付枠の既定値として参照し、明示的なON/OFFを優先する）。
 // これに加えて「Gmail連携」タブを持つ（予約通知メールの読み取り設定・調査用）。
 
 type TabKey = 'bookings' | 'slots' | 'plans' | 'calendar' | 'email' | 'gmail';
@@ -902,13 +902,10 @@ function SlotSettingsTab() {
         key={start}
         type="button"
         onClick={() => toggleSlot(dateStr, start)}
-        disabled={!businessDay}
         title={
-          (!businessDay
-            ? `${start}: 営業日未登録のため停止中`
-            : isOpen
-              ? `${start}: 受付中（クリックで停止）`
-              : `${start}: 停止中（クリックで再開）`) +
+          (isOpen
+            ? `${start}: 受付中（クリックで停止）`
+            : `${start}: 停止中（クリックで受付開始）`) +
           (vacancy ? ` / 空き${vacancy.remaining}名（定員${vacancy.capacity}名）` : '')
         }
         className={`rounded transition-colors ${
@@ -920,7 +917,7 @@ function SlotSettingsTab() {
             ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
             : businessDay
               ? 'bg-gray-200 text-gray-500 line-through hover:bg-gray-300'
-              : 'bg-gray-200 text-gray-400 line-through cursor-not-allowed'
+              : 'bg-slate-100 text-slate-600 line-through hover:bg-slate-200'
         } ${dirty ? 'ring-2 ring-amber-400' : ''}`}
       >
         {/* 横幅が足りないグリッドでは時刻と空き状況を2段にして切れを防ぐ */}
@@ -953,7 +950,7 @@ function SlotSettingsTab() {
 
   const toggleSlot = (date: string, start: string) => {
     const day = days.get(date);
-    if (!day?.businessDay || day.closed) return; // 営業日未登録・休業日は操作不可
+    if (!day) return;
 
     const key = `${date}|${start}`;
     const currentValue = effectiveIsOpen(date, start);
@@ -1016,8 +1013,8 @@ function SlotSettingsTab() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
         各日のチップ（{SLOT_STARTS.join(' / ')}）をクリックしてON/OFFを切り替え、
         <b>「まとめて保存」</b>ボタンで確定します（クリック時点ではまだ保存されません）。
-        カレンダー管理で<b>営業日を登録した日だけ</b>受付できます。営業日未登録・休業日は
-        停止中となり操作できません。
+        保存したON/OFFは営業日カレンダーより優先されるため、営業日未登録・休業表示の日でも
+        ワークショップの受付枠を設定できます。何も設定していない日は、従来どおり営業日だけが受付中になります。
       </div>
 
       {message && (
@@ -1058,8 +1055,8 @@ function SlotSettingsTab() {
         <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-600">
           <div className="flex items-center"><div className="w-3 h-3 bg-emerald-100 border border-emerald-300 rounded mr-1.5"></div>受付中（OFF切替可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded mr-1.5"></div>停止中（ON切替可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded mr-1.5"></div>営業日未登録（停止・操作不可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-1.5"></div>休業日（操作不可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded mr-1.5"></div>営業日未登録（ON切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-1.5"></div>休業表示（ON切替可）</div>
           <div className="flex items-center"><div className="w-3 h-3 bg-white border-2 border-amber-400 rounded mr-1.5"></div>未保存の変更あり</div>
           <div className="flex items-center text-gray-500">枠内の数字は「空き人数／定員」</div>
         </div>
@@ -1100,16 +1097,12 @@ function SlotSettingsTab() {
                     </span>
                     <span className="text-xs text-gray-500">{weekday}</span>
                   </div>
-                  {closed && <span className="text-[10px] text-gray-500">休業</span>}
+                  {closed && <span className="text-[10px] text-gray-500">休業表示</span>}
                   {!closed && !businessDay && <span className="text-[10px] text-gray-500">未登録</span>}
                 </div>
-                {closed ? (
-                  <p className="flex-1 text-xs text-gray-400">休業日のため受付できません</p>
-                ) : (
-                  <div className="flex-1 flex gap-2">
-                    {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'list'))}
-                  </div>
-                )}
+                <div className="flex-1 flex gap-2">
+                  {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'list'))}
+                </div>
               </div>
             );
           })}
@@ -1141,16 +1134,14 @@ function SlotSettingsTab() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold">{day}</span>
-                  {closed && <span className="text-[10px] px-1 py-0.5 bg-gray-200 rounded">休業</span>}
+                  {closed && <span className="text-[10px] px-1 py-0.5 bg-gray-200 rounded">休業表示</span>}
                   {!closed && !businessDay && (
                     <span className="text-[10px] px-1 py-0.5 bg-slate-200 rounded">未登録</span>
                   )}
                 </div>
-                {!closed && (
-                  <div className="space-y-1">
-                    {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'grid'))}
-                  </div>
-                )}
+                <div className="space-y-1">
+                  {SLOT_STARTS.map(start => renderSlotButton(dateStr, start, businessDay, 'grid'))}
+                </div>
               </div>
             );
           })}
@@ -2065,7 +2056,7 @@ function JalanCloseAlerts() {
           ACTIVITY BOARD
         </a>
         で手動で閉じてください。満席の枠と、定休日・イベント出店などで受け付けていない日を表示します。
-        今後30日間のうち、営業日カレンダーを登録済みの月
+        今後30日間のうち、営業日または受付枠を設定済みの月
         {registeredMonths.length > 0 ? `（${registeredMonths.join('・')}）` : ''}
         だけが対象です。未登録の月は予定が未定のため対象外にしています。
       </p>
@@ -2073,7 +2064,7 @@ function JalanCloseAlerts() {
       {full.length === 0 && low.length === 0 && closedSlots.length === 0 && fullyClosedDates.length === 0 ? (
         <p className="mt-4 text-sm text-gray-500">
           {registeredMonths.length === 0
-            ? '今後30日間に営業日カレンダーの登録がありません。先に営業日を登録してください。'
+            ? '今後30日間に営業日または受付枠の設定がありません。先に受付可能な日を設定してください。'
             : '対応が必要な枠はありません。'}
         </p>
       ) : (

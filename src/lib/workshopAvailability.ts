@@ -15,6 +15,7 @@ import { getOverridesInRange } from './workshopSlotOverrides';
 import {
   buildWorkshopCalendarPolicy,
   isWorkshopBusinessDate,
+  isWorkshopSlotEnabled,
   type WorkshopCalendarPolicy,
 } from './workshopCalendarPolicy';
 import {
@@ -153,9 +154,10 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
     partySizeBySlot.set(key, (partySizeBySlot.get(key) || 0) + booking.partySize);
   }
 
-  // 管理画面で明示的に閉鎖された枠（is_open=false）のみを除外対象とする
-  const closedSlotKeys = new Set(
-    overrides.filter(o => !o.isOpen).map(o => `${o.date}|${o.startTime}`)
+  // 管理画面の明示的なON/OFFを営業日カレンダーより優先する。
+  // trueなら営業日未登録・休業表示の日でも予約可能、falseなら営業日でも停止する。
+  const overrideMap = new Map(
+    overrides.map(o => [`${o.date}|${o.startTime}`, o.isOpen])
   );
 
   const dates = listDatesInRange(fromDate, toDate);
@@ -171,14 +173,14 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
 
     for (const slot of WORKSHOP_SLOTS) {
       const base = { date, startTime: slot.start, endTime: slot.end };
+      const override = overrideMap.get(`${date}|${slot.start}`);
+      const slotEnabled = isWorkshopSlotEnabled(calendarPolicy, date, override);
 
-      if (dayClosedReason) {
-        statuses.push({ ...base, remaining: 0, state: 'closed', reason: dayClosedReason });
-        continue;
-      }
-
-      if (closedSlotKeys.has(`${date}|${slot.start}`)) {
-        statuses.push({ ...base, remaining: 0, state: 'closed', reason: '受付枠を停止中です' });
+      if (!slotEnabled) {
+        const reason = override === false
+          ? '受付枠を停止中です'
+          : dayClosedReason ?? '受付日として設定されていません';
+        statuses.push({ ...base, remaining: 0, state: 'closed', reason });
         continue;
       }
 

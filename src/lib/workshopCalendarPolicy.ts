@@ -33,3 +33,15 @@ export function isWorkshopBusinessDate(
 ): boolean {
   return policy.businessDates.has(date) && !policy.closedDates.has(date);
 }
+
+/**
+ * 受付枠設定が保存されている場合は、そのON/OFFを営業日表示より優先する。
+ * 未設定の場合だけ、従来どおり営業日カレンダーを既定値として使う。
+ */
+export function isWorkshopSlotEnabled(
+  policy: WorkshopCalendarPolicy,
+  date: string,
+  override: boolean | undefined
+): boolean {
+  return override ?? isWorkshopBusinessDate(policy, date);
+}

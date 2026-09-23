@@ -12,9 +12,10 @@ import {
 import {
   findSlotsToCloseOnJalan,
   findFullyClosedDates,
-  filterToRegisteredMonths,
+  filterToConfiguredSchedule,
   LOW_REMAINING_THRESHOLD,
 } from '@/lib/jalanSlotAlerts';
+import { getOverridesInRange } from '@/lib/workshopSlotOverrides';
 import { WORKSHOP_SLOTS } from '@/lib/workshopBookingConfig';
 import { todayJstDateStr } from '@/lib/workshopBookingConfig';
 import { checkCapacityConsistency } from '@/lib/workshopCapacityCheck';
@@ -50,8 +51,20 @@ export async function GET(request: NextRequest) {
 
     // 営業日カレンダーを登録していない月は「休業」ではなく「予定が未定」。
     // そこまで警告すると月まるごとが一覧に並び、本当に対応が必要な日が埋もれる。
-    const registeredMonths = await getRegisteredCalendarMonths(from, to);
-    const alerts = filterToRegisteredMonths(findSlotsToCloseOnJalan(statuses), registeredMonths);
+    const [registeredMonths, overrides] = await Promise.all([
+      getRegisteredCalendarMonths(from, to),
+      getOverridesInRange(from, to),
+    ]);
+    const overrideDates = new Set(overrides.map((override) => override.date));
+    const alerts = filterToConfiguredSchedule(
+      findSlotsToCloseOnJalan(statuses),
+      registeredMonths,
+      overrideDates
+    );
+    const configuredMonths = new Set([
+      ...registeredMonths,
+      ...Array.from(overrideDates, (date) => date.slice(0, 7)),
+    ]);
 
     // 定員設定の不整合もここで返す。受付枠に関わる問題を1画面で拾えるようにするため
     // （専用の診断画面を作っても見に行かないので、日常的に開く画面に出す）。
@@ -63,7 +76,7 @@ export async function GET(request: NextRequest) {
       threshold: LOW_REMAINING_THRESHOLD,
       // 画面に「どの月を見ているか」を出すため。警告が0件のとき、
       // 対応不要なのか未登録で対象外なのかを区別できるようにする
-      registeredMonths: [...registeredMonths].sort(),
+      registeredMonths: [...configuredMonths].sort(),
       alerts,
       // 終日閉じている日は日単位でまとめて見せる（枠ごとに並べると件数が多くなりすぎる）
       fullyClosedDates: findFullyClosedDates(alerts, WORKSHOP_SLOTS.length),
