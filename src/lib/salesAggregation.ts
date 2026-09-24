@@ -17,6 +17,30 @@ export function dailySalesDocId(dateStr: string): string {
 
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+export interface SalesTotalParts {
+  storeTotal?: number;
+  adjustment?: number;
+  wordOfMouthDiscount?: number;
+  ecTotal?: number;
+  workshopTotal?: number;
+  jalanPointAmount?: number;
+}
+
+/**
+ * 日別・月次・バックアップで共通の総売上計算。
+ * じゃらんポイントは利用日の売上として1ポイント＝1円で加算する。
+ */
+export function calculateSalesGrandTotal(parts: SalesTotalParts): number {
+  return (
+    (parts.storeTotal || 0) +
+    (parts.adjustment || 0) -
+    (parts.wordOfMouthDiscount || 0) +
+    (parts.ecTotal || 0) +
+    (parts.workshopTotal || 0) +
+    (parts.jalanPointAmount || 0)
+  );
+}
+
 // EC（オンライン）注文の決済方法ラベル。API（日別売上の内訳集計）とUI（表示）の双方から参照する。
 // 将来 paymentMethod の値が増えても（例: paypay）ここに追記するだけで両側に反映される。
 // 未知のキーは ecMethodLabel() 側でキーそのままフォールバック表示する。

@@ -73,6 +73,13 @@ export const dailySales = defineType({
     defineField({ name: 'cashAmount', title: '現金合計（自動計算）', type: 'number', readOnly: true }),
     defineField({ name: 'payPayAmount', title: 'PayPay合計（自動計算）', type: 'number', readOnly: true }),
     defineField({ name: 'manualCardAmount', title: 'クレジット合計・手入力分（自動計算）', type: 'number', readOnly: true }),
+    defineField({
+      name: 'jalanPointAmount',
+      title: 'じゃらんポイント（円）',
+      description: '利用されたポイントを1ポイント＝1円として入力します。総売上に加算されます。',
+      type: 'number',
+      validation: Rule => Rule.min(0),
+    }),
     defineField({ name: 'wordOfMouthDiscount', title: '口コミ割引', type: 'number' }),
     defineField({ name: 'adjustment', title: '調整', type: 'number' }),
     defineField({ name: 'notes', title: '備考', type: 'text' }),

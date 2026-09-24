@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ecMethodLabel, workshopMethodLabel } from '@/lib/salesAggregation';
+import { calculateSalesGrandTotal, ecMethodLabel, workshopMethodLabel } from '@/lib/salesAggregation';
 import { includesNormalized, normalizeForSearch } from '@/lib/searchText';
 
 // ========== 型 ==========
@@ -121,6 +121,7 @@ interface DayData {
   dailySales: {
     visitorCount?: number;
     purchaseGroupCount?: number;
+    jalanPointAmount?: number;
     wordOfMouthDiscount?: number;
     adjustment?: number;
     notes?: string;
@@ -1281,6 +1282,7 @@ function SummaryTab({
   const [saving, setSaving] = useState(false);
   const [visitorCount, setVisitorCount] = useState('0');
   const [purchaseGroupCount, setPurchaseGroupCount] = useState('0');
+  const [jalanPointAmount, setJalanPointAmount] = useState('0');
   const [wordOfMouthDiscount, setWordOfMouthDiscount] = useState('0');
   const [adjustment, setAdjustment] = useState('0');
   const [notes, setNotes] = useState('');
@@ -1300,6 +1302,7 @@ function SummaryTab({
       setData(dayData);
       setVisitorCount(String(dayData.dailySales?.visitorCount ?? 0));
       setPurchaseGroupCount(String(dayData.dailySales?.purchaseGroupCount ?? 0));
+      setJalanPointAmount(String(dayData.dailySales?.jalanPointAmount ?? 0));
       setWordOfMouthDiscount(String(dayData.dailySales?.wordOfMouthDiscount ?? 0));
       setAdjustment(String(dayData.dailySales?.adjustment ?? 0));
       setNotes(dayData.dailySales?.notes || '');
@@ -1315,9 +1318,15 @@ function SummaryTab({
   }, [date, loadDay]);
 
   const agg = data?.aggregate;
-  // 調整・割引は保存前でも画面上の総売上に即時反映する
-  const grandTotal =
-    (agg?.storeTotal || 0) + toNumber(adjustment) - toNumber(wordOfMouthDiscount) + (agg?.ecTotal || 0) + (agg?.workshopTotal || 0);
+  // じゃらんポイント・調整・割引は保存前でも画面上の総売上に即時反映する
+  const grandTotal = calculateSalesGrandTotal({
+    storeTotal: agg?.storeTotal,
+    adjustment: toNumber(adjustment),
+    wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
+    ecTotal: agg?.ecTotal,
+    workshopTotal: agg?.workshopTotal,
+    jalanPointAmount: toNumber(jalanPointAmount),
+  });
 
   const handleSave = async () => {
     setSaving(true);
@@ -1328,6 +1337,7 @@ function SummaryTab({
         body: JSON.stringify({
           visitorCount: toNumber(visitorCount),
           purchaseGroupCount: toNumber(purchaseGroupCount),
+          jalanPointAmount: toNumber(jalanPointAmount),
           wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
           adjustment: toNumber(adjustment),
           notes,
@@ -1577,6 +1587,12 @@ function SummaryTab({
             <span>−¥{(agg?.discountTotal || 0).toLocaleString()}</span>
           </div>
         )}
+        {toNumber(jalanPointAmount) > 0 && (
+          <div className="flex justify-between text-sm text-moss-green">
+            <span>じゃらんポイント</span>
+            <span>＋¥{toNumber(jalanPointAmount).toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between font-bold text-lg border-t pt-2">
           <span>その日の総売上</span>
           <span>¥{grandTotal.toLocaleString()}</span>
@@ -1641,7 +1657,7 @@ function SummaryTab({
 
       {/* カウンタ・調整・備考 */}
       <div className="bg-white shadow rounded-lg p-4 space-y-3">
-        <h2 className="font-medium text-gray-900">来店・調整（自動加算済み、手修正可）</h2>
+        <h2 className="font-medium text-gray-900">来店・じゃらんポイント・調整（自動加算済み、手修正可）</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-600 mb-1">来店者数</label>
@@ -1652,12 +1668,17 @@ function SummaryTab({
             <input type="number" inputMode="numeric" min="0" value={displayStr(purchaseGroupCount)} onChange={(e) => setPurchaseGroupCount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">調整（マイナス可）</label>
-            <input type="number" inputMode="numeric" value={displayStr(adjustment)} onChange={(e) => setAdjustment(e.target.value)} placeholder="0" className={numberInputClass} />
+            <label className="block text-sm text-gray-600 mb-1">じゃらんポイント（円）</label>
+            <input type="number" inputMode="numeric" min="0" value={displayStr(jalanPointAmount)} onChange={(e) => setJalanPointAmount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
+            <p className="mt-1 text-xs text-gray-500">1ポイント＝1円として総売上に加算</p>
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
             <input type="number" inputMode="numeric" min="0" value={displayStr(wordOfMouthDiscount)} onChange={(e) => setWordOfMouthDiscount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">調整（マイナス可）</label>
+            <input type="number" inputMode="numeric" value={displayStr(adjustment)} onChange={(e) => setAdjustment(e.target.value)} placeholder="0" className={numberInputClass} />
           </div>
         </div>
         <div>

@@ -7,7 +7,12 @@
 
 import { writeClient } from './sanity';
 import { getOrders, getOrdersInDateRange, type Order } from './orders';
-import { getJstDayBoundariesUtc, dailySalesDocId, ecMethodLabel } from './salesAggregation';
+import {
+  calculateSalesGrandTotal,
+  getJstDayBoundariesUtc,
+  dailySalesDocId,
+  ecMethodLabel,
+} from './salesAggregation';
 import { jstDateOf } from './storeSales';
 import {
   upsertTransactionRow,
@@ -277,6 +282,7 @@ export async function collectAllTransactions(): Promise<TransactionSheetRow[]> {
 interface DailySalesCountersDoc {
   visitorCount?: number;
   purchaseGroupCount?: number;
+  jalanPointAmount?: number;
   wordOfMouthDiscount?: number;
   adjustment?: number;
 }
@@ -309,7 +315,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
     Array<{ total?: number }>,
   ] = await Promise.all([
     writeClient.fetch(
-      `*[_id == $id][0]{ visitorCount, purchaseGroupCount, wordOfMouthDiscount, adjustment }`,
+      `*[_id == $id][0]{ visitorCount, purchaseGroupCount, jalanPointAmount, wordOfMouthDiscount, adjustment }`,
       { id: docId }
     ),
     writeClient.fetch(
@@ -361,7 +367,13 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
   const adjustment = dailySales?.adjustment || 0;
   const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
   const storeTotal = cashAmount + payPayAmount + manualCardAmount + qrChargeTotal;
-  const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal;
+  const grandTotal = calculateSalesGrandTotal({
+    storeTotal,
+    adjustment,
+    wordOfMouthDiscount,
+    ecTotal,
+    jalanPointAmount: dailySales?.jalanPointAmount,
+  });
 
   return {
     date: dateStr,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
-import { getJstDayBoundariesUtc } from '@/lib/salesAggregation';
+import { calculateSalesGrandTotal, getJstDayBoundariesUtc } from '@/lib/salesAggregation';
 import { taxBreakdown } from '@/lib/tax';
 import { getOrdersInDateRange } from '@/lib/orders';
 
@@ -47,6 +47,7 @@ interface MonthDailySales {
   visitorCount?: number;
   purchaseGroupCount?: number;
   adjustment?: number;
+  jalanPointAmount?: number;
   wordOfMouthDiscount?: number;
   notes?: string;
 }
@@ -60,6 +61,7 @@ interface DayRow {
   payPay: number;
   card: number;
   qr: number;
+  jalanPointAmount: number;
   /** その日の来店者数（日別の記録から） */
   visitors: number;
   /** その日のワークショップ売上。イベント日の偏りを見るために日別で持つ */
@@ -101,6 +103,7 @@ interface MonthlySummary {
   methodTotals: { cash: number; payPay: number; card: number; qr: number };
   categoryTotals: Record<string, number>;
   discountTotal: number;
+  jalanPointTotal: number;
   taxExcludedTotal: number;
   taxAmountTotal: number;
   visitorTotal: number;
@@ -190,7 +193,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     ),
     writeClient.fetch(
       `*[_type == "dailySales" && date >= $first && date <= $last]{
-        date, visitorCount, purchaseGroupCount, adjustment, wordOfMouthDiscount, notes
+        date, visitorCount, purchaseGroupCount, adjustment, jalanPointAmount, wordOfMouthDiscount, notes
       }`,
       { first, last }
     ),
@@ -207,6 +210,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
       payPay: 0,
       card: 0,
       qr: 0,
+      jalanPointAmount: 0,
       visitors: 0,
       workshopTotal: 0,
       note: '',
@@ -290,15 +294,18 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
 
   let adjustmentTotal = 0;
   let wordOfMouthTotal = 0;
+  let jalanPointTotal = 0;
   let visitorTotal = 0;
   let purchaseGroupTotal = 0;
   for (const ds of dailySalesList) {
     adjustmentTotal += ds.adjustment || 0;
     wordOfMouthTotal += ds.wordOfMouthDiscount || 0;
+    jalanPointTotal += ds.jalanPointAmount || 0;
     visitorTotal += ds.visitorCount || 0;
     purchaseGroupTotal += ds.purchaseGroupCount || 0;
     const row = ds.date ? dayMap.get(ds.date) : undefined;
     if (row) {
+      row.jalanPointAmount = ds.jalanPointAmount || 0;
       row.visitors = ds.visitorCount || 0;
       row.note = ds.notes?.trim() || '';
     }
@@ -316,7 +323,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     visitorAvg: 0,
   }));
   for (const row of days) {
-    row.total = row.storeTotal + row.ecTotal;
+    row.total = row.storeTotal + row.ecTotal + row.jalanPointAmount;
     if (row.total > 0) businessDays++;
     const [y, m, d] = row.date.split('-').map(Number);
     const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
@@ -339,8 +346,14 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
 
   const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
   const ecTotal = days.reduce((sum, row) => sum + row.ecTotal, 0);
-  // 日別集計 /api/admin/sales/[date] の grandTotal と同じ計算式（調整・口コミ割引を反映）
-  const grandTotal = storeTotal + adjustmentTotal - wordOfMouthTotal + ecTotal;
+  // 日別集計 /api/admin/sales/[date] と同じ計算式（調整・口コミ割引・じゃらんポイントを反映）
+  const grandTotal = calculateSalesGrandTotal({
+    storeTotal,
+    adjustment: adjustmentTotal,
+    wordOfMouthDiscount: wordOfMouthTotal,
+    ecTotal,
+    jalanPointAmount: jalanPointTotal,
+  });
   const tax = taxBreakdown(grandTotal);
 
   return {
@@ -356,6 +369,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
       methodTotals,
       categoryTotals,
       discountTotal,
+      jalanPointTotal,
       taxExcludedTotal: tax.excludedAmount,
       taxAmountTotal: tax.taxAmount,
       visitorTotal,

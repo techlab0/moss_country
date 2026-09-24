@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
         cashAmount,
         payPayAmount,
         manualCardAmount,
+        jalanPointAmount,
         wordOfMouthDiscount,
         adjustment,
         "itemCount": count(lineItems)

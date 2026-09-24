@@ -22,6 +22,7 @@ interface DayRow {
   payPay: number;
   card: number;
   qr: number;
+  jalanPointAmount: number;
   visitors: number;
   workshopTotal: number;
   note: string;
@@ -34,6 +35,7 @@ interface MonthlySummary {
   methodTotals: { cash: number; payPay: number; card: number; qr: number };
   categoryTotals: Record<string, number>;
   discountTotal: number;
+  jalanPointTotal: number;
   taxExcludedTotal: number;
   taxAmountTotal: number;
   visitorTotal: number;
@@ -443,6 +445,11 @@ export default function MonthlySalesPage() {
             <SummaryCard
               label="割引合計"
               value={`−¥${summary.discountTotal.toLocaleString()}`}
+            />
+            <SummaryCard
+              label="じゃらんポイント"
+              value={`¥${summary.jalanPointTotal.toLocaleString()}`}
+              sub="1ポイント＝1円で総売上に加算"
             />
             <SummaryCard
               label="営業日数（売上のあった日）"

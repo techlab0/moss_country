@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
-import { getJstDayBoundariesUtc, dailySalesDocId, DATE_PATTERN } from '@/lib/salesAggregation';
+import {
+  calculateSalesGrandTotal,
+  getJstDayBoundariesUtc,
+  dailySalesDocId,
+  DATE_PATTERN,
+} from '@/lib/salesAggregation';
 import { syncDailySalesToSheet } from '@/lib/googleSheets';
 import { computeDailySalesSheetRow } from '@/lib/salesBackup';
 import { taxBreakdown } from '@/lib/tax';
@@ -132,13 +137,13 @@ export async function GET(
     const { start, end } = getJstDayBoundariesUtc(date);
 
     const [dailySales, transactions, charges, paidOrders]: [
-      { visitorCount?: number; purchaseGroupCount?: number; wordOfMouthDiscount?: number; adjustment?: number; notes?: string; updatedAt?: string } | null,
+      { visitorCount?: number; purchaseGroupCount?: number; jalanPointAmount?: number; wordOfMouthDiscount?: number; adjustment?: number; notes?: string; updatedAt?: string } | null,
       TransactionDoc[],
       ChargeDoc[],
       Array<{ total?: number; items?: OrderItemSnapshot[]; paymentMethod?: string }>,
     ] = await Promise.all([
       writeClient.fetch(
-        `*[_id == $id][0]{ visitorCount, purchaseGroupCount, wordOfMouthDiscount, adjustment, notes, updatedAt }`,
+        `*[_id == $id][0]{ visitorCount, purchaseGroupCount, jalanPointAmount, wordOfMouthDiscount, adjustment, notes, updatedAt }`,
         { id: docId }
       ),
       writeClient.fetch(
@@ -256,8 +261,16 @@ export async function GET(
 
     const adjustment = dailySales?.adjustment || 0;
     const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
+    const jalanPointAmount = dailySales?.jalanPointAmount || 0;
     const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
-    const grandTotal = storeTotal + adjustment - wordOfMouthDiscount + ecTotal + workshopTotal;
+    const grandTotal = calculateSalesGrandTotal({
+      storeTotal,
+      adjustment,
+      wordOfMouthDiscount,
+      ecTotal,
+      workshopTotal,
+      jalanPointAmount,
+    });
     const tax = taxBreakdown(grandTotal);
 
     return NextResponse.json({
@@ -288,7 +301,7 @@ export async function GET(
   }
 }
 
-// カウンタ（来店者数・購入組数）・調整・口コミ割引・備考の保存＋Googleシート同期
+// カウンタ（来店者数・購入組数）・じゃらんポイント・調整・口コミ割引・備考の保存＋Googleシート同期
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ date: string }> }
@@ -311,6 +324,7 @@ export async function PUT(
       date,
       visitorCount: Math.max(0, Number(body.visitorCount) || 0),
       purchaseGroupCount: Math.max(0, Number(body.purchaseGroupCount) || 0),
+      jalanPointAmount: Math.max(0, Number(body.jalanPointAmount) || 0),
       wordOfMouthDiscount: Math.max(0, Number(body.wordOfMouthDiscount) || 0),
       adjustment: Number(body.adjustment) || 0,
       notes: typeof body.notes === 'string' ? body.notes : '',
