@@ -47,6 +47,7 @@ interface TransactionView {
   discountType?: DiscountType;
   discountValue?: number;
   discountAmount?: number;
+  jalanPointAmount?: number;
   notes?: string;
 }
 
@@ -112,6 +113,8 @@ interface Aggregate {
   workshopTotal?: number;
   workshopBreakdown?: Array<{ method: string; amount: number; count: number }>;
   discountTotal: number;
+  transactionJalanPointTotal: number;
+  jalanPointTotal: number;
   grandTotal: number;
   taxExcludedTotal: number;
   taxAmountTotal: number;
@@ -162,6 +165,7 @@ interface EditState {
   paidAmount?: number;
   discountType: DiscountType | '';
   discountValue: string;
+  jalanPointAmount: string;
   notes: string;
 }
 
@@ -407,6 +411,7 @@ function EntryTab({
   const [paymentMethod, setPaymentMethod] = useState<EntryMethod>('cash');
   const [discountType, setDiscountType] = useState<DiscountType | ''>('');
   const [discountValue, setDiscountValue] = useState('0');
+  const [jalanPointAmount, setJalanPointAmount] = useState('0');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -475,6 +480,9 @@ function EntryTab({
     [total, discountType, discountValue]
   );
   const finalTotal = total - discountAmount;
+  const pointAmount = toNumber(jalanPointAmount);
+  const receivedAmount = Math.max(0, finalTotal - pointAmount);
+  const acceptsJalanPoints = paymentMethod === 'cash' || paymentMethod === 'payPay' || paymentMethod === 'card';
 
   // レシート風の確認画面に表示する明細行（商品名・数量・行合計）
   const confirmRows = useMemo(() => {
@@ -546,6 +554,7 @@ function EntryTab({
     setPaymentMethod('cash');
     setDiscountType('');
     setDiscountValue('0');
+    setJalanPointAmount('0');
     setNotes('');
     setConfirming(false);
     setQrFlow(null);
@@ -562,6 +571,10 @@ function EntryTab({
     }
     if (lineItems.length > 0 && finalTotal <= 0) {
       alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
+      return;
+    }
+    if (acceptsJalanPoints && pointAmount > finalTotal) {
+      alert('じゃらんポイントは売上合計以下で入力してください');
       return;
     }
 
@@ -653,6 +666,7 @@ function EntryTab({
             lineItems,
             discountType: discountType || undefined,
             discountValue: toNumber(discountValue),
+            jalanPointAmount: pointAmount,
             notes: notes.trim() || undefined,
           }),
         });
@@ -665,7 +679,9 @@ function EntryTab({
         };
         onRegistered(
           lineItems.length > 0
-            ? `登録しました（${methodLabels[method]} ¥${finalTotal.toLocaleString()}）`
+            ? pointAmount > 0
+              ? `登録しました（売上 ¥${finalTotal.toLocaleString()}／${methodLabels[method]} ¥${receivedAmount.toLocaleString()}／じゃらんポイント ¥${pointAmount.toLocaleString()}）`
+              : `登録しました（${methodLabels[method]} ¥${finalTotal.toLocaleString()}）`
             : `来店のみ登録しました（${visitors}名）`
         );
         if (data.inventoryWarnings?.length) {
@@ -788,6 +804,18 @@ function EntryTab({
               <span>−¥{discountAmount.toLocaleString()}</span>
             </div>
           )}
+          {pointAmount > 0 && (
+            <>
+              <div className="flex justify-between text-moss-green font-medium">
+                <span>うち、じゃらんポイント</span>
+                <span>¥{pointAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-700 font-medium">
+                <span>{methodLabels[paymentMethod]}で受け取る金額</span>
+                <span>¥{receivedAmount.toLocaleString()}</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between items-center pt-1">
             <span className="font-medium text-gray-900">合計</span>
             <span className="text-3xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
@@ -814,7 +842,7 @@ function EntryTab({
           <div className="text-center border-t pt-3 space-y-2">
             <img src={payPayQrUrl} alt="PayPay 店舗用QRコード" className="mx-auto w-56 h-56 object-contain" />
             <p className="text-sm text-gray-500">
-              お客様にPayPayでこのQRコードを読み取ってもらい、合計金額 ¥{finalTotal.toLocaleString()} を入力してもらってください
+              お客様にPayPayでこのQRコードを読み取ってもらい、受取金額 ¥{receivedAmount.toLocaleString()} を入力してもらってください
             </p>
           </div>
         )}
@@ -1196,6 +1224,22 @@ function EntryTab({
                 )}
               </div>
             )}
+            {total > 0 && acceptsJalanPoints && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-600 shrink-0">うち、じゃらんポイント</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max={finalTotal}
+                  value={displayStr(jalanPointAmount)}
+                  onChange={(e) => setJalanPointAmount(sanitizeNonNegative(e.target.value))}
+                  placeholder="0"
+                  className="w-28 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+                />
+                <span className="text-xs text-gray-500">円</span>
+              </div>
+            )}
             {total > 0 && (
               <input
                 type="text"
@@ -1213,6 +1257,11 @@ function EntryTab({
                     小計 ¥{total.toLocaleString()} − 割引 ¥{discountAmount.toLocaleString()}
                   </p>
                 )}
+                {pointAmount > 0 && (
+                  <p className="text-xs text-moss-green">
+                    うちポイント ¥{pointAmount.toLocaleString()}／受取額 ¥{receivedAmount.toLocaleString()}
+                  </p>
+                )}
                 <span className="text-2xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
               </div>
             </div>
@@ -1220,7 +1269,10 @@ function EntryTab({
               {(['cash', 'payPay', 'qr', 'paypay', 'card', 'pos'] as EntryMethod[]).map(method => (
                 <button
                   key={method}
-                  onClick={() => setPaymentMethod(method)}
+                  onClick={() => {
+                    setPaymentMethod(method);
+                    if (method === 'qr' || method === 'paypay' || method === 'pos') setJalanPointAmount('0');
+                  }}
                   className={`py-2.5 text-xs font-medium rounded-md border ${
                     paymentMethod === method
                       ? 'bg-moss-green text-white border-moss-green'
@@ -1238,6 +1290,10 @@ function EntryTab({
                 if (total > 0 && paymentMethod !== 'qr' && paymentMethod !== 'pos' && paymentMethod !== 'paypay') {
                   if (finalTotal <= 0) {
                     alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
+                    return;
+                  }
+                  if (pointAmount > finalTotal) {
+                    alert('じゃらんポイントは売上合計以下で入力してください');
                     return;
                   }
                   setConfirming(true);
@@ -1325,7 +1381,7 @@ function SummaryTab({
     wordOfMouthDiscount: toNumber(wordOfMouthDiscount),
     ecTotal: agg?.ecTotal,
     workshopTotal: agg?.workshopTotal,
-    jalanPointAmount: toNumber(jalanPointAmount),
+    jalanPointAmount: (agg?.transactionJalanPointTotal || 0) + toNumber(jalanPointAmount),
   });
 
   const handleSave = async () => {
@@ -1364,6 +1420,7 @@ function SummaryTab({
       lines: (tx.lineItems || []).map(li => toEditLine(li, salesItems)),
       discountType: tx.discountType || '',
       discountValue: String(tx.discountValue ?? 0),
+      jalanPointAmount: String(tx.jalanPointAmount ?? 0),
       notes: tx.notes || '',
     });
   };
@@ -1378,6 +1435,7 @@ function SummaryTab({
       paidAmount: charge.amount,
       discountType: '',
       discountValue: '0',
+      jalanPointAmount: '0',
       notes: '',
     });
   };
@@ -1411,6 +1469,7 @@ function SummaryTab({
             visitorCount: toNumber(edit.visitorCount),
             discountType: edit.discountType || undefined,
             discountValue: toNumber(edit.discountValue),
+            jalanPointAmount: toNumber(edit.jalanPointAmount),
             notes: edit.notes.trim() || undefined,
           };
 
@@ -1587,9 +1646,15 @@ function SummaryTab({
             <span>−¥{(agg?.discountTotal || 0).toLocaleString()}</span>
           </div>
         )}
+        {(agg?.transactionJalanPointTotal || 0) > 0 && (
+          <div className="flex justify-between text-sm text-moss-green">
+            <span>じゃらんポイント（取引内）</span>
+            <span>＋¥{(agg?.transactionJalanPointTotal || 0).toLocaleString()}</span>
+          </div>
+        )}
         {toNumber(jalanPointAmount) > 0 && (
           <div className="flex justify-between text-sm text-moss-green">
-            <span>じゃらんポイント</span>
+            <span>じゃらんポイント（追加入力）</span>
             <span>＋¥{toNumber(jalanPointAmount).toLocaleString()}</span>
           </div>
         )}
@@ -1668,9 +1733,9 @@ function SummaryTab({
             <input type="number" inputMode="numeric" min="0" value={displayStr(purchaseGroupCount)} onChange={(e) => setPurchaseGroupCount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">じゃらんポイント（円）</label>
+            <label className="block text-sm text-gray-600 mb-1">じゃらんポイント（追加分・円）</label>
             <input type="number" inputMode="numeric" min="0" value={displayStr(jalanPointAmount)} onChange={(e) => setJalanPointAmount(sanitizeNonNegative(e.target.value))} placeholder="0" className={numberInputClass} />
-            <p className="mt-1 text-xs text-gray-500">1ポイント＝1円として総売上に加算</p>
+            <p className="mt-1 text-xs text-gray-500">各売上に入力していないポイントだけを追加</p>
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-1">口コミ割引</label>
@@ -1767,6 +1832,12 @@ function SummaryTab({
                       {(tx.discountAmount || 0) > 0 && (
                         <p className="text-xs text-red-600 font-medium mt-0.5">
                           割引: −¥{(tx.discountAmount || 0).toLocaleString()}（小計 ¥{(tx.subtotal || 0).toLocaleString()}）
+                        </p>
+                      )}
+                      {(tx.jalanPointAmount || 0) > 0 && (
+                        <p className="text-xs text-moss-green font-medium mt-0.5">
+                          うち、じゃらんポイント: ¥{(tx.jalanPointAmount || 0).toLocaleString()}／
+                          {methodLabels[tx.paymentMethod || 'cash']}受取: ¥{Math.max(0, (tx.total || 0) - (tx.jalanPointAmount || 0)).toLocaleString()}
                         </p>
                       )}
                       {tx.notes && <p className="text-xs text-gray-400 italic mt-0.5">{tx.notes}</p>}
@@ -1899,6 +1970,7 @@ function HistoricalSingleEntry({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [discountType, setDiscountType] = useState<DiscountType | ''>('');
   const [discountValue, setDiscountValue] = useState('0');
+  const [jalanPointAmount, setJalanPointAmount] = useState('0');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -1924,6 +1996,8 @@ function HistoricalSingleEntry({
     [subtotal, discountType, discountValue]
   );
   const grandTotal = subtotal - discountAmount;
+  const pointAmount = toNumber(jalanPointAmount);
+  const receivedAmount = Math.max(0, grandTotal - pointAmount);
 
   const setQuantity = (id: string, value: string) => {
     setQuantities(prev => ({ ...prev, [id]: sanitizeNonNegative(value) }));
@@ -1944,6 +2018,7 @@ function HistoricalSingleEntry({
     setCustomItems([]);
     setDiscountType('');
     setDiscountValue('0');
+    setJalanPointAmount('0');
     setNotes('');
   };
 
@@ -1972,6 +2047,10 @@ function HistoricalSingleEntry({
       alert('割引後の合計金額が0円です。数量・金額・割引を確認してください');
       return;
     }
+    if (pointAmount > grandTotal) {
+      alert('じゃらんポイントは売上合計以下で入力してください');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -1985,6 +2064,7 @@ function HistoricalSingleEntry({
           lineItems,
           discountType: discountType || undefined,
           discountValue: toNumber(discountValue),
+          jalanPointAmount: pointAmount,
           notes: notes.trim() || undefined,
           isHistorical: true,
         }),
@@ -2149,6 +2229,22 @@ function HistoricalSingleEntry({
           </div>
         )}
         {subtotal > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 shrink-0">うち、じゃらんポイント</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max={grandTotal}
+              value={displayStr(jalanPointAmount)}
+              onChange={(e) => setJalanPointAmount(sanitizeNonNegative(e.target.value))}
+              placeholder="0"
+              className="w-28 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+            />
+            <span className="text-xs text-gray-500">円</span>
+          </div>
+        )}
+        {subtotal > 0 && (
           <input
             type="text"
             value={notes}
@@ -2170,10 +2266,22 @@ function HistoricalSingleEntry({
             <span>−¥{discountAmount.toLocaleString()}</span>
           </div>
         )}
+        {pointAmount > 0 && (
+          <div className="flex justify-between text-sm text-moss-green">
+            <span>うち、じゃらんポイント</span>
+            <span>¥{pointAmount.toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">合計</span>
           <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
         </div>
+        {pointAmount > 0 && pointAmount <= grandTotal && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{methodLabels[paymentMethod]}での受取額</span>
+            <span>¥{receivedAmount.toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       <button
@@ -2265,6 +2373,9 @@ function EditPanel({
   }, 0);
   const editDiscountAmount = edit.isCharge ? 0 : previewDiscountAmount(editSubtotal, edit.discountType, edit.discountValue);
   const editTotal = editSubtotal - editDiscountAmount;
+  const editPointAmount = edit.isCharge ? 0 : toNumber(edit.jalanPointAmount);
+  const editReceivedAmount = Math.max(0, editTotal - editPointAmount);
+  const pointAmountInvalid = editPointAmount > editTotal;
 
   const mismatch = edit.isCharge && edit.paidAmount !== undefined && editTotal !== edit.paidAmount;
 
@@ -2318,6 +2429,19 @@ function EditPanel({
                 className="w-24 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
               />
             )}
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">うち、じゃらんポイント（円）</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max={editTotal}
+              value={displayStr(edit.jalanPointAmount)}
+              onChange={(e) => setEdit({ ...edit, jalanPointAmount: sanitizeNonNegative(e.target.value) })}
+              placeholder="0"
+              className={numberInputClass}
+            />
           </div>
           <div className="col-span-2">
             <label className="block text-xs text-gray-500 mb-1">メモ</label>
@@ -2398,10 +2522,27 @@ function EditPanel({
           <span>−¥{editDiscountAmount.toLocaleString()}</span>
         </div>
       )}
+      {editPointAmount > 0 && (
+        <div className="flex justify-between items-center text-sm text-moss-green">
+          <span>うち、じゃらんポイント</span>
+          <span>¥{editPointAmount.toLocaleString()}</span>
+        </div>
+      )}
       <div className="flex justify-between items-center text-sm font-medium border-t pt-2">
         <span className="text-gray-700">合計</span>
         <span className="font-bold">¥{editTotal.toLocaleString()}</span>
       </div>
+      {!edit.isCharge && editPointAmount > 0 && !pointAmountInvalid && (
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">{methodLabels[edit.paymentMethod]}での受取額</span>
+          <span>¥{editReceivedAmount.toLocaleString()}</span>
+        </div>
+      )}
+      {pointAmountInvalid && (
+        <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1.5">
+          じゃらんポイントは売上合計以下で入力してください。
+        </p>
+      )}
       {mismatch && (
         <p className="text-xs text-yellow-700 bg-yellow-50 rounded px-2 py-1.5">
           ⚠️ 明細合計が決済金額（¥{(edit.paidAmount || 0).toLocaleString()}）と一致していません。記録として保存はできますが、金額の変更（返金）はできません。
@@ -2411,7 +2552,7 @@ function EditPanel({
       <div className="flex gap-2">
         <button
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || pointAmountInvalid}
           className="flex-1 py-2.5 bg-moss-green text-white text-sm font-medium rounded-md hover:bg-moss-green/90 disabled:opacity-50"
         >
           {saving ? '保存中...' : '保存'}
@@ -2506,6 +2647,7 @@ function HistoricalBulkEntry({
   const [customRows, setCustomRows] = useState<HistoricalCustomRow[]>([]);
   const [discountType, setDiscountType] = useState<DiscountType | ''>('');
   const [discountValue, setDiscountValue] = useState('0');
+  const [jalanPointAmount, setJalanPointAmount] = useState('0');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -2556,6 +2698,8 @@ function HistoricalBulkEntry({
     [subtotal, discountType, discountValue]
   );
   const grandTotal = subtotal - discountAmount;
+  const pointAmount = toNumber(jalanPointAmount);
+  const receivedAmount = Math.max(0, grandTotal - pointAmount);
 
   const addCustomRow = () => {
     setCustomRows(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: '', unitPrice: '0', quantity: '1', paymentMethod: 'cash' }]);
@@ -2595,6 +2739,10 @@ function HistoricalBulkEntry({
       alert('日付を指定してください');
       return;
     }
+    if (pointAmount > grandTotal) {
+      alert('じゃらんポイントは売上合計以下で入力してください');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -2612,6 +2760,7 @@ function HistoricalBulkEntry({
           },
           discountType: discountType || undefined,
           discountValue: toNumber(discountValue),
+          jalanPointAmount: pointAmount,
           notes: notes.trim() || undefined,
         }),
       });
@@ -2770,6 +2919,26 @@ function HistoricalBulkEntry({
       )}
 
       {subtotal > 0 && (
+        <div className="bg-white border rounded-md p-3 space-y-1">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 shrink-0">うち、じゃらんポイント</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max={grandTotal}
+              value={displayStr(jalanPointAmount)}
+              onChange={(e) => setJalanPointAmount(sanitizeNonNegative(e.target.value))}
+              placeholder="0"
+              className="w-28 px-2 py-2 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
+            />
+            <span className="text-xs text-gray-500">円</span>
+          </div>
+          <p className="text-[11px] text-gray-500">複数の支払い方法がある場合は、各売上額の比率でポイントを分けて記録します。</p>
+        </div>
+      )}
+
+      {subtotal > 0 && (
         <input
           type="text"
           value={notes}
@@ -2790,10 +2959,22 @@ function HistoricalBulkEntry({
             <span>−¥{discountAmount.toLocaleString()}</span>
           </div>
         )}
+        {pointAmount > 0 && (
+          <div className="flex justify-between text-sm text-moss-green">
+            <span>うち、じゃらんポイント</span>
+            <span>¥{pointAmount.toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">合計</span>
           <span className="text-xl font-bold text-gray-900">¥{grandTotal.toLocaleString()}</span>
         </div>
+        {pointAmount > 0 && pointAmount <= grandTotal && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>現金・PayPay・カードでの受取額</span>
+            <span>¥{receivedAmount.toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       <button

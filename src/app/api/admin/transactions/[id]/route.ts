@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
+import { resolveJalanPointPayment } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 import {
   applyStoreSaleInventory,
@@ -19,6 +20,8 @@ interface ExistingTransaction {
   visitorCount?: number;
   itemCount: number;
   subtotal?: number;
+  total?: number;
+  jalanPointAmount?: number;
   discountType?: DiscountType;
   discountValue?: number;
   // 在庫を戻すために、変更前の明細（売上項目と数量）も取得する
@@ -31,7 +34,7 @@ async function fetchExisting(id: string): Promise<ExistingTransaction | null> {
   return writeClient.fetch(
     `*[_type == "storeTransaction" && _id == $id][0]{
       _id, date, visitorCount, "itemCount": count(lineItems),
-      subtotal, discountType, discountValue, source,
+      subtotal, total, jalanPointAmount, discountType, discountValue, source,
       lineItems[]{ quantity, "salesItemId": salesItem._ref },
       inventoryApplied[]{ productId, productName, quantity }
     }`,
@@ -64,6 +67,7 @@ export async function PATCH(
     // 明細か割引のどちらかが変わっていれば、両方を踏まえて合計を再計算する
     const lineItemsChanged = Array.isArray(body.lineItems);
     const discountChanged = body.discountType !== undefined || body.discountValue !== undefined;
+    let nextTotal = existing.total || 0;
     if (lineItemsChanged || discountChanged) {
       let subtotal: number;
       if (lineItemsChanged) {
@@ -86,6 +90,14 @@ export async function PATCH(
       updates.discountValue = discountType ? discountValue : undefined;
       updates.discountAmount = discountAmount;
       updates.total = total;
+      nextTotal = total;
+    }
+
+    if (lineItemsChanged || discountChanged || body.jalanPointAmount !== undefined) {
+      const pointInput = body.jalanPointAmount !== undefined
+        ? body.jalanPointAmount
+        : existing.jalanPointAmount;
+      updates.jalanPointAmount = resolveJalanPointPayment(nextTotal, pointInput).jalanPointAmount;
     }
 
     if (body.paymentMethod !== undefined) {
@@ -135,6 +147,9 @@ export async function PATCH(
     return NextResponse.json({ transaction, inventoryWarnings });
   } catch (error) {
     console.error('店頭取引更新エラー:', error);
+    if (error instanceof RangeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     const message = error instanceof Error ? error.message : '取引の更新に失敗しました';
     return NextResponse.json({ error: message }, { status: 500 });
   }

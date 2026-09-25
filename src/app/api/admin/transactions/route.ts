@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
-import { DATE_PATTERN, todayJst } from '@/lib/salesAggregation';
+import { DATE_PATTERN, resolveJalanPointPayment, todayJst } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, adjustDailyCounters, applyDiscount, DiscountType, StoreLineItemInput } from '@/lib/storeSales';
 import { applyStoreSaleInventory, storeInventoryResultFields } from '@/lib/storeInventory';
 import { storeTransactionToTxRow } from '@/lib/salesBackup';
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { discountAmount, total } = applyDiscount(subtotal, discountType, discountValue);
+    const { jalanPointAmount } = resolveJalanPointPayment(total, body.jalanPointAmount);
 
     const transaction = await writeClient.create({
       _type: 'storeTransaction',
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       discountValue: discountType ? discountValue : undefined,
       discountAmount,
       total,
+      jalanPointAmount,
       notes,
       source: isHistorical ? 'historical' : undefined,
     });
@@ -89,6 +91,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ transaction, inventoryWarnings });
   } catch (error) {
     console.error('店頭取引登録エラー:', error);
+    if (error instanceof RangeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     const message = error instanceof Error ? error.message : '取引の登録に失敗しました';
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -110,7 +115,7 @@ export async function GET(request: NextRequest) {
     const transactions = await writeClient.fetch(
       `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
         _id, createdAt, paymentMethod, visitorCount, total, source, notes,
-        subtotal, discountType, discountValue, discountAmount,
+        subtotal, discountType, discountValue, discountAmount, jalanPointAmount,
         lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
       }`,
       { date }

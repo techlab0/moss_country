@@ -15,7 +15,7 @@ import { getBookingsInDateRange } from '@/lib/workshopBookings';
 import type { OrderItemSnapshot } from '@/lib/orders';
 
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
-// dailySales ドキュメントはカウンタ（来店者数・購入組数）・調整・備考のみを保持する。
+// dailySales ドキュメントはカウンタ・取引に紐づかないポイント追加分・調整・備考を保持する。
 
 type PaymentMethod = 'cash' | 'payPay' | 'card';
 
@@ -33,6 +33,7 @@ interface TransactionDoc {
   paymentMethod?: PaymentMethod;
   visitorCount?: number;
   total?: number;
+  jalanPointAmount?: number;
   lineItems?: AggLineItem[];
   source?: string;
   subtotal?: number;
@@ -149,7 +150,7 @@ export async function GET(
       writeClient.fetch(
         `*[_type == "storeTransaction" && date == $date] | order(createdAt desc) {
           _id, createdAt, paymentMethod, visitorCount, total, source, notes,
-          subtotal, discountAmount,
+          subtotal, discountAmount, jalanPointAmount,
           lineItems[]{ name, quantity, amount, "salesItemId": salesItem._ref }
         }`,
         { date }
@@ -183,10 +184,13 @@ export async function GET(
     const rows = new Map<string, ItemRow>();
     const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
     let discountTotal = 0;
+    let transactionJalanPointTotal = 0;
 
     for (const tx of transactions) {
       const method: PaymentMethod = tx.paymentMethod || 'cash';
-      methodTotals[method] += tx.total || 0;
+      const pointAmount = Math.min(tx.jalanPointAmount || 0, tx.total || 0);
+      methodTotals[method] += (tx.total || 0) - pointAmount;
+      transactionJalanPointTotal += pointAmount;
       discountTotal += tx.discountAmount || 0;
       for (const li of tx.lineItems || []) {
         addToRow(rows, li, method);
@@ -261,7 +265,8 @@ export async function GET(
 
     const adjustment = dailySales?.adjustment || 0;
     const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
-    const jalanPointAmount = dailySales?.jalanPointAmount || 0;
+    const manualJalanPointAmount = dailySales?.jalanPointAmount || 0;
+    const jalanPointTotal = transactionJalanPointTotal + manualJalanPointAmount;
     const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
     const grandTotal = calculateSalesGrandTotal({
       storeTotal,
@@ -269,7 +274,7 @@ export async function GET(
       wordOfMouthDiscount,
       ecTotal,
       workshopTotal,
-      jalanPointAmount,
+      jalanPointAmount: jalanPointTotal,
     });
     const tax = taxBreakdown(grandTotal);
 
@@ -287,6 +292,8 @@ export async function GET(
         workshopTotal,
         workshopBreakdown,
         discountTotal,
+        transactionJalanPointTotal,
+        jalanPointTotal,
         grandTotal,
         taxExcludedTotal: tax.excludedAmount,
         taxAmountTotal: tax.taxAmount,

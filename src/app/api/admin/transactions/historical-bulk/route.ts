@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
-import { DATE_PATTERN } from '@/lib/salesAggregation';
+import { DATE_PATTERN, distributeJalanPointAmount } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, distributeDiscount, StoreLineItemInput, DiscountType } from '@/lib/storeSales';
 
 const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
     }
 
     const discountAmounts = distributeDiscount(resolved.map(r => r.subtotal), discountType, discountValue);
+    const salesTotals = resolved.map((row, index) => row.subtotal - discountAmounts[index]);
+    const jalanPointAmounts = distributeJalanPointAmount(salesTotals, body.jalanPointAmount);
 
     const transactions = [];
     for (let i = 0; i < resolved.length; i++) {
@@ -60,7 +62,8 @@ export async function POST(request: NextRequest) {
         discountType,
         discountValue: discountType ? discountValue : undefined,
         discountAmount,
-        total: subtotal - discountAmount,
+        total: salesTotals[i],
+        jalanPointAmount: jalanPointAmounts[i],
         notes,
         source: 'historical',
       });
@@ -70,6 +73,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ transactions });
   } catch (error) {
     console.error('過去実績の一括登録エラー:', error);
+    if (error instanceof RangeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     const message = error instanceof Error ? error.message : '登録に失敗しました';
     return NextResponse.json({ error: message }, { status: 500 });
   }

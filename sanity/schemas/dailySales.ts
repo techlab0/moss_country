@@ -75,8 +75,8 @@ export const dailySales = defineType({
     defineField({ name: 'manualCardAmount', title: 'クレジット合計・手入力分（自動計算）', type: 'number', readOnly: true }),
     defineField({
       name: 'jalanPointAmount',
-      title: 'じゃらんポイント（円）',
-      description: '利用されたポイントを1ポイント＝1円として入力します。総売上に加算されます。',
+      title: 'じゃらんポイント（取引に紐づかない追加分・円）',
+      description: '各売上へ入力していない追加分だけを、1ポイント＝1円として入力します。総売上に加算されます。',
       type: 'number',
       validation: Rule => Rule.min(0),
     }),

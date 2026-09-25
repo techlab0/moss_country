@@ -168,19 +168,26 @@ export interface StoreTransactionForRow {
   lineItems?: Array<{ name?: string | null; quantity?: number | null; amount?: number | null }>;
   subtotal?: number | null;
   total?: number | null;
+  jalanPointAmount?: number | null;
   notes?: string | null;
   createdAt?: string | null;
 }
 
 export function storeTransactionToTxRow(tx: StoreTransactionForRow): TransactionSheetRow {
-  const itemsSummary = summarizeItems(tx.lineItems) || tx.notes || '';
+  const pointAmount = Math.min(tx.jalanPointAmount || 0, tx.total || 0);
+  const baseSummary = summarizeItems(tx.lineItems) || tx.notes || '';
+  const itemsSummary = pointAmount > 0
+    ? `${baseSummary}${baseSummary ? ' / ' : ''}じゃらんポイント ¥${pointAmount.toLocaleString()}`
+    : baseSummary;
   return {
     datetime: formatJst(tx.createdAt),
     type: '手入力',
     txId: `tx:${tx._id}`,
     customerName: '',
     customerEmail: '',
-    paymentMethod: storeTxMethodLabel(tx.paymentMethod),
+    paymentMethod: pointAmount > 0
+      ? `${storeTxMethodLabel(tx.paymentMethod)}＋じゃらんポイント`
+      : storeTxMethodLabel(tx.paymentMethod),
     itemsSummary,
     subtotal: tx.subtotal || 0,
     shipping: 0,
@@ -225,7 +232,7 @@ const TX_CHARGE_PROJECTION = `{
 }`;
 
 const TX_STORE_TRANSACTION_PROJECTION = `{
-  _id, paymentMethod, subtotal, total, notes, createdAt,
+  _id, paymentMethod, subtotal, total, jalanPointAmount, notes, createdAt,
   lineItems[]{ name, quantity, amount }
 }`;
 
@@ -290,6 +297,7 @@ interface DailySalesCountersDoc {
 interface StoreTransactionForDailyAgg {
   paymentMethod?: 'cash' | 'payPay' | 'card';
   total?: number;
+  jalanPointAmount?: number;
   lineItems?: Array<{ amount?: number; category?: string }>;
 }
 
@@ -320,7 +328,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
     ),
     writeClient.fetch(
       `*[_type == "storeTransaction" && date == $date]{
-        paymentMethod, total, lineItems[]{ amount, "category": salesItem->category }
+        paymentMethod, total, jalanPointAmount, lineItems[]{ amount, "category": salesItem->category }
       }`,
       { date: dateStr }
     ),
@@ -340,10 +348,14 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
   let cashAmount = 0;
   let payPayAmount = 0;
   let manualCardAmount = 0;
+  let transactionJalanPointTotal = 0;
   for (const tx of transactions) {
-    if (tx.paymentMethod === 'payPay') payPayAmount += tx.total || 0;
-    else if (tx.paymentMethod === 'card') manualCardAmount += tx.total || 0;
-    else cashAmount += tx.total || 0;
+    const pointAmount = Math.min(tx.jalanPointAmount || 0, tx.total || 0);
+    const receivedAmount = (tx.total || 0) - pointAmount;
+    transactionJalanPointTotal += pointAmount;
+    if (tx.paymentMethod === 'payPay') payPayAmount += receivedAmount;
+    else if (tx.paymentMethod === 'card') manualCardAmount += receivedAmount;
+    else cashAmount += receivedAmount;
     for (const li of tx.lineItems || []) {
       const category = li.category || 'other';
       categorySubtotals[category] = (categorySubtotals[category] || 0) + (li.amount || 0);
@@ -372,7 +384,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
     adjustment,
     wordOfMouthDiscount,
     ecTotal,
-    jalanPointAmount: dailySales?.jalanPointAmount,
+    jalanPointAmount: transactionJalanPointTotal + (dailySales?.jalanPointAmount || 0),
   });
 
   return {

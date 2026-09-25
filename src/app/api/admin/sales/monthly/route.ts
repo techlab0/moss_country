@@ -26,6 +26,7 @@ interface MonthTransaction {
   source?: string;
   paymentMethod?: PaymentMethod;
   total?: number;
+  jalanPointAmount?: number;
   discountAmount?: number;
   lineItems?: MonthLineItem[];
 }
@@ -173,7 +174,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
   ] = await Promise.all([
     writeClient.fetch(
       `*[_type == "storeTransaction" && date >= $first && date <= $last]{
-        date, createdAt, source, paymentMethod, total, discountAmount,
+        date, createdAt, source, paymentMethod, total, discountAmount, jalanPointAmount,
         lineItems[]{ name, quantity, amount, "category": salesItem->category }
       }`,
       { first, last }
@@ -222,6 +223,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
   const hourMap = new Map<number, HourRow>();
   const itemMap = new Map<string, ItemRow>();
   let discountTotal = 0;
+  let transactionJalanPointTotal = 0;
   let hourCoveredTotal = 0;
 
   const addHour = (hour: number, amount: number) => {
@@ -246,11 +248,15 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     const row = tx.date ? dayMap.get(tx.date) : undefined;
     const method: PaymentMethod = tx.paymentMethod || 'cash';
     const amount = tx.total || 0;
+    const pointAmount = Math.min(tx.jalanPointAmount || 0, amount);
+    const receivedAmount = amount - pointAmount;
     if (row) {
-      row[method] += amount;
-      row.storeTotal += amount;
+      row[method] += receivedAmount;
+      row.storeTotal += receivedAmount;
+      row.jalanPointAmount += pointAmount;
     }
-    methodTotals[method] += amount;
+    methodTotals[method] += receivedAmount;
+    transactionJalanPointTotal += pointAmount;
     discountTotal += tx.discountAmount || 0;
     // 紙の記録をまとめて入力したものは createdAt が「入力した時刻」なので時間帯集計から外す
     if (tx.createdAt && tx.source !== 'historical') {
@@ -294,18 +300,18 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
 
   let adjustmentTotal = 0;
   let wordOfMouthTotal = 0;
-  let jalanPointTotal = 0;
+  let manualJalanPointTotal = 0;
   let visitorTotal = 0;
   let purchaseGroupTotal = 0;
   for (const ds of dailySalesList) {
     adjustmentTotal += ds.adjustment || 0;
     wordOfMouthTotal += ds.wordOfMouthDiscount || 0;
-    jalanPointTotal += ds.jalanPointAmount || 0;
+    manualJalanPointTotal += ds.jalanPointAmount || 0;
     visitorTotal += ds.visitorCount || 0;
     purchaseGroupTotal += ds.purchaseGroupCount || 0;
     const row = ds.date ? dayMap.get(ds.date) : undefined;
     if (row) {
-      row.jalanPointAmount = ds.jalanPointAmount || 0;
+      row.jalanPointAmount += ds.jalanPointAmount || 0;
       row.visitors = ds.visitorCount || 0;
       row.note = ds.notes?.trim() || '';
     }
@@ -346,6 +352,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
 
   const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
   const ecTotal = days.reduce((sum, row) => sum + row.ecTotal, 0);
+  const jalanPointTotal = transactionJalanPointTotal + manualJalanPointTotal;
   // 日別集計 /api/admin/sales/[date] と同じ計算式（調整・口コミ割引・じゃらんポイントを反映）
   const grandTotal = calculateSalesGrandTotal({
     storeTotal,
