@@ -9,6 +9,7 @@ import { WorkshopSection } from '@/components/sections/home/WorkshopSection';
 import { CTASection } from '@/components/sections/home/CTASection';
 import { HomeScrollJourney } from '@/components/sections/home/HomeScrollJourney';
 import { SceneBackdrop } from '@/components/sections/home/SceneBackdrop';
+import { SeasonalAtmosphere } from '@/components/sections/home/SeasonalAtmosphere';
 import { defaultHeroImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 
@@ -37,6 +38,7 @@ export default function Home() {
       <HomeScrollJourney>
         {/* 全シーン共通の固定背景ステージ（黒ベース＋シーンごとのテラリウム画像） */}
         <SceneBackdrop img={img} imgStyle={imgStyle} />
+        <SeasonalAtmosphere />
 
         {/* Hero Section（relative必須: 固定背景ステージより前面に描画するため） */}
         <div data-home-screen="regular" className="relative">
