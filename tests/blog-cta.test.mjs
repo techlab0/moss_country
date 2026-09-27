@@ -133,14 +133,17 @@ test('非公開商品はブログの商品カードへ表示しない', () => {
   }), []);
 });
 
-test('ブログ記事は汎用の共有ボタンを表示し、非対応環境ではURLをコピーする', async () => {
+test('ブログ記事はスマートフォンで共有し、PCでは記事URLをコピーする', async () => {
   const [button, detailPage] = await Promise.all([
     readFile(new URL('../src/components/blog/BlogShareButton.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/app/blog/[slug]/page.tsx', import.meta.url), 'utf8'),
   ]);
 
   assert.ok(button.includes('navigator.share'), 'スマートフォンなどの共有機能を利用する');
+  assert.ok(button.includes("window.matchMedia('(max-width: 767px)').matches"), 'スマートフォン幅だけ共有機能を利用する');
+  assert.match(button, /if \(isMobileLayout && navigator\.share\)/, 'PCでは共有画面を開かずURLコピーへ進む');
   assert.ok(button.includes('navigator.clipboard.writeText'), '共有非対応時はURLをコピーする');
+  assert.ok(button.includes("document.execCommand('copy')"), 'Clipboard APIが使えないPCでもコピーを試みる');
   assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
   assert.ok(!button.includes('window.location.href'), 'ブラウザ上の不確実なURLを共有に使わない');

@@ -11,16 +11,34 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
 
   const copyUrl = async (url: string) => {
     try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API is unavailable');
       await navigator.clipboard.writeText(url);
       setMessage('記事URLをコピーしました');
     } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand('copy');
+      textarea.remove();
+
+      if (copied) {
+        setMessage('記事URLをコピーしました');
+        return;
+      }
+
       window.prompt('記事URLをコピーしてください', url);
       setMessage('');
     }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    const isMobileLayout = window.matchMedia('(max-width: 767px)').matches;
+
+    if (isMobileLayout && navigator.share) {
       try {
         await navigator.share({
           // 携帯電話の「コピー」で文章ではなく純粋な記事URLだけが入るよう、
