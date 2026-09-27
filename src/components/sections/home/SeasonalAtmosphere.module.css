@@ -100,12 +100,34 @@
 }
 
 .autumn .particle {
-  width: 11px;
-  height: 15px;
-  border-radius: 80% 15% 75% 25%;
-  background: linear-gradient(145deg, rgba(211, 111, 48, 0.82), rgba(126, 55, 24, 0.62));
-  box-shadow: 0 0 7px rgba(216, 121, 48, 0.12);
-  clip-path: polygon(50% 0, 88% 26%, 100% 70%, 57% 100%, 15% 78%, 0 35%);
+  width: 16px;
+  height: 18px;
+  background: linear-gradient(135deg, rgba(228, 101, 42, 0.9), rgba(143, 38, 27, 0.72));
+  clip-path: polygon(
+    50% 0,
+    57% 21%,
+    72% 8%,
+    68% 31%,
+    91% 24%,
+    77% 43%,
+    100% 49%,
+    75% 58%,
+    84% 79%,
+    59% 68%,
+    55% 88%,
+    53% 100%,
+    47% 100%,
+    46% 88%,
+    42% 68%,
+    17% 80%,
+    25% 58%,
+    0 50%,
+    23% 43%,
+    9% 25%,
+    32% 31%,
+    28% 8%,
+    43% 21%
+  );
 }
 
 .autumn::before {
@@ -113,14 +135,19 @@
 }
 
 .autumn .particle:nth-child(3n) {
-  background: linear-gradient(145deg, rgba(219, 166, 67, 0.82), rgba(143, 78, 25, 0.64));
+  width: 13px;
+  height: 15px;
+  background: linear-gradient(135deg, rgba(236, 158, 46, 0.88), rgba(174, 66, 27, 0.7));
 }
 
 .autumn .particle:nth-child(4n + 1) {
-  width: 13px;
-  height: 13px;
-  background: linear-gradient(135deg, rgba(171, 69, 37, 0.8), rgba(103, 42, 24, 0.58));
-  clip-path: polygon(50% 0, 63% 29%, 92% 20%, 75% 48%, 100% 62%, 66% 68%, 60% 100%, 43% 72%, 8% 82%, 28% 52%, 0 36%, 38% 34%);
+  width: 19px;
+  height: 21px;
+  background: linear-gradient(135deg, rgba(200, 54, 37, 0.88), rgba(112, 29, 26, 0.68));
+}
+
+.autumn .particle:nth-child(5n + 2) {
+  background: linear-gradient(135deg, rgba(220, 119, 35, 0.9), rgba(151, 48, 24, 0.7));
 }
 
 .winter .particle {
