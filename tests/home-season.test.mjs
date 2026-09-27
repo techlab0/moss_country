@@ -20,10 +20,13 @@ test('範囲外の月は受け付けない', () => {
 });
 
 test('季節演出はトップページ限定で、操作と動作軽減設定を妨げない', async () => {
-  const [page, component, css] = await Promise.all([
+  const [page, component, css, cherryPetal, mapleLeaf, snowCrystal] = await Promise.all([
     readFile('src/app/page.tsx', 'utf8'),
     readFile('src/components/sections/home/SeasonalAtmosphere.tsx', 'utf8'),
     readFile('src/components/sections/home/SeasonalAtmosphere.module.css', 'utf8'),
+    readFile('public/images/seasonal/cherry-petal-mask.svg', 'utf8'),
+    readFile('public/images/seasonal/maple-leaf-mask.svg', 'utf8'),
+    readFile('public/images/seasonal/snow-crystal-mask.svg', 'utf8'),
   ]);
 
   assert.match(page, /<SeasonalAtmosphere \/>/);
@@ -31,4 +34,10 @@ test('季節演出はトップページ限定で、操作と動作軽減設定�
   assert.match(css, /pointer-events: none/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /nth-child\(n \+ 12\)/);
+  assert.match(css, /cherry-petal-mask\.svg/);
+  assert.match(css, /maple-leaf-mask\.svg/);
+  assert.match(css, /snow-crystal-mask\.svg/);
+  assert.match(cherryPetal, /<path/);
+  assert.match(mapleLeaf, /<path/);
+  assert.match(snowCrystal, /<path/);
 });
