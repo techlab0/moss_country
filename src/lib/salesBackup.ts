@@ -86,6 +86,7 @@ const STORE_TX_METHOD_LABELS: Record<string, string> = {
   cash: '現金',
   payPay: 'PayPay',
   card: 'カード（手入力）',
+  deferred: '後日入金',
 };
 
 function storeTxMethodLabel(method?: string | null): string {
@@ -193,7 +194,7 @@ export function storeTransactionToTxRow(tx: StoreTransactionForRow): Transaction
     shipping: 0,
     tax: 0,
     total: tx.total || 0,
-    status: '支払い済み',
+    status: tx.paymentMethod === 'deferred' ? '後日入金予定' : '支払い済み',
     updatedAt: nowJst(),
   };
 }
@@ -295,7 +296,7 @@ interface DailySalesCountersDoc {
 }
 
 interface StoreTransactionForDailyAgg {
-  paymentMethod?: 'cash' | 'payPay' | 'card';
+  paymentMethod?: 'cash' | 'payPay' | 'card' | 'deferred';
   total?: number;
   jalanPointAmount?: number;
   lineItems?: Array<{ amount?: number; category?: string }>;
@@ -348,6 +349,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
   let cashAmount = 0;
   let payPayAmount = 0;
   let manualCardAmount = 0;
+  let deferredAmount = 0;
   let transactionJalanPointTotal = 0;
   for (const tx of transactions) {
     const pointAmount = Math.min(tx.jalanPointAmount || 0, tx.total || 0);
@@ -355,6 +357,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
     transactionJalanPointTotal += pointAmount;
     if (tx.paymentMethod === 'payPay') payPayAmount += receivedAmount;
     else if (tx.paymentMethod === 'card') manualCardAmount += receivedAmount;
+    else if (tx.paymentMethod === 'deferred') deferredAmount += receivedAmount;
     else cashAmount += receivedAmount;
     for (const li of tx.lineItems || []) {
       const category = li.category || 'other';
@@ -378,7 +381,7 @@ export async function computeDailySalesSheetRow(dateStr: string): Promise<DailyS
 
   const adjustment = dailySales?.adjustment || 0;
   const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
-  const storeTotal = cashAmount + payPayAmount + manualCardAmount + qrChargeTotal;
+  const storeTotal = cashAmount + payPayAmount + manualCardAmount + deferredAmount + qrChargeTotal;
   const grandTotal = calculateSalesGrandTotal({
     storeTotal,
     adjustment,

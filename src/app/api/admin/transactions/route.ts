@@ -7,7 +7,7 @@ import { applyStoreSaleInventory, storeInventoryResultFields } from '@/lib/store
 import { storeTransactionToTxRow } from '@/lib/salesBackup';
 import { upsertTransactionRow } from '@/lib/googleSheets';
 
-const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
+const PAYMENT_METHODS = ['cash', 'payPay', 'card', 'deferred'] as const;
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
 
 function parseDiscountInput(body: { discountType?: unknown; discountValue?: unknown }): { discountType?: DiscountType; discountValue: number } {
@@ -17,7 +17,7 @@ function parseDiscountInput(body: { discountType?: unknown; discountValue?: unkn
 }
 
 // 店頭取引（1会計 = 1レコード）の登録。
-// 現金・PayPay・手動カード用。QRコード決済は /api/admin/in-store-charge が担当する。
+// 現金・PayPay・手動カード・後日入金用。QRコード決済は /api/admin/in-store-charge が担当する。
 export async function POST(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request);

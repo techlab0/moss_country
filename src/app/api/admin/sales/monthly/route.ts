@@ -11,7 +11,7 @@ import { getOrdersInDateRange } from '@/lib/orders';
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-type PaymentMethod = 'cash' | 'payPay' | 'card';
+type PaymentMethod = 'cash' | 'payPay' | 'card' | 'deferred';
 
 interface MonthLineItem {
   name?: string;
@@ -61,6 +61,7 @@ interface DayRow {
   cash: number;
   payPay: number;
   card: number;
+  deferred: number;
   qr: number;
   jalanPointAmount: number;
   /** その日の来店者数（日別の記録から） */
@@ -101,7 +102,7 @@ interface MonthlySummary {
   grandTotal: number;
   storeTotal: number;
   ecTotal: number;
-  methodTotals: { cash: number; payPay: number; card: number; qr: number };
+  methodTotals: { cash: number; payPay: number; card: number; deferred: number; qr: number };
   categoryTotals: Record<string, number>;
   discountTotal: number;
   jalanPointTotal: number;
@@ -210,6 +211,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
       cash: 0,
       payPay: 0,
       card: 0,
+      deferred: 0,
       qr: 0,
       jalanPointAmount: 0,
       visitors: 0,
@@ -218,7 +220,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     });
   }
 
-  const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
+  const methodTotals = { cash: 0, payPay: 0, card: 0, deferred: 0, qr: 0 };
   const categoryTotals: Record<string, number> = {};
   const hourMap = new Map<number, HourRow>();
   const itemMap = new Map<string, ItemRow>();
@@ -350,7 +352,7 @@ async function aggregateMonth(month: string): Promise<MonthAggregate> {
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 20);
 
-  const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
+  const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.deferred + methodTotals.qr;
   const ecTotal = days.reduce((sum, row) => sum + row.ecTotal, 0);
   const jalanPointTotal = transactionJalanPointTotal + manualJalanPointTotal;
   // 日別集計 /api/admin/sales/[date] と同じ計算式（調整・口コミ割引・じゃらんポイントを反映）

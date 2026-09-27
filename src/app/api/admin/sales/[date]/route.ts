@@ -17,7 +17,7 @@ import type { OrderItemSnapshot } from '@/lib/orders';
 // 取引（storeTransaction）と支払い済みQR決済（inStoreCharge）から日別の集計を組み立てる。
 // dailySales ドキュメントはカウンタ・取引に紐づかないポイント追加分・調整・備考を保持する。
 
-type PaymentMethod = 'cash' | 'payPay' | 'card';
+type PaymentMethod = 'cash' | 'payPay' | 'card' | 'deferred';
 
 interface AggLineItem {
   name?: string;
@@ -68,6 +68,7 @@ interface ItemRow {
   cash: MethodCell;
   payPay: MethodCell;
   card: MethodCell;
+  deferred: MethodCell;
   qr: MethodCell;
   // EC（オンライン）購入分。現金/PayPay/カード/QRのどれでもないため専用セルに集計する
   // （合計列には反映されるが、店舗の決済方法別セルには加算しない＝二重計上を避ける）
@@ -99,6 +100,7 @@ function addToRow(
       cash: emptyCell(),
       payPay: emptyCell(),
       card: emptyCell(),
+      deferred: emptyCell(),
       qr: emptyCell(),
       ec: emptyCell(),
       ecMethods: {},
@@ -182,7 +184,7 @@ export async function GET(
     );
 
     const rows = new Map<string, ItemRow>();
-    const methodTotals = { cash: 0, payPay: 0, card: 0, qr: 0 };
+    const methodTotals = { cash: 0, payPay: 0, card: 0, deferred: 0, qr: 0 };
     let discountTotal = 0;
     let transactionJalanPointTotal = 0;
 
@@ -267,7 +269,7 @@ export async function GET(
     const wordOfMouthDiscount = dailySales?.wordOfMouthDiscount || 0;
     const manualJalanPointAmount = dailySales?.jalanPointAmount || 0;
     const jalanPointTotal = transactionJalanPointTotal + manualJalanPointAmount;
-    const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.qr;
+    const storeTotal = methodTotals.cash + methodTotals.payPay + methodTotals.card + methodTotals.deferred + methodTotals.qr;
     const grandTotal = calculateSalesGrandTotal({
       storeTotal,
       adjustment,

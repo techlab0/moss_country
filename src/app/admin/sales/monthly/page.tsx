@@ -21,6 +21,7 @@ interface DayRow {
   cash: number;
   payPay: number;
   card: number;
+  deferred: number;
   qr: number;
   jalanPointAmount: number;
   visitors: number;
@@ -32,7 +33,7 @@ interface MonthlySummary {
   grandTotal: number;
   storeTotal: number;
   ecTotal: number;
-  methodTotals: { cash: number; payPay: number; card: number; qr: number };
+  methodTotals: { cash: number; payPay: number; card: number; deferred: number; qr: number };
   categoryTotals: Record<string, number>;
   discountTotal: number;
   jalanPointTotal: number;
@@ -94,9 +95,10 @@ const methodLabels: Record<string, string> = {
   cash: '現金',
   payPay: 'PayPay',
   card: 'クレジット(手動)',
+  deferred: '後日入金',
   qr: 'クレジット(QR)',
 };
-const methodOrder = ['cash', 'payPay', 'card', 'qr'] as const;
+const methodOrder = ['cash', 'payPay', 'card', 'deferred', 'qr'] as const;
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 

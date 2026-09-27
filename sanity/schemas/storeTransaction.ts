@@ -1,6 +1,6 @@
 import { defineField, defineType } from 'sanity'
 
-// 店頭での1会計 = 1ドキュメント。現金・PayPay・手動カード決済の記録用
+// 店頭での1会計 = 1ドキュメント。現金・PayPay・手動カード・後日入金の記録用
 // （QRコード決済は inStoreCharge が同じ役割を担う）
 export const storeTransaction = defineType({
   name: 'storeTransaction',
@@ -24,6 +24,7 @@ export const storeTransaction = defineType({
           { title: '現金', value: 'cash' },
           { title: 'PayPay', value: 'payPay' },
           { title: 'クレジット（手動）', value: 'card' },
+          { title: '後日入金', value: 'deferred' },
         ],
       },
     }),

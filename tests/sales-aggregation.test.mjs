@@ -80,3 +80,26 @@ test('じゃらんポイントは入力・保存・日別・月次・バック�
   assert.match(files[7], /jalanPointTotal/);
   assert.match(files[8], /transactionJalanPointTotal/);
 });
+
+test('後日入金は入力・保存・日別・月次・バックアップで独立した支払い方法として扱う', async () => {
+  const files = await Promise.all([
+    'sanity/schemas/storeTransaction.ts',
+    'src/app/admin/sales/page.tsx',
+    'src/app/admin/sales/monthly/page.tsx',
+    'src/app/api/admin/transactions/route.ts',
+    'src/app/api/admin/transactions/[id]/route.ts',
+    'src/app/api/admin/transactions/historical-bulk/route.ts',
+    'src/app/api/admin/sales/[date]/route.ts',
+    'src/app/api/admin/sales/monthly/route.ts',
+    'src/lib/salesBackup.ts',
+  ].map(path => readFile(path, 'utf8')));
+
+  for (const source of files) {
+    assert.match(source, /deferred/);
+  }
+  assert.match(files[0], /title: '後日入金', value: 'deferred'/);
+  assert.match(files[1], /deferred: '後日入金'/);
+  assert.match(files[6], /methodTotals\.deferred/);
+  assert.match(files[7], /methodTotals\.deferred/);
+  assert.match(files[8], /deferredAmount/);
+});

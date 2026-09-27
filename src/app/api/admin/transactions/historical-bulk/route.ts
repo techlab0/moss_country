@@ -4,7 +4,7 @@ import { verifyAdminSession } from '@/lib/auth';
 import { DATE_PATTERN, distributeJalanPointAmount } from '@/lib/salesAggregation';
 import { resolveStoreLineItems, distributeDiscount, StoreLineItemInput, DiscountType } from '@/lib/storeSales';
 
-const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
+const PAYMENT_METHODS = ['cash', 'payPay', 'card', 'deferred'] as const;
 type PaymentMethod = typeof PAYMENT_METHODS[number];
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
 

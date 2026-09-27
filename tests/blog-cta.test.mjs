@@ -144,6 +144,12 @@ test('ブログ記事はスマートフォンで共有し、PCでは記事URLを
   assert.match(button, /if \(isMobileLayout && navigator\.share\)/, 'PCでは共有画面を開かずURLコピーへ進む');
   assert.ok(button.includes('navigator.clipboard.writeText'), '共有非対応時はURLをコピーする');
   assert.ok(button.includes("document.execCommand('copy')"), 'Clipboard APIが使えないPCでもコピーを試みる');
+  assert.ok(button.includes('Instagramなど'), '端末の共有機能からInstagramなどを選べる');
+  assert.ok(button.includes('twitter.com/intent/tweet'), 'Xの共有画面を開ける');
+  assert.ok(button.includes('facebook.com/sharer/sharer.php'), 'Facebookの共有画面を開ける');
+  assert.ok(button.includes('social-plugins.line.me/lineit/share'), 'LINEの共有画面を開ける');
+  assert.ok(button.includes('URLをコピー'), 'URLコピーを明示的に選べる');
+  assert.match(button, /handleNativeShare[\s\S]*?navigator\.share\(\{ url \}\)/, 'Instagramなどは端末標準の共有先を利用する');
   assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
   assert.ok(!button.includes('window.location.href'), 'ブラウザ上の不確実なURLを共有に使わない');

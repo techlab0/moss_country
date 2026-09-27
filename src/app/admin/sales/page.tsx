@@ -24,7 +24,7 @@ interface CustomItemRow {
   quantity: string;
 }
 
-type PaymentMethod = 'cash' | 'payPay' | 'card';
+type PaymentMethod = 'cash' | 'payPay' | 'card' | 'deferred';
 type EntryMethod = PaymentMethod | 'qr' | 'pos' | 'paypay';
 type DiscountType = 'amount' | 'percent';
 
@@ -55,6 +55,7 @@ interface HistoricalItemState {
   cashQty: string;
   payPayQty: string;
   cardQty: string;
+  deferredQty: string;
   unitPrice: string; // 金額直接入力(variable)の商品のみ使用
 }
 
@@ -96,6 +97,7 @@ interface ItemRow {
   cash: MethodCell;
   payPay: MethodCell;
   card: MethodCell;
+  deferred: MethodCell;
   qr: MethodCell;
   ec: MethodCell;
   ecMethods?: Record<string, MethodCell>;
@@ -103,7 +105,7 @@ interface ItemRow {
 }
 
 interface Aggregate {
-  methodTotals: { cash: number; payPay: number; card: number; qr: number };
+  methodTotals: { cash: number; payPay: number; card: number; deferred: number; qr: number };
   itemRows: ItemRow[];
   itemsTotal: number;
   storeTotal: number;
@@ -187,9 +189,14 @@ const methodLabels: Record<EntryMethod, string> = {
   payPay: 'PayPay',
   qr: 'クレジット(QR)',
   card: 'クレジット(手動)',
+  deferred: '後日入金',
   pos: 'タッチ決済',
   paypay: 'PayPay(QR)',
 };
+
+function paymentAmountLabel(method: EntryMethod): string {
+  return method === 'deferred' ? '後日入金予定額' : `${methodLabels[method]}での受取額`;
+}
 
 // Square POS API のディープリンクを組み立てる（iOS: square-commerce-v1://）。
 // 決済後は options.auto_return で自動的に callback_url へ戻り、state に載せた会計IDが返る。
@@ -654,7 +661,7 @@ function EntryTab({
         // 端末のSquare POSアプリを起動（戻り先はこの画面。ポーリングで完了を検知）
         window.location.href = launchUrl;
       } else {
-        // qr/pos/paypay はそれぞれ専用分岐で処理済み。ここに来るのは現金・PayPay(手入力)・手動カードのみ。
+        // qr/pos/paypay はそれぞれ専用分岐で処理済み。ここに来るのは手入力の支払い方法のみ。
         const method: PaymentMethod =
           paymentMethod === 'qr' || paymentMethod === 'pos' || paymentMethod === 'paypay' ? 'cash' : paymentMethod;
         const response = await fetch('/api/admin/transactions', {
@@ -811,7 +818,7 @@ function EntryTab({
                 <span>¥{pointAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-gray-700 font-medium">
-                <span>{methodLabels[paymentMethod]}で受け取る金額</span>
+                <span>{paymentAmountLabel(paymentMethod)}</span>
                 <span>¥{receivedAmount.toLocaleString()}</span>
               </div>
             </>
@@ -1265,8 +1272,8 @@ function EntryTab({
                 <span className="text-2xl font-bold text-gray-900">¥{finalTotal.toLocaleString()}</span>
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {(['cash', 'payPay', 'qr', 'paypay', 'card', 'pos'] as EntryMethod[]).map(method => (
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {(['cash', 'payPay', 'qr', 'paypay', 'card', 'pos', 'deferred'] as EntryMethod[]).map(method => (
                 <button
                   key={method}
                   onClick={() => {
@@ -1285,7 +1292,7 @@ function EntryTab({
             </div>
             <button
               onClick={() => {
-                // 商品ありの現金・PayPay(手入力)・手動カードはレシート風の確認画面を挟む
+                // 商品ありの手入力決済はレシート風の確認画面を挟む
                 // （QR・PayPay(QR)・POSアプリ起動は決済画面自体が確認を兼ね、来店のみは確認不要のため直接登録）
                 if (total > 0 && paymentMethod !== 'qr' && paymentMethod !== 'pos' && paymentMethod !== 'paypay') {
                   if (finalTotal <= 0) {
@@ -1609,6 +1616,10 @@ function SummaryTab({
           <span>¥{(agg?.methodTotals.card || 0).toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
+          <span className="text-gray-600">後日入金</span>
+          <span>¥{(agg?.methodTotals.deferred || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
           <span className="text-gray-600">クレジット（QR）</span>
           <span>¥{(agg?.methodTotals.qr || 0).toLocaleString()}</span>
         </div>
@@ -1683,6 +1694,7 @@ function SummaryTab({
                 <th className="text-right py-1 px-1">現金</th>
                 <th className="text-right py-1 px-1">PayPay</th>
                 <th className="text-right py-1 px-1">カード</th>
+                <th className="text-right py-1 px-1">後日入金</th>
                 <th className="text-right py-1 px-1">QR</th>
                 <th className="text-right py-1 px-1">EC</th>
                 <th className="text-right py-1 pl-1">合計</th>
@@ -1692,7 +1704,7 @@ function SummaryTab({
               {agg.itemRows.map(row => (
                 <tr key={row.key} className="border-b last:border-0">
                   <td className="py-1.5 pr-2 text-gray-900">{row.name}</td>
-                  {(['cash', 'payPay', 'card', 'qr'] as const).map(method => (
+                  {(['cash', 'payPay', 'card', 'deferred', 'qr'] as const).map(method => (
                     <td key={method} className="text-right py-1.5 px-1 text-gray-600">
                       {row[method].amount > 0
                         ? (row[method].quantity > 0 ? `${row[method].quantity}個` : `¥${row[method].amount.toLocaleString()}`)
@@ -1837,7 +1849,7 @@ function SummaryTab({
                       {(tx.jalanPointAmount || 0) > 0 && (
                         <p className="text-xs text-moss-green font-medium mt-0.5">
                           うち、じゃらんポイント: ¥{(tx.jalanPointAmount || 0).toLocaleString()}／
-                          {methodLabels[tx.paymentMethod || 'cash']}受取: ¥{Math.max(0, (tx.total || 0) - (tx.jalanPointAmount || 0)).toLocaleString()}
+                          {paymentAmountLabel(tx.paymentMethod || 'cash')}: ¥{Math.max(0, (tx.total || 0) - (tx.jalanPointAmount || 0)).toLocaleString()}
                         </p>
                       )}
                       {tx.notes && <p className="text-xs text-gray-400 italic mt-0.5">{tx.notes}</p>}
@@ -2189,8 +2201,8 @@ function HistoricalSingleEntry({
       </div>
 
       <div className="bg-white border rounded-md p-3 space-y-2">
-        <div className="grid grid-cols-3 gap-2">
-          {(['cash', 'payPay', 'card'] as PaymentMethod[]).map(method => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {(['cash', 'payPay', 'card', 'deferred'] as PaymentMethod[]).map(method => (
             <button
               key={method}
               onClick={() => setPaymentMethod(method)}
@@ -2278,7 +2290,7 @@ function HistoricalSingleEntry({
         </div>
         {pointAmount > 0 && pointAmount <= grandTotal && (
           <div className="flex justify-between text-sm text-gray-600">
-            <span>{methodLabels[paymentMethod]}での受取額</span>
+            <span>{paymentAmountLabel(paymentMethod)}</span>
             <span>¥{receivedAmount.toLocaleString()}</span>
           </div>
         )}
@@ -2393,6 +2405,7 @@ function EditPanel({
               <option value="cash">現金</option>
               <option value="payPay">PayPay</option>
               <option value="card">クレジット(手動)</option>
+              <option value="deferred">後日入金</option>
             </select>
           </div>
           <div>
@@ -2534,7 +2547,7 @@ function EditPanel({
       </div>
       {!edit.isCharge && editPointAmount > 0 && !pointAmountInvalid && (
         <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">{methodLabels[edit.paymentMethod]}での受取額</span>
+          <span className="text-gray-600">{paymentAmountLabel(edit.paymentMethod)}</span>
           <span>¥{editReceivedAmount.toLocaleString()}</span>
         </div>
       )}
@@ -2574,6 +2587,7 @@ const emptyHistoricalItemState: HistoricalItemState = {
   cashQty: '0',
   payPayQty: '0',
   cardQty: '0',
+  deferredQty: '0',
   unitPrice: '0',
 };
 
@@ -2660,14 +2674,16 @@ function HistoricalBulkEntry({
   const methodQtyValue = (state: HistoricalItemState, method: PaymentMethod): string => {
     if (method === 'cash') return state.cashQty;
     if (method === 'payPay') return state.payPayQty;
-    return state.cardQty;
+    if (method === 'card') return state.cardQty;
+    return state.deferredQty;
   };
 
   const setMethodQty = (item: SalesItem, method: PaymentMethod, value: string) => {
     const clean = sanitizeNonNegative(value);
     if (method === 'cash') updateItemState(item._id, { cashQty: clean });
     else if (method === 'payPay') updateItemState(item._id, { payPayQty: clean });
-    else updateItemState(item._id, { cardQty: clean });
+    else if (method === 'card') updateItemState(item._id, { cardQty: clean });
+    else updateItemState(item._id, { deferredQty: clean });
   };
 
   const methodAmount = (item: SalesItem, method: PaymentMethod): number => {
@@ -2680,7 +2696,7 @@ function HistoricalBulkEntry({
   const categoryTotal = useCallback((category: string) => {
     return salesItems
       .filter(item => item.category === category)
-      .reduce((sum, item) => sum + methodAmount(item, 'cash') + methodAmount(item, 'payPay') + methodAmount(item, 'card'), 0);
+      .reduce((sum, item) => sum + methodAmount(item, 'cash') + methodAmount(item, 'payPay') + methodAmount(item, 'card') + methodAmount(item, 'deferred'), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [salesItems, itemState]);
 
@@ -2710,11 +2726,12 @@ function HistoricalBulkEntry({
       cash: [],
       payPay: [],
       card: [],
+      deferred: [],
     };
 
     for (const item of salesItems) {
       const state = getState(item._id);
-      (['cash', 'payPay', 'card'] as PaymentMethod[]).forEach(method => {
+      (['cash', 'payPay', 'card', 'deferred'] as PaymentMethod[]).forEach(method => {
         const qty = toNumber(methodQtyValue(state, method));
         if (qty <= 0) return;
         groups[method].push({
@@ -2730,7 +2747,7 @@ function HistoricalBulkEntry({
       groups[row.paymentMethod].push({ customName: row.name.trim(), quantity: qty, amount: toNumber(row.unitPrice) });
     }
 
-    const methodsWithItems = (['cash', 'payPay', 'card'] as PaymentMethod[]).filter(m => groups[m].length > 0);
+    const methodsWithItems = (['cash', 'payPay', 'card', 'deferred'] as PaymentMethod[]).filter(m => groups[m].length > 0);
     if (methodsWithItems.length === 0) {
       alert('少なくとも1つ、商品と数量を入力してください');
       return;
@@ -2757,6 +2774,7 @@ function HistoricalBulkEntry({
             cash: groups.cash,
             payPay: groups.payPay,
             card: groups.card,
+            deferred: groups.deferred,
           },
           discountType: discountType || undefined,
           discountValue: toNumber(discountValue),
@@ -2779,7 +2797,7 @@ function HistoricalBulkEntry({
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">
-        紙の集計表の内容を、商品ごとに現金・PayPay・クレジットの内訳で入力してください。来店者数・購入組数は下の「来店・調整」欄に直接入力できます。
+        紙の集計表の内容を、商品ごとに現金・PayPay・クレジット・後日入金の内訳で入力してください。来店者数・購入組数は下の「来店・調整」欄に直接入力できます。
       </p>
 
       {categoryOrder.map(category => {
@@ -2812,8 +2830,8 @@ function HistoricalBulkEntry({
                         className="w-24 mb-1 px-2 py-1.5 text-sm text-right text-blue-700 font-bold border border-gray-300 rounded-md"
                       />
                     )}
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['cash', 'payPay', 'card'] as PaymentMethod[]).map(method => (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(['cash', 'payPay', 'card', 'deferred'] as PaymentMethod[]).map(method => (
                         <div key={method}>
                           <label className="block text-[10px] text-gray-500 mb-0.5">{methodLabels[method]}</label>
                           <input
@@ -2885,6 +2903,7 @@ function HistoricalBulkEntry({
                 <option value="cash">現金</option>
                 <option value="payPay">PayPay</option>
                 <option value="card">クレジット</option>
+                <option value="deferred">後日入金</option>
               </select>
               <button onClick={() => setCustomRows(prev => prev.filter(r => r.id !== row.id))} className="text-red-500 text-sm px-2">✕</button>
             </li>
@@ -2971,7 +2990,7 @@ function HistoricalBulkEntry({
         </div>
         {pointAmount > 0 && pointAmount <= grandTotal && (
           <div className="flex justify-between text-sm text-gray-600">
-            <span>現金・PayPay・カードでの受取額</span>
+            <span>ポイント以外の受取・入金予定額</span>
             <span>¥{receivedAmount.toLocaleString()}</span>
           </div>
         )}

@@ -11,7 +11,7 @@ import {
   type StoreInventoryLine,
 } from '@/lib/storeInventory';
 
-const PAYMENT_METHODS = ['cash', 'payPay', 'card'] as const;
+const PAYMENT_METHODS = ['cash', 'payPay', 'card', 'deferred'] as const;
 const DISCOUNT_TYPES = ['amount', 'percent'] as const;
 
 interface ExistingTransaction {

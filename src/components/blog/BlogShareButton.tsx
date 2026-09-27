@@ -8,12 +8,30 @@ interface BlogShareButtonProps {
 
 export function BlogShareButton({ url }: BlogShareButtonProps) {
   const [message, setMessage] = useState('');
+  const encodedUrl = encodeURIComponent(url);
+  const socialLinks = [
+    {
+      label: 'X',
+      href: `https://twitter.com/intent/tweet?url=${encodedUrl}`,
+      className: 'border-black bg-black text-white hover:bg-gray-800',
+    },
+    {
+      label: 'Facebook',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      className: 'border-[#1877f2] bg-[#1877f2] text-white hover:bg-[#1268d3]',
+    },
+    {
+      label: 'LINEで送る',
+      href: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`,
+      className: 'border-[#06c755] bg-[#06c755] text-white hover:bg-[#05b34c]',
+    },
+  ];
 
-  const copyUrl = async (url: string) => {
+  const copyUrl = async (url: string, successMessage = '記事URLをコピーしました') => {
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API is unavailable');
       await navigator.clipboard.writeText(url);
-      setMessage('記事URLをコピーしました');
+      setMessage(successMessage);
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = url;
@@ -26,13 +44,27 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
       textarea.remove();
 
       if (copied) {
-        setMessage('記事URLをコピーしました');
+        setMessage(successMessage);
         return;
       }
 
       window.prompt('記事URLをコピーしてください', url);
       setMessage('');
     }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ url });
+        setMessage('');
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+
+    await copyUrl(url, '記事URLをコピーしました。Instagramなどへ貼り付けて共有できます');
   };
 
   const handleShare = async () => {
@@ -67,6 +99,33 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
         </svg>
         共有
       </button>
+      <div className="flex max-w-xl flex-wrap items-center justify-center gap-2" aria-label="共有先を選択">
+        <button
+          type="button"
+          onClick={handleNativeShare}
+          className="rounded-full border border-[#c13584] bg-white px-4 py-2 text-sm font-medium text-[#a62c72] transition-colors hover:bg-[#fff3fa] focus:outline-none focus:ring-2 focus:ring-[#c13584] focus:ring-offset-2"
+        >
+          Instagramなど
+        </button>
+        {socialLinks.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2 ${link.className}`}
+          >
+            {link.label}
+          </a>
+        ))}
+        <button
+          type="button"
+          onClick={() => copyUrl(url)}
+          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2"
+        >
+          URLをコピー
+        </button>
+      </div>
       <p className="min-h-5 text-sm text-gray-600" role="status" aria-live="polite">
         {message}
       </p>
