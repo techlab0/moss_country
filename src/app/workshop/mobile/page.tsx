@@ -117,13 +117,13 @@ const features = [
 
 const pricingBasics = [
   { label: '講師料', value: '30,000円／日' },
-  { label: '材料費', value: '1名あたり 1,500円' },
+  { label: '材料費', value: '2,500円／名' },
   { label: '交通費', value: '実費' },
-  { label: '基本容器サイズ', value: '縦11cm × 横6cm' },
+  { label: '使用容器サイズ（基本）', value: '縦11cm × 横6cm' },
 ];
 
 const assistanceFees = [
-  { people: '〜20名', fee: '加算なし' },
+  { people: '〜20名', fee: '無料' },
   { people: '21〜30名', fee: '+10,000円' },
   { people: '31〜40名', fee: '+20,000円' },
   { people: '41〜50名', fee: '+30,000円' },
@@ -143,9 +143,9 @@ const figurePlans = [
   },
   {
     name: '法人・団体向け おまとめプラン',
-    price: '材料費 2,000円（税込）／名（フィギュア代込み）',
+    price: '材料費 3,000円（税込）／名（フィギュア代込み）',
     notes: [
-      '会計を簡略化したい場合におすすめです',
+      'お好きなフィギュアを2つまで使用可能',
       '対象フィギュアから自由に選択可能',
       '追加精算不要でスムーズにご精算いただけます',
     ],
@@ -153,9 +153,9 @@ const figurePlans = [
 ];
 
 const cancellationFees = [
-  { timing: '開催日の14日前以降', fee: '料金の30%' },
-  { timing: '開催日の7日前以降', fee: '料金の50%' },
-  { timing: '前日〜当日', fee: '料金の100%' },
+  { timing: '14日前〜', fee: '30%' },
+  { timing: '7日前〜', fee: '50%' },
+  { timing: '前日・当日', fee: '100%' },
 ];
 
 const bookingSteps = [
@@ -489,7 +489,7 @@ export default function MobileWorkshopPage() {
                 <div className="overflow-hidden rounded-lg border border-gray-200">
                   <div className="grid grid-cols-2 bg-light-green text-moss-green font-semibold">
                     <div className="px-4 py-3">参加人数</div>
-                    <div className="px-4 py-3 text-right">加算額</div>
+                    <div className="px-4 py-3 text-right">運営補助費</div>
                   </div>
                   {editableAssistanceFees.map((item) => (
                     <div key={item.people} className="grid grid-cols-2 border-t border-gray-200 bg-white">

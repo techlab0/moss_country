@@ -48,6 +48,10 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(registry.includes("path: '/workshop/mobile'"), '公開ページのパスを登録する');
   assert.ok(registry.includes('`menu${number}Image`'), 'メニュー画像を編集対象に含める');
   assert.ok(registry.includes('importantNotes'), '注意事項を編集対象に含める');
+  assert.ok(registry.includes("default: '材料費 3,000円（税込）／名（フィギュア代込み）'"), '団体向け料金を資料の金額に合わせる');
+  assert.ok(registry.includes('お好きなフィギュアを2つまで使用可能'), '団体向けプランのフィギュア数を案内する');
+  assert.ok(registry.includes("'材料費|2,500円／名'"), '基本材料費を資料の金額に合わせる');
+  assert.ok(registry.includes("default: 'お支払い・会場要件'"), '支払い条件と会場要件を資料に合わせて表示する');
   assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
   assert.ok(adminPage.includes("get('page')"), 'URLから編集対象ページを選べる');
