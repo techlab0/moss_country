@@ -70,7 +70,8 @@ test('出張ワークショップへの導線・見積もり・開催写真を�
   assert.ok(registry.includes('2,500円〜／名'), '出張ワークショップの材料費を2,500円からと表示する');
   assert.ok(registry.includes('carousel5Title'), 'トップページに団体・法人向けカルーセル項目を用意する');
   assert.ok(homePage.includes("link: '/workshop/mobile'"), 'カルーセルから出張ワークショップへ移動する');
-  assert.ok(registry.includes('galleryImage1') && registry.includes('galleryImage2'), '開催写真を管理画面から変更できる');
+  assert.ok(registry.includes("Array.from({ length: 8 }"), '8枚の開催写真を管理画面から変更できる');
+  assert.ok(registry.includes('/images/workshop/mobile/mobile-workshop-'), '追加された出張ワークショップ写真を初期表示する');
   assert.ok(mobileWorkshopPage.includes("t('galleryTitle')"), '出張ページに過去の開催写真を表示する');
   assert.ok(mobileWorkshopPage.includes('無料見積もりを依頼する'), '出張ページに見積もりボタンを表示する');
   assert.ok(mobileWorkshopPage.includes('/contact#contact-form'), '見積もりボタンを問い合わせフォームへつなぐ');

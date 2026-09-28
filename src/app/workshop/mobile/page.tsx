@@ -386,7 +386,7 @@ export default function MobileWorkshopPage() {
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-5 max-w-5xl mx-auto">
-            {[1, 2].map((number) => (
+            {Array.from({ length: 8 }, (_, index) => index + 1).map((number) => (
               <figure key={number} className="overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-xl">
                 <img
                   src={img(`galleryImage${number}`)}
