@@ -122,6 +122,20 @@ const pricingBasics = [
   { label: '使用容器サイズ（基本）', value: '縦11cm × 横6cm' },
 ];
 
+// 管理画面に旧料金（1,500円／2,500円）が保存されていても、公開ページでは
+// 現在の基本材料費「2,500円〜」を表示する。その他の任意料金はそのまま尊重する。
+const normalizeBasicMaterialPrice = (value: string) => {
+  if (/^(?:1名あたり\s*)?(?:1,500|2,500)円(?:（税込）)?(?:〜)?(?:／名)?$/.test(value.trim())) {
+    return '2,500円〜／名';
+  }
+  return value;
+};
+
+const normalizeBasicMaterialNote = (value: string) => value.replace(
+  /基本材料費は1名あたり(?:1,500|2,500)円(?:（税込）)?(?:〜)?です。/,
+  '基本材料費は1名あたり2,500円（税込）〜です。',
+);
+
 const assistanceFees = [
   { people: '〜20名', fee: '無料' },
   { people: '21〜30名', fee: '+10,000円' },
@@ -197,7 +211,9 @@ export default function MobileWorkshopPage() {
   }));
   const editablePricingBasics = pricingBasics.map((item, index) => ({
     label: t(`price${index + 1}Label`),
-    value: t(`price${index + 1}Value`),
+    value: index === 1
+      ? normalizeBasicMaterialPrice(t(`price${index + 1}Value`))
+      : t(`price${index + 1}Value`),
   }));
   const editableAssistanceFees = assistanceFees.map((item, index) => ({
     people: t(`assist${index + 1}People`),
@@ -486,7 +502,7 @@ export default function MobileWorkshopPage() {
           <div className="text-center mt-8">
             <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
               <p className="text-white text-sm">
-                <span className="whitespace-pre-line">{t('menusNote')}</span>
+                <span className="whitespace-pre-line">{normalizeBasicMaterialNote(t('menusNote'))}</span>
               </p>
             </div>
           </div>

@@ -69,6 +69,8 @@ test('出張ワークショップへの導線・見積もり・開催写真を�
   const contactPage = await readFile(resolve(projectRoot, 'src/app/contact/page.tsx'), 'utf8');
 
   assert.ok(registry.includes('2,500円〜／名'), '出張ワークショップの材料費を2,500円からと表示する');
+  assert.ok(mobileWorkshopPage.includes('normalizeBasicMaterialPrice'), '保存済みの旧料金も2,500円からへ統一する');
+  assert.ok(mobileWorkshopPage.includes('normalizeBasicMaterialNote'), '材料費の補足文も2,500円からへ統一する');
   assert.ok(registry.includes('carousel5Title'), 'トップページに団体・法人向けカルーセル項目を用意する');
   assert.ok(homePage.includes("link: '/workshop/mobile'"), 'カルーセルから出張ワークショップへ移動する');
   assert.ok(registry.includes("Array.from({ length: 8 }"), '8枚の開催写真を管理画面から変更できる');
