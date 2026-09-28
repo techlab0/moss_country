@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -128,6 +129,21 @@ export default function WorkshopPage() {
         <div className="absolute inset-0 bg-black/40" />
         <Container className="relative z-10">
           <div className="text-center">
+            <nav aria-label="ワークショップの種類" className="mb-8 flex flex-col sm:flex-row justify-center gap-3">
+              <Link
+                href="/workshop"
+                aria-current="page"
+                className="rounded-full border border-white bg-white px-6 py-3 text-sm font-semibold text-moss-green shadow-lg"
+              >
+                店舗体験
+              </Link>
+              <Link
+                href="/workshop/mobile"
+                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-moss-green"
+              >
+                出張・団体・法人向け
+              </Link>
+            </nav>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               {t('heroTitle')}
             </h1>

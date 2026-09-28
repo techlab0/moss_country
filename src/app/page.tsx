@@ -90,6 +90,15 @@ export default function Home() {
               category: 'Workshop',
               link: '/workshop'
             },
+            {
+              id: '5',
+              title: t('carousel5Title'),
+              description: t('carousel5Desc'),
+              image: img('carousel5Image'),
+              imageStyle: imgStyle('carousel5Image'),
+              category: 'For Groups & Business',
+              link: '/workshop/mobile'
+            },
           ]}
         />
 

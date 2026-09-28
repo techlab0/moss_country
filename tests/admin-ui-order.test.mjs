@@ -50,7 +50,7 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(registry.includes('importantNotes'), '注意事項を編集対象に含める');
   assert.ok(registry.includes("default: '材料費 3,000円（税込）／名（フィギュア代込み）'"), '団体向け料金を資料の金額に合わせる');
   assert.ok(registry.includes('お好きなフィギュアを2つまで使用可能'), '団体向けプランのフィギュア数を案内する');
-  assert.ok(registry.includes("'材料費|2,500円／名'"), '基本材料費を資料の金額に合わせる');
+  assert.ok(registry.includes("'材料費|2,500円〜／名'"), '基本材料費を資料の金額に合わせる');
   assert.ok(registry.includes("default: 'お支払い・会場要件'"), '支払い条件と会場要件を資料に合わせて表示する');
   assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
@@ -58,6 +58,27 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   const dedicatedPage = await readFile(resolve(projectRoot, 'src/app/admin/mobile-workshop/page.tsx'), 'utf8');
   assert.ok(adminLayout.includes("href: '/admin/mobile-workshop'"), '管理メニューに専用入口を表示する');
   assert.ok(dedicatedPage.includes("redirect('/admin/pages?page=mobileWorkshop')"), '専用画面は出張ワークショップ編集へ転送する');
+});
+
+test('出張ワークショップへの導線・見積もり・開催写真を各ページに表示する', async () => {
+  const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const homePage = await readFile(resolve(projectRoot, 'src/app/page.tsx'), 'utf8');
+  const workshopPage = await readFile(resolve(projectRoot, 'src/app/workshop/page.tsx'), 'utf8');
+  const mobileWorkshopPage = await readFile(resolve(projectRoot, 'src/app/workshop/mobile/page.tsx'), 'utf8');
+  const contactPage = await readFile(resolve(projectRoot, 'src/app/contact/page.tsx'), 'utf8');
+
+  assert.ok(registry.includes('2,500円〜／名'), '出張ワークショップの材料費を2,500円からと表示する');
+  assert.ok(registry.includes('carousel5Title'), 'トップページに団体・法人向けカルーセル項目を用意する');
+  assert.ok(homePage.includes("link: '/workshop/mobile'"), 'カルーセルから出張ワークショップへ移動する');
+  assert.ok(registry.includes('galleryImage1') && registry.includes('galleryImage2'), '開催写真を管理画面から変更できる');
+  assert.ok(mobileWorkshopPage.includes("t('galleryTitle')"), '出張ページに過去の開催写真を表示する');
+  assert.ok(mobileWorkshopPage.includes('無料見積もりを依頼する'), '出張ページに見積もりボタンを表示する');
+  assert.ok(mobileWorkshopPage.includes('/contact#contact-form'), '見積もりボタンを問い合わせフォームへつなぐ');
+  assert.ok(contactPage.includes('id="contact-form"'), '問い合わせフォームへ直接移動できる');
+  for (const page of [workshopPage, mobileWorkshopPage]) {
+    assert.ok(page.includes('店舗体験'), '店舗体験への切り替えボタンを表示する');
+    assert.ok(page.includes('出張・団体・法人向け'), '出張・団体・法人向けへの切り替えボタンを表示する');
+  }
 });
 
 test('ワークショップ予約の自動返信メールを管理画面から編集できる', async () => {

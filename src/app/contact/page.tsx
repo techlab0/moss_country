@@ -256,7 +256,7 @@ export default function ContactPage() {
       </section>
 
       {/* Contact Form */}
-      <section className="py-20 relative" style={{
+      <section id="contact-form" className="py-20 relative scroll-mt-20" style={{
         backgroundImage: isMobile
           ? `url('${backgroundImageMobileUrl}')`
           : `url('${backgroundImageUrl}')`,

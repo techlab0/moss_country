@@ -117,7 +117,7 @@ const features = [
 
 const pricingBasics = [
   { label: '講師料', value: '30,000円／日' },
-  { label: '材料費', value: '2,500円／名' },
+  { label: '材料費', value: '2,500円〜／名' },
   { label: '交通費', value: '実費' },
   { label: '使用容器サイズ（基本）', value: '縦11cm × 横6cm' },
 ];
@@ -277,6 +277,21 @@ export default function MobileWorkshopPage() {
         <div className="absolute inset-0 bg-black/50" />
         <Container className="relative z-10">
           <div className="text-center">
+            <nav aria-label="ワークショップの種類" className="mb-8 flex flex-col sm:flex-row justify-center gap-3">
+              <Link
+                href="/workshop"
+                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-moss-green"
+              >
+                店舗体験
+              </Link>
+              <Link
+                href="/workshop/mobile"
+                aria-current="page"
+                className="rounded-full border border-white bg-white px-6 py-3 text-sm font-semibold text-moss-green shadow-lg"
+              >
+                出張・団体・法人向け
+              </Link>
+            </nav>
             <p className="text-lg md:text-xl text-white/80 mb-4 tracking-widest">MOSS COUNTRY</p>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               {t('heroTitle')}
@@ -289,14 +304,15 @@ export default function MobileWorkshopPage() {
               {t('heroLead2')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-white !text-moss-green hover:bg-moss-green hover:!text-white"
-                onClick={() => window.location.href = '/contact'}
-              >
-                出張のご相談はこちら
-              </Button>
+              <Link href="/contact#contact-form">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="bg-white !text-moss-green hover:bg-moss-green hover:!text-white"
+                >
+                  無料見積もりを依頼する
+                </Button>
+              </Link>
               <Link href="/workshop">
                 <Button
                   variant="ghost"
@@ -351,6 +367,35 @@ export default function MobileWorkshopPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </Container>
+      </section>
+
+      {/* Past Workshop Gallery */}
+      <section className="py-20">
+        <Container>
+          <div className="text-center mb-12">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                {t('galleryTitle')}
+              </h2>
+              <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+              <p className="text-lg text-gray-100 max-w-3xl mx-auto">
+                {t('galleryLead')}
+              </p>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5 max-w-5xl mx-auto">
+            {[1, 2].map((number) => (
+              <figure key={number} className="overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-xl">
+                <img
+                  src={img(`galleryImage${number}`)}
+                  alt={imgAlt(`galleryImage${number}`, `出張ワークショップの開催風景${number}`)}
+                  style={imgStyle(`galleryImage${number}`)}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </figure>
+            ))}
           </div>
         </Container>
       </section>
@@ -668,14 +713,15 @@ export default function MobileWorkshopPage() {
               {t('ctaLead2')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                variant="ghost"
-                size="lg"
-                className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = '/contact'}
-              >
-                お問い合わせフォーム
-              </Button>
+              <Link href="/contact#contact-form">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
+                >
+                  無料見積もりを依頼する
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="lg"

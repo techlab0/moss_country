@@ -51,6 +51,9 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'carousel4Title', label: '作品カルーセル4 タイトル', type: 'text', default: 'ワークショップ' },
       { key: 'carousel4Desc', label: '作品カルーセル4 説明', type: 'textarea', default: '職人による本格指導で自分だけのオリジナル作品を。初心者も安心の充実サポート。' },
       { key: 'carousel4Image', label: '作品カルーセル4 画像', type: 'image', default: '/images/workshop/mosscountry_workshop_blight.png' },
+      { key: 'carousel5Title', label: '作品カルーセル5 タイトル', type: 'text', default: '団体・法人向けワークショップ' },
+      { key: 'carousel5Desc', label: '作品カルーセル5 説明', type: 'textarea', default: '企業イベントや福利厚生、学校・団体行事へ。本格的な苔テラリウム体験を会場までお届けします。' },
+      { key: 'carousel5Image', label: '作品カルーセル5 画像', type: 'image', default: '/images/workshop/IMG_0504.jpg' },
       { key: 'workshopTitle', label: 'ワークショップ案内 見出し', type: 'text', default: '自分の手で作る' },
       { key: 'workshopTitleAccent', label: 'ワークショップ案内 見出し強調部', type: 'text', default: '特別なテラリウム体験' },
       { key: 'workshopLead', label: 'ワークショップ案内 リード文', type: 'textarea', default: '経験豊富な職人が丁寧に指導する、本格的なテラリウム制作体験。初心者の方でも安心して参加できるよう、基礎から応用まで幅広いコースをご用意しています。' },
@@ -330,6 +333,10 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'aboutText1', label: 'サービス紹介 本文1', type: 'textarea', default: 'Moss Countryの出張ワークショップは、イベント会場やご指定の場所に職人が直接お伺いし、苔テラリウムの制作体験を提供するサービスです。' },
       { key: 'aboutText2', label: 'サービス紹介 本文2', type: 'textarea', default: '材料や道具はすべて持参するため、会場側のご準備は最小限。テーブルとスペースがあれば、どこでも開催可能です。' },
       { key: 'aboutText3', label: 'サービス紹介 本文3', type: 'textarea', default: 'イベント主催者様も、一般のお客様も、お気軽にご相談ください。人数やご予算に合わせた最適なプランをご提案いたします。' },
+      { key: 'galleryTitle', label: '開催写真 見出し', type: 'text', default: '過去の開催風景' },
+      { key: 'galleryLead', label: '開催写真 説明', type: 'textarea', default: '参加者の皆様が、思い思いの苔テラリウムづくりを楽しんでいる様子をご紹介します。' },
+      { key: 'galleryImage1', label: '開催写真1', type: 'image', default: '/images/workshop/IMG_0504.jpg' },
+      { key: 'galleryImage2', label: '開催写真2', type: 'image', default: '/images/workshop/IMG_0503.jpg' },
       { key: 'scenesTitle', label: '利用シーン 見出し', type: 'text', default: 'こんなシーンで活躍しています' },
       { key: 'scenesLead', label: '利用シーン 説明', type: 'textarea', default: 'さまざまなイベントや場所でワークショップを開催しています' },
       { key: 'scene1Title', label: '利用シーン1 見出し', type: 'text', default: 'マルシェ・フェスティバル' },
@@ -357,12 +364,12 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
           { key: `menu${number}Time`, label: `メニュー${number} 所要時間`, type: 'text' as const, default: defaults[5] },
         ];
       }),
-      { key: 'menusNote', label: 'メニュー 補足', type: 'textarea', default: '※ 出張ワークショップの基本材料費は1名あたり2,500円（税込）です。\n※ 上記以外のメニューもご相談に応じて対応可能です。\n※ 容器・内容の変更により追加費用が発生する場合があります。' },
+      { key: 'menusNote', label: 'メニュー 補足', type: 'textarea', default: '※ 出張ワークショップの基本材料費は1名あたり2,500円（税込）〜です。\n※ 上記以外のメニューもご相談に応じて対応可能です。\n※ 容器・内容の変更により追加費用が発生する場合があります。' },
       { key: 'pricingTitle', label: '料金・開催条件 見出し', type: 'text', default: '料金・開催条件' },
       { key: 'pricingLead', label: '料金・開催条件 説明', type: 'textarea', default: '出張ワークショップの基本料金と人数ごとの目安です' },
       { key: 'basicPricingTitle', label: '基本料金 見出し', type: 'text', default: '基本料金' },
       { key: 'assistanceTitle', label: '運営補助費 見出し', type: 'text', default: '運営補助費' },
-      ...['講師料|30,000円／日', '材料費|2,500円／名', '交通費|実費', '使用容器サイズ（基本）|縦11cm × 横6cm'].flatMap((item, index) => {
+      ...['講師料|30,000円／日', '材料費|2,500円〜／名', '交通費|実費', '使用容器サイズ（基本）|縦11cm × 横6cm'].flatMap((item, index) => {
         const [label, value] = item.split('|');
         return [
           { key: `price${index + 1}Label`, label: `基本料金${index + 1} 項目`, type: 'text' as const, default: label },
