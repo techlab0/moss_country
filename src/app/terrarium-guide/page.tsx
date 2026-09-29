@@ -1,20 +1,9 @@
-import type { Metadata } from 'next';
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from '@/components/layout/Container';
-
-export const metadata: Metadata = {
-  title: 'はじめてのテラリウム｜起源・魅力・楽しみ方',
-  description:
-    'テラリウムの起源、暮らしにもたらす魅力、人気の理由、おすすめしたい人、置き場所や始め方を苔テラリウム専門店Moss Countryがご案内します。',
-  alternates: { canonical: '/terrarium-guide' },
-  openGraph: {
-    title: '小さな森を、暮らしの中へ。｜MOSS COUNTRY',
-    description: 'テラリウムの歴史と魅力、置き場所、初めての選び方をご紹介します。',
-    url: '/terrarium-guide',
-    images: ['/images/terrarium-generated/terrarium-hero-key-030-v1.png'],
-  },
-};
+import { usePageContent } from '@/hooks/usePageContent';
 
 const benefits = [
   {
@@ -107,16 +96,19 @@ const references = [
 ];
 
 export default function TerrariumGuidePage() {
+  const { img, imgAlt, imgStyle } = usePageContent('terrariumGuide');
+
   return (
     <div className="min-h-screen bg-[#07100c] text-white">
       <section className="relative isolate flex min-h-[88svh] items-end overflow-hidden pt-24">
         <Image
-          src="/images/terrarium-generated/terrarium-hero-key-030-v1.png"
-          alt="ガラス容器の中に広がる苔と植物の小さな森"
+          src={img('heroImage')}
+          alt={imgAlt('heroImage', 'ガラス容器の中に広がる苔と植物の小さな森')}
           fill
           priority
           sizes="100vw"
-          className="-z-20 object-cover object-center"
+          className="-z-20 object-cover"
+          style={imgStyle('heroImage')}
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#07100c] via-black/55 to-black/10" />
         <Container className="pb-14 sm:pb-20 lg:pb-24">
@@ -179,11 +171,12 @@ export default function TerrariumGuidePage() {
 
               <figure className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
                 <Image
-                  src="/images/terrarium-generated/terrarium-artwork-woodland-arch-v1.png"
-                  alt="苔と流木がつくる森のアーチを表現したテラリウム"
+                  src={img('originImage')}
+                  alt={imgAlt('originImage', '苔と流木がつくる森のアーチを表現したテラリウム')}
                   fill
                   sizes="(min-width: 1024px) 45vw, 100vw"
                   className="object-cover"
+                  style={imgStyle('originImage')}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 <figcaption className="absolute bottom-0 left-0 p-6 text-sm leading-6 text-white/70">
@@ -246,11 +239,12 @@ export default function TerrariumGuidePage() {
 
         <section id="recommended" className="relative isolate scroll-mt-32 overflow-hidden py-20 sm:py-28">
           <Image
-            src="/images/terrarium-generated/terrarium-artwork-basalt-ravine-v1.png"
-            alt=""
+            src={img('recommendedImage')}
+            alt={imgAlt('recommendedImage', '')}
             fill
             sizes="100vw"
             className="-z-20 object-cover"
+            style={imgStyle('recommendedImage')}
           />
           <div className="absolute inset-0 -z-10 bg-black/75 backdrop-blur-[1px]" />
           <Container>
@@ -326,11 +320,12 @@ export default function TerrariumGuidePage() {
 
               <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-white/10">
                 <Image
-                  src="/images/terrarium-generated/terrarium-artwork-moonlit-wetland-v1.png"
-                  alt="静かな水辺を思わせる苔テラリウム"
+                  src={img('startImage')}
+                  alt={imgAlt('startImage', '静かな水辺を思わせる苔テラリウム')}
                   fill
                   sizes="(min-width: 1024px) 40vw, 100vw"
                   className="object-cover"
+                  style={imgStyle('startImage')}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
                 <p className="absolute bottom-0 p-7 font-serif text-xl leading-relaxed text-white/85">

@@ -123,6 +123,7 @@ export const defaultSiteSettings: SiteSettingsData = {
     { label: 'ワークショップ', href: '/workshop', isVisible: true },
     { label: '出張ワークショップ', href: '/workshop/mobile', isVisible: true },
     { label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true },
+    { label: 'テラリウムを知る', href: '/terrarium-guide', isVisible: true },
     { label: 'ストーリー', href: '/story', isVisible: true },
     { label: '店舗情報', href: '/store', isVisible: true },
     { label: 'ブログ', href: '/blog', isVisible: true },
@@ -177,9 +178,14 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
   const savedSitemapLinks = saved.footerSitemapLinks?.length
     ? saved.footerSitemapLinks
     : defaultSiteSettings.footerSitemapLinks;
-  const footerSitemapLinks = saved.rentalTerrariumSitemapConfigured === true || savedSitemapLinks.some(link => link.href === '/rental-terrarium')
+  const linksWithRentalTerrarium = saved.rentalTerrariumSitemapConfigured === true || savedSitemapLinks.some(link => link.href === '/rental-terrarium')
     ? savedSitemapLinks
     : [...savedSitemapLinks, { label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true }];
+  // 既存のSanity設定には新設ページのリンクが含まれないため、一度追加して
+  // 次回の管理画面保存以降は通常のフッターリンクとして表示設定を引き継ぐ。
+  const footerSitemapLinks = linksWithRentalTerrarium.some(link => link.href === '/terrarium-guide')
+    ? linksWithRentalTerrarium
+    : [...linksWithRentalTerrarium, { label: 'テラリウムを知る', href: '/terrarium-guide', isVisible: true }];
   return {
     headerLinks: saved.headerLinks?.length ? saved.headerLinks : defaultSiteSettings.headerLinks,
     footerSitemapLinks,

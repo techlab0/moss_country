@@ -5,6 +5,8 @@ import { test } from 'node:test';
 const page = readFileSync('src/app/terrarium-guide/page.tsx', 'utf8');
 const homeAbout = readFileSync('src/components/sections/home/AboutSection.tsx', 'utf8');
 const sitemap = readFileSync('src/app/sitemap.ts', 'utf8');
+const siteSettings = readFileSync('src/lib/siteSettingsDefaults.ts', 'utf8');
+const pageContentRegistry = readFileSync('src/lib/pageContentRegistry.ts', 'utf8');
 
 test('テラリウム入門ページに必要な案内が揃っている', () => {
   for (const heading of [
@@ -32,4 +34,16 @@ test('商品・体験・店舗への導線とトップページの入口があ�
   assert.match(page, /href="\/store"/);
   assert.match(homeAbout, /href="\/terrarium-guide"/);
   assert.match(sitemap, /\$\{baseUrl\}\/terrarium-guide/);
+});
+
+test('フッターのサイトマップに入口がある', () => {
+  assert.match(siteSettings, /label: 'テラリウムを知る', href: '\/terrarium-guide'/);
+});
+
+test('管理画面から主要画像を変更できる', () => {
+  assert.match(pageContentRegistry, /terrariumGuide:\s*\{/);
+  for (const imageKey of ['heroImage', 'originImage', 'recommendedImage', 'startImage']) {
+    assert.match(pageContentRegistry, new RegExp(`key: '${imageKey}'.+type: 'image'`));
+    assert.match(page, new RegExp(`img\\('${imageKey}'\\)`));
+  }
 });

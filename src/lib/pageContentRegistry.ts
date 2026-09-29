@@ -76,6 +76,16 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'sceneCtaImageMobile', label: 'シーン背景 CTA（スマホ・縦長9:16）', type: 'image', default: '/images/terrarium-generated/terrarium-mobile-artwork-waterfall-cliff-v1.png' },
     ],
   },
+  terrariumGuide: {
+    title: 'テラリウムを知るページ',
+    path: '/terrarium-guide',
+    fields: [
+      { key: 'heroImage', label: 'メイン画像', type: 'image', default: '/images/terrarium-generated/terrarium-hero-key-030-v1.png' },
+      { key: 'originImage', label: '起源セクション 画像', type: 'image', default: '/images/terrarium-generated/terrarium-artwork-woodland-arch-v1.png' },
+      { key: 'recommendedImage', label: 'おすすめの人セクション 背景画像', type: 'image', default: '/images/terrarium-generated/terrarium-artwork-basalt-ravine-v1.png' },
+      { key: 'startImage', label: '始め方セクション 画像', type: 'image', default: '/images/terrarium-generated/terrarium-artwork-moonlit-wetland-v1.png' },
+    ],
+  },
   story: {
     title: 'ストーリーページ',
     path: '/story',
