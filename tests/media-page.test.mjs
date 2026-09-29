@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { mediaCoverage, featuredMediaCoverage } from '../src/content/mediaCoverage.ts';
 
 test('メディア掲載情報は日付の新しい順で、出典URL付き', () => {
-  assert.ok(mediaCoverage.length >= 5);
+  assert.ok(mediaCoverage.length >= 3);
 
   for (const [index, item] of mediaCoverage.entries()) {
     assert.match(item.date, /^\d{4}-\d{2}-\d{2}$/);

@@ -34,18 +34,6 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
     featured: true,
   },
   {
-    id: 'ebetsu-tsutaya-2026-02-26',
-    date: '2026-02-26',
-    displayDate: '2026.02.26',
-    category: 'Web掲載',
-    outlet: '江別 蔦屋書店',
-    title: '苔テラリウム作成ワークショップの開催情報を掲載',
-    description:
-      '江別 蔦屋書店の公式サイトで、Moss Countryが講師を務める苔テラリウム作成ワークショップをご紹介いただきました。',
-    sourceUrl: 'https://ebetsu-t.com/event/mosscountry-202602/',
-    sourceLabel: '江別 蔦屋書店の掲載を見る',
-  },
-  {
     id: 'htb-norinori-sanpo-2025-11-15',
     date: '2025-11-15',
     displayDate: '2025.11.15',
@@ -74,19 +62,6 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
     sourceUrl: 'https://www.stv.jp/tv/dosanko_eve/tokushu/k7edca0000004jxz.html',
     sourceLabel: 'STVの特集ページを見る',
     featured: true,
-  },
-  {
-    id: 'plants-plants-2025-05-08',
-    date: '2025-05-08',
-    displayDate: '2025.05.08',
-    category: 'Web掲載',
-    outlet: 'プランツ×プランツ',
-    title: 'Sapporo Botanical Market 参加者紹介',
-    description:
-      '札幌の植物イベント「プランツ×プランツ」の参加者紹介で、作品づくりやワークショップについてご紹介いただきました。',
-    sourceUrl:
-      'https://decks.jp/plantsplants/2025/05/08/%E5%8F%82%E5%8A%A0%E8%80%85%E7%B4%B9%E4%BB%8B-moss-country/',
-    sourceLabel: '紹介記事を見る',
   },
 ];
 
