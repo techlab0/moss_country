@@ -3,6 +3,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { mediaCoverage, featuredMediaCoverage } from '../src/content/mediaCoverage.ts';
 
+const siteSettings = readFileSync('src/lib/siteSettingsDefaults.ts', 'utf8');
+const sitemap = readFileSync('src/app/sitemap.ts', 'utf8');
+
 test('メディア掲載情報は日付の新しい順で、出典URL付き', () => {
   assert.ok(mediaCoverage.length >= 10);
 
@@ -28,6 +31,7 @@ test('福永探偵社の放送動画と新しい掲載実績へのリンクが�
   assert.ok(mediaCoverage.some(item => item.sourceUrl === 'https://tsukinuke.jp/1/p/45838'));
   assert.ok(mediaCoverage.some(item => item.sourceUrl.includes('stec4bfb02875f40f7ae9d7d03b047c0d6')));
   assert.ok(mediaCoverage.some(item => item.id === 'fm-maple-radio-hinoatarubasho-2026-02-03'));
+  assert.ok(mediaCoverage.some(item => item.sourceUrl === 'https://www.hokkaido-np.co.jp/article/1243111/'));
 });
 test('トップページには掲載実績への導線と抜粋がある', () => {
   const homePage = readFileSync('src/app/page.tsx', 'utf8');
@@ -36,6 +40,11 @@ test('トップページには掲載実績への導線と抜粋がある', () =>
   assert.match(homePage, /<MediaHighlightsSection \/>/);
   assert.match(homeSection, /href="\/media"/);
   assert.equal(featuredMediaCoverage.length, 3);
+});
+
+test('メディア情報はフッターと検索エンジン向けのサイトマップに掲載する', () => {
+  assert.match(siteSettings, /label: 'メディア情報', href: '\/media'/);
+  assert.match(sitemap, /\$\{baseUrl\}\/media/);
 });
 
 test('掲載実績で指定したローカル画像が存在する', () => {

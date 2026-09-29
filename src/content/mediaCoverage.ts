@@ -84,8 +84,8 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
     title: '「寒さに強いコケ 小さな緑」に掲載',
     description:
       '北海道新聞の紙面で、寒さに強いコケと小さな緑の世界をテーマにMoss Countryをご紹介いただきました。',
-    sourceUrl: 'https://www.hokkaido-np.co.jp/',
-    sourceLabel: '北海道新聞デジタルを見る',
+    sourceUrl: 'https://www.hokkaido-np.co.jp/article/1243111/',
+    sourceLabel: '北海道新聞の記事を見る',
   },
   {
     id: 'fm-maple-radio-hinoatarubasho-2026-02-03',
