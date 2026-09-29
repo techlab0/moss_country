@@ -13,6 +13,7 @@
     "test:analytics": "node --experimental-strip-types --test tests/analytics-summary.test.mjs",
     "test:home-season": "node --experimental-strip-types --test tests/home-season.test.mjs",
     "test:media": "node --experimental-strip-types --test tests/media-page.test.mjs",
+    "test:terrarium-guide": "node --test tests/terrarium-guide.test.mjs",
     "test:sales": "node --experimental-strip-types --test tests/sales-aggregation.test.mjs",
     "test:inventory": "node --experimental-strip-types --test tests/inventory-responsibility.test.mjs",
     "test:mailer": "node --experimental-strip-types --test tests/mailer-config.test.mjs",
