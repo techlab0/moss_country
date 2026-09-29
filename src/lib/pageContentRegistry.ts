@@ -117,7 +117,7 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'heroLead', label: 'ヒーロー リード文', type: 'textarea', default: '札幌の中心部にある私たちの店舗で、実際に手に取って、テラリウムの美しさと職人の技術を感じてください。' },
       { key: 'facility1Name', label: '設備1 名称', type: 'text', default: 'ショールーム' },
       { key: 'facility1Desc', label: '設備1 説明', type: 'textarea', default: '様々なサイズ・デザインのテラリウムを実際に手に取ってご覧いただけます' },
-      { key: 'facility1Image', label: '設備1 画像', type: 'image', default: '/images/store/moss-country_store_items.png' },
+      { key: 'facility1Image', label: '設備1 画像', type: 'image', default: '/images/store/moss-country_store_showroom-2026.jpg' },
       { key: 'facility2Name', label: '設備2 名称', type: 'text', default: 'ワークショップスペース' },
       { key: 'facility2Desc', label: '設備2 説明', type: 'textarea', default: '少人数制で丁寧に指導する、アットホームな制作スペース' },
       { key: 'facility2Image', label: '設備2 画像', type: 'image', default: '/images/store/moss-country_store_workshopspace.png' },
