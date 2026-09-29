@@ -27,6 +27,7 @@ test('福永探偵社の放送動画と新しい掲載実績へのリンクが�
 
   assert.ok(mediaCoverage.some(item => item.sourceUrl === 'https://tsukinuke.jp/1/p/45838'));
   assert.ok(mediaCoverage.some(item => item.sourceUrl.includes('stec4bfb02875f40f7ae9d7d03b047c0d6')));
+  assert.ok(mediaCoverage.some(item => item.id === 'fm-maple-radio-hinoatarubasho-2026-02-03'));
 });
 test('トップページには掲載実績への導線と抜粋がある', () => {
   const homePage = readFileSync('src/app/page.tsx', 'utf8');

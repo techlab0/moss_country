@@ -88,6 +88,18 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
     sourceLabel: '北海道新聞デジタルを見る',
   },
   {
+    id: 'fm-maple-radio-hinoatarubasho-2026-02-03',
+    date: '2026-02-03',
+    displayDate: '2026.02.03',
+    category: 'ラジオ',
+    outlet: 'FMメイプル きたひろボールパークラジオ',
+    title: '「Radio陽の当たる場所」に出演',
+    description:
+      '北広島市のコミュニティ放送局、FMメイプル きたひろボールパークラジオの番組「Radio陽の当たる場所」に出演し、Moss Countryと苔テラリウムについてお話ししました。',
+    sourceUrl: 'https://fm-maple.com/',
+    sourceLabel: 'FMメイプル公式サイトを見る',
+  },
+  {
     id: 'fm-north-wave-2025-12-06',
     date: '2025-12-06',
     displayDate: '2025.12.06',
