@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Hero } from '@/components/sections/Hero';
 import { LatestNews } from '@/components/sections/LatestNews';
+import { MediaHighlightsSection } from '@/components/sections/home/MediaHighlightsSection';
 import { AboutSection } from '@/components/sections/home/AboutSection';
 import { ProductsSection } from '@/components/sections/home/ProductsSection';
 import { WorkshopSection } from '@/components/sections/home/WorkshopSection';
@@ -50,6 +51,9 @@ export default function Home() {
 
         {/* 新着情報 */}
         <LatestNews />
+
+        {/* メディア掲載情報 */}
+        <MediaHighlightsSection />
 
         {/* 商品カテゴリー概要 - 円形カルーセル */}
         <ProductsSection
