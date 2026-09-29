@@ -40,6 +40,7 @@ test('トップページには掲載実績への導線と抜粋がある', () =>
   assert.match(homePage, /<MediaHighlightsSection \/>/);
   assert.match(homeSection, /href="\/media"/);
   assert.equal(featuredMediaCoverage.length, 3);
+  assert.ok(featuredMediaCoverage.every(item => item.category === 'テレビ'));
 });
 
 test('メディア情報はフッターと検索エンジン向けのサイトマップに掲載する', () => {

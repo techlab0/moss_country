@@ -59,6 +59,8 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
     title: '会場からの生中継で出展の様子を放送',
     description:
       '大和ハウス プレミストドームで開催された「サッポロ モノ ヴィレッジ 2026春」の生中継で、Moss Countryの出展映像が放送されました。',
+    image: '/images/media/sapporo-mono-village-2026.jpg',
+    imageAlt: 'サッポロ モノ ヴィレッジの生中継で紹介されたMoss Countryの苔テラリウム',
     sourceUrl: 'https://sdome-event.jp/smv/event.php',
     sourceLabel: '公式イベントページを見る',
   },
@@ -175,4 +177,7 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
   },
 ];
 
-export const featuredMediaCoverage = mediaCoverage.filter((item) => item.featured);
+/** トップページでは、日付の新しいテレビ掲載を3件だけ紹介する。 */
+export const featuredMediaCoverage = mediaCoverage
+  .filter((item) => item.category === 'テレビ')
+  .slice(0, 3);
