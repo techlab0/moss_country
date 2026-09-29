@@ -31,7 +31,7 @@ class HomeScrollJourneyContractTests(unittest.TestCase):
         self.assertIn("reducedMotion.matches", journey)
         self.assertIn("syncTouch: false", journey)
         self.assertIn("lerp: 0.12", journey)
-        self.assertIn("wheelMultiplier: 0.65", journey)
+        self.assertIn("wheelMultiplier: 0.8", journey)
 
     def test_desktop_and_mobile_share_the_soft_background_transition(self) -> None:
         backdrop = (ROOT / "src/components/sections/home/SceneBackdrop.tsx").read_text(encoding="utf-8")

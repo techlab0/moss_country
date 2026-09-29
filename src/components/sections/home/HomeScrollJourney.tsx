@@ -21,7 +21,7 @@ export function HomeScrollJourney({ children }: HomeScrollJourneyProps) {
       smoothWheel: true,
       syncTouch: false,
       lerp: 0.12,
-      wheelMultiplier: 0.65,
+      wheelMultiplier: 0.8,
       stopInertiaOnNavigate: true,
     });
     const unsubscribe = lenis.on('scroll', () => ScrollTrigger.update());
