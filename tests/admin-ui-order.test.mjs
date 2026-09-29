@@ -85,6 +85,16 @@ test('出張ワークショップへの導線・見積もり・開催写真を�
   }
 });
 
+test('店舗ワークショップに参加風景と完成作品を表示する', async () => {
+  const registry = await readFile(resolve(projectRoot, 'src/lib/pageContentRegistry.ts'), 'utf8');
+  const workshopPage = await readFile(resolve(projectRoot, 'src/app/workshop/page.tsx'), 'utf8');
+
+  assert.ok(registry.includes("default: 'ワークショップの参加風景'"), '参加風景の見出しを管理画面から編集できる');
+  assert.ok(registry.includes('/images/workshop/store/store-workshop-0'), '追加された店舗ワークショップ写真を初期表示する');
+  assert.ok(workshopPage.includes("t('galleryTitle')"), '店舗ワークショップページに参加風景を表示する');
+  assert.ok(workshopPage.includes('galleryImages.map'), '参加風景と完成作品を一覧表示する');
+});
+
 test('ワークショップ予約の自動返信メールを管理画面から編集できる', async () => {
   const adminPage = await readFile(resolve(projectRoot, 'src/app/admin/workshop-bookings/page.tsx'), 'utf8');
   const settingsApi = await readFile(resolve(projectRoot, 'src/app/api/admin/workshop-email-settings/route.ts'), 'utf8');

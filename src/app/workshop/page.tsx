@@ -41,6 +41,14 @@ export default function WorkshopPage() {
     title: t(`step${i}Title`),
     description: t(`step${i}Desc`),
   }));
+  const galleryImages = [1, 2, 3, 4, 5, 6].map(i => ({
+    src: img(`galleryImage${i}`),
+    style: imgStyle(`galleryImage${i}`),
+    alt: i <= 3
+      ? `店舗ワークショップの参加風景${i}`
+      : `店舗ワークショップで完成した苔テラリウム${i - 3}`,
+    label: i <= 3 ? '制作風景' : '完成作品',
+  }));
   const [isMobile, setIsMobile] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['workshop'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['workshop'].src);
@@ -287,6 +295,42 @@ export default function WorkshopPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Workshop Gallery */}
+      <section id="workshop-gallery" className="scroll-mt-24 py-20">
+        <Container>
+          <div className="mb-12 bg-black/60 p-8 text-center backdrop-blur-sm">
+            <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">
+              {t('galleryTitle')}
+            </h2>
+            <div className="mx-auto mb-6 h-1 w-24 bg-white" />
+            <p className="mx-auto max-w-3xl whitespace-pre-line text-lg text-gray-100">
+              {t('galleryLead')}
+            </p>
+          </div>
+
+          <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
+            {galleryImages.map((image, index) => (
+              <figure
+                key={image.src || index}
+                className="group relative mb-5 break-inside-avoid overflow-hidden rounded-2xl border border-white/20 bg-black/40 shadow-xl"
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.02]"
+                  style={image.style}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption className="absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-1 text-xs font-medium tracking-wide text-white backdrop-blur-sm">
+                  {image.label}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </Container>
       </section>
