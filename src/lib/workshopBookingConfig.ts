@@ -38,8 +38,8 @@ export const DEFAULT_DURATION_MIN = 120;
 /** 予約受付曜日（0=日, 1=月, ..., 6=土）。既定は全曜日を対象にし、営業日はSupabase calendar_events(type='open')側で制御する */
 export const BOOKABLE_WEEKDAYS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
 
-/** 何日先まで予約可能か */
-export const ADVANCE_DAYS = 60;
+/** 何か月先まで予約可能か（暦月単位） */
+export const ADVANCE_MONTHS = 3;
 
 /** 予約受付の締切（開始時刻の何時間前まで受け付けるか） */
 export const MIN_LEAD_HOURS = 24;
@@ -126,7 +126,7 @@ export function isBookableWeekday(dateStr: string): boolean {
   return BOOKABLE_WEEKDAYS.includes(day);
 }
 
-/** 開始からADVANCE_DAYS日後までの日付(YYYY-MM-DD)を列挙する */
+/** 指定範囲の日付(YYYY-MM-DD)を両端を含めて列挙する */
 export function listDatesInRange(fromStr: string, toStr: string): string[] {
   const dates: string[] = [];
   const from = new Date(`${fromStr}T00:00:00Z`);
@@ -147,11 +147,19 @@ export function todayJstDateStr(): string {
   return new Date(Date.now() + JST_OFFSET_MINUTES * 60000).toISOString().slice(0, 10);
 }
 
-/** 今日からADVANCE_DAYS日後(JST暦日, YYYY-MM-DD)を返す */
+/** YYYY-MM-DDへ暦月を加算する。月末日は移動先の月末に収める。 */
+export function addCalendarMonthsToDateStr(dateStr: string, months: number): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const target = new Date(Date.UTC(year, month - 1, 1));
+  target.setUTCMonth(target.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
+/** 今日からADVANCE_MONTHSか月後(JST暦日, YYYY-MM-DD)を返す */
 export function maxBookableDateStr(): string {
-  const d = new Date(Date.now() + JST_OFFSET_MINUTES * 60000);
-  d.setUTCDate(d.getUTCDate() + ADVANCE_DAYS);
-  return d.toISOString().slice(0, 10);
+  return addCalendarMonthsToDateStr(todayJstDateStr(), ADVANCE_MONTHS);
 }
 
 /** 指定の枠開始時刻(JST ISO)が MIN_LEAD_HOURS の受付締切より後（＝まだ受付可能）かどうか */

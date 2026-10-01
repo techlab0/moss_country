@@ -54,7 +54,7 @@ import {
 const IMPORT_QUERY =
   '(from:reservation@activityboard.jp OR from:reservation_request@activityboard.jp OR from:reservation_cancel@activityboard.jp)';
 
-/** 既定で何日前までのメールを見るか。予約可能期間（ADVANCE_DAYS=60日）より広めに取る */
+/** 既定で何日前までのメールを見るか。公開サイトの予約可能期間とは別に、受信済みメールを遡る範囲 */
 const DEFAULT_SINCE_DAYS = 90;
 const DEFAULT_MAX_MESSAGES = 100;
 const HARD_MAX_MESSAGES = 300;

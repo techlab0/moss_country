@@ -114,15 +114,8 @@ export default function WorkshopBookingPage() {
     setAvailabilityError(null);
     setAvailabilityUnavailable(false);
 
-    const today = new Date();
-    const from = today.toISOString().slice(0, 10);
-    const maxDate = new Date(today);
-    maxDate.setDate(maxDate.getDate() + 60);
-    const to = maxDate.toISOString().slice(0, 10);
-
-    fetch(
-      `/api/workshop/availability?from=${from}&to=${to}&planId=${encodeURIComponent(selectedPlan._id)}`
-    )
+    // 表示期間はサーバー側の予約受付期間（現在は3か月後まで）を正とする。
+    fetch(`/api/workshop/availability?planId=${encodeURIComponent(selectedPlan._id)}`)
       .then(async (res) => {
         if (!mounted) return;
         if (res.status === 503) {
@@ -412,7 +405,16 @@ export default function WorkshopBookingPage() {
                 <UnavailableNotice message="現在ご案内できる空き枠がありません。恐れ入りますが、下記よりお問い合わせください。" />
               ) : (
                 <>
-                  <p className="text-stone-500 text-xs">※ご予約は開始時刻の24時間前までとなります</p>
+                  <div className="space-y-1 text-xs text-stone-500">
+                    <p>※ご予約は開始時刻の24時間前までとなります</p>
+                    <p>
+                      3か月より先の日程は、
+                      <Link href="/contact" className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
+                        お問い合わせ
+                      </Link>
+                      よりご相談ください。
+                    </p>
+                  </div>
                   <div className="max-h-[28rem] overflow-y-auto space-y-3 pr-1">
                     {groupedByDate.map(([date, slots]) => (
                       <div key={date} className="bg-stone-900/50 rounded-xl p-4 border border-stone-800">

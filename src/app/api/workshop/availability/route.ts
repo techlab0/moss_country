@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const today = todayJstDateStr();
     const maxDate = maxBookableDateStr();
 
-    // 受付可能な範囲（今日〜ADVANCE_DAYS日後）にクランプする
+    // 受付可能な範囲（今日〜ADVANCE_MONTHSか月後）にクランプする
     const fromDate = fromParam && fromParam > today ? fromParam : today;
     const toDate = toParam && toParam < maxDate ? toParam : maxDate;
 
