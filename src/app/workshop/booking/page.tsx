@@ -407,6 +407,7 @@ export default function WorkshopBookingPage() {
                 <>
                   <div className="space-y-1 text-xs text-stone-500">
                     <p>※ご予約は開始時刻の24時間前までとなります</p>
+                    <p>当日参加をご希望の場合は、一度ご連絡の上スタッフにご相談ください。</p>
                     <p>
                       3か月より先の日程は、
                       <Link href="/contact" className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
