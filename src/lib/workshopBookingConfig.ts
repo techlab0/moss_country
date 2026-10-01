@@ -142,6 +142,48 @@ export function listDatesInRange(fromStr: string, toStr: string): string[] {
   return dates;
 }
 
+export interface WorkshopDateRange {
+  from: string;
+  to: string;
+}
+
+/**
+ * 長期間の空き状況を外部カレンダーへ一度に問い合わせないよう、
+ * 指定期間を最大maxDays日（両端を含む）の連続した範囲へ分割する。
+ */
+export function splitWorkshopDateRange(
+  fromStr: string,
+  toStr: string,
+  maxDays = 31
+): WorkshopDateRange[] {
+  if (!Number.isInteger(maxDays) || maxDays < 1) {
+    throw new RangeError('maxDaysは1以上の整数で指定してください');
+  }
+
+  const from = new Date(`${fromStr}T00:00:00Z`);
+  const to = new Date(`${toStr}T00:00:00Z`);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
+    return [];
+  }
+
+  const ranges: WorkshopDateRange[] = [];
+  const cursor = new Date(from);
+  while (cursor <= to) {
+    const chunkEnd = new Date(cursor);
+    chunkEnd.setUTCDate(chunkEnd.getUTCDate() + maxDays - 1);
+    if (chunkEnd > to) chunkEnd.setTime(to.getTime());
+
+    ranges.push({
+      from: cursor.toISOString().slice(0, 10),
+      to: chunkEnd.toISOString().slice(0, 10),
+    });
+    cursor.setTime(chunkEnd.getTime());
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return ranges;
+}
+
 /** 今日(JST暦日, YYYY-MM-DD)を返す */
 export function todayJstDateStr(): string {
   return new Date(Date.now() + JST_OFFSET_MINUTES * 60000).toISOString().slice(0, 10);

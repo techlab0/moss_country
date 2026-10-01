@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSimpleWorkshopById } from '@/lib/sanity';
-import { computeAvailableSlots, CalendarUnavailableError } from '@/lib/workshopAvailability';
-import { todayJstDateStr, maxBookableDateStr } from '@/lib/workshopBookingConfig';
+import {
+  computeAvailableSlots,
+  CalendarUnavailableError,
+  type AvailableSlot,
+} from '@/lib/workshopAvailability';
+import {
+  todayJstDateStr,
+  maxBookableDateStr,
+  splitWorkshopDateRange,
+} from '@/lib/workshopBookingConfig';
 import { consumeDistributedRateLimit } from '@/lib/distributedRateLimit';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -53,7 +61,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const available = await computeAvailableSlots(fromDate, toDate);
+    // 約3か月分を外部カレンダーへ一度に問い合わせると取得に失敗するため、
+    // 最大31日ずつ順番に確認してから1つの一覧へまとめる。
+    // 途中の範囲が1つでも失敗した場合は例外を維持し、安全側で503を返す。
+    const available: AvailableSlot[] = [];
+    for (const range of splitWorkshopDateRange(fromDate, toDate)) {
+      const rangeAvailability = await computeAvailableSlots(range.from, range.to);
+      available.push(...rangeAvailability);
+    }
     return NextResponse.json({ available });
   } catch (error) {
     if (error instanceof CalendarUnavailableError) {

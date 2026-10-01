@@ -8,13 +8,28 @@ const projectRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const moduleUrl = (path) => pathToFileURL(resolve(projectRoot, path)).href;
 
 test('公開予約は暦月で3か月後まで受け付ける', async () => {
-  const { ADVANCE_MONTHS, addCalendarMonthsToDateStr } = await import(
+  const { ADVANCE_MONTHS, addCalendarMonthsToDateStr, splitWorkshopDateRange } = await import(
     moduleUrl('src/lib/workshopBookingConfig.ts')
   );
 
   assert.equal(ADVANCE_MONTHS, 3);
   assert.equal(addCalendarMonthsToDateStr('2026-10-01', ADVANCE_MONTHS), '2027-01-01');
   assert.equal(addCalendarMonthsToDateStr('2026-01-31', ADVANCE_MONTHS), '2026-04-30');
+  assert.deepEqual(splitWorkshopDateRange('2026-10-01', '2027-01-01'), [
+    { from: '2026-10-01', to: '2026-10-31' },
+    { from: '2026-11-01', to: '2026-12-01' },
+    { from: '2026-12-02', to: '2027-01-01' },
+  ]);
+});
+
+test('公開空き枠APIは3か月分を31日ずつ確認する', async () => {
+  const availabilityRoute = await readFile(
+    resolve(projectRoot, 'src/app/api/workshop/availability/route.ts'),
+    'utf8'
+  );
+
+  assert.ok(availabilityRoute.includes('splitWorkshopDateRange(fromDate, toDate)'));
+  assert.ok(availabilityRoute.includes('computeAvailableSlots(range.from, range.to)'));
 });
 
 test('予約画面はサーバーの受付期間を使い、3か月より先を問い合わせへ案内する', async () => {
