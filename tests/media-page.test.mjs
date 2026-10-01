@@ -41,6 +41,9 @@ test('トップページには掲載実績への導線と抜粋がある', () =>
   assert.match(homeSection, /href="\/media"/);
   assert.equal(featuredMediaCoverage.length, 3);
   assert.ok(featuredMediaCoverage.every(item => item.category === 'テレビ'));
+  assert.ok(featuredMediaCoverage.every(item => item.image));
+  assert.ok(featuredMediaCoverage.some(item => item.id === 'stv-fukunaga-2025-08-26'));
+  assert.ok(!featuredMediaCoverage.some(item => item.id === 'nhk-hotnews-hokkaido-2025-09-22'));
 });
 
 test('メディア情報はフッターと検索エンジン向けのサイトマップに掲載する', () => {

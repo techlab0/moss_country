@@ -177,7 +177,7 @@ export const mediaCoverage: readonly MediaCoverageItem[] = [
   },
 ];
 
-/** トップページでは、日付の新しいテレビ掲載を3件だけ紹介する。 */
+/** トップページでは、画像があるテレビ掲載を日付の新しい順に3件だけ紹介する。 */
 export const featuredMediaCoverage = mediaCoverage
-  .filter((item) => item.category === 'テレビ')
+  .filter((item) => item.category === 'テレビ' && item.image)
   .slice(0, 3);
