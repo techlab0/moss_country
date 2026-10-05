@@ -204,6 +204,10 @@ export default function MobileWorkshopPage() {
     title: t(`scene${index + 1}Title`),
     description: t(`scene${index + 1}Desc`),
   }));
+  const workshopClients = t('clientsList')
+    .split('\n')
+    .map((name) => name.trim())
+    .filter(Boolean);
   const editableFeatures = features.map((feature, index) => ({
     ...feature,
     title: t(`feature${index + 1}Title`),
@@ -413,6 +417,41 @@ export default function MobileWorkshopPage() {
               </figure>
             ))}
           </div>
+        </Container>
+      </section>
+
+      {/* Workshop Clients */}
+      <section className="py-20">
+        <Container>
+          <div className="text-center mb-12">
+            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                {t('clientsTitle')}
+              </h2>
+              <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+              <p className="text-lg text-gray-100 max-w-3xl mx-auto whitespace-pre-line">
+                {t('clientsLead')}
+              </p>
+            </div>
+          </div>
+
+          {workshopClients.length > 0 ? (
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+              {workshopClients.map((name, index) => (
+                <li
+                  key={`${name}-${index}`}
+                  className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/95 px-5 py-4 text-gray-800 shadow-lg backdrop-blur-sm"
+                >
+                  <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-moss-green" aria-hidden="true"></span>
+                  <span className="font-medium leading-relaxed">{name}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="max-w-3xl mx-auto rounded-2xl border border-white/50 bg-white/90 px-6 py-5 text-center text-gray-600 shadow-lg backdrop-blur-sm">
+              掲載許可をいただいた企業・施設様を順次ご紹介します。
+            </p>
+          )}
         </Container>
       </section>
 

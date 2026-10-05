@@ -48,6 +48,11 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(registry.includes("path: '/workshop/mobile'"), '公開ページのパスを登録する');
   assert.ok(registry.includes('`menu${number}Image`'), 'メニュー画像を編集対象に含める');
   assert.ok(registry.includes('importantNotes'), '注意事項を編集対象に含める');
+  assert.ok(registry.includes("key: 'clientsList'"), '開催した企業・施設名の一覧を編集対象に含める');
+  assert.ok(registry.includes('1行につき企業・施設名を1件'), '開催実績は1行ずつ入力できることを案内する');
+  assert.ok(registry.includes('イオンモール札幌発寒'), '公開情報で確認した開催施設を初期表示する');
+  assert.ok(registry.includes('グループホーム文教の里'), '公開情報で確認した福祉施設を初期表示する');
+  assert.ok(registry.includes('百合が原公園'), '公開情報で確認した公共施設を初期表示する');
   assert.ok(registry.includes("default: '材料費 3,000円（税込）／名（フィギュア代込み）'"), '団体向け料金を資料の金額に合わせる');
   assert.ok(registry.includes('お好きなフィギュアを2つまで使用可能'), '団体向けプランのフィギュア数を案内する');
   assert.ok(registry.includes("'材料費|2,500円〜／名'"), '基本材料費を資料の金額に合わせる');
@@ -55,6 +60,8 @@ test('出張ワークショップをページ編集の対象として公開ペ�
   assert.ok(registry.includes('開催月の月末締め・翌月末払い'), '出張ワークショップの支払い条件を分かりやすく案内する');
   assert.ok(publicPage.includes("usePageContent('mobileWorkshop')"), '公開ページで保存内容を読み込む');
   assert.ok(publicPage.includes("img('aboutImage')"), '紹介画像の上書きを公開ページへ反映する');
+  assert.ok(publicPage.includes("t('clientsTitle')"), '公開ページに開催実績の見出しを表示する');
+  assert.ok(publicPage.includes('workshopClients.map'), '入力された企業・施設名を一覧表示する');
   assert.ok(adminPage.includes("get('page')"), 'URLから編集対象ページを選べる');
   const dedicatedPage = await readFile(resolve(projectRoot, 'src/app/admin/mobile-workshop/page.tsx'), 'utf8');
   assert.ok(adminLayout.includes("href: '/admin/mobile-workshop'"), '管理メニューに専用入口を表示する');
