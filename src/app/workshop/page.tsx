@@ -15,6 +15,7 @@ const planMeta = [
   { id: 'pop-jar', dimensions: '11cm × 6cm' },
   { id: 'glass-ball-m', dimensions: '15cm × 12cm' },
   { id: 'glass-ball-l', dimensions: 'サイズはコース詳細をご確認ください' },
+  { id: 'cliff-terrarium', dimensions: '8cm × 10cm' },
   { id: 'glass-box', dimensions: 'サイズはコース詳細をご確認ください' },
 ];
 
