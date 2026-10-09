@@ -31,7 +31,7 @@ export default function WorkshopPage() {
     image: img(`plan${i + 1}Image`),
     imageStyle: imgStyle(`plan${i + 1}Image`),
     isVisible: t(`plan${i + 1}Visible`) !== 'false',
-  })).filter(plan => plan.isVisible);
+  })).filter(plan => plan.id !== 'cliff-terrarium' && plan.isVisible);
   const testimonials = [1, 2, 3].map(i => ({
     name: t(`testimonial${i}Name`),
     age: t(`testimonial${i}Age`),
