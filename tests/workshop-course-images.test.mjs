@@ -24,6 +24,9 @@ test('公開画面はメイン画像からスワイプ対応ギャラリーを�
   const booking = read('src/app/workshop/booking/page.tsx');
 
   assert.match(gallery, /role="dialog"/);
+  assert.match(gallery, /createPortal/);
+  assert.match(gallery, /overflow-y-auto/);
+  assert.match(gallery, /h-full w-full object-contain/);
   assert.match(gallery, /onTouchStart/);
   assert.match(gallery, /onTouchEnd/);
   assert.match(gallery, /写真を見る/);
