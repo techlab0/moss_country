@@ -509,6 +509,9 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'plan6Duration', label: 'プラン6 所要時間', type: 'text', default: '' },
       { key: 'plan6Desc', label: 'プラン6 説明', type: 'textarea', default: '岩肌と苔が織りなす、崖のような立体構造。小さな容器に自然の迫力と静けさを閉じ込めました。' },
       { key: 'plan6Image', label: 'プラン6 画像', type: 'image', default: '/images/products/moss-country_products_bottle.png' },
+      { key: 'importantTitle', label: '注意事項 見出し', type: 'text', default: '注意事項' },
+      { key: 'importantNotes', label: '注意事項（1行1項目）', type: 'textarea', default: 'ワークショップ中の怪我、衣服の汚れ等につきましては、一切責任を負いかねますのでご了承ください。\n制作後の管理環境や経年変化により、植物の状態が変化する場合がございます。\n記録・広報を目的として、制作風景を撮影させていただく場合がございます。\n天候不良、災害、交通機関の影響等により開催が困難な場合、日程変更または中止をご相談させていただく場合がございます。' },
+      { key: 'importantFooter', label: '注意事項 末尾文', type: 'textarea', default: 'ご不明な点や詳細については、お気軽にお問い合わせください。' },
       { key: 'galleryTitle', label: '参加風景 見出し', type: 'text', default: 'ワークショップの参加風景' },
       { key: 'galleryLead', label: '参加風景 説明', type: 'textarea', default: '制作を楽しむひとときと、完成した苔テラリウムをご紹介します。初めての方にも、職人が丁寧にお手伝いします。' },
       ...Array.from({ length: 6 }, (_, index) => ({

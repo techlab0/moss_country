@@ -100,6 +100,10 @@ test('店舗ワークショップに参加風景と完成作品を表示する',
   assert.ok(registry.includes('/images/workshop/store/store-workshop-0'), '追加された店舗ワークショップ写真を初期表示する');
   assert.ok(workshopPage.includes("t('galleryTitle')"), '店舗ワークショップページに参加風景を表示する');
   assert.ok(workshopPage.includes('galleryImages.map'), '参加風景と完成作品を一覧表示する');
+  assert.ok(registry.includes("key: 'importantNotes'"), '店舗ワークショップの注意事項を管理画面から編集できる');
+  assert.ok(workshopPage.includes("t('importantTitle')"), '含まれるものの下に注意事項の見出しを表示する');
+  assert.ok(workshopPage.includes("t('importantNotes').split('\\n')"), '注意事項を1項目ずつ表示する');
+  assert.ok(workshopPage.includes("t('importantFooter')"), '注意事項の末尾案内を表示する');
 });
 
 test('ワークショップ予約の自動返信メールを管理画面から編集できる', async () => {

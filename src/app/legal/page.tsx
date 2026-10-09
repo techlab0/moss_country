@@ -120,7 +120,7 @@ export default async function LegalPage() {
                     <dt className="font-medium text-gray-700">引渡時期</dt>
                     <dd className="text-gray-900">
                       ご入金確認後、3-7営業日以内に発送いたします。<br />
-                      在庫切れの場合は別途ご連絡いたします。
+                      ご購入のタイミングによっては在庫切れとなり、ご購入をキャンセルさせていただく場合がございます。
                     </dd>
                   </div>
                 </div>

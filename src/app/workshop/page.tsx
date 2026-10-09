@@ -295,6 +295,23 @@ export default function WorkshopPage() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-4xl mx-auto mt-4 border border-white/20">
+              <h4 className="text-lg font-semibold text-white mb-4">{t('importantTitle')}</h4>
+              <div className="grid gap-3 text-left md:grid-cols-2">
+                {t('importantNotes').split('\n').filter(Boolean).map((note) => (
+                  <p
+                    key={note}
+                    className="rounded-lg border border-white/10 bg-white/10 p-4 text-sm leading-relaxed text-gray-100"
+                  >
+                    {note}
+                  </p>
+                ))}
+              </div>
+              <p className="mt-4 whitespace-pre-line text-left text-sm leading-relaxed text-gray-200">
+                {t('importantFooter')}
+              </p>
+            </div>
           </div>
         </Container>
       </section>
