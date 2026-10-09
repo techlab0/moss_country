@@ -3,6 +3,7 @@ import { writeClient } from '@/lib/sanity';
 import { verifyAdminSession } from '@/lib/auth';
 import { countUpcomingBookingsByPlan } from '@/lib/workshopBookings';
 import { todayJst } from '@/lib/salesAggregation';
+import type { WorkshopPlanCategory, WorkshopPlanStatus } from '@/lib/workshopCoursePresets';
 
 // ワークショップの予約プラン（Sanityの simpleWorkshop）の管理API。
 // これまではSanity Studioからしか編集できなかったため、管理画面から追加・編集・削除できるようにする。
@@ -16,15 +17,43 @@ interface PlanInput {
   description?: unknown;
   price?: unknown;
   duration?: unknown;
+  category?: unknown;
+  containerKey?: unknown;
+  containerKeys?: unknown;
+  containerName?: unknown;
+  courseName?: unknown;
+  mossTypes?: unknown;
+  includedItems?: unknown;
+  priceNote?: unknown;
+  status?: unknown;
+  sortOrder?: unknown;
+  pricingMode?: unknown;
+  participantPrice?: unknown;
+  nonParticipantPrice?: unknown;
 }
 
-/** 入力を検証して保存用の値に正規化する。エラー文言を返した場合は保存しない。 */
-export function normalizePlanInput(body: PlanInput): { error: string } | {
+interface NormalizedPlanInput {
   title: string;
   description: string;
   price: number;
   duration: string;
-} {
+  category: WorkshopPlanCategory;
+  containerKey: string;
+  containerKeys: string[];
+  containerName: string;
+  courseName: string;
+  mossTypes: string;
+  includedItems: string;
+  priceNote: string;
+  status: WorkshopPlanStatus;
+  sortOrder: number;
+  pricingMode: 'standard' | 'maintenance';
+  participantPrice?: number;
+  nonParticipantPrice?: number;
+}
+
+/** 入力を検証して保存用の値に正規化する。エラー文言を返した場合は保存しない。 */
+export function normalizePlanInput(body: PlanInput): { error: string } | NormalizedPlanInput {
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   if (!title) {
     return { error: 'プラン名は必須です' };
@@ -36,11 +65,47 @@ export function normalizePlanInput(body: PlanInput): { error: string } | {
     return { error: '料金は1円以上の数値で入力してください' };
   }
 
+  const statuses: WorkshopPlanStatus[] = ['active', 'paused', 'hidden'];
+  const status = statuses.includes(body.status as WorkshopPlanStatus)
+    ? body.status as WorkshopPlanStatus
+    : 'active';
+  const categories: WorkshopPlanCategory[] = ['terrarium', 'maintenance', 'legacy'];
+  const category = categories.includes(body.category as WorkshopPlanCategory)
+    ? body.category as WorkshopPlanCategory
+    : 'legacy';
+  const sortOrder = Number(body.sortOrder);
+  const pricingMode = body.pricingMode === 'maintenance' ? 'maintenance' : 'standard';
+  const participantPrice = Number(body.participantPrice);
+  const nonParticipantPrice = Number(body.nonParticipantPrice);
+  if (pricingMode === 'maintenance' && (
+    !Number.isFinite(participantPrice) || participantPrice <= 0 ||
+    !Number.isFinite(nonParticipantPrice) || nonParticipantPrice <= 0
+  )) {
+    return { error: 'メンテナンス会は基本コース参加者料金と未参加料金を入力してください' };
+  }
+
   return {
     title,
     description: typeof body.description === 'string' ? body.description.trim() : '',
     price: Math.round(price),
     duration: typeof body.duration === 'string' ? body.duration.trim() : '',
+    category,
+    containerKey: typeof body.containerKey === 'string' ? body.containerKey.trim() : '',
+    containerKeys: Array.isArray(body.containerKeys)
+      ? body.containerKeys.filter((value): value is string => typeof value === 'string').map(value => value.trim()).filter(Boolean)
+      : [],
+    containerName: typeof body.containerName === 'string' ? body.containerName.trim() : '',
+    courseName: typeof body.courseName === 'string' ? body.courseName.trim() : '',
+    mossTypes: typeof body.mossTypes === 'string' ? body.mossTypes.trim() : '',
+    includedItems: typeof body.includedItems === 'string' ? body.includedItems.trim() : '',
+    priceNote: typeof body.priceNote === 'string' ? body.priceNote.trim() : '',
+    status,
+    sortOrder: Number.isFinite(sortOrder) ? Math.round(sortOrder) : 0,
+    pricingMode,
+    ...(pricingMode === 'maintenance' ? {
+      participantPrice: Math.round(participantPrice),
+      nonParticipantPrice: Math.round(nonParticipantPrice),
+    } : {}),
   };
 }
 
@@ -53,12 +118,25 @@ export async function GET(request: NextRequest) {
 
     // 下書き（drafts.*）は公開側の一覧に出ないため、管理画面でも除外して実態を揃える
     const plans = await writeClient.fetch(`
-      *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
+      *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(sortOrder asc, title asc) {
         _id,
         title,
         description,
         price,
-        duration
+        duration,
+        category,
+        containerKey,
+        containerKeys,
+        containerName,
+        courseName,
+        mossTypes,
+        includedItems,
+        priceNote,
+        status,
+        sortOrder,
+        pricingMode,
+        participantPrice,
+        nonParticipantPrice
       }
     `);
 

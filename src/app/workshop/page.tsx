@@ -6,14 +6,16 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
+import { getSimpleWorkshops } from '@/lib/sanity';
+import type { SimpleWorkshop } from '@/types/sanity';
 
 const planMeta = [
   { id: 'glass-canister-ss', dimensions: '6cm × 11cm' },
   { id: 'glass-ball-s', dimensions: '10cm × 8cm' },
   { id: 'pop-jar', dimensions: '11cm × 6cm' },
   { id: 'glass-ball-m', dimensions: '15cm × 12cm' },
-  { id: 'glass-ball-box-ll', dimensions: '15cm × 12cm' },
-  { id: 'cliff-terrarium', dimensions: '8cm × 10cm' },
+  { id: 'glass-ball-l', dimensions: 'サイズはコース詳細をご確認ください' },
+  { id: 'glass-box', dimensions: 'サイズはコース詳細をご確認ください' },
 ];
 
 export default function WorkshopPage() {
@@ -53,6 +55,15 @@ export default function WorkshopPage() {
   const [heroImageUrl, setHeroImageUrl] = useState<string>(defaultHeroImages['workshop'].src);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(defaultBackgroundImages['workshop'].src);
   const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState<string>(defaultBackgroundImages['workshop-mobile'].src);
+  const [coursePlans, setCoursePlans] = useState<SimpleWorkshop[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getSimpleWorkshops().then((plans) => {
+      if (mounted) setCoursePlans(plans);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   // 画面サイズを監視してモバイルかどうかを判定
   useEffect(() => {
@@ -260,10 +271,53 @@ export default function WorkshopPage() {
                     </p>
                   )}
                   <p className="text-gray-600 text-sm md:text-base whitespace-pre-line">{size.description}</p>
+                  {coursePlans.filter((plan) => plan.category === 'terrarium' && (plan.containerKey === size.id || plan.containerKeys?.includes(size.id))).map((plan) => (
+                    <div key={plan._id} className="mt-4 rounded-lg border border-moss-green/20 bg-light-green/10 p-3 text-left">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-moss-green">{plan.courseName || plan.title}</h4>
+                        {plan.status === 'paused' && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">受付停止中</span>}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-600">{plan.description}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="text-xs text-gray-500">{plan.duration}</span>
+                        <span className="font-bold text-moss-green">¥{(plan.price || 0).toLocaleString()}</span>
+                      </div>
+                      {plan.status !== 'paused' && (
+                        <Link href={`/workshop/booking?planId=${encodeURIComponent(plan._id)}`} className="mt-3 block rounded-md bg-moss-green px-3 py-2 text-center text-xs font-semibold text-white hover:opacity-90">
+                          このコースを予約
+                        </Link>
+                      )}
+                    </div>
+                  ))}
                 </CardHeader>
               </Card>
             ))}
           </div>
+
+          {coursePlans.some((plan) => plan.category === 'maintenance') && (
+            <div className="mx-auto mt-10 max-w-4xl rounded-xl border border-white/20 bg-black/50 p-6 text-white backdrop-blur-sm">
+              <h3 className="text-2xl font-bold">メンテナンス会</h3>
+              <p className="mt-2 text-sm text-gray-200">予約制です。苔以外の植物は別売りとなります。</p>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {coursePlans.filter((plan) => plan.category === 'maintenance').map((plan) => (
+                  <div key={plan._id} className="rounded-lg border border-white/15 bg-white/10 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold">{plan.containerName || plan.title}</h4>
+                      {plan.status === 'paused' && <span className="rounded-full bg-amber-200/20 px-2 py-1 text-xs text-amber-100">受付停止中</span>}
+                    </div>
+                    <p className="mt-2 text-sm">基本コース参加者：¥{(plan.participantPrice || 0).toLocaleString()}</p>
+                    <p className="text-sm">未参加：¥{(plan.nonParticipantPrice || 0).toLocaleString()}</p>
+                    {plan.duration === '要相談' && <p className="mt-1 text-xs text-amber-100">※要相談</p>}
+                    {plan.status !== 'paused' && (
+                      <Link href={`/workshop/booking?planId=${encodeURIComponent(plan._id)}`} className="mt-3 block rounded-md border border-white/50 px-3 py-2 text-center text-xs font-semibold hover:bg-white hover:text-moss-green">
+                        料金区分を選んで予約
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <div className="text-center mt-8">
             <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">

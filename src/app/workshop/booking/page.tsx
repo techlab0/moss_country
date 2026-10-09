@@ -8,6 +8,7 @@ import { SquarePaymentForm } from '@/components/ui/SquarePaymentForm';
 import { getSimpleWorkshops } from '@/lib/sanity';
 import { CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import type { SimpleWorkshop } from '@/types/sanity';
+import { workshopContainerOrder } from '@/lib/workshopCoursePresets';
 
 // 既存のワークショップページ（src/app/workshop/page.tsx）と同じ問い合わせ導線を流用する
 const JALAN_URL =
@@ -35,6 +36,7 @@ interface BookingResult {
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
+type MaintenanceParticipation = 'participant' | 'non_participant';
 
 const STEP_LABELS: Record<Step, string> = {
   1: 'プラン選択',
@@ -84,12 +86,21 @@ export default function WorkshopBookingPage() {
   const [plans, setPlans] = useState<SimpleWorkshop[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<SimpleWorkshop | null>(null);
+  const [maintenanceParticipation, setMaintenanceParticipation] = useState<MaintenanceParticipation | null>(null);
 
   useEffect(() => {
     let mounted = true;
     getSimpleWorkshops()
       .then((data) => {
-        if (mounted) setPlans(data);
+        if (mounted) {
+          setPlans(data);
+          const requestedPlanId = new URLSearchParams(window.location.search).get('planId');
+          const requestedPlan = data.find((plan) => plan._id === requestedPlanId);
+          if (requestedPlan && requestedPlan.status !== 'paused' && requestedPlan.pricingMode !== 'maintenance') {
+            setSelectedPlan(requestedPlan);
+            setStep(2);
+          }
+        }
       })
       .finally(() => {
         if (mounted) setPlansLoading(false);
@@ -175,13 +186,40 @@ export default function WorkshopBookingPage() {
   // ---- 完了 ----
   const [result, setResult] = useState<BookingResult | null>(null);
 
-  const total = selectedPlan?.price ? selectedPlan.price * partySize : 0;
+  const selectedUnitPrice = selectedPlan?.pricingMode === 'maintenance'
+    ? maintenanceParticipation === 'participant'
+      ? selectedPlan.participantPrice || 0
+      : maintenanceParticipation === 'non_participant'
+        ? selectedPlan.nonParticipantPrice || 0
+        : 0
+    : selectedPlan?.price || 0;
+  const total = selectedUnitPrice * partySize;
+  const selectedPlanLabel = selectedPlan
+    ? `${selectedPlan.title}${selectedPlan.pricingMode === 'maintenance'
+      ? maintenanceParticipation === 'participant' ? '（基本コース参加者）' : '（基本コース未参加）'
+      : ''}`
+    : '';
+
+  const groupedPlans = useMemo(() => {
+    const groups = new Map<string, SimpleWorkshop[]>();
+    for (const plan of plans) {
+      const key = plan.containerKey || 'other';
+      groups.set(key, [...(groups.get(key) || []), plan]);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      const ai = workshopContainerOrder.indexOf(a);
+      const bi = workshopContainerOrder.indexOf(b);
+      return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    });
+  }, [plans]);
 
   const squareApplicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
   const squareLocationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || 'main';
 
-  const handleSelectPlan = (plan: SimpleWorkshop) => {
+  const handleSelectPlan = (plan: SimpleWorkshop, participation: MaintenanceParticipation | null = null) => {
+    if (plan.status === 'paused') return;
     setSelectedPlan(plan);
+    setMaintenanceParticipation(participation);
     setSelectedSlot(null);
     setAvailability([]);
     setStep(2);
@@ -232,6 +270,7 @@ export default function WorkshopBookingPage() {
           paymentMethod,
           idempotencyKey: idempotencyKeyRef.current,
           notes: notes.trim() || undefined,
+          ...(selectedPlan.pricingMode === 'maintenance' ? { maintenanceParticipation } : {}),
           ...(paymentToken ? { paymentToken } : {}),
         }),
       });
@@ -296,7 +335,7 @@ export default function WorkshopBookingPage() {
               </div>
               <div className="flex justify-between text-stone-300 text-sm">
                 <span>プラン</span>
-                <span className="text-white font-medium">{selectedPlan?.title}</span>
+                <span className="text-white font-medium">{selectedPlanLabel}</span>
               </div>
               <div className="flex justify-between text-stone-300 text-sm">
                 <span>日時</span>
@@ -356,24 +395,45 @@ export default function WorkshopBookingPage() {
               ) : plans.length === 0 ? (
                 <UnavailableNotice message="現在ご案内できるプランがありません。恐れ入りますが、下記よりお問い合わせください。" />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {plans.map((plan) => (
-                    <button
-                      key={plan._id}
-                      onClick={() => handleSelectPlan(plan)}
-                      className="text-left bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800 hover:border-emerald-500 transition-colors"
-                    >
-                      <h3 className="text-lg font-medium text-white mb-2">{plan.title}</h3>
-                      <p className="text-stone-400 text-sm mb-4 whitespace-pre-line line-clamp-3">
-                        {plan.description}
-                      </p>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-stone-400">{plan.duration || '-'}</span>
-                        <span className="text-emerald-400 font-bold text-lg">
-                          {plan.price ? `¥${plan.price.toLocaleString()}` : 'お問い合わせください'}
-                        </span>
+                <div className="space-y-8">
+                  {groupedPlans.map(([containerKey, containerPlans]) => (
+                    <section key={containerKey}>
+                      <h2 className="mb-3 text-xl font-medium text-white">
+                        {containerPlans[0]?.containerName || 'ワークショップ'}
+                      </h2>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {containerPlans.map((plan) => {
+                          const paused = plan.status === 'paused';
+                          return (
+                            <div key={plan._id} className={`text-left bg-stone-900/50 rounded-2xl p-6 border ${paused ? 'border-stone-800 opacity-70' : 'border-stone-800'}`}>
+                              <div className="flex items-start justify-between gap-3">
+                                <h3 className="text-lg font-medium text-white mb-2">{plan.courseName || plan.title}</h3>
+                                {paused && <span className="shrink-0 rounded-full bg-amber-900/60 px-2 py-1 text-xs text-amber-200">受付停止中</span>}
+                              </div>
+                              <p className="text-stone-400 text-sm mb-3 whitespace-pre-line">{plan.description}</p>
+                              {plan.mossTypes && <p className="text-xs text-stone-500 mb-3 whitespace-pre-line">使用する苔：{plan.mossTypes.replace(/\n/g, '・')}</p>}
+                              {plan.includedItems && <p className="text-xs text-emerald-200 mb-3 whitespace-pre-line">付属：{plan.includedItems.replace(/\n/g, '・')}</p>}
+                              {plan.pricingMode === 'maintenance' ? (
+                                <div className="space-y-2">
+                                  <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan, 'participant')} className="w-full rounded-lg border border-emerald-700 px-3 py-2 text-left text-sm text-white hover:bg-emerald-900/30 disabled:cursor-not-allowed">
+                                    基本コース参加者 <strong className="float-right text-emerald-400">¥{(plan.participantPrice || 0).toLocaleString()}</strong>
+                                  </button>
+                                  <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan, 'non_participant')} className="w-full rounded-lg border border-stone-700 px-3 py-2 text-left text-sm text-white hover:border-emerald-600 disabled:cursor-not-allowed">
+                                    基本コース未参加 <strong className="float-right text-emerald-400">¥{(plan.nonParticipantPrice || 0).toLocaleString()}</strong>
+                                  </button>
+                                </div>
+                              ) : (
+                                <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan)} className="w-full rounded-lg border border-emerald-700 px-3 py-2 text-left text-sm text-stone-300 hover:bg-emerald-900/30 disabled:cursor-not-allowed">
+                                  {plan.duration || '所要時間はお問い合わせください'}
+                                  <strong className="float-right text-lg text-emerald-400">¥{(plan.price || 0).toLocaleString()}</strong>
+                                </button>
+                              )}
+                              {plan.priceNote && <p className="mt-3 text-xs text-stone-500">※{plan.priceNote}</p>}
+                            </div>
+                          );
+                        })}
                       </div>
-                    </button>
+                    </section>
                   ))}
                 </div>
               )}
@@ -386,7 +446,7 @@ export default function WorkshopBookingPage() {
               <div className="bg-stone-900/50 rounded-xl p-4 border border-stone-800 flex items-center justify-between">
                 <div>
                   <p className="text-stone-400 text-xs">選択中のプラン</p>
-                  <p className="text-white font-medium">{selectedPlan.title}</p>
+                  <p className="text-white font-medium">{selectedPlanLabel}</p>
                 </div>
                 <button className="text-emerald-400 text-sm hover:underline" onClick={() => setStep(1)}>
                   変更する
@@ -557,7 +617,7 @@ export default function WorkshopBookingPage() {
                 <h2 className="text-white font-medium mb-2">ご予約内容の確認</h2>
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-400">プラン</span>
-                  <span className="text-white">{selectedPlan.title}</span>
+                  <span className="text-white">{selectedPlanLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-400">日時</span>

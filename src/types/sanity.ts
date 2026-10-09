@@ -4,6 +4,19 @@ export interface SimpleWorkshop {
   description: string
   price?: number
   duration?: string
+  category?: 'terrarium' | 'maintenance' | 'legacy'
+  containerKey?: string
+  containerKeys?: string[]
+  containerName?: string
+  courseName?: string
+  mossTypes?: string
+  includedItems?: string
+  priceNote?: string
+  status?: 'active' | 'paused' | 'hidden'
+  sortOrder?: number
+  pricingMode?: 'standard' | 'maintenance'
+  participantPrice?: number
+  nonParticipantPrice?: number
 }
 
 export interface Product {

@@ -47,17 +47,32 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
   try {
     const [workshops, hiddenIds] = await Promise.all([
       client.fetch(`
-      *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(title asc) {
+      *[_type == "simpleWorkshop" && !(_id in path("drafts.**"))] | order(sortOrder asc, title asc) {
         _id,
         title,
         description,
         price,
-        duration
+        duration,
+        category,
+        containerKey,
+        containerKeys,
+        containerName,
+        courseName,
+        mossTypes,
+        includedItems,
+        priceNote,
+        status,
+        sortOrder,
+        pricingMode,
+        participantPrice,
+        nonParticipantPrice
       }
       `),
       getHiddenWorkshopPlanIds(),
     ])
-    return (workshops as SimpleWorkshop[]).filter(workshop => !hiddenIds.includes(workshop._id))
+    return (workshops as SimpleWorkshop[]).filter(workshop =>
+      workshop.status !== 'hidden' && !hiddenIds.includes(workshop._id)
+    )
   } catch (error) {
     console.warn('Failed to fetch workshops from Sanity:', error)
     return []
@@ -77,10 +92,25 @@ export async function getSimpleWorkshopById(id: string): Promise<SimpleWorkshop 
         title,
         description,
         price,
-        duration
+        duration,
+        category,
+        containerKey,
+        containerKeys,
+        containerName,
+        courseName,
+        mossTypes,
+        includedItems,
+        priceNote,
+        status,
+        sortOrder,
+        pricingMode,
+        participantPrice,
+        nonParticipantPrice
       }`,
       { id }
     )
+    // status未設定の従来プランは互換性のため受付中として扱う。
+    if (workshop?.status === 'paused' || workshop?.status === 'hidden') return null
     return workshop || null
   } catch (error) {
     console.warn(`Failed to fetch workshop from Sanity (id: ${id}):`, error)

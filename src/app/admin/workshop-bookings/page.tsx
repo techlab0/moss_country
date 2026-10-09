@@ -570,6 +570,19 @@ interface WorkshopPlan {
   description?: string;
   price?: number;
   duration?: string;
+  category?: 'terrarium' | 'maintenance' | 'legacy';
+  containerKey?: string;
+  containerKeys?: string[];
+  containerName?: string;
+  courseName?: string;
+  mossTypes?: string;
+  includedItems?: string;
+  priceNote?: string;
+  status?: 'active' | 'paused' | 'hidden';
+  sortOrder?: number;
+  pricingMode?: 'standard' | 'maintenance';
+  participantPrice?: number;
+  nonParticipantPrice?: number;
   upcomingBookingCount?: number;
 }
 
@@ -578,9 +591,40 @@ interface PlanFormState {
   description: string;
   price: string;
   duration: string;
+  category: 'terrarium' | 'maintenance' | 'legacy';
+  containerKey: string;
+  containerKeys: string;
+  containerName: string;
+  courseName: string;
+  mossTypes: string;
+  includedItems: string;
+  priceNote: string;
+  status: 'active' | 'paused' | 'hidden';
+  sortOrder: string;
+  pricingMode: 'standard' | 'maintenance';
+  participantPrice: string;
+  nonParticipantPrice: string;
 }
 
-const emptyPlanForm: PlanFormState = { title: '', description: '', price: '', duration: '' };
+const emptyPlanForm: PlanFormState = {
+  title: '',
+  description: '',
+  price: '',
+  duration: '',
+  category: 'terrarium',
+  containerKey: '',
+  containerKeys: '',
+  containerName: '',
+  courseName: '',
+  mossTypes: '',
+  includedItems: '',
+  priceNote: '',
+  status: 'hidden',
+  sortOrder: '0',
+  pricingMode: 'standard',
+  participantPrice: '',
+  nonParticipantPrice: '',
+};
 
 function PlanSettingsTab() {
   const [plans, setPlans] = useState<WorkshopPlan[]>([]);
@@ -624,6 +668,19 @@ function PlanSettingsTab() {
       description: plan.description || '',
       price: plan.price != null ? String(plan.price) : '',
       duration: plan.duration || '',
+      category: plan.category || 'legacy',
+      containerKey: plan.containerKey || '',
+      containerKeys: (plan.containerKeys || []).join('\n'),
+      containerName: plan.containerName || '',
+      courseName: plan.courseName || '',
+      mossTypes: plan.mossTypes || '',
+      includedItems: plan.includedItems || '',
+      priceNote: plan.priceNote || '',
+      status: plan.status || 'active',
+      sortOrder: plan.sortOrder != null ? String(plan.sortOrder) : '0',
+      pricingMode: plan.pricingMode || 'standard',
+      participantPrice: plan.participantPrice != null ? String(plan.participantPrice) : '',
+      nonParticipantPrice: plan.nonParticipantPrice != null ? String(plan.nonParticipantPrice) : '',
     });
   };
 
@@ -645,6 +702,19 @@ function PlanSettingsTab() {
           description: form.description,
           price: Number(form.price),
           duration: form.duration,
+          category: form.category,
+          containerKey: form.containerKey,
+          containerKeys: form.containerKeys.split(/[\n,]/).map((value) => value.trim()).filter(Boolean),
+          containerName: form.containerName,
+          courseName: form.courseName,
+          mossTypes: form.mossTypes,
+          includedItems: form.includedItems,
+          priceNote: form.priceNote,
+          status: form.status,
+          sortOrder: Number(form.sortOrder),
+          pricingMode: form.pricingMode,
+          participantPrice: Number(form.participantPrice),
+          nonParticipantPrice: Number(form.nonParticipantPrice),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -684,6 +754,24 @@ function PlanSettingsTab() {
     }
   };
 
+  const handleInitializePresets = async () => {
+    if (!window.confirm('指定されたコース22件を、すべて「非表示」で初期登録しますか？既に登録済みのコースは上書きしません。')) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/workshop-plans/presets', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '初期登録に失敗しました');
+      alert('指定コースを非表示で初期登録しました。公開するコースだけ編集画面で「受付中」に変更してください。');
+      await fetchPlans();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '初期登録に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const isFormOpen = creating || editingId !== null;
 
   return (
@@ -692,14 +780,24 @@ function PlanSettingsTab() {
         <p className="text-sm text-gray-600">
           予約画面で選べるプランを管理します。ここで設定した料金が、お客様の予約時の請求額になります。
         </p>
-        <button
-          type="button"
-          onClick={startCreate}
-          disabled={saving}
-          className="px-4 py-2 text-sm font-medium text-white bg-moss-green rounded-md hover:opacity-90 disabled:opacity-50"
-        >
-          プランを追加
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleInitializePresets}
+            disabled={saving}
+            className="px-4 py-2 text-sm font-medium text-moss-green border border-moss-green rounded-md hover:bg-green-50 disabled:opacity-50"
+          >
+            指定コースを非表示で初期登録
+          </button>
+          <button
+            type="button"
+            onClick={startCreate}
+            disabled={saving}
+            className="px-4 py-2 text-sm font-medium text-white bg-moss-green rounded-md hover:opacity-90 disabled:opacity-50"
+          >
+            プランを追加
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -721,6 +819,42 @@ function PlanSettingsTab() {
               />
             </div>
             <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">受付状態</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as PlanFormState['status'] }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="active">受付中（公開）</option>
+                <option value="paused">受付停止中（表示のみ）</option>
+                <option value="hidden">非表示</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">種類</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value as PlanFormState['category'] }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="terrarium">苔テラリウム</option>
+                <option value="maintenance">メンテナンス会</option>
+                <option value="legacy">従来プラン</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">料金形式</label>
+              <select
+                value={form.pricingMode}
+                onChange={(e) => setForm((prev) => ({ ...prev, pricingMode: e.target.value as PlanFormState['pricingMode'] }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="standard">通常料金</option>
+                <option value="maintenance">メンテナンス会（参加歴別）</option>
+              </select>
+            </div>
+            {form.pricingMode === 'standard' ? (
+            <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">料金（円・1名あたり） *</label>
               <input
                 type="number"
@@ -730,6 +864,34 @@ function PlanSettingsTab() {
                 placeholder="4000"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
               />
+            </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">基本コース参加者料金 *</label>
+                  <input type="number" min={1} value={form.participantPrice} onChange={(e) => setForm((prev) => ({ ...prev, participantPrice: e.target.value, price: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">基本コース未参加料金 *</label>
+                  <input type="number" min={1} value={form.nonParticipantPrice} onChange={(e) => setForm((prev) => ({ ...prev, nonParticipantPrice: e.target.value, price: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">容器・サイズ名</label>
+              <input type="text" value={form.containerName} onChange={(e) => setForm((prev) => ({ ...prev, containerName: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">コース名</label>
+              <input type="text" value={form.courseName} onChange={(e) => setForm((prev) => ({ ...prev, courseName: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">容器識別子</label>
+              <input type="text" value={form.containerKey} onChange={(e) => setForm((prev) => ({ ...prev, containerKey: e.target.value }))} placeholder="glass-ball-s" className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">対応する容器識別子（複数時は改行）</label>
+              <textarea value={form.containerKeys} onChange={(e) => setForm((prev) => ({ ...prev, containerKeys: e.target.value }))} rows={2} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">所要時間</label>
@@ -750,6 +912,22 @@ function PlanSettingsTab() {
                 placeholder="予約画面に表示される説明文です"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">使用する苔（1行1種類）</label>
+              <textarea value={form.mossTypes} onChange={(e) => setForm((prev) => ({ ...prev, mossTypes: e.target.value }))} rows={4} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">付属品（1行1項目）</label>
+              <textarea value={form.includedItems} onChange={(e) => setForm((prev) => ({ ...prev, includedItems: e.target.value }))} rows={4} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">別売り・追加料金の案内</label>
+              <textarea value={form.priceNote} onChange={(e) => setForm((prev) => ({ ...prev, priceNote: e.target.value }))} rows={2} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">表示順</label>
+              <input type="number" value={form.sortOrder} onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -785,6 +963,7 @@ function PlanSettingsTab() {
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="px-4 py-2 text-left font-medium">プラン名</th>
+                <th className="px-4 py-2 text-left font-medium">状態</th>
                 <th className="px-4 py-2 text-right font-medium">料金</th>
                 <th className="px-4 py-2 text-left font-medium">所要時間</th>
                 <th className="px-4 py-2 text-left font-medium">説明</th>
@@ -796,8 +975,21 @@ function PlanSettingsTab() {
               {plans.map((plan) => (
                 <tr key={plan._id}>
                   <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{plan.title}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      (plan.status || 'active') === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : plan.status === 'paused'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {(plan.status || 'active') === 'active' ? '受付中' : plan.status === 'paused' ? '受付停止中' : '非表示'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-right text-gray-900 whitespace-nowrap">
-                    {plan.price != null ? `¥${plan.price.toLocaleString()}` : '—'}
+                    {plan.pricingMode === 'maintenance'
+                      ? `参加者 ¥${(plan.participantPrice || 0).toLocaleString()} / 未参加 ¥${(plan.nonParticipantPrice || 0).toLocaleString()}`
+                      : plan.price != null ? `¥${plan.price.toLocaleString()}` : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{plan.duration || '—'}</td>
                   <td className="px-4 py-3 text-gray-600 max-w-md">{plan.description || '—'}</td>

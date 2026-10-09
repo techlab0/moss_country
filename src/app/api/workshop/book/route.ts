@@ -61,6 +61,7 @@ interface BookRequestBody {
   notes?: string;
   paymentToken?: { token?: string };
   idempotencyKey?: string;
+  maintenanceParticipation?: 'participant' | 'non_participant';
 }
 
 /**
@@ -329,11 +330,25 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json({ error: '指定されたワークショッププランが見つかりません' }, { status: 400 });
     }
-    if (!plan.price || plan.price <= 0) {
+    const isMaintenance = plan.pricingMode === 'maintenance';
+    const maintenanceParticipation = body.maintenanceParticipation;
+    if (isMaintenance && maintenanceParticipation !== 'participant' && maintenanceParticipation !== 'non_participant') {
+      return NextResponse.json({ error: 'メンテナンス会の料金区分を選択してください' }, { status: 400 });
+    }
+    const unitPrice = isMaintenance
+      ? maintenanceParticipation === 'participant'
+        ? plan.participantPrice
+        : plan.nonParticipantPrice
+      : plan.price;
+    if (!unitPrice || unitPrice <= 0) {
       return NextResponse.json({ error: 'このプランは現在予約を受け付けていません（価格未設定）' }, { status: 400 });
     }
 
-    const total = plan.price * (partySize as number);
+    const participationLabel = isMaintenance
+      ? maintenanceParticipation === 'participant' ? '基本コース参加者' : '基本コース未参加'
+      : null;
+    const bookedPlanName = participationLabel ? `${plan.title}（${participationLabel}）` : plan.title;
+    const total = unitPrice * (partySize as number);
 
     // ---- 空き枠の再検証（一覧表示と同じロジック。表示後に他の予約が入っている可能性があるため必須） ----
     try {
@@ -363,7 +378,7 @@ export async function POST(request: NextRequest) {
       reservation = await reserveBookingSlot({
         bookingNumber,
         workshopPlanId: plan._id,
-        workshopPlanName: plan.title,
+        workshopPlanName: bookedPlanName,
         date,
         startTime,
         endTime,
@@ -439,10 +454,10 @@ export async function POST(request: NextRequest) {
       const event = await createBookingEvent({
         eventId: requestedEventId,
         idempotencyKey,
-        summary: `WS予約: ${plan.title} / ${customerName} / ${partySize}名`,
+        summary: `WS予約: ${bookedPlanName} / ${customerName} / ${partySize}名`,
         description: [
           `予約番号: ${bookingNumber}`,
-          `プラン: ${plan.title}`,
+          `プラン: ${bookedPlanName}`,
           `人数: ${partySize}名`,
           `氏名: ${customerName}`,
           `メール: ${customerEmail}`,
@@ -587,7 +602,7 @@ export async function POST(request: NextRequest) {
             merchantPaymentId: bookingNumber,
             amountJpy: total,
             orderDescription: buildPaymentDescription({
-              items: [{ name: plan.title, quantity: partySize as number, price: plan.price }],
+              items: [{ name: bookedPlanName, quantity: partySize as number, price: unitPrice }],
               total,
             }),
             redirectUrl: `${siteBaseUrl}/workshop/booking/paypay/return?booking=${encodeURIComponent(bookingNumber)}`,
@@ -616,7 +631,7 @@ export async function POST(request: NextRequest) {
     // ---- 確認メール送信（顧客・店舗。失敗しても例外を投げない sendMail のためtry不要） ----
     const emailVariables = {
       bookingNumber,
-      planName: plan.title,
+      planName: bookedPlanName,
       date,
       startTime,
       endTime,
@@ -677,7 +692,7 @@ ${defaultEmailBody}` : defaultEmailBody;
           customerEmail: customerEmail || '',
           paymentMethod:
             paymentMethod === 'credit_card' ? 'クレジット(オンライン)' : paymentMethod === 'paypay' ? 'PayPay(オンライン)' : '現地払い',
-          itemsSummary: `${plan.title}×${partySize}名`,
+          itemsSummary: `${bookedPlanName}×${partySize}名`,
           subtotal: total,
           shipping: 0,
           tax: 0,
