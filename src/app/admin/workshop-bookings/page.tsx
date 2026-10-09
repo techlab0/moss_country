@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react';
 import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 
@@ -634,6 +634,15 @@ function PlanSettingsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<PlanFormState>(emptyPlanForm);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // 一覧下部の「編集」を押した場合も、画面上部に開く編集欄をすぐ確認できるようにする。
+  useEffect(() => {
+    if (!creating && editingId === null) return;
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [creating, editingId]);
 
   const fetchPlans = useCallback(async () => {
     setLoading(true);
@@ -805,7 +814,7 @@ function PlanSettingsTab() {
       )}
 
       {isFormOpen && (
-        <div className="bg-white shadow rounded-lg p-4 space-y-3">
+        <div ref={formRef} className="scroll-mt-24 bg-white shadow rounded-lg p-4 space-y-3">
           <h3 className="font-medium text-gray-900">{creating ? 'プランを追加' : 'プランを編集'}</h3>
           <div className="grid md:grid-cols-2 gap-3">
             <div>

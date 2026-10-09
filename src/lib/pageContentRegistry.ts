@@ -510,7 +510,7 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'plan6Desc', label: 'プラン6 説明', type: 'textarea', default: '岩肌と苔が織りなす、崖のような立体構造。ポップジャーの中に自然の迫力と静けさを閉じ込めます。' },
       { key: 'plan6Image', label: 'プラン6 画像', type: 'image', default: '/images/products/moss-country_products_bottle.png' },
       { key: 'plan7Name', label: 'プラン7 名称', type: 'text', default: 'ガラスボックス' },
-      { key: 'plan7Visible', label: 'プラン7を表示する', type: 'boolean', default: 'true' },
+      { key: 'plan7Visible', label: 'プラン7を表示する', type: 'boolean', default: 'false' },
       { key: 'plan7BookingPlanId', label: 'プラン7に対応する予約プラン', type: 'workshopPlan', default: '' },
       { key: 'plan7Price', label: 'プラン7 価格', type: 'text', default: '¥18,000' },
       { key: 'plan7Duration', label: 'プラン7 所要時間', type: 'text', default: '' },
