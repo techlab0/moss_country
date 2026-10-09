@@ -8,6 +8,7 @@ import { defaultHeroImages, defaultBackgroundImages } from '@/lib/imageUtils';
 import { usePageContent } from '@/hooks/usePageContent';
 import { getSimpleWorkshops } from '@/lib/sanity';
 import type { SimpleWorkshop } from '@/types/sanity';
+import { WorkshopCourseGallery } from '@/components/workshop/WorkshopCourseGallery';
 
 const planMeta = [
   { id: 'glass-canister-ss', dimensions: '6cm × 11cm' },
@@ -277,6 +278,7 @@ export default function WorkshopPage() {
                   <p className="text-gray-600 text-sm md:text-base whitespace-pre-line">{size.description}</p>
                   {sizeCourses.map((plan) => (
                     <div key={plan._id} className="mt-4 rounded-lg border border-moss-green/20 bg-light-green/10 p-3 text-left">
+                      <WorkshopCourseGallery images={plan.courseImages} courseName={plan.courseName || plan.title} compact />
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="text-sm font-semibold text-moss-green">{plan.courseName || plan.title}</h4>
                         {plan.status === 'paused' && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">受付停止中</span>}

@@ -72,6 +72,21 @@ export const simpleWorkshop = defineType({
     }),
     defineField({ name: 'participantPrice', title: '基本コース参加者料金', type: 'number' }),
     defineField({ name: 'nonParticipantPrice', title: '基本コース未参加料金', type: 'number' }),
+    defineField({
+      name: 'courseImages',
+      title: 'コース画像（先頭がメイン・最大5枚）',
+      type: 'array',
+      validation: (Rule) => Rule.max(5),
+      of: [
+        {
+          type: 'image',
+          options: { hotspot: true },
+          fields: [
+            { name: 'alt', title: '画像の説明', type: 'string' },
+          ],
+        },
+      ],
+    }),
   ],
   preview: {
     select: {

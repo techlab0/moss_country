@@ -3,6 +3,9 @@
 import { Fragment, useState, useEffect, useCallback, useRef } from 'react';
 import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import { shortenPlanName } from '@/lib/workshopPlanDisplay';
+import { compressImageForUpload } from '@/lib/imageCompress';
+import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
+import type { WorkshopCourseImage } from '@/types/sanity';
 
 // このファイルは「予約一覧」（既存）と「受付枠設定」（新規・カレンダー形式のON/OFF設定）の
 // 2タブ構成。営業日カレンダー管理（/admin/calendar）とは別画面のまま混ぜない
@@ -583,6 +586,7 @@ interface WorkshopPlan {
   pricingMode?: 'standard' | 'maintenance';
   participantPrice?: number;
   nonParticipantPrice?: number;
+  courseImages?: WorkshopCourseImage[];
   upcomingBookingCount?: number;
 }
 
@@ -604,6 +608,7 @@ interface PlanFormState {
   pricingMode: 'standard' | 'maintenance';
   participantPrice: string;
   nonParticipantPrice: string;
+  courseImages: WorkshopCourseImage[];
 }
 
 const emptyPlanForm: PlanFormState = {
@@ -624,6 +629,7 @@ const emptyPlanForm: PlanFormState = {
   pricingMode: 'standard',
   participantPrice: '',
   nonParticipantPrice: '',
+  courseImages: [],
 };
 
 function PlanSettingsTab() {
@@ -634,6 +640,7 @@ function PlanSettingsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<PlanFormState>(emptyPlanForm);
+  const [uploadingCourseImage, setUploadingCourseImage] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   // 一覧下部の「編集」を押した場合も、画面上部に開く編集欄をすぐ確認できるようにする。
@@ -690,6 +697,7 @@ function PlanSettingsTab() {
       pricingMode: plan.pricingMode || 'standard',
       participantPrice: plan.participantPrice != null ? String(plan.participantPrice) : '',
       nonParticipantPrice: plan.nonParticipantPrice != null ? String(plan.nonParticipantPrice) : '',
+      courseImages: plan.courseImages || [],
     });
   };
 
@@ -724,6 +732,13 @@ function PlanSettingsTab() {
           pricingMode: form.pricingMode,
           participantPrice: Number(form.participantPrice),
           nonParticipantPrice: Number(form.nonParticipantPrice),
+          courseImages: form.courseImages.map((image) => ({
+            _key: image._key,
+            _type: image._type,
+            asset: image.asset,
+            alt: image.alt,
+            hotspot: image.hotspot,
+          })),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -737,6 +752,40 @@ function PlanSettingsTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCourseImageUpload = async (file: File) => {
+    if (form.courseImages.length >= 5) {
+      alert('コース画像は最大5枚です');
+      return;
+    }
+    setUploadingCourseImage(true);
+    try {
+      const uploadFile = await compressImageForUpload(file);
+      const uploadData = new FormData();
+      uploadData.append('file', uploadFile);
+      const res = await fetch('/api/admin/images/upload', { method: 'POST', body: uploadData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.image) throw new Error(data.error || '画像のアップロードに失敗しました');
+      setForm((prev) => ({
+        ...prev,
+        courseImages: [...prev.courseImages, { ...data.image, url: data.thumbnailUrl }],
+      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '画像のアップロードに失敗しました');
+    } finally {
+      setUploadingCourseImage(false);
+    }
+  };
+
+  const moveCourseImage = (index: number, direction: -1 | 1) => {
+    setForm((prev) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.courseImages.length) return prev;
+      const courseImages = [...prev.courseImages];
+      [courseImages[index], courseImages[nextIndex]] = [courseImages[nextIndex], courseImages[index]];
+      return { ...prev, courseImages };
+    });
   };
 
   const handleDelete = async (plan: WorkshopPlan) => {
@@ -933,6 +982,50 @@ function PlanSettingsTab() {
             <div className="md:col-span-2">
               <label className="block text-xs font-medium text-gray-500 mb-1">別売り・追加料金の案内</label>
               <textarea value={form.priceNote} onChange={(e) => setForm((prev) => ({ ...prev, priceNote: e.target.value }))} rows={2} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">コース画像（最大5枚・先頭がメイン画像）</label>
+              {form.courseImages.length > 0 && (
+                <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {form.courseImages.map((image, index) => (
+                    <div key={image._key || index} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-gray-200">
+                        {image.url ? (
+                          <img src={image.url} alt={image.alt || `コース画像${index + 1}`} className="h-full w-full object-cover" style={{ objectPosition: imageObjectPosition(image) }} />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-gray-500">画像{index + 1}</div>
+                        )}
+                        {index === 0 && <span className="absolute left-2 top-2 rounded-full bg-moss-green px-2 py-1 text-xs font-medium text-white">メイン</span>}
+                      </div>
+                      <input
+                        type="text"
+                        value={image.alt || ''}
+                        onChange={(e) => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.map((entry, imageIndex) => imageIndex === index ? { ...entry, alt: e.target.value } : entry) }))}
+                        placeholder="画像の説明（任意）"
+                        className="mt-2 w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                      />
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <button type="button" disabled={index === 0} onClick={() => moveCourseImage(index, -1)} className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">前へ</button>
+                        <button type="button" disabled={index === form.courseImages.length - 1} onClick={() => moveCourseImage(index, 1)} className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">後ろへ</button>
+                        <button type="button" onClick={() => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.filter((_, imageIndex) => imageIndex !== index) }))} className="ml-auto rounded border border-red-300 px-2 py-1 text-xs text-red-700">削除</button>
+                      </div>
+                      <ImagePositionControls image={image} onChange={(nextImage) => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.map((entry, imageIndex) => imageIndex === index ? nextImage : entry) }))} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={uploadingCourseImage || form.courseImages.length >= 5}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded file:border-0 file:bg-moss-green file:px-4 file:py-2 file:text-white disabled:opacity-50"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleCourseImageUpload(file);
+                  e.target.value = '';
+                }}
+              />
+              <p className="mt-1 text-xs text-gray-500">{uploadingCourseImage ? 'アップロード中...' : `${form.courseImages.length}/5枚`}</p>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">表示順</label>

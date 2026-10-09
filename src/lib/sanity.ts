@@ -65,7 +65,15 @@ export async function getSimpleWorkshops(): Promise<SimpleWorkshop[]> {
         sortOrder,
         pricingMode,
         participantPrice,
-        nonParticipantPrice
+        nonParticipantPrice,
+        courseImages[]{
+          _key,
+          _type,
+          asset,
+          alt,
+          hotspot,
+          "url": asset->url
+        }
       }
       `),
       getHiddenWorkshopPlanIds(),
@@ -105,7 +113,15 @@ export async function getSimpleWorkshopById(id: string): Promise<SimpleWorkshop 
         sortOrder,
         pricingMode,
         participantPrice,
-        nonParticipantPrice
+        nonParticipantPrice,
+        courseImages[]{
+          _key,
+          _type,
+          asset,
+          alt,
+          hotspot,
+          "url": asset->url
+        }
       }`,
       { id }
     )

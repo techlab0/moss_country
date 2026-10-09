@@ -9,6 +9,7 @@ import { getSimpleWorkshops } from '@/lib/sanity';
 import { CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
 import type { SimpleWorkshop } from '@/types/sanity';
 import { workshopContainerOrder } from '@/lib/workshopCoursePresets';
+import { WorkshopCourseGallery } from '@/components/workshop/WorkshopCourseGallery';
 
 // 既存のワークショップページ（src/app/workshop/page.tsx）と同じ問い合わせ導線を流用する
 const JALAN_URL =
@@ -404,8 +405,10 @@ export default function WorkshopBookingPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {containerPlans.map((plan) => {
                           const paused = plan.status === 'paused';
+                          const legacyPlan = !plan.category || plan.category === 'legacy';
                           return (
                             <div key={plan._id} className={`text-left bg-stone-900/50 rounded-2xl p-6 border ${paused ? 'border-stone-800 opacity-70' : 'border-stone-800'}`}>
+                              <WorkshopCourseGallery images={plan.courseImages} courseName={plan.courseName || plan.title} compact />
                               <div className="flex items-start justify-between gap-3">
                                 <h3 className="text-lg font-medium text-white mb-2">{plan.courseName || plan.title}</h3>
                                 {paused && <span className="shrink-0 rounded-full bg-amber-900/60 px-2 py-1 text-xs text-amber-200">受付停止中</span>}
@@ -425,7 +428,9 @@ export default function WorkshopBookingPage() {
                               ) : (
                                 <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan)} className="w-full rounded-lg border border-emerald-700 px-3 py-2 text-left text-sm text-stone-300 hover:bg-emerald-900/30 disabled:cursor-not-allowed">
                                   {plan.duration || '所要時間はお問い合わせください'}
-                                  <strong className="float-right text-lg text-emerald-400">¥{(plan.price || 0).toLocaleString()}</strong>
+                                  {!legacyPlan && (
+                                    <strong className="float-right text-lg text-emerald-400">¥{(plan.price || 0).toLocaleString()}</strong>
+                                  )}
                                 </button>
                               )}
                               {plan.priceNote && <p className="mt-3 text-xs text-stone-500">※{plan.priceNote}</p>}

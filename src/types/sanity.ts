@@ -17,6 +17,16 @@ export interface SimpleWorkshop {
   pricingMode?: 'standard' | 'maintenance'
   participantPrice?: number
   nonParticipantPrice?: number
+  courseImages?: WorkshopCourseImage[]
+}
+
+export interface WorkshopCourseImage {
+  _key?: string
+  _type: 'image'
+  asset: { _type: 'reference'; _ref: string }
+  alt?: string
+  hotspot?: { _type?: string; x?: number; y?: number; height?: number; width?: number }
+  url?: string
 }
 
 export interface Product {

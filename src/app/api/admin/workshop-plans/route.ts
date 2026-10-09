@@ -30,6 +30,15 @@ interface PlanInput {
   pricingMode?: unknown;
   participantPrice?: unknown;
   nonParticipantPrice?: unknown;
+  courseImages?: unknown;
+}
+
+interface NormalizedCourseImage {
+  _key: string;
+  _type: 'image';
+  asset: { _type: 'reference'; _ref: string };
+  alt?: string;
+  hotspot?: { _type: 'sanity.imageHotspot'; x: number; y: number; height: number; width: number };
 }
 
 interface NormalizedPlanInput {
@@ -50,6 +59,35 @@ interface NormalizedPlanInput {
   pricingMode: 'standard' | 'maintenance';
   participantPrice?: number;
   nonParticipantPrice?: number;
+  courseImages: NormalizedCourseImage[];
+}
+
+function normalizeCourseImages(value: unknown): NormalizedCourseImage[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 5).flatMap((entry, index) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const image = entry as Record<string, unknown>;
+    const asset = image.asset as Record<string, unknown> | undefined;
+    const ref = typeof asset?._ref === 'string' ? asset._ref : '';
+    if (!ref.startsWith('image-')) return [];
+    const hotspot = image.hotspot as Record<string, unknown> | undefined;
+    const validHotspot = hotspot && ['x', 'y', 'height', 'width'].every((key) => Number.isFinite(Number(hotspot[key])));
+    return [{
+      _key: typeof image._key === 'string' && image._key ? image._key : `course-image-${index}-${ref.slice(-8)}`,
+      _type: 'image' as const,
+      asset: { _type: 'reference' as const, _ref: ref },
+      ...(typeof image.alt === 'string' && image.alt.trim() ? { alt: image.alt.trim() } : {}),
+      ...(validHotspot ? {
+        hotspot: {
+          _type: 'sanity.imageHotspot' as const,
+          x: Number(hotspot.x),
+          y: Number(hotspot.y),
+          height: Number(hotspot.height),
+          width: Number(hotspot.width),
+        },
+      } : {}),
+    }];
+  });
 }
 
 /** 入力を検証して保存用の値に正規化する。エラー文言を返した場合は保存しない。 */
@@ -106,6 +144,7 @@ export function normalizePlanInput(body: PlanInput): { error: string } | Normali
       participantPrice: Math.round(participantPrice),
       nonParticipantPrice: Math.round(nonParticipantPrice),
     } : {}),
+    courseImages: normalizeCourseImages(body.courseImages),
   };
 }
 
@@ -136,7 +175,15 @@ export async function GET(request: NextRequest) {
         sortOrder,
         pricingMode,
         participantPrice,
-        nonParticipantPrice
+        nonParticipantPrice,
+        courseImages[]{
+          _key,
+          _type,
+          asset,
+          alt,
+          hotspot,
+          "url": asset->url
+        }
       }
     `);
 
