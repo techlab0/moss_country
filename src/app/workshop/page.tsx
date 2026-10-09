@@ -246,7 +246,12 @@ export default function WorkshopPage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-            {workshopSizes.map((size) => (
+            {workshopSizes.map((size) => {
+              const sizeCourses = coursePlans.filter((plan) =>
+                plan.category === 'terrarium' &&
+                (plan.containerKey === size.id || plan.containerKeys?.includes(size.id))
+              );
+              return (
               <Card key={size.id} className="hover:transform hover:scale-105 transition-all duration-300">
                 <div className="overflow-hidden">
                   <img
@@ -260,7 +265,9 @@ export default function WorkshopPage() {
                   {/* 価格はタイトルの下に置く。横並びにすると、幅の広い画面でタイトルと価格が離れて対応が分かりにくくなる */}
                   <div className="flex flex-col gap-0.5 mb-2">
                     <h3 className="text-base md:text-2xl font-semibold text-moss-green">{size.name}</h3>
-                    <span className="text-moss-green font-bold text-sm md:text-xl">{size.price}</span>
+                    <span className="text-moss-green font-bold text-sm md:text-xl">
+                      {sizeCourses.length > 0 ? 'コースにより異なります' : size.price}
+                    </span>
                   </div>
                   <p className="text-sm md:text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
                   {size.duration && (
@@ -272,7 +279,7 @@ export default function WorkshopPage() {
                     </p>
                   )}
                   <p className="text-gray-600 text-sm md:text-base whitespace-pre-line">{size.description}</p>
-                  {coursePlans.filter((plan) => plan.category === 'terrarium' && (plan.containerKey === size.id || plan.containerKeys?.includes(size.id))).map((plan) => (
+                  {sizeCourses.map((plan) => (
                     <div key={plan._id} className="mt-4 rounded-lg border border-moss-green/20 bg-light-green/10 p-3 text-left">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="text-sm font-semibold text-moss-green">{plan.courseName || plan.title}</h4>
@@ -292,7 +299,8 @@ export default function WorkshopPage() {
                   ))}
                 </CardHeader>
               </Card>
-            ))}
+              );
+            })}
           </div>
 
           {coursePlans.some((plan) => plan.category === 'maintenance') && (
