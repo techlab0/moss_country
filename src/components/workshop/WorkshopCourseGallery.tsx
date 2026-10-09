@@ -17,7 +17,7 @@ export function WorkshopCourseGallery({
   const visibleImages = useMemo(() => (images || []).filter((image) => Boolean(image.url)).slice(0, 5), [images]);
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const showPrevious = useCallback(() => setCurrentIndex((index) => (index - 1 + visibleImages.length) % visibleImages.length), [visibleImages.length]);
   const showNext = useCallback(() => setCurrentIndex((index) => (index + 1) % visibleImages.length), [visibleImages.length]);
@@ -60,39 +60,54 @@ export function WorkshopCourseGallery({
       </button>
 
       {open && createPortal(
-        <div className="fixed inset-0 z-[1000] overflow-y-auto overscroll-contain bg-black/90" role="dialog" aria-modal="true" aria-label={`${courseName}の写真ギャラリー`}>
-          <div className="flex min-h-full items-center justify-center px-3 pb-4 pt-16 md:p-8">
-            <button type="button" onClick={() => setOpen(false)} className="fixed right-3 top-3 z-20 rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-900 shadow-lg hover:bg-stone-100 md:right-5 md:top-5" aria-label="ギャラリーを閉じる">閉じる ×</button>
-            <div className="w-full max-w-5xl">
-              <div
-                className="relative flex h-[58dvh] min-h-64 items-center justify-center overflow-hidden rounded-xl bg-black md:h-[70dvh]"
-                onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
-                onTouchEnd={(event) => {
-                  const startX = touchStartX.current;
-                  const endX = event.changedTouches[0]?.clientX;
-                  touchStartX.current = null;
-                  if (startX == null || endX == null || visibleImages.length < 2) return;
-                  if (startX - endX > 40) showNext();
-                  if (endX - startX > 40) showPrevious();
-                }}
-              >
-                <img src={currentImage.url} alt={currentImage.alt || `${courseName}の写真${currentIndex + 1}`} className="h-full w-full object-contain" />
-                {visibleImages.length > 1 && (
-                  <>
-                    <button type="button" onClick={showPrevious} className="absolute left-2 rounded-full bg-black/55 p-3 text-2xl text-white hover:bg-black/75" aria-label="前の写真">‹</button>
-                    <button type="button" onClick={showNext} className="absolute right-2 rounded-full bg-black/55 p-3 text-2xl text-white hover:bg-black/75" aria-label="次の写真">›</button>
-                  </>
-                )}
-              </div>
-              <div className="mt-3 flex justify-center gap-2 overflow-x-auto pb-1">
-                {visibleImages.map((image, index) => (
-                  <button key={image._key || index} type="button" onClick={() => setCurrentIndex(index)} className={`h-16 w-20 shrink-0 overflow-hidden rounded-md border-2 ${index === currentIndex ? 'border-emerald-400' : 'border-transparent opacity-65 hover:opacity-100'}`} aria-label={`${index + 1}枚目の写真を表示`}>
-                    <img src={image.url} alt="" className="h-full w-full object-cover" style={{ objectPosition: imageObjectPosition(image) }} />
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-center text-sm text-white">{courseName}　{currentIndex + 1}/{visibleImages.length}</p>
+        <div className="fixed inset-x-0 top-0 z-[1000] grid h-screen h-[100svh] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-black p-3 md:p-5" role="dialog" aria-modal="true" aria-label={`${courseName}の写真ギャラリー`}>
+          <div className="flex min-h-14 items-center justify-between gap-3 border-b border-white/15 pb-3">
+            <p className="min-w-0 truncate text-sm font-medium text-white md:text-base">{courseName}</p>
+            <button type="button" onClick={() => setOpen(false)} className="min-h-12 min-w-28 shrink-0 rounded-full bg-white px-6 py-3 text-base font-bold text-stone-900 shadow-xl hover:bg-stone-100" aria-label="ギャラリーを閉じる">閉じる ×</button>
+          </div>
+          <div
+            className="relative flex min-h-0 items-center justify-center overflow-hidden bg-black [touch-action:pan-y_pinch-zoom]"
+            onTouchStart={(event) => {
+              if (event.touches.length !== 1) {
+                touchStart.current = null;
+                return;
+              }
+              const touch = event.touches[0];
+              touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+            }}
+            onTouchMove={(event) => {
+              if (event.touches.length !== 1) touchStart.current = null;
+            }}
+            onTouchEnd={(event) => {
+              const start = touchStart.current;
+              const end = event.changedTouches.length === 1 ? event.changedTouches[0] : null;
+              touchStart.current = null;
+              if (!start || !end || visibleImages.length < 2) return;
+              const distanceX = end.clientX - start.x;
+              const distanceY = end.clientY - start.y;
+              if (Math.abs(distanceX) < 50 || Math.abs(distanceX) <= Math.abs(distanceY) * 1.25) return;
+              if (distanceX < 0) showNext();
+              if (distanceX > 0) showPrevious();
+            }}
+            onTouchCancel={() => { touchStart.current = null; }}
+          >
+            <img src={currentImage.url} alt={currentImage.alt || `${courseName}の写真${currentIndex + 1}`} className="h-full w-full select-none object-contain" draggable={false} />
+            {visibleImages.length > 1 && (
+              <>
+                <button type="button" onClick={showPrevious} className="absolute left-2 flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-3xl text-white hover:bg-stone-800 md:left-4" aria-label="前の写真">‹</button>
+                <button type="button" onClick={showNext} className="absolute right-2 flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-3xl text-white hover:bg-stone-800 md:right-4" aria-label="次の写真">›</button>
+              </>
+            )}
+          </div>
+          <div className="border-t border-white/15 pt-2">
+            <div className="flex justify-center gap-2 overflow-x-auto pb-1">
+              {visibleImages.map((image, index) => (
+                <button key={image._key || index} type="button" onClick={() => setCurrentIndex(index)} className={`h-14 w-16 shrink-0 overflow-hidden rounded-md border-2 md:h-16 md:w-20 ${index === currentIndex ? 'border-emerald-400' : 'border-transparent opacity-65 hover:opacity-100'}`} aria-label={`${index + 1}枚目の写真を表示`}>
+                  <img src={image.url} alt="" className="h-full w-full object-cover" style={{ objectPosition: imageObjectPosition(image) }} />
+                </button>
+              ))}
             </div>
+            <p className="mt-1 text-center text-sm text-white">{currentIndex + 1}/{visibleImages.length}</p>
           </div>
         </div>,
         document.body,

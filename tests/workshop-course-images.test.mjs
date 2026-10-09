@@ -25,8 +25,10 @@ test('公開画面はメイン画像からスワイプ対応ギャラリーを�
 
   assert.match(gallery, /role="dialog"/);
   assert.match(gallery, /createPortal/);
-  assert.match(gallery, /overflow-y-auto/);
-  assert.match(gallery, /h-full w-full object-contain/);
+  assert.match(gallery, /grid-rows-\[auto_minmax\(0,1fr\)_auto\]/);
+  assert.match(gallery, /event\.touches\.length !== 1/);
+  assert.match(gallery, /\[touch-action:pan-y_pinch-zoom\]/);
+  assert.match(gallery, /h-full w-full[^"\n]*object-contain/);
   assert.match(gallery, /onTouchStart/);
   assert.match(gallery, /onTouchEnd/);
   assert.match(gallery, /写真を見る/);
