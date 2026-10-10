@@ -11,7 +11,7 @@ const mobileWorkshopMenus = [
   {
     id: 'glass-canister-ss',
     name: 'ガラスキャニスターSS',
-    dimensions: '6cm × 11cm',
+    dimensions: '縦11cm × 横6cm',
     price: '基本容器',
     description: '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。',
     image: '/images/workshop/glass-canister-ss.JPG',
@@ -20,7 +20,7 @@ const mobileWorkshopMenus = [
   {
     id: 'glass-ball-s',
     name: 'ガラスボールS',
-    dimensions: '10cm × 8cm',
+    dimensions: '縦8cm × 横10cm',
     price: '応相談',
     description: '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。',
     image: '/images/workshop/glass-ball-s.JPG',
@@ -29,7 +29,7 @@ const mobileWorkshopMenus = [
   {
     id: 'pop-jar',
     name: 'ポップジャー',
-    dimensions: '11cm × 6cm',
+    dimensions: '縦17cm × 横9cm',
     price: '応相談',
     description: 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。',
     image: '/images/workshop/pop-jar.JPG',

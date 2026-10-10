@@ -11,10 +11,10 @@ import type { SimpleWorkshop } from '@/types/sanity';
 import { WorkshopCourseGallery } from '@/components/workshop/WorkshopCourseGallery';
 
 const planMeta = [
-  { id: 'glass-canister-ss', dimensions: '6cm × 11cm' },
-  { id: 'glass-ball-s', dimensions: '10cm × 8cm' },
-  { id: 'pop-jar', dimensions: '11cm × 6cm' },
-  { id: 'glass-ball-m', dimensions: '15cm × 12cm' },
+  { id: 'glass-canister-ss', dimensions: '縦11cm × 横6cm' },
+  { id: 'glass-ball-s', dimensions: '縦8cm × 横10cm' },
+  { id: 'pop-jar', dimensions: '縦17cm × 横9cm' },
+  { id: 'glass-ball-m', dimensions: '縦13cm × 横15cm' },
   { id: 'glass-ball-l', dimensions: 'サイズはコース詳細をご確認ください' },
   { id: 'cliff-terrarium', dimensions: '8cm × 10cm' },
   { id: 'glass-box', dimensions: 'サイズはコース詳細をご確認ください' },

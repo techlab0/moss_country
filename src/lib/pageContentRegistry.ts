@@ -373,9 +373,9 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'menusLead', label: 'メニュー 説明', type: 'textarea', default: '持ち運びしやすいサイズを中心にご用意しています' },
       ...[1, 2, 3].flatMap((number) => {
         const defaults = [
-          ['ガラスキャニスターSS', '6cm × 11cm', '基本容器', '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。', '/images/workshop/glass-canister-ss.JPG', '約90分'],
-          ['ガラスボールS', '10cm × 8cm', '応相談', '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。', '/images/workshop/glass-ball-s.JPG', '約120分'],
-          ['ポップジャー', '11cm × 6cm', '応相談', 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。', '/images/workshop/pop-jar.JPG', '約120分'],
+          ['ガラスキャニスターSS', '縦11cm × 横6cm', '基本容器', '手のひらサイズの小さな苔の世界。短時間で完成するため、イベントでも気軽に楽しめます。', '/images/workshop/glass-canister-ss.JPG', '約90分'],
+          ['ガラスボールS', '縦8cm × 横10cm', '応相談', '丸いガラスの中に広がる小さな苔の森。体験の満足度が高く、人気のメニューです。', '/images/workshop/glass-ball-s.JPG', '約120分'],
+          ['ポップジャー', '縦17cm × 横9cm', '応相談', 'ころんと可愛い形の容器で、お子様にも人気。イベントの記念にぴったりです。', '/images/workshop/pop-jar.JPG', '約120分'],
         ][number - 1];
         return [
           { key: `menu${number}Name`, label: `メニュー${number} 名称`, type: 'text' as const, default: defaults[0] },
