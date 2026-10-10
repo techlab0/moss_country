@@ -306,8 +306,8 @@ export default function WorkshopPage() {
 
           {coursePlans.some((plan) => plan.category === 'maintenance') && (
             <div className="mx-auto mt-10 max-w-4xl rounded-xl border border-white/20 bg-black/50 p-6 text-white backdrop-blur-sm">
-              <h3 className="text-2xl font-bold">メンテナンス会</h3>
-              <p className="mt-2 text-sm text-gray-200">予約制です。苔以外の植物は別売りとなります。</p>
+              <h3 className="text-2xl font-bold">{t('maintenanceTitle')}</h3>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-200">{t('maintenanceLead')}</p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {coursePlans.filter((plan) => plan.category === 'maintenance').map((plan) => (
                   <div key={plan._id} className="rounded-lg border border-white/15 bg-white/10 p-4">
@@ -315,9 +315,14 @@ export default function WorkshopPage() {
                       <h4 className="font-semibold">{plan.containerName || plan.title}</h4>
                       {plan.status === 'paused' && <span className="rounded-full bg-amber-200/20 px-2 py-1 text-xs text-amber-100">受付停止中</span>}
                     </div>
-                    <p className="mt-2 text-sm">基本コース参加者：¥{(plan.participantPrice || 0).toLocaleString()}</p>
-                    <p className="text-sm">未参加：¥{(plan.nonParticipantPrice || 0).toLocaleString()}</p>
-                    {plan.duration === '要相談' && <p className="mt-1 text-xs text-amber-100">※要相談</p>}
+                    {plan.description && <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-gray-200">{plan.description}</p>}
+                    {plan.mossTypes && <p className="mt-2 text-xs text-gray-300">使用する苔：{plan.mossTypes.replace(/\n/g, '・')}</p>}
+                    <div className="mt-3 rounded-md bg-black/20 p-3">
+                      <p className="text-sm">{t('maintenanceParticipantLabel')}：¥{(plan.participantPrice || 0).toLocaleString()}</p>
+                      <p className="mt-1 text-sm">{t('maintenanceNonParticipantLabel')}：¥{(plan.nonParticipantPrice || 0).toLocaleString()}</p>
+                    </div>
+                    {plan.duration && <p className="mt-2 text-xs text-amber-100">所要時間：{plan.duration}</p>}
+                    {plan.priceNote && <p className="mt-1 whitespace-pre-line text-xs text-gray-300">※{plan.priceNote}</p>}
                     {plan.status !== 'paused' && (
                       <Link href={`/workshop/booking?planId=${encodeURIComponent(plan._id)}`} className="mt-3 block rounded-md border border-white/50 px-3 py-2 text-center text-xs font-semibold hover:bg-white hover:text-moss-green">
                         料金区分を選んで予約

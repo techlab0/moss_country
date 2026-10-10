@@ -935,6 +935,11 @@ function PlanSettingsTab() {
                 </div>
               </>
             )}
+            {(form.category === 'maintenance' || form.pricingMode === 'maintenance') && (
+              <div className="md:col-span-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
+                メンテナンス会では「容器・サイズ名」「説明」「所要時間」「使用する苔」「別売り・追加料金の案内」が公開ページと予約画面に表示されます。見出しと全体説明、料金区分名は「ページ編集 → ワークショップページ」から変更できます。
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">容器・サイズ名</label>
               <input type="text" value={form.containerName} onChange={(e) => setForm((prev) => ({ ...prev, containerName: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md" />
@@ -962,7 +967,7 @@ function PlanSettingsTab() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1">説明</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">説明（公開ページ・予約画面に表示）</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}

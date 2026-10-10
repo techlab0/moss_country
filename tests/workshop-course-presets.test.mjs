@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import { workshopCoursePresets } from '../src/lib/workshopCoursePresets.ts';
@@ -29,6 +30,21 @@ test('メンテナンス会はサイズごとに参加者・未参加料金を�
   const combined = maintenance.at(-1);
   assert.deepEqual(combined.containerKeys, ['glass-ball-l', 'glass-box']);
   assert.match(combined.description, /要相談/);
+});
+
+test('メンテナンス会の案内文を編集して公開ページへ表示できる', () => {
+  const registry = fs.readFileSync('src/lib/pageContentRegistry.ts', 'utf8');
+  const workshopPage = fs.readFileSync('src/app/workshop/page.tsx', 'utf8');
+  const adminPage = fs.readFileSync('src/app/admin/workshop-bookings/page.tsx', 'utf8');
+
+  for (const key of ['maintenanceTitle', 'maintenanceLead', 'maintenanceParticipantLabel', 'maintenanceNonParticipantLabel']) {
+    assert.match(registry, new RegExp(`key: '${key}'`));
+    assert.match(workshopPage, new RegExp(`t\\('${key}'\\)`));
+  }
+  assert.match(workshopPage, /plan\.description/);
+  assert.match(workshopPage, /plan\.mossTypes/);
+  assert.match(workshopPage, /plan\.priceNote/);
+  assert.match(adminPage, /説明（公開ページ・予約画面に表示）/);
 });
 
 test('代表コースの価格・苔・付属品を保持する', () => {
