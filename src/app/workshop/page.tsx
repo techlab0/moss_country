@@ -270,6 +270,11 @@ export default function WorkshopPage() {
                     <h3 className="text-base md:text-2xl font-semibold text-moss-green">{size.name}</h3>
                   </div>
                   <p className="text-sm md:text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
+                  {!size.dimensions.startsWith('サイズは') && (
+                    <p className="-mt-2 mb-3 text-[10px] leading-relaxed text-gray-500 md:text-xs">
+                      ※容器により多少の誤差が生じる場合があります。
+                    </p>
+                  )}
                   {size.duration && (
                     <p className="flex items-center gap-1 text-xs md:text-sm text-gray-600 mb-3">
                       <svg className="w-4 h-4 text-moss-green shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
