@@ -243,7 +243,10 @@ export default function WorkshopPage() {
           
           {/* Size Options */}
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-6">作品サイズ・料金</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">作品サイズ・料金</h3>
+            <p className="text-xs text-white/80 md:text-sm">
+              ※表記サイズは目安です。容器により実際のサイズとは多少異なる場合があります。
+            </p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
