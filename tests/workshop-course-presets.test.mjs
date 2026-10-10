@@ -47,6 +47,17 @@ test('メンテナンス会の案内文を編集して公開ページへ表示�
   assert.match(adminPage, /説明（公開ページ・予約画面に表示）/);
 });
 
+test('メンテナンス会から予約画面へ移動した場合は専用一覧だけを表示する', () => {
+  const workshopPage = fs.readFileSync('src/app/workshop/page.tsx', 'utf8');
+  const bookingPage = fs.readFileSync('src/app/workshop/booking/page.tsx', 'utf8');
+
+  assert.match(workshopPage, /\/workshop\/booking\?view=maintenance&planId=/);
+  assert.match(bookingPage, /searchParams\.get\('view'\) === 'maintenance'/);
+  assert.match(bookingPage, /plan\.category === 'maintenance' \|\| plan\.pricingMode === 'maintenance'/);
+  assert.match(bookingPage, /メンテナンス会のみ表示しています/);
+  assert.match(bookingPage, /通常のワークショップを含む一覧を見る/);
+});
+
 test('代表コースの価格・苔・付属品を保持する', () => {
   const farm = workshopCoursePresets.find((plan) => plan._id === 'workshop-s-farm');
   assert.equal(farm?.price, 5500);

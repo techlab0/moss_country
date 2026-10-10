@@ -88,6 +88,7 @@ export default function WorkshopBookingPage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<SimpleWorkshop | null>(null);
   const [maintenanceParticipation, setMaintenanceParticipation] = useState<MaintenanceParticipation | null>(null);
+  const [maintenanceOnly, setMaintenanceOnly] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -95,8 +96,16 @@ export default function WorkshopBookingPage() {
       .then((data) => {
         if (mounted) {
           setPlans(data);
-          const requestedPlanId = new URLSearchParams(window.location.search).get('planId');
+          const searchParams = new URLSearchParams(window.location.search);
+          const requestedPlanId = searchParams.get('planId');
           const requestedPlan = data.find((plan) => plan._id === requestedPlanId);
+          if (
+            searchParams.get('view') === 'maintenance' ||
+            requestedPlan?.category === 'maintenance' ||
+            requestedPlan?.pricingMode === 'maintenance'
+          ) {
+            setMaintenanceOnly(true);
+          }
           if (requestedPlan && requestedPlan.status !== 'paused' && requestedPlan.pricingMode !== 'maintenance') {
             setSelectedPlan(requestedPlan);
             setStep(2);
@@ -203,7 +212,10 @@ export default function WorkshopBookingPage() {
 
   const groupedPlans = useMemo(() => {
     const groups = new Map<string, SimpleWorkshop[]>();
-    for (const plan of plans) {
+    const displayedPlans = maintenanceOnly
+      ? plans.filter((plan) => plan.category === 'maintenance' || plan.pricingMode === 'maintenance')
+      : plans;
+    for (const plan of displayedPlans) {
       const key = plan.containerKey || 'other';
       groups.set(key, [...(groups.get(key) || []), plan]);
     }
@@ -212,7 +224,12 @@ export default function WorkshopBookingPage() {
       const bi = workshopContainerOrder.indexOf(b);
       return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
     });
-  }, [plans]);
+  }, [maintenanceOnly, plans]);
+
+  const showAllPlans = () => {
+    setMaintenanceOnly(false);
+    window.history.replaceState(null, '', '/workshop/booking');
+  };
 
   const squareApplicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
   const squareLocationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || 'main';
@@ -382,7 +399,9 @@ export default function WorkshopBookingPage() {
       <Container>
         <div className="py-8 max-w-3xl mx-auto">
           <div className="border-b border-stone-800 pb-6 mb-8">
-            <h1 className="text-3xl md:text-4xl font-light text-white">ワークショップ予約</h1>
+            <h1 className="text-3xl md:text-4xl font-light text-white">
+              {maintenanceOnly ? 'メンテナンス会の予約' : 'ワークショップ予約'}
+            </h1>
             <p className="text-stone-400 mt-2 text-sm">
               ステップ {step} / 5 ・ {STEP_LABELS[step]}
             </p>
@@ -391,10 +410,21 @@ export default function WorkshopBookingPage() {
           {/* ステップ1: プラン選択 */}
           {step === 1 && (
             <div className="space-y-4">
+              {maintenanceOnly && (
+                <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-4">
+                  <p className="font-medium text-emerald-200">メンテナンス会のみ表示しています</p>
+                  <p className="mt-1 text-sm leading-relaxed text-stone-300">
+                    お持ちの容器サイズを選び、基本コースへの参加歴に合う料金区分をお選びください。
+                  </p>
+                  <button type="button" onClick={showAllPlans} className="mt-3 text-sm text-emerald-400 underline underline-offset-4 hover:text-emerald-300">
+                    通常のワークショップを含む一覧を見る
+                  </button>
+                </div>
+              )}
               {plansLoading ? (
                 <div className="text-stone-400 text-center py-12">読み込み中...</div>
-              ) : plans.length === 0 ? (
-                <UnavailableNotice message="現在ご案内できるプランがありません。恐れ入りますが、下記よりお問い合わせください。" />
+              ) : groupedPlans.length === 0 ? (
+                <UnavailableNotice message={maintenanceOnly ? '現在ご案内できるメンテナンス会がありません。恐れ入りますが、下記よりお問い合わせください。' : '現在ご案内できるプランがありません。恐れ入りますが、下記よりお問い合わせください。'} />
               ) : (
                 <div className="space-y-8">
                   {groupedPlans.map(([containerKey, containerPlans]) => (

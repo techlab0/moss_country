@@ -329,7 +329,7 @@ export default function WorkshopPage() {
                     {plan.duration && <p className="mt-2 text-xs text-amber-100">所要時間：{plan.duration}</p>}
                     {plan.priceNote && <p className="mt-1 whitespace-pre-line text-xs text-gray-300">※{plan.priceNote}</p>}
                     {plan.status !== 'paused' && (
-                      <Link href={`/workshop/booking?planId=${encodeURIComponent(plan._id)}`} className="mt-3 block rounded-md border border-white/50 px-3 py-2 text-center text-xs font-semibold hover:bg-white hover:text-moss-green">
+                      <Link href={`/workshop/booking?view=maintenance&planId=${encodeURIComponent(plan._id)}`} className="mt-3 block rounded-md border border-white/50 px-3 py-2 text-center text-xs font-semibold hover:bg-white hover:text-moss-green">
                         料金区分を選んで予約
                       </Link>
                     )}
