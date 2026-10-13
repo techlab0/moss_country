@@ -109,6 +109,65 @@ test('予約処理はDBで枠を確保してからGoogleイベントを作成す
   assert.match(source, /PAYMENT_STATUS_UNKNOWN/);
 });
 
+test('通常キャンセルのメールは予約情報を含み、未完了の返金を完了扱いにしない', async () => {
+  const { buildWorkshopCancellationEmail } = await import(
+    moduleUrl('src/lib/workshopCancellationEmail.ts')
+  );
+  const email = buildWorkshopCancellationEmail({
+    bookingNumber: 'WS-20261013-001',
+    workshopPlanName: '海のテラリウム',
+    date: '2026-10-20',
+    startTime: '11:30',
+    endTime: '13:30',
+    partySize: 2,
+    customerName: '苔 太郎',
+    paymentMethod: 'credit_card',
+    total: 9000,
+  }, { kind: 'cancelled', needsRefund: true });
+
+  assert.match(email.subject, /予約キャンセルのお知らせ/);
+  assert.match(email.text, /予約番号: WS-20261013-001/);
+  assert.match(email.text, /プラン: 海のテラリウム/);
+  assert.match(email.text, /人数: 2名/);
+  assert.match(email.text, /返金手続きはまだ完了していません/);
+  assert.doesNotMatch(email.text, /返金いたしました/);
+});
+
+test('返金を伴うキャンセルメールは返金額と支払い方法を案内する', async () => {
+  const { buildWorkshopCancellationEmail } = await import(
+    moduleUrl('src/lib/workshopCancellationEmail.ts')
+  );
+  const email = buildWorkshopCancellationEmail({
+    bookingNumber: 'WS-20261013-002',
+    workshopPlanName: '初心者自由制作',
+    date: '2026-10-21',
+    startTime: '15:00',
+    endTime: '17:00',
+    partySize: 1,
+    customerName: null,
+    paymentMethod: 'paypay',
+    total: 5500,
+  }, { kind: 'refunded', refundAmount: 4000, isFullRefund: false });
+
+  assert.match(email.subject, /キャンセルと返金のお知らせ/);
+  assert.match(email.text, /返金金額: ¥4,000/);
+  assert.match(email.text, /お支払い金額: ¥5,500/);
+  assert.match(email.text, /返金方法: PayPay/);
+});
+
+test('管理画面の通常キャンセルはDBのキャンセル成功後に完了メールを送る', async () => {
+  const source = await readFile(
+    resolve('src/app/api/admin/workshop-bookings/[id]/route.ts'),
+    'utf8',
+  );
+  const cancelAt = source.indexOf('await cancelBooking(');
+  const mailAt = source.indexOf('await sendMail(');
+
+  assert.ok(cancelAt >= 0, '予約のキャンセル処理が必要');
+  assert.ok(mailAt > cancelAt, 'キャンセル成功後にだけ完了メールを送る');
+  assert.match(source, /cancellationEmailStatus/);
+});
+
 test('SQLが同時予約・冪等性・分散レート制限をDB側で保証する', async () => {
   const sql = await readFile(
     resolve('docs/sql/migrate-workshop-booking-safety.sql'),

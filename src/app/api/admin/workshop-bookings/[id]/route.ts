@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '@/lib/auth';
 import { getBookingById, cancelBooking } from '@/lib/workshopBookings';
 import { deleteBookingEvent } from '@/lib/googleCalendar';
+import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { buildWorkshopCancellationEmail } from '@/lib/workshopCancellationEmail';
 
 export async function GET(
   request: NextRequest,
@@ -63,10 +65,30 @@ export async function PATCH(
     await cancelBooking(id, { googleEventId: null });
     const updated = await getBookingById(id);
 
+    let cancellationEmailStatus: 'sent' | 'failed' | 'no_recipient' = 'no_recipient';
+    if (booking.customerEmail) {
+      const email = buildWorkshopCancellationEmail(booking, { kind: 'cancelled', needsRefund });
+      const result = await sendMail({
+        to: booking.customerEmail,
+        replyTo: STORE_EMAIL,
+        bcc: STORE_EMAIL,
+        subject: email.subject,
+        text: email.text,
+      });
+      cancellationEmailStatus = result.sent ? 'sent' : 'failed';
+      if (!result.sent) {
+        console.warn('ワークショップ予約: キャンセル完了メールを送信できませんでした', {
+          bookingNumber: booking.bookingNumber,
+          reason: result.reason,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       booking: updated,
       needsRefund,
+      cancellationEmailStatus,
     });
   } catch (error) {
     console.error('ワークショップ予約キャンセルエラー:', error);

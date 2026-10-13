@@ -6,6 +6,7 @@ import { deleteBookingEvent } from '@/lib/googleCalendar';
 import { refundPayment as refundSquarePayment } from '@/lib/square';
 import { getPaymentStatus as getPaypayPaymentStatus, refundPayment as refundPaypayPayment } from '@/lib/paypayWebClient';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
+import { buildWorkshopCancellationEmail } from '@/lib/workshopCancellationEmail';
 
 // ワークショップ予約の返金。オンラインで事前決済された予約（Squareカード / PayPay）に対して
 // 返金し、あわせて予約をキャンセルする（枠とGoogleカレンダーのイベントも解放する）。
@@ -141,38 +142,28 @@ export async function POST(
       }
     }
 
+    let cancellationEmailStatus: 'sent' | 'failed' | 'no_recipient' = 'no_recipient';
     if (booking.customerEmail) {
-      await sendMail({
+      const email = buildWorkshopCancellationEmail(booking, {
+        kind: 'refunded',
+        refundAmount,
+        isFullRefund,
+      });
+      const result = await sendMail({
         to: booking.customerEmail,
         replyTo: STORE_EMAIL,
         // 店舗にも控えを送る（お客様に届かない事態を店舗側で検知できるようにするため）
         bcc: STORE_EMAIL,
-        subject: `【MOSS COUNTRY】ご予約のキャンセルと返金のお知らせ (予約番号: ${booking.bookingNumber})`,
-        text: [
-          `${booking.customerName || 'お客様'} 様`,
-          '',
-          isFullRefund
-            ? 'ご予約をキャンセルし、お支払いいただいた全額を返金いたしました。'
-            : 'ご予約をキャンセルし、下記の金額を返金いたしました。',
-          '',
-          `予約番号: ${booking.bookingNumber}`,
-          `プラン: ${booking.workshopPlanName || 'ワークショップ'}`,
-          `日時: ${booking.date} ${booking.startTime}〜${booking.endTime}`,
-          `返金金額: ¥${refundAmount.toLocaleString()}`,
-          ...(isFullRefund
-            ? []
-            : [
-                `お支払い金額: ¥${booking.total.toLocaleString('ja-JP')}`,
-                'キャンセルポリシーに基づき、キャンセル料を差し引いた金額を返金しております。',
-              ]),
-          `返金方法: ${booking.paymentMethod === 'paypay' ? 'PayPay' : 'クレジットカード'}`,
-          '',
-          '返金の反映までにはお支払い方法により数日かかる場合があります。',
-          '',
-          '----',
-          'MOSS COUNTRY',
-        ].join('\n'),
+        subject: email.subject,
+        text: email.text,
       });
+      cancellationEmailStatus = result.sent ? 'sent' : 'failed';
+      if (!result.sent) {
+        console.warn('ワークショップ予約: キャンセル・返金完了メールを送信できませんでした', {
+          bookingNumber: booking.bookingNumber,
+          reason: result.reason,
+        });
+      }
     }
 
     const updated = await getBookingById(id);
@@ -184,6 +175,7 @@ export async function POST(
       amount: refundAmount,
       refundedAmount: alreadyRefunded + refundAmount,
       isFullRefund,
+      cancellationEmailStatus,
     });
   } catch (error) {
     console.error('ワークショップ予約の返金エラー:', error);

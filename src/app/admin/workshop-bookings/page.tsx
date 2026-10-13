@@ -229,7 +229,12 @@ function BookingsListTab() {
       if (!res.ok) {
         throw new Error(data.error || '返金に失敗しました');
       }
-      alert(`返金しました（¥${(data.amount ?? booking.total ?? 0).toLocaleString()}）`);
+      const emailNotice = data.cancellationEmailStatus === 'sent'
+        ? '\nお客様へキャンセル・返金完了メールを送信しました。'
+        : data.cancellationEmailStatus === 'no_recipient'
+          ? '\nお客様のメールアドレスがないため、完了メールは送信していません。'
+          : '\n完了メールを送信できませんでした。お客様へ直接ご連絡ください。';
+      alert(`返金しました（¥${(data.amount ?? booking.total ?? 0).toLocaleString()}）${emailNotice}`);
       await fetchBookings();
     } catch (err) {
       alert(err instanceof Error ? err.message : '返金に失敗しました');
@@ -254,13 +259,19 @@ function BookingsListTab() {
       if (!res.ok) {
         throw new Error(data.error || 'キャンセルに失敗しました');
       }
+      const emailNotice = data.cancellationEmailStatus === 'sent'
+        ? '\nお客様へキャンセル完了メールを送信しました。'
+        : data.cancellationEmailStatus === 'no_recipient'
+          ? '\nお客様のメールアドレスがないため、完了メールは送信していません。'
+          : '\n完了メールを送信できませんでした。お客様へ直接ご連絡ください。';
       if (data.needsRefund) {
         alert(
           'キャンセルしました。\n' +
-          'この予約は支払い済みです。返金する場合は「返金」ボタンから実行してください。'
+          'この予約は支払い済みです。返金する場合は「返金」ボタンから実行してください。' +
+          emailNotice
         );
       } else {
-        alert('キャンセルしました。');
+        alert(`キャンセルしました。${emailNotice}`);
       }
       await fetchBookings();
     } catch (err) {
