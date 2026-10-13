@@ -47,7 +47,7 @@ export function buildWorkshopCancellationEmail(
       ? outcome.isFullRefund
         ? 'ご予約をキャンセルし、お支払いいただいた全額を返金いたしました。'
         : 'ご予約をキャンセルし、下記の金額を返金いたしました。'
-      : 'ワークショップのご予約キャンセルを承りました。',
+      : 'ご予約のキャンセル処理が完了しましたので、お知らせいたします。',
     '',
     `予約番号: ${booking.bookingNumber}`,
     `プラン: ${booking.workshopPlanName || 'ワークショップ'}`,

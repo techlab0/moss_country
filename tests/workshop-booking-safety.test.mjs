@@ -129,6 +129,7 @@ test('通常キャンセルのメールは予約情報を含み、未完了の�
   assert.match(email.text, /予約番号: WS-20261013-001/);
   assert.match(email.text, /プラン: 海のテラリウム/);
   assert.match(email.text, /人数: 2名/);
+  assert.match(email.text, /ご予約のキャンセル処理が完了しましたので、お知らせいたします/);
   assert.match(email.text, /返金手続きはまだ完了していません/);
   assert.doesNotMatch(email.text, /返金いたしました/);
 });
