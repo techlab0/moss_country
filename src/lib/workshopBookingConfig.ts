@@ -9,20 +9,58 @@ import type { SimpleWorkshop } from '@/types/sanity';
 
 export const TIME_ZONE = 'Asia/Tokyo';
 
-/**
- * 受付枠（JST、24時間表記）。じゃらん掲載の2枠と同一。
- * 予約はプランの所要時間に関わらず枠全体（start〜end）を占有する
- * （＝枠の空き判定はプランのdurationではなくこの固定windowで行う）。
- * 枠ごとのON/OFFは管理画面（受付枠設定）から workshop_slot_overrides テーブル経由で変更する
- * （src/lib/workshopSlotOverrides.ts 参照）。
- */
-export const WORKSHOP_SLOTS: ReadonlyArray<{ start: string; end: string }> = [
-  { start: '11:30', end: '13:30' },
-  { start: '15:00', end: '17:00' },
+export interface WorkshopSlot {
+  start: string;
+  end: string;
+  /** 定員を合算する代表開始時刻。異なる開始時刻でも同じ値なら合計6名で判定する。 */
+  capacityGroupStart: string;
+}
+
+/** 通常ワークショップの受付枠（じゃらん掲載の2枠と同一）。 */
+export const WORKSHOP_SLOTS: ReadonlyArray<WorkshopSlot> = [
+  { start: '11:30', end: '13:30', capacityGroupStart: '11:30' },
+  { start: '15:00', end: '17:00', capacityGroupStart: '15:00' },
 ];
 
+/** メンテナンス会は通常枠から30分ずらし、対応する通常枠と定員を共有する。 */
+export const MAINTENANCE_WORKSHOP_SLOTS: ReadonlyArray<WorkshopSlot> = [
+  { start: '12:00', end: '14:00', capacityGroupStart: '11:30' },
+  { start: '15:30', end: '17:30', capacityGroupStart: '15:00' },
+];
+
+/** 管理画面の手動予約で受け付ける全開始時刻。 */
+export const ALL_WORKSHOP_SLOTS: ReadonlyArray<WorkshopSlot> = [
+  ...WORKSHOP_SLOTS,
+  ...MAINTENANCE_WORKSHOP_SLOTS,
+];
+
+type WorkshopSchedulePlan = Pick<SimpleWorkshop, 'category' | 'pricingMode'>;
+
+export function isMaintenanceWorkshopPlan(plan?: WorkshopSchedulePlan | null): boolean {
+  return plan?.pricingMode === 'maintenance' || plan?.category === 'maintenance';
+}
+
+export function getWorkshopSlotsForPlan(
+  plan?: WorkshopSchedulePlan | null
+): ReadonlyArray<WorkshopSlot> {
+  return isMaintenanceWorkshopPlan(plan) ? MAINTENANCE_WORKSHOP_SLOTS : WORKSHOP_SLOTS;
+}
+
+export function findWorkshopSlotForPlan(
+  plan: WorkshopSchedulePlan | null | undefined,
+  startTime: string
+): WorkshopSlot | undefined {
+  return getWorkshopSlotsForPlan(plan).find(slot => slot.start === startTime);
+}
+
+/** 11:30と12:00、15:00と15:30をそれぞれ同じ定員グループへ正規化する。 */
+export function capacityGroupStartFor(startTime: string): string {
+  return ALL_WORKSHOP_SLOTS.find(slot => slot.start === startTime)?.capacityGroupStart ?? startTime;
+}
+
 /**
- * 1枠あたりの最大受け入れ人数（同一日・同一開始時刻の予約party_size合計がこれ以上なら満枠扱い）。
+ * 1定員グループあたりの最大受け入れ人数。
+ * 11:30+12:00、15:00+15:30の予約party_size合計がこれ以上なら満枠扱い。
  *
  * 重要: この値はDBのトリガー enforce_workshop_slot_capacity にも同じ数値がある。
  * ここだけ変えるとトリガーが古い定員のまま残り、画面上は「空きあり」なのに

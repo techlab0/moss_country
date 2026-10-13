@@ -19,20 +19,33 @@ SET search_path = ''
 AS $$
 DECLARE
   reserved_count INTEGER;
+  capacity_group_start TEXT;
 BEGIN
   IF NEW.status <> 'confirmed' THEN
     RETURN NEW;
   END IF;
 
+  capacity_group_start := CASE NEW.start_time
+    WHEN '12:00' THEN '11:30'
+    WHEN '15:30' THEN '15:00'
+    ELSE NEW.start_time
+  END;
+
+  -- 通常11:30とメンテナンス12:00、通常15:00とメンテナンス15:30を
+  -- それぞれ同じロック・定員グループとして扱う。
   PERFORM pg_advisory_xact_lock(
-    hashtextextended(NEW.date::TEXT || '|' || NEW.start_time, 0)
+    hashtextextended(NEW.date::TEXT || '|' || capacity_group_start, 0)
   );
 
   SELECT COALESCE(SUM(party_size), 0)
     INTO reserved_count
     FROM public.workshop_bookings
    WHERE date = NEW.date
-     AND start_time = NEW.start_time
+     AND CASE start_time
+           WHEN '12:00' THEN '11:30'
+           WHEN '15:30' THEN '15:00'
+           ELSE start_time
+         END = capacity_group_start
      AND status = 'confirmed'
      AND (TG_OP <> 'UPDATE' OR id <> NEW.id);
 

@@ -29,8 +29,10 @@ import {
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import {
-  WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
+  capacityGroupStartFor,
+  findWorkshopSlotForPlan,
+  isMaintenanceWorkshopPlan,
   jstDateTimeToIso,
   todayJstDateStr,
   maxBookableDateStr,
@@ -290,8 +292,7 @@ export async function POST(request: NextRequest) {
     if (!date || !DATE_RE.test(date)) {
       return NextResponse.json({ error: 'dateの形式が不正です（YYYY-MM-DD）' }, { status: 400 });
     }
-    const matchedSlot = WORKSHOP_SLOTS.find(s => s.start === startTime);
-    if (!startTime || !matchedSlot) {
+    if (!startTime) {
       return NextResponse.json({ error: '指定された開始時刻は受け付けていません' }, { status: 400 });
     }
     if (!Number.isInteger(partySize) || (partySize as number) <= 0) {
@@ -330,7 +331,11 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json({ error: '指定されたワークショッププランが見つかりません' }, { status: 400 });
     }
-    const isMaintenance = plan.pricingMode === 'maintenance';
+    const matchedSlot = findWorkshopSlotForPlan(plan, startTime);
+    if (!matchedSlot) {
+      return NextResponse.json({ error: 'このプランでは指定された開始時刻を受け付けていません' }, { status: 400 });
+    }
+    const isMaintenance = isMaintenanceWorkshopPlan(plan);
     const maintenanceParticipation = body.maintenanceParticipation;
     if (isMaintenance && maintenanceParticipation !== 'participant' && maintenanceParticipation !== 'non_participant') {
       return NextResponse.json({ error: 'メンテナンス会の料金区分を選択してください' }, { status: 400 });
@@ -352,7 +357,7 @@ export async function POST(request: NextRequest) {
 
     // ---- 空き枠の再検証（一覧表示と同じロジック。表示後に他の予約が入っている可能性があるため必須） ----
     try {
-      const slotCheck = await isSlotStillAvailable(date, startTime, partySize as number);
+      const slotCheck = await isSlotStillAvailable(date, startTime, partySize as number, plan);
       if (!slotCheck.ok) {
         return NextResponse.json({ error: slotCheck.reason }, { status: 409 });
       }
@@ -367,7 +372,7 @@ export async function POST(request: NextRequest) {
     }
 
     const bookingNumber = buildWorkshopBookingNumber(idempotencyKey);
-    // 枠全体（start〜end）を占有する。プランの所要時間は使わない（予約可否バリデーションで既にWORKSHOP_SLOTSのstartと一致確認済み）
+    // 枠全体（start〜end）を占有する。プランの所要時間は使わない。
     const startISO = jstDateTimeToIso(date, startTime);
     const endTime = matchedSlot.end;
     const endISO = jstDateTimeToIso(date, endTime);
@@ -652,9 +657,12 @@ export async function POST(request: NextRequest) {
     try {
       // 満席になった枠を拾う必要があるため、予約可能な枠だけを返す
       // computeAvailableSlots ではなく computeSlotStatuses を使う
+      // じゃらんは通常枠だけを販売するため、メンテナンス予約でも共有先の通常枠を確認する。
       const slotsAfterBooking = await computeSlotStatuses(date, date);
       const alerts = findSlotsToCloseOnJalan(slotsAfterBooking);
-      jalanWarning = buildJalanCloseWarning(findAlertForSlot(alerts, date, startTime));
+      jalanWarning = buildJalanCloseWarning(
+        findAlertForSlot(alerts, date, capacityGroupStartFor(startTime))
+      );
     } catch (error) {
       console.error('じゃらん向け在庫警告の判定に失敗しました（予約は成立済み）:', error);
     }

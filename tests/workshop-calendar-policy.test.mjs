@@ -29,7 +29,39 @@ test('公開空き枠APIは3か月分を31日ずつ確認する', async () => {
   );
 
   assert.ok(availabilityRoute.includes('splitWorkshopDateRange(fromDate, toDate)'));
-  assert.ok(availabilityRoute.includes('computeAvailableSlots(range.from, range.to)'));
+  assert.ok(availabilityRoute.includes('computeAvailableSlots(range.from, range.to, plan)'));
+});
+
+test('通常とメンテナンス会は開始時刻を分け、対応する枠で定員6名を共有する', async () => {
+  const {
+    CAPACITY_PER_SLOT,
+    WORKSHOP_SLOTS,
+    MAINTENANCE_WORKSHOP_SLOTS,
+    capacityGroupStartFor,
+    getWorkshopSlotsForPlan,
+  } = await import(moduleUrl('src/lib/workshopBookingConfig.ts'));
+
+  assert.equal(CAPACITY_PER_SLOT, 6);
+  assert.deepEqual(WORKSHOP_SLOTS.map(({ start, end }) => [start, end]), [
+    ['11:30', '13:30'],
+    ['15:00', '17:00'],
+  ]);
+  assert.deepEqual(MAINTENANCE_WORKSHOP_SLOTS.map(({ start, end }) => [start, end]), [
+    ['12:00', '14:00'],
+    ['15:30', '17:30'],
+  ]);
+  assert.equal(getWorkshopSlotsForPlan({ pricingMode: 'maintenance' })[0].start, '12:00');
+  assert.equal(getWorkshopSlotsForPlan({ category: 'maintenance' })[1].start, '15:30');
+  assert.equal(capacityGroupStartFor('12:00'), '11:30');
+  assert.equal(capacityGroupStartFor('15:30'), '15:00');
+});
+
+test('DBの最終定員判定も通常枠とメンテナンス枠を合算する', async () => {
+  const sql = await readFile(resolve(projectRoot, 'docs/sql/fix-workshop-slot-capacity.sql'), 'utf8');
+
+  assert.match(sql, /WHEN '12:00' THEN '11:30'/);
+  assert.match(sql, /WHEN '15:30' THEN '15:00'/);
+  assert.match(sql, /reserved_count \+ NEW\.party_size > 6/);
 });
 
 test('予約画面はサーバーの受付期間を使い、3か月より先を問い合わせへ案内する', async () => {

@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
     const fromDate = fromParam && fromParam > today ? fromParam : today;
     const toDate = toParam && toParam < maxDate ? toParam : maxDate;
 
-    // プラン指定があれば実在確認のみ行う（枠の時間帯はWORKSHOP_SLOTSの固定windowでプランに依存しないため、
-    // durationの解決は不要。ただし存在しないplanIdでの呼び出しは弾く）
+    // プラン種別によって通常ワークショップ／メンテナンス会の開始時刻を切り替える。
+    let plan = null;
     if (planId) {
-      const plan = await getSimpleWorkshopById(planId);
+      plan = await getSimpleWorkshopById(planId);
       if (!plan) {
         return NextResponse.json({ error: '指定されたワークショッププランが見つかりません' }, { status: 400 });
       }
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     // 途中の範囲が1つでも失敗した場合は例外を維持し、安全側で503を返す。
     const available: AvailableSlot[] = [];
     for (const range of splitWorkshopDateRange(fromDate, toDate)) {
-      const rangeAvailability = await computeAvailableSlots(range.from, range.to);
+      const rangeAvailability = await computeAvailableSlots(range.from, range.to, plan);
       available.push(...rangeAvailability);
     }
     return NextResponse.json({ available });

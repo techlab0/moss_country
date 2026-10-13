@@ -19,14 +19,18 @@ import {
   type WorkshopCalendarPolicy,
 } from './workshopCalendarPolicy';
 import {
-  WORKSHOP_SLOTS,
   CAPACITY_PER_SLOT,
+  capacityGroupStartFor,
+  getWorkshopSlotsForPlan,
   jstDateTimeToIso,
   addMinutesToIso,
   isBookableWeekday,
   isWithinLeadTime,
   listDatesInRange,
 } from './workshopBookingConfig';
+import type { SimpleWorkshop } from '@/types/sanity';
+
+type WorkshopSchedulePlan = Pick<SimpleWorkshop, 'category' | 'pricingMode'>;
 
 export interface AvailableSlot {
   date: string;
@@ -124,7 +128,11 @@ export async function getRegisteredCalendarMonths(
  * computeAvailableSlots はこの結果から open だけを取り出したもので、
  * 判定ロジックの二重化を避けるため両者は同じ計算を共有する。
  */
-export async function computeSlotStatuses(fromDate: string, toDate: string): Promise<SlotStatus[]> {
+export async function computeSlotStatuses(
+  fromDate: string,
+  toDate: string,
+  plan?: WorkshopSchedulePlan | null
+): Promise<SlotStatus[]> {
   if (fromDate > toDate) return [];
 
   let calendarPolicy: WorkshopCalendarPolicy;
@@ -147,10 +155,11 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
     throw new CalendarUnavailableError('予約カレンダーに接続できません');
   }
 
-  // 同一日・同一開始時刻の予約人数を集計（プランを問わず1枠の定員として扱う）
+  // 対応する通常枠とメンテナンス枠を同じ定員グループとして集計する。
+  // 11:30+12:00、15:00+15:30をそれぞれプランを問わず合計6名で扱う。
   const partySizeBySlot = new Map<string, number>();
   for (const booking of existingBookings) {
-    const key = `${booking.date}|${booking.startTime}`;
+    const key = `${booking.date}|${capacityGroupStartFor(booking.startTime)}`;
     partySizeBySlot.set(key, (partySizeBySlot.get(key) || 0) + booking.partySize);
   }
 
@@ -171,9 +180,9 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
         ? '営業日ではありません（定休日・イベント出店など）'
         : null;
 
-    for (const slot of WORKSHOP_SLOTS) {
+    for (const slot of getWorkshopSlotsForPlan(plan)) {
       const base = { date, startTime: slot.start, endTime: slot.end };
-      const override = overrideMap.get(`${date}|${slot.start}`);
+      const override = overrideMap.get(`${date}|${slot.capacityGroupStart}`);
       const slotEnabled = isWorkshopSlotEnabled(calendarPolicy, date, override);
 
       if (!slotEnabled) {
@@ -203,7 +212,7 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
         continue;
       }
 
-      const booked = partySizeBySlot.get(`${date}|${slot.start}`) || 0;
+      const booked = partySizeBySlot.get(`${date}|${slot.capacityGroupStart}`) || 0;
       const remaining = CAPACITY_PER_SLOT - booked;
 
       if (remaining <= 0) {
@@ -222,8 +231,12 @@ export async function computeSlotStatuses(fromDate: string, toDate: string): Pro
  * [fromDate, toDate]（両端含む、YYYY-MM-DD）の範囲で予約可能な枠一覧を計算する。
  * 予約可能な枠だけを返す（満席・受付停止の枠は含まれない）。
  */
-export async function computeAvailableSlots(fromDate: string, toDate: string): Promise<AvailableSlot[]> {
-  const statuses = await computeSlotStatuses(fromDate, toDate);
+export async function computeAvailableSlots(
+  fromDate: string,
+  toDate: string,
+  plan?: WorkshopSchedulePlan | null
+): Promise<AvailableSlot[]> {
+  const statuses = await computeSlotStatuses(fromDate, toDate, plan);
   return statuses
     .filter((s) => s.state === 'open')
     .map(({ date, startTime, endTime, remaining }) => ({ date, startTime, endTime, remaining }));
@@ -236,9 +249,10 @@ export async function computeAvailableSlots(fromDate: string, toDate: string): P
 export async function isSlotStillAvailable(
   date: string,
   startTime: string,
-  partySize: number
+  partySize: number,
+  plan?: WorkshopSchedulePlan | null
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const slots = await computeAvailableSlots(date, date);
+  const slots = await computeAvailableSlots(date, date, plan);
   const slot = slots.find(s => s.startTime === startTime);
 
   if (!slot) {

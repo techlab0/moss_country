@@ -3,7 +3,11 @@ import { verifyAdminSession } from '@/lib/auth';
 import { getWorkshopCalendarPolicy, CalendarUnavailableError } from '@/lib/workshopAvailability';
 import { isWorkshopBusinessDate, isWorkshopSlotEnabled } from '@/lib/workshopCalendarPolicy';
 import { getOverridesInRange, setOverride } from '@/lib/workshopSlotOverrides';
-import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import {
+  WORKSHOP_SLOTS,
+  CAPACITY_PER_SLOT,
+  capacityGroupStartFor,
+} from '@/lib/workshopBookingConfig';
 import { getBookingsInDateRange } from '@/lib/workshopBookings';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -17,7 +21,7 @@ interface DaySlots {
     start: string;
     end: string;
     isOpen: boolean;
-    /** 予約済みの人数（同一日・同一開始時刻の合計） */
+    /** 予約済みの人数（対応する通常・メンテナンス開始時刻の合計） */
     booked: number;
     /** 1枠あたりの定員 */
     capacity: number;
@@ -77,11 +81,11 @@ export async function GET(request: NextRequest) {
     // (date|startTime) -> isOpen（管理者が明示的に設定した枠のみ）
     const overrideMap = new Map(overrides.map(o => [`${o.date}|${o.startTime}`, o.isOpen]));
 
-    // (date|startTime) -> 予約済み人数。空き枠計算（computeAvailableSlots）と同じく
-    // プランを問わず1枠の定員に対する合計人数で数える。
+    // (date|capacityGroupStart) -> 予約済み人数。
+    // 11:30+12:00、15:00+15:30をそれぞれ同じ定員6名として数える。
     const bookedBySlot = new Map<string, number>();
     for (const booking of bookings) {
-      const key = `${booking.date}|${booking.startTime}`;
+      const key = `${booking.date}|${capacityGroupStartFor(booking.startTime)}`;
       bookedBySlot.set(key, (bookedBySlot.get(key) || 0) + booking.partySize);
     }
 

@@ -1,7 +1,11 @@
 'use client';
 
 import { Fragment, useState, useEffect, useCallback, useRef } from 'react';
-import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT } from '@/lib/workshopBookingConfig';
+import {
+  ALL_WORKSHOP_SLOTS,
+  WORKSHOP_SLOTS,
+  CAPACITY_PER_SLOT,
+} from '@/lib/workshopBookingConfig';
 import { shortenPlanName } from '@/lib/workshopPlanDisplay';
 import { compressImageForUpload } from '@/lib/imageCompress';
 import { ImagePositionControls, imageObjectPosition } from '@/components/admin/ImagePositionControls';
@@ -328,9 +332,10 @@ function BookingsListTab() {
                 onChange={(e) => setManualForm((prev) => ({ ...prev, startTime: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
               >
-                {WORKSHOP_SLOTS.map((slot) => (
+                {ALL_WORKSHOP_SLOTS.map((slot) => (
                   <option key={slot.start} value={slot.start}>
                     {slot.start}〜{slot.end}
+                    {slot.start === '12:00' || slot.start === '15:30' ? '（メンテナンス会）' : '（通常）'}
                   </option>
                 ))}
               </select>
@@ -536,7 +541,7 @@ interface SlotInfo {
   start: string;
   end: string;
   isOpen: boolean;
-  /** 予約済み人数（同一日・同一開始時刻の合計） */
+  /** 予約済み人数（対応する通常・メンテナンス開始時刻の合計） */
   booked?: number;
   /** 1枠あたりの定員 */
   capacity?: number;
@@ -1312,6 +1317,8 @@ function SlotSettingsTab() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
         各日のチップ（{SLOT_STARTS.join(' / ')}）をクリックしてON/OFFを切り替え、
         <b>「まとめて保存」</b>ボタンで確定します（クリック時点ではまだ保存されません）。
+        11:30の設定は通常11:30・メンテナンス会12:00、15:00の設定は通常15:00・
+        メンテナンス会15:30に共通で適用され、表示する空き人数も各組み合わせの合計です。
         保存したON/OFFは営業日カレンダーより優先されるため、営業日未登録・休業表示の日でも
         ワークショップの受付枠を設定できます。何も設定していない日は、従来どおり営業日だけが受付中になります。
       </div>

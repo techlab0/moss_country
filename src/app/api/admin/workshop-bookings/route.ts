@@ -10,7 +10,12 @@ import {
 } from '@/lib/workshopBookings';
 import { createBookingEvent } from '@/lib/googleCalendar';
 import { buildWorkshopBookingNumber, buildGoogleBookingEventId } from '@/lib/workshopBookingSafety';
-import { WORKSHOP_SLOTS, CAPACITY_PER_SLOT, jstDateTimeToIso } from '@/lib/workshopBookingConfig';
+import {
+  ALL_WORKSHOP_SLOTS,
+  MAINTENANCE_WORKSHOP_SLOTS,
+  CAPACITY_PER_SLOT,
+  jstDateTimeToIso,
+} from '@/lib/workshopBookingConfig';
 import { computeAvailableSlots } from '@/lib/workshopAvailability';
 import { randomUUID } from 'crypto';
 
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
     if (!DATE_RE.test(date)) {
       return NextResponse.json({ error: '日付の形式が不正です（YYYY-MM-DD）' }, { status: 400 });
     }
-    const slot = WORKSHOP_SLOTS.find(s => s.start === startTime);
+    const slot = ALL_WORKSHOP_SLOTS.find(s => s.start === startTime);
     if (!slot) {
       return NextResponse.json({ error: '受付枠の開始時刻が不正です' }, { status: 400 });
     }
@@ -100,7 +105,12 @@ export async function POST(request: NextRequest) {
 
     // 空き人数の事前チェック（受付停止中の枠でも管理者は登録できるようにするため、
     // 枠のON/OFFではなく残り人数だけを見る）
-    const available = await computeAvailableSlots(date, date).catch(() => null);
+    const isMaintenanceTime = MAINTENANCE_WORKSHOP_SLOTS.some(s => s.start === startTime);
+    const available = await computeAvailableSlots(
+      date,
+      date,
+      isMaintenanceTime ? { pricingMode: 'maintenance' } : null
+    ).catch(() => null);
     if (available) {
       const target = available.find(s => s.date === date && s.startTime === startTime);
       const remaining = target?.remaining ?? 0;
