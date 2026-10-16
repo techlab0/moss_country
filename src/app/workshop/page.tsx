@@ -244,7 +244,7 @@ export default function WorkshopPage() {
           {/* Size Options */}
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-white mb-2">作品サイズ・料金</h3>
-            <p className="text-xs text-white/80 md:text-sm">
+            <p className="text-xs font-semibold text-white md:text-sm">
               ※表記サイズは目安です。容器により実際のサイズとは多少異なる場合があります。
             </p>
           </div>
@@ -271,9 +271,10 @@ export default function WorkshopPage() {
                   </div>
                   <p className="text-sm md:text-lg font-medium text-gray-700 mb-3">{size.dimensions}</p>
                   {!size.dimensions.startsWith('サイズは') && (
-                    <p className="-mt-2 mb-3 text-[10px] leading-relaxed text-gray-500 md:text-xs">
-                      ※容器により多少の誤差が生じる場合があります。
-                    </p>
+                    <div className="-mt-2 mb-3 space-y-1 text-[11px] font-semibold leading-relaxed text-gray-800 md:text-sm">
+                      <p>※容器により多少の誤差が生じる場合があります。</p>
+                      <p>※フィギュアは別料金です。</p>
+                    </div>
                   )}
                   {size.duration && (
                     <p className="flex items-center gap-1 text-xs md:text-sm text-gray-600 mb-3">

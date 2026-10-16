@@ -68,3 +68,11 @@ test('代表コースの価格・苔・付属品を保持する', () => {
   assert.equal(large?.price, 18000);
   assert.match(large?.mossTypes || '', /コウヤノマンネングサ/);
 });
+
+test('容器サイズの注意書きとフィギュア別料金を見やすく案内する', () => {
+  const workshopPage = fs.readFileSync('src/app/workshop/page.tsx', 'utf8');
+
+  assert.match(workshopPage, /容器により多少の誤差が生じる場合があります/);
+  assert.match(workshopPage, /フィギュアは別料金です/);
+  assert.match(workshopPage, /font-semibold leading-relaxed text-gray-800/);
+});
