@@ -26,9 +26,18 @@ const careGuideMeta = [
   { list: ['苔を取り出し傷んでいる部分や茶色くなっている部分は捨てましょう', '新しい容器に土、石、流木などレイアウト物を入れて移し替えることも可能です'] },
 ];
 
+const legacyHeroTitle = 'MOSS COUNTRYの<br />テラリウムコレクション';
+const legacyHeroLead = '一つひとつ手作業で丁寧に作られた本格テラリウム。初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。';
+const currentHeroTitle = 'MOSS COUNTRYの商品コレクション';
+const currentHeroLead = '苔テラリウムをはじめ、制作を楽しむための素材や関連アイテムまで。暮らしに小さな自然を取り入れる、お気に入りの商品を見つけてください。';
+
 export default function ProductsPage() {
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
   const { t, img, imgStyle } = usePageContent('products');
+  // 管理画面に以前の既定文が保存されている場合も、商品構成に合う新しい案内へ移行する。
+  // 管理画面で別の文章へ編集した場合は、その内容をそのまま尊重する。
+  const heroTitle = t('heroTitle') === legacyHeroTitle ? currentHeroTitle : t('heroTitle');
+  const heroLead = t('heroLead') === legacyHeroLead ? currentHeroLead : t('heroLead');
   const terrariumCategories = [1, 2, 3, 4].map(i => ({
     name: t(`terrarium${i}Name`),
     description: t(`terrarium${i}Desc`),
@@ -234,11 +243,11 @@ export default function ProductsPage() {
           <div className="text-center">
             <h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg"
-              dangerouslySetInnerHTML={{ __html: t('heroTitle') }}
+              dangerouslySetInnerHTML={{ __html: heroTitle }}
             />
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
             <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow whitespace-pre-line">
-              {t('heroLead')}
+              {heroLead}
             </p>
             <Button variant="primary" size="lg">
               <a href="#products">

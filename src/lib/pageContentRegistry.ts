@@ -180,8 +180,8 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
     title: '商品ページ',
     path: '/shop',
     fields: [
-      { key: 'heroTitle', label: 'ヒーロー見出し（<br/>で改行）', type: 'text', default: 'MOSS COUNTRYの<br />テラリウムコレクション' },
-      { key: 'heroLead', label: 'ヒーロー リード文', type: 'textarea', default: '一つひとつ手作業で丁寧に作られた本格テラリウム。初心者向けからプレミアムまで、あなたにぴったりの作品を見つけてください。' },
+      { key: 'heroTitle', label: 'ヒーロー見出し（<br/>で改行）', type: 'text', default: 'MOSS COUNTRYの商品コレクション' },
+      { key: 'heroLead', label: 'ヒーロー リード文', type: 'textarea', default: '苔テラリウムをはじめ、制作を楽しむための素材や関連アイテムまで。暮らしに小さな自然を取り入れる、お気に入りの商品を見つけてください。' },
       { key: 'terrarium1Name', label: 'テラリウム区分1 名称', type: 'text', default: 'Mini Terrarium（ミニ・テラリウム）' },
       { key: 'terrarium1Desc', label: 'テラリウム区分1 説明', type: 'textarea', default: '小さなガラスの中に広がる、あなただけの癒しの森。手のひらの中で、穏やかな時間が流れます。' },
       { key: 'terrarium1Image', label: 'テラリウム区分1 画像', type: 'image', default: '/images/products/moss-country_products_bottle.png' },
