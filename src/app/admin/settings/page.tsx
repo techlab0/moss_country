@@ -8,7 +8,7 @@ import {
   maintenanceTargetPages,
   snsPlatformLabels,
 } from '@/lib/siteSettingsDefaults';
-import type { ShippingSettings, CarrierId } from '@/lib/shipping';
+import { type ShippingSettings } from '@/lib/shipping';
 import { defaultSeoSettings, type SeoSettings } from '@/lib/seoSettings';
 import { editablePages, type PageSeoEntry } from '@/lib/pageSeo';
 
@@ -840,8 +840,6 @@ function ShippingSettingsEditor({
   const priceOf = (zoneId: string, size: number) =>
     table.rates.find((r) => r.zoneId === zoneId && r.size === size)?.price ?? 0;
 
-  const setCarrier = (c: CarrierId) => onChange({ ...settings, carrier: c });
-
   const setRate = (zoneId: string, size: number, price: number) => {
     const rates = [...table.rates];
     const idx = rates.findIndex((r) => r.zoneId === zoneId && r.size === size);
@@ -887,30 +885,12 @@ function ShippingSettingsEditor({
       </div>
 
       <div className={settings.freeShippingMode ? 'opacity-50 pointer-events-none space-y-6' : 'space-y-6'}>
-      {/* 業者選択 */}
+      {/* 送料計算の基準 */}
       <div className="bg-white shadow-sm rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-1">利用する配送業者</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          お客様の送料計算に使う配送業者と料金表を選びます。料金は下の表で編集できます。
+        <h2 className="text-xl font-semibold text-gray-900 mb-1">送料計算の基準料金</h2>
+        <p className="text-sm text-gray-600">
+          購入画面の送料計算には、下のゆうパック料金表を使用します。実際の配送業者は、ご注文内容やお届け先に応じて発送時に店舗が選定します。
         </p>
-        <div className="flex gap-3">
-          {(Object.keys(settings.carriers) as CarrierId[]).map((c) => (
-            <label
-              key={c}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer ${
-                carrier === c ? 'border-moss-green bg-moss-green/10' : 'border-gray-300'
-              }`}
-            >
-              <input
-                type="radio"
-                name="carrier"
-                checked={carrier === c}
-                onChange={() => setCarrier(c)}
-              />
-              <span className="text-sm text-gray-800">{settings.carriers[c].label}</span>
-            </label>
-          ))}
-        </div>
       </div>
 
       {/* 料金表（ゾーン × サイズ） */}

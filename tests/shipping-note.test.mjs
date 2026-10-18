@@ -7,9 +7,36 @@ import test from 'node:test';
 const shippingModuleUrl = pathToFileURL(resolve('src/lib/shipping.ts')).href;
 const {
   DEFAULT_SHIPPING_SETTINGS,
+  SHIPPING_RATE_CARRIER,
   formatShippingDiscountNote,
+  isCarrierId,
   resolveShippingFee,
 } = await import(shippingModuleUrl);
+
+test('配送業者は顧客に選ばせず、送料計算だけゆうパック料金を基準にする', async () => {
+  assert.equal(SHIPPING_RATE_CARRIER, 'yupack');
+  assert.equal(isCarrierId('yupack'), true);
+  assert.equal(isCarrierId('yamato'), true);
+
+  const [checkout, adminSettings, settingsApi, ...orderApis] = await Promise.all([
+    readFile(resolve('src/app/checkout/page.tsx'), 'utf8'),
+    readFile(resolve('src/app/admin/settings/page.tsx'), 'utf8'),
+    readFile(resolve('src/app/api/admin/shipping-settings/route.ts'), 'utf8'),
+    readFile(resolve('src/app/api/orders/create-offline/route.ts'), 'utf8'),
+    readFile(resolve('src/app/api/payments/create-payment/route.ts'), 'utf8'),
+    readFile(resolve('src/app/api/payments/create-payment-link/route.ts'), 'utf8'),
+    readFile(resolve('src/app/api/payments/paypay/create/route.ts'), 'utf8'),
+  ]);
+  assert.doesNotMatch(checkout, /name="shippingCarrier"/);
+  assert.doesNotMatch(checkout, /shippingCarrier: formData\.shippingCarrier/);
+  assert.match(checkout, /配送業者は、ご注文内容やお届け先に応じて当店が選定いたします/);
+  assert.match(adminSettings, /実際の配送業者は、ご注文内容やお届け先に応じて発送時に店舗が選定します/);
+  assert.match(settingsApi, /const carrier: CarrierId = SHIPPING_RATE_CARRIER/);
+  for (const api of orderApis) {
+    assert.doesNotMatch(api, /orderData\.shippingCarrier/);
+    assert.match(api, /const shippingCarrier = null/);
+  }
+});
 
 test('10,000円以上は送料無料ではなく500円引きと案内する', () => {
   const note = formatShippingDiscountNote({

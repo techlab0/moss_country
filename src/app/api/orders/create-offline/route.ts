@@ -4,7 +4,6 @@ import { InventoryService } from '@/lib/inventory';
 import { sendMail, STORE_EMAIL } from '@/lib/mailer';
 import { createOrder } from '@/lib/orders';
 import { checkRateLimit } from '@/lib/simpleRateLimit';
-import { isCarrierId, CARRIER_LABELS } from '@/lib/shipping';
 import { assertPurchaseAllowed } from '@/lib/purchaseLock';
 import type { Cart, CheckoutFormData } from '@/types/ecommerce';
 
@@ -61,8 +60,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // クライアント申告の配送業者は 'yupack' | 'yamato' 以外を受け付けない（不正値はnull扱い）
-    const shippingCarrier = isCarrierId(orderData.shippingCarrier) ? orderData.shippingCarrier : null;
+    // 配送業者は発送時に店舗が選定するため、お客様からの指定は保存しない。
+    const shippingCarrier = null;
 
     // 価格・送料改ざん対策: クライアント申告額を信用せず、Sanityの正規データと送料設定から再計算する
     let totals;
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
       totals = await recalculateCartTotals(cart, {
         prefecture: orderData.shippingAddress?.state,
         express: orderData.shippingMethod === 'express',
-        carrier: shippingCarrier ?? undefined,
       });
     } catch (error) {
       if (error instanceof InvalidCartError) {
@@ -166,7 +164,6 @@ export async function POST(request: NextRequest) {
           `合計: ¥${totals.total.toLocaleString()}`,
           '',
           `お支払い方法: ${paymentMethodLabel}`,
-          shippingCarrier ? `配送業者: ${CARRIER_LABELS[shippingCarrier]}` : null,
           '',
           '【お届け先】',
           shippingAddressLines,
@@ -194,7 +191,6 @@ export async function POST(request: NextRequest) {
           '',
           `合計: ¥${totals.total.toLocaleString()}`,
           `お支払い方法: ${paymentMethodLabel}`,
-          shippingCarrier ? `配送業者: ${CARRIER_LABELS[shippingCarrier]}` : null,
           '',
           '【お届け先】',
           shippingAddressLines,

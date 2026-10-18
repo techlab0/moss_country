@@ -5,6 +5,7 @@ import {
   getShippingSettings,
   invalidateShippingSettingsCache,
   DEFAULT_SHIPPING_SETTINGS,
+  SHIPPING_RATE_CARRIER,
   type ShippingSettings,
   type CarrierId,
 } from '@/lib/shipping';
@@ -70,7 +71,8 @@ function validateSettings(
 ): { ok: true; value: ShippingSettings } | { ok: false; error: string } {
   const d = DEFAULT_SHIPPING_SETTINGS;
 
-  const carrier: CarrierId = input.carrier === 'yamato' || input.carrier === 'yupack' ? input.carrier : d.carrier;
+  // 送料計算の基準料金表はゆうパックに固定する。実際の配送業者は発送時に店舗が選定する。
+  const carrier: CarrierId = SHIPPING_RATE_CARRIER;
 
   const zones = Array.isArray(input.zones) && input.zones.length > 0 ? input.zones : d.zones;
   if (

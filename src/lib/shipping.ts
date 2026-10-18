@@ -9,8 +9,12 @@
 
 export type CarrierId = 'yupack' | 'yamato';
 
-// クライアント（フォーム送信値等）から来た値が正当な CarrierId かどうかを検証する。
-// 送料表を持たない不正な業者IDが計算・保存に混入するのを防ぐために各所で使う。
+// お客様には配送業者を選ばせず、送料の算出にはこの料金表を内部基準として使う。
+// 実際の配送業者は、ご注文内容やお届け先に応じて店舗が発送時に選定する。
+export const SHIPPING_RATE_CARRIER: CarrierId = 'yupack';
+
+// 過去注文・保存済み設定を読み取るための配送業者ID検証。
+// 新規注文ではお客様から配送業者を受け取らない。
 export function isCarrierId(value: unknown): value is CarrierId {
   return value === 'yupack' || value === 'yamato';
 }
@@ -46,7 +50,7 @@ export interface CarrierTable {
 }
 
 export interface ShippingSettings {
-  carrier: CarrierId; // 実際に利用する配送業者
+  carrier: CarrierId; // 送料計算に使う基準料金表（実際の配送業者を確約する値ではない）
   zones: ShippingZone[];
   carriers: Record<CarrierId, CarrierTable>;
   freeShippingMode: boolean; // サイト全体を送料無料にする（全商品を送料込み価格で販売する運用）
@@ -103,7 +107,7 @@ export interface PackageMetrics {
 export interface ShippingOptions {
   express?: boolean;
   hasFragile?: boolean;
-  // 顧客が選択した配送業者。未指定時は settings.carrier（管理者設定のデフォルト業者）を使う。
+  // 管理・過去データ向けの料金表指定。顧客向け購入画面からは指定しない。
   carrier?: CarrierId;
 }
 
@@ -352,7 +356,7 @@ const YAMATO_RATES = buildRates({
 });
 
 export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
-  carrier: 'yupack',
+  carrier: SHIPPING_RATE_CARRIER,
   zones: DEFAULT_ZONES,
   carriers: {
     yupack: { label: 'ゆうパック（日本郵便）', sizeTiers: YUPACK_TIERS, rates: YUPACK_RATES },
@@ -378,7 +382,8 @@ function mergeWithDefaults(doc: Partial<ShippingSettings> | null | undefined): S
   const d = DEFAULT_SHIPPING_SETTINGS;
   const carriers = doc.carriers as Partial<Record<CarrierId, CarrierTable>> | undefined;
   return {
-    carrier: doc.carrier === 'yamato' || doc.carrier === 'yupack' ? doc.carrier : d.carrier,
+    // 以前ヤマトが保存されていても、新規注文はゆうパックへ安全に固定する。
+    carrier: SHIPPING_RATE_CARRIER,
     zones: Array.isArray(doc.zones) && doc.zones.length > 0 ? doc.zones : d.zones,
     carriers: {
       yupack: mergeCarrier(carriers?.yupack, d.carriers.yupack),
