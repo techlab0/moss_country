@@ -1,5 +1,6 @@
 'use client';
 
+import { ActionRequiredStrip } from '@/components/admin/ActionRequiredStrip';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { RecentOrders } from '@/components/admin/RecentOrders';
 import { InventoryAlerts } from '@/components/admin/InventoryAlerts';
@@ -24,6 +25,9 @@ export default function AdminDashboardPage() {
             💰 売上を入力する
           </Link>
         </div>
+
+        {/* 要対応の通知 */}
+        <ActionRequiredStrip />
 
         {/* 統計情報 */}
         <DashboardStats />
