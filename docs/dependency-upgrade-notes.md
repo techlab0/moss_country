@@ -12,6 +12,8 @@ Primary migration references: [Next.js 16 upgrade](https://nextjs.org/docs/app/g
 
 The public npm audit falls from 33 aggregate entries (2 critical, 23 high, 8 moderate) to 18 (0 critical, 14 high, 4 moderate). The remaining entries derive from two source advisories, without a published patched release:
 
+The repository owner's GitHub API returned all 60 currently open Dependabot alerts. Comparing each advisory's vulnerable range against every installed version in the final lockfile shows 58 no longer affected (removed packages count as removed exposure). Only alerts [#48](https://github.com/techlab0/moss_country/security/dependabot/48) and [#52](https://github.com/techlab0/moss_country/security/dependabot/52) still match. This is a lockfile comparison, not a claim that GitHub has closed the alerts: main still requires merging and rescanning.
+
 | Package | Advisory | Dependency paths and limits |
 | --- | --- | --- |
 | `braces@3.0.3` | [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) | ESLint globbing and Sanity CLI/codegen; no application request path accepts glob patterns. |
