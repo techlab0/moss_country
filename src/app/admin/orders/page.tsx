@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { buildStatusHref, matchesOrderListFilter, parseOrderListFilter, saveAdminStatus, type OrderListFilter } from '@/lib/adminListStatus';
 
 interface Order {
   id: string;
@@ -18,6 +20,7 @@ interface Order {
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: '未処理', color: 'bg-yellow-100 text-yellow-800' },
   paid: { label: '支払い済み', color: 'bg-emerald-100 text-emerald-800' },
+  confirmed: { label: '確認済み', color: 'bg-cyan-100 text-cyan-800' },
   processing: { label: '処理中', color: 'bg-blue-100 text-blue-800' },
   shipped: { label: '発送済', color: 'bg-green-100 text-green-800' },
   delivered: { label: '配達完了', color: 'bg-gray-100 text-gray-800' },
@@ -33,15 +36,24 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 const AdminOrdersPage = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const filterFromUrl = parseOrderListFilter(searchParams.get('status'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const filter = filterFromUrl;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const setFilterFromUi = (nextFilter: OrderListFilter) => {
+    const href = buildStatusHref(pathname, searchParams.toString(), nextFilter, 'all');
+    if (href !== `${pathname}${window.location.search}`) router.push(href);
+  };
 
   const fetchOrders = async () => {
     try {
@@ -97,25 +109,22 @@ const AdminOrdersPage = () => {
       }
     }
 
-    const previousOrders = orders;
-    setOrders(orders.map(order =>
+    const previousStatus = target?.status;
+    setOrders(previous => previous.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
     setUpdatingId(orderId);
 
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!response.ok) {
-        throw new Error('ステータスの更新に失敗しました');
-      }
+      await saveAdminStatus(fetch, `/api/admin/orders/${orderId}`, 'PATCH', newStatus);
     } catch (err) {
       console.error('Status update error:', err);
       alert(err instanceof Error ? err.message : 'ステータスの更新に失敗しました');
-      setOrders(previousOrders);
+      if (previousStatus !== undefined) {
+        setOrders(previous => previous.map(order =>
+          order.id === orderId ? { ...order, status: previousStatus } : order
+        ));
+      }
     } finally {
       setUpdatingId(null);
     }
@@ -138,9 +147,7 @@ const AdminOrdersPage = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order =>
-    filter === 'all' || order.status === filter
-  );
+  const filteredOrders = orders.filter((order) => matchesOrderListFilter(order.status, filter));
 
   if (loading) {
     return (
@@ -172,7 +179,7 @@ const AdminOrdersPage = () => {
 
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => setFilter('all')}
+          onClick={() => setFilterFromUi('all')}
           className={`px-4 py-2 text-sm font-medium rounded-md ${
             filter === 'all'
               ? 'bg-blue-600 text-white'
@@ -181,10 +188,18 @@ const AdminOrdersPage = () => {
         >
           すべて ({orders.length})
         </button>
+        <button
+          onClick={() => setFilterFromUi('unshipped')}
+          className={`px-4 py-2 text-sm font-medium rounded-md ${
+            filter === 'unshipped' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          未発送 ({orders.filter((order) => matchesOrderListFilter(order.status, 'unshipped')).length})
+        </button>
         {Object.entries(statusConfig).map(([status, config]) => (
           <button
             key={status}
-            onClick={() => setFilter(status)}
+            onClick={() => setFilterFromUi(status as OrderListFilter)}
             className={`px-4 py-2 text-sm font-medium rounded-md ${
               filter === status
                 ? 'bg-blue-600 text-white'
@@ -212,9 +227,17 @@ const AdminOrdersPage = () => {
                         {order.orderNumber}
                       </p>
                       <div className="ml-2 shrink-0 flex">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(statusConfig[order.status] || statusConfig.pending).color}`}>
-                          {(statusConfig[order.status] || { label: order.status }).label}
-                        </span>
+                        <select
+                          aria-label={`${order.orderNumber}のステータス`}
+                          value={order.status}
+                          onChange={(event) => updateOrderStatus(order.id, event.target.value)}
+                          disabled={updatingId !== null}
+                          className={`rounded-full border-0 px-2 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60 ${(statusConfig[order.status] || statusConfig.pending).color}`}
+                        >
+                          {Object.entries(statusConfig).map(([status, config]) => (
+                            <option key={status} value={status}>{config.label}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="mt-2 flex flex-wrap justify-between gap-2">
@@ -233,18 +256,6 @@ const AdminOrdersPage = () => {
                         >
                           詳細
                         </Link>
-                        <select
-                          value={order.status}
-                          onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                          disabled={updatingId === order.id}
-                          className="text-sm border-gray-300 rounded-md"
-                        >
-                          {Object.entries(statusConfig).map(([status, config]) => (
-                            <option key={status} value={status}>
-                              {config.label}
-                            </option>
-                          ))}
-                        </select>
                         <button
                           onClick={() => deleteOrder(order.id, order.orderNumber)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
@@ -264,4 +275,10 @@ const AdminOrdersPage = () => {
   );
 };
 
-export default AdminOrdersPage;
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-500">読み込み中...</div>}>
+      <AdminOrdersPage />
+    </Suspense>
+  );
+}

@@ -69,12 +69,12 @@ export function ActionRequiredStrip() {
 
   const items: ActionItem[] = [
     {
-      href: '/admin/contacts',
+      href: '/admin/contacts?status=pending',
       label: '未対応のお問い合わせ',
       count: counts?.inquiries?.pending ?? 0,
     },
     {
-      href: '/admin/orders',
+      href: '/admin/orders?status=unshipped',
       label: '未発送の注文',
       count: counts?.orders?.pending ?? 0,
     },

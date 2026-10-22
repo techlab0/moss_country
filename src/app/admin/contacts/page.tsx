@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { buildStatusHref, parseContactStatus, saveAdminStatus, type ContactStatus } from '@/lib/adminListStatus';
+import { fetchContactPage } from '@/lib/contactRequest';
 
 interface ContactInquiry {
   id: string;
@@ -49,11 +52,17 @@ const INQUIRY_TYPE_LABELS: Record<string, string> = {
   other: 'その他'
 };
 
-function ContactsPage() {
+function ContactsPageContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const statusFromUrl = parseContactStatus(searchParams.get('status'));
   const [contacts, setContacts] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dbConnected, setDbConnected] = useState(true);
+  const [refreshRevision, setRefreshRevision] = useState(0);
+  const [updatingContactIds, setUpdatingContactIds] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -64,7 +73,6 @@ function ContactsPage() {
   // フィルター・検索状態
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
     priority: '',
     inquiry_type: ''
   });
@@ -73,67 +81,96 @@ function ContactsPage() {
   // 下書きに溜めて「検索」または Enter のときだけ反映する。
   const [searchDraft, setSearchDraft] = useState('');
 
-  const fetchContacts = useCallback(async () => {
-    try {
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    const isCurrent = () => active && !controller.signal.aborted;
+
+    const loadContacts = async () => {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
+        ...(statusFromUrl ? { status: statusFromUrl } : {}),
         ...Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => value !== '')
+          Object.entries(filters).filter(([, value]) => value !== '')
         )
       });
 
-      const response = await fetch(`/api/admin/contacts?${params}`);
-      
-      if (!response.ok && response.status !== 200) {
-        throw new Error('お問い合わせデータの取得に失敗しました');
-      }
+      try {
+        const data = await fetchContactPage<ContactsResponse>(
+          fetch,
+          `/api/admin/contacts?${params}`,
+          controller.signal,
+          isCurrent,
+        );
+        if (!data || !isCurrent()) return;
 
-      const data: ContactsResponse = await response.json();
-      
-      // データベース接続状態を更新
-      setDbConnected(data.dbConnected !== false);
-      
-      // データベース接続エラーの場合でも、空のデータで表示を続行
-      setContacts(data.contacts || []);
-      setPagination(data.pagination);
-      
-      // データベース接続エラーがある場合は警告を表示
-      if (data.dbConnected === false || data.error) {
-        setError('データベース接続エラー: お問い合わせデータを表示できません。管理者にお問い合わせください。');
-      }
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
-      setDbConnected(false);
-      setContacts([]);
-      setPagination({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-      });
-    } finally {
-      setLoading(false);
-    }
-    // pagination オブジェクト全体を依存にすると、取得後の setPagination で
-    // 参照が変わって取得が繰り返される。実際に使う値だけを依存にする。
-  }, [pagination.page, pagination.limit, filters]);
+        const lastPage = Math.max(1, data.pagination.totalPages);
+        if (pagination.page > lastPage) {
+          setPagination((previous) => ({ ...previous, page: lastPage }));
+          return;
+        }
 
-  useEffect(() => {
-    fetchContacts();
-  }, [fetchContacts]);
+        setDbConnected(data.dbConnected !== false);
+        setContacts(data.contacts || []);
+        setPagination(data.pagination);
+        if (data.dbConnected === false || data.error) {
+          setError('データベース接続エラー: お問い合わせデータを表示できません。管理者にお問い合わせください。');
+        }
+      } catch (err) {
+        if (!isCurrent()) return;
+        setError(err instanceof Error ? err.message : 'エラーが発生しました');
+        setDbConnected(false);
+        setContacts([]);
+        setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 });
+      } finally {
+        if (isCurrent()) setLoading(false);
+      }
+    };
+
+    void loadContacts();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [
+    pagination.page,
+    pagination.limit,
+    filters,
+    statusFromUrl,
+    refreshRevision,
+  ]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handleFilterChange = (key: string, value: string) => {
+    if (key === 'status') {
+      const href = buildStatusHref(pathname, searchParams.toString(), value);
+      setPagination(prev => ({ ...prev, page: 1 }));
+      if (href !== `${pathname}${window.location.search}`) router.push(href);
+      return;
+    }
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 })); // フィルター変更時は1ページ目に戻る
+  };
+
+  const handleContactStatusChange = async (contact: ContactInquiry, status: ContactStatus) => {
+    if (status === contact.status) return;
+    setUpdatingContactIds((previous) => [...previous, contact.id]);
+    setError(null);
+    try {
+      await saveAdminStatus(fetch, `/api/admin/contacts/${contact.id}`, 'PUT', status);
+      setRefreshRevision((revision) => revision + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ステータスの更新に失敗しました');
+    } finally {
+      setUpdatingContactIds((previous) => previous.filter((id) => id !== contact.id));
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -223,7 +260,22 @@ function ContactsPage() {
 
       {/* フィルター・検索 */}
       <div className="bg-white shadow-sm rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ステータス
+            </label>
+            <select
+              className="block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green"
+              value={statusFromUrl}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+            >
+              <option value="">すべて</option>
+              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               検索
@@ -352,9 +404,17 @@ function ContactsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(contact.status)}`}>
-                        {STATUS_LABELS[contact.status] || contact.status}
-                      </span>
+                      <select
+                        aria-label={`${contact.name}のステータス`}
+                        value={contact.status}
+                        disabled={updatingContactIds.includes(contact.id)}
+                        onChange={(event) => handleContactStatusChange(contact, event.target.value as ContactStatus)}
+                        className={`rounded-full border-0 px-2 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-moss-green disabled:opacity-60 ${getStatusBadgeColor(contact.status)}`}
+                      >
+                        {Object.entries(STATUS_LABELS).map(([status, label]) => (
+                          <option key={status} value={status}>{label}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityBadgeColor(contact.priority)}`}>
@@ -451,4 +511,10 @@ function ContactsPage() {
   );
 }
 
-export default ContactsPage;
+export default function ContactsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-500">読み込み中...</div>}>
+      <ContactsPageContent />
+    </Suspense>
+  );
+}
