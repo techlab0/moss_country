@@ -58,7 +58,7 @@ export function RecentOrders() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-sm">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">最近の注文</h2>
         </div>
@@ -66,9 +66,9 @@ export function RecentOrders() {
           <div className="animate-pulse space-y-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="h-4 bg-gray-200 rounded flex-1"></div>
-                <div className="h-4 bg-gray-200 rounded w-20"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded-sm flex-1"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-20"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-16"></div>
               </div>
             ))}
           </div>
@@ -78,7 +78,7 @@ export function RecentOrders() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg shadow-sm">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">最近の注文</h2>

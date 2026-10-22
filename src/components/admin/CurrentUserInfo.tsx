@@ -37,17 +37,17 @@ export function CurrentUserInfo() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 animate-pulse">
-        <div className="h-4 bg-gray-200 rounded mb-4"></div>
-        <div className="h-6 bg-gray-200 rounded mb-2"></div>
-        <div className="h-4 bg-gray-200 rounded w-32"></div>
+      <div className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+        <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+        <div className="h-6 bg-gray-200 rounded-sm mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded-sm w-32"></div>
       </div>
     );
   }
 
   if (error || !currentUser) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">現在のユーザー</h3>
         <p className="text-red-600">{error || 'ユーザー情報を取得できませんでした'}</p>
       </div>
@@ -55,7 +55,7 @@ export function CurrentUserInfo() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow-sm p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">現在のユーザー</h3>
       <div className="space-y-3">
         <div className="flex justify-between">

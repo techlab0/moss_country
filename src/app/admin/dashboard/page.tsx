@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
           </div>
           <Link
             href="/admin/sales"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-moss-green text-white text-base font-semibold rounded-lg shadow hover:bg-moss-green/90 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-moss-green text-white text-base font-semibold rounded-lg shadow-sm hover:bg-moss-green/90 transition-colors"
           >
             💰 売上を入力する
           </Link>

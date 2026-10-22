@@ -318,7 +318,7 @@ function BookingsListTab() {
       </div>
 
       {showManualForm && (
-        <div className="bg-white shadow rounded-lg p-4 space-y-3">
+        <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
           <div>
             <h3 className="font-medium text-gray-900">予約を追加</h3>
             <p className="text-xs text-gray-500 mt-1">
@@ -450,16 +450,16 @@ function BookingsListTab() {
 
       {loading ? (
         <div className="animate-pulse space-y-3">
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-12 bg-gray-200 rounded-sm"></div>
+          <div className="h-12 bg-gray-200 rounded-sm"></div>
+          <div className="h-12 bg-gray-200 rounded-sm"></div>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">{error}</div>
       ) : bookings.length === 0 ? (
-        <div className="bg-white shadow rounded-lg p-8 text-center text-gray-500">予約はありません。</div>
+        <div className="bg-white shadow-sm rounded-lg p-8 text-center text-gray-500">予約はありません。</div>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
+        <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b">
@@ -879,7 +879,7 @@ function PlanSettingsTab() {
       )}
 
       {isFormOpen && (
-        <div ref={formRef} className="scroll-mt-24 bg-white shadow rounded-lg p-4 space-y-3">
+        <div ref={formRef} className="scroll-mt-24 bg-white shadow-sm rounded-lg p-4 space-y-3">
           <h3 className="font-medium text-gray-900">{creating ? 'プランを追加' : 'プランを編集'}</h3>
           <div className="grid md:grid-cols-2 gap-3">
             <div>
@@ -1026,9 +1026,9 @@ function PlanSettingsTab() {
                         className="mt-2 w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs"
                       />
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <button type="button" disabled={index === 0} onClick={() => moveCourseImage(index, -1)} className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">前へ</button>
-                        <button type="button" disabled={index === form.courseImages.length - 1} onClick={() => moveCourseImage(index, 1)} className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">後ろへ</button>
-                        <button type="button" onClick={() => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.filter((_, imageIndex) => imageIndex !== index) }))} className="ml-auto rounded border border-red-300 px-2 py-1 text-xs text-red-700">削除</button>
+                        <button type="button" disabled={index === 0} onClick={() => moveCourseImage(index, -1)} className="rounded-sm border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">前へ</button>
+                        <button type="button" disabled={index === form.courseImages.length - 1} onClick={() => moveCourseImage(index, 1)} className="rounded-sm border border-gray-300 px-2 py-1 text-xs disabled:opacity-30">後ろへ</button>
+                        <button type="button" onClick={() => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.filter((_, imageIndex) => imageIndex !== index) }))} className="ml-auto rounded-sm border border-red-300 px-2 py-1 text-xs text-red-700">削除</button>
                       </div>
                       <ImagePositionControls image={image} onChange={(nextImage) => setForm((prev) => ({ ...prev, courseImages: prev.courseImages.map((entry, imageIndex) => imageIndex === index ? nextImage : entry) }))} />
                     </div>
@@ -1039,7 +1039,7 @@ function PlanSettingsTab() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 disabled={uploadingCourseImage || form.courseImages.length >= 5}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded file:border-0 file:bg-moss-green file:px-4 file:py-2 file:text-white disabled:opacity-50"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-sm file:border-0 file:bg-moss-green file:px-4 file:py-2 file:text-white disabled:opacity-50"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleCourseImageUpload(file);
@@ -1074,7 +1074,7 @@ function PlanSettingsTab() {
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
+      <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
         {loading ? (
           <p className="px-4 py-6 text-sm text-gray-500 text-center">読み込み中...</p>
         ) : plans.length === 0 ? (
@@ -1317,8 +1317,8 @@ function SlotSettingsTab() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-3">
-        <div className="h-12 bg-gray-200 rounded"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="h-12 bg-gray-200 rounded-sm"></div>
+        <div className="h-96 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -1348,7 +1348,7 @@ function SlotSettingsTab() {
 
       <JalanCloseAlerts />
 
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow-sm rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">
             {year}年 {monthNames[month - 1]}
@@ -1370,11 +1370,11 @@ function SlotSettingsTab() {
         </div>
 
         <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-600">
-          <div className="flex items-center"><div className="w-3 h-3 bg-emerald-100 border border-emerald-300 rounded mr-1.5"></div>受付中（OFF切替可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded mr-1.5"></div>停止中（ON切替可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded mr-1.5"></div>営業日未登録（ON切替可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-1.5"></div>休業表示（ON切替可）</div>
-          <div className="flex items-center"><div className="w-3 h-3 bg-white border-2 border-amber-400 rounded mr-1.5"></div>未保存の変更あり</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-emerald-100 border border-emerald-300 rounded-sm mr-1.5"></div>受付中（OFF切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded-sm mr-1.5"></div>停止中（ON切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded-sm mr-1.5"></div>営業日未登録（ON切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded-sm mr-1.5"></div>休業表示（ON切替可）</div>
+          <div className="flex items-center"><div className="w-3 h-3 bg-white border-2 border-amber-400 rounded-sm mr-1.5"></div>未保存の変更あり</div>
           <div className="flex items-center text-gray-500">枠内の数字は「空き人数／定員」</div>
         </div>
 
@@ -1451,9 +1451,9 @@ function SlotSettingsTab() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold">{day}</span>
-                  {closed && <span className="text-[10px] px-1 py-0.5 bg-gray-200 rounded">休業表示</span>}
+                  {closed && <span className="text-[10px] px-1 py-0.5 bg-gray-200 rounded-sm">休業表示</span>}
                   {!closed && !businessDay && (
-                    <span className="text-[10px] px-1 py-0.5 bg-slate-200 rounded">未登録</span>
+                    <span className="text-[10px] px-1 py-0.5 bg-slate-200 rounded-sm">未登録</span>
                   )}
                 </div>
                 <div className="space-y-1">
@@ -1591,7 +1591,7 @@ function EmailSettingsTab() {
             value={settings.subject}
             maxLength={200}
             onChange={(event) => setSettings((current) => ({ ...current, subject: event.target.value }))}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-moss-green focus:ring-moss-green"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-xs focus:border-moss-green focus:ring-moss-green"
           />
         </label>
 
@@ -1602,7 +1602,7 @@ function EmailSettingsTab() {
             rows={20}
             maxLength={10000}
             onChange={(event) => setSettings((current) => ({ ...current, body: event.target.value }))}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-moss-green focus:ring-moss-green"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm shadow-xs focus:border-moss-green focus:ring-moss-green"
           />
         </label>
 
@@ -1610,7 +1610,7 @@ function EmailSettingsTab() {
           <p className="text-sm font-medium text-gray-700">予約内容を自動挿入する文字</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {EMAIL_PLACEHOLDERS.map(([placeholder, label]) => (
-              <span key={placeholder} className="rounded bg-white px-2 py-1 text-xs text-gray-700 ring-1 ring-gray-200">
+              <span key={placeholder} className="rounded-sm bg-white px-2 py-1 text-xs text-gray-700 ring-1 ring-gray-200">
                 <code>{placeholder}</code>：{label}
               </span>
             ))}
@@ -2115,7 +2115,7 @@ function GmailIntegrationTab() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-none"
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-hidden"
               placeholder="from:activityboard.jp"
             />
           </div>
@@ -2127,7 +2127,7 @@ function GmailIntegrationTab() {
               max={50}
               value={maxResults}
               onChange={(e) => setMaxResults(Number(e.target.value))}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-none"
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-moss-green focus:outline-hidden"
             />
           </div>
           <button
@@ -2198,7 +2198,7 @@ function GmailIntegrationTab() {
                                   本文（{bodies[message.id].format}）
                                   {bodies[message.id].truncated && '／長いため途中まで表示しています'}
                                 </p>
-                                <pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-3 text-xs text-gray-800">
+                                <pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap rounded-sm border border-gray-200 bg-white p-3 text-xs text-gray-800">
                                   {bodies[message.id].body || '(本文なし)'}
                                 </pre>
                               </div>

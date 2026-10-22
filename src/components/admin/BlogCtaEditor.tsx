@@ -85,7 +85,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-white shadow-sm rounded-lg p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-2">記事下の案内ボタン</h2>
@@ -122,7 +122,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                     type="button"
                     onClick={() => moveItem(index, -1)}
                     disabled={index === 0}
-                    className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 disabled:opacity-40"
+                    className="rounded-sm border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 disabled:opacity-40"
                     aria-label={`ボタン${index + 1}を上へ移動`}
                   >
                     ↑ 上へ
@@ -131,7 +131,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                     type="button"
                     onClick={() => moveItem(index, 1)}
                     disabled={index === links.length - 1}
-                    className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 disabled:opacity-40"
+                    className="rounded-sm border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 disabled:opacity-40"
                     aria-label={`ボタン${index + 1}を下へ移動`}
                   >
                     ↓ 下へ
@@ -139,7 +139,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    className="rounded border border-red-200 bg-white px-2.5 py-1 text-xs text-red-700 hover:bg-red-50"
+                    className="rounded-sm border border-red-200 bg-white px-2.5 py-1 text-xs text-red-700 hover:bg-red-50"
                   >
                     削除
                   </button>
@@ -155,7 +155,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                   value={productId}
                   onChange={(event) => selectProduct(index, event.target.value)}
                   disabled={productsLoading}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-moss-green focus:ring-moss-green disabled:bg-gray-100 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-moss-green focus:ring-moss-green disabled:bg-gray-100 sm:text-sm"
                 >
                   <option value="">商品を選ばず、URLを入力する</option>
                   {missingSelection && <option value={productId}>選択済み商品（現在取得できません）</option>}
@@ -179,7 +179,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                     maxLength={60}
                     value={item.label || ''}
                     onChange={(event) => updateItem(index, 'label', event.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-moss-green focus:ring-moss-green sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-moss-green focus:ring-moss-green sm:text-sm"
                     placeholder="例：この商品を見る"
                   />
                 </div>
@@ -188,9 +188,9 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                     <p className="block text-sm font-medium text-gray-700">自動表示される商品</p>
                     <div className="mt-1 flex min-h-24 items-center gap-3 rounded-md border border-emerald-200 bg-white p-3">
                       {selected.thumbnailUrl ? (
-                        <img src={selected.thumbnailUrl} alt="" className="h-20 w-20 rounded object-cover" />
+                        <img src={selected.thumbnailUrl} alt="" className="h-20 w-20 rounded-sm object-cover" />
                       ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded bg-gray-100 text-xs text-gray-400">画像なし</div>
+                        <div className="flex h-20 w-20 items-center justify-center rounded-sm bg-gray-100 text-xs text-gray-400">画像なし</div>
                       )}
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900">{selected.name}</p>
@@ -209,7 +209,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
                     id={`cta-url-${index}`}
                     value={item.url || ''}
                     onChange={(event) => updateItem(index, 'url', event.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-moss-green focus:ring-moss-green sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:border-moss-green focus:ring-moss-green sm:text-sm"
                     placeholder="例：/shop/商品名"
                   />
                   <p className="mt-1 text-xs text-gray-500">商品ページを開き、アドレス欄のURLをコピーして貼り付けられます。</p>
@@ -219,7 +219,7 @@ export function BlogCtaEditor({ links, onChange }: BlogCtaEditorProps) {
 
               {item.label && (item.url || productId) && (
                 <div className="mt-4 text-center">
-                  <span className="inline-flex items-center rounded-lg bg-moss-green px-5 py-2.5 text-sm font-medium text-white shadow">
+                  <span className="inline-flex items-center rounded-lg bg-moss-green px-5 py-2.5 text-sm font-medium text-white shadow-sm">
                     {item.label}
                     <span aria-hidden="true" className="ml-2">→</span>
                   </span>

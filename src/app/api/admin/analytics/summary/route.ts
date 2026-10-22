@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   // 結果は30分キャッシュしているため、GoogleやVercel側の設定を変えた直後は
   // 古い「未連携」の結果が返り続ける。?refresh=1 でキャッシュを破棄して取り直せるようにする。
   if (request.nextUrl.searchParams.get('refresh') === '1') {
-    revalidateTag('site-analytics');
+    revalidateTag('site-analytics', { expire: 0 });
   }
 
   // 個々のサービスの失敗は summary の中で status として表現されるため、

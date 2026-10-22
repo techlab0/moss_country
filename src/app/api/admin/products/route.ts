@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     const product = await writeClient.create(doc as { _type: string } & Record<string, unknown>);
 
     // 新商品を公開側（/shop 一覧・詳細）へ即時反映する
-    revalidateTag('products');
+    revalidateTag('products', { expire: 0 });
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

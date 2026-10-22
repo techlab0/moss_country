@@ -1,18 +1,15 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from 'eslint/config'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTs from 'eslint-config-next/typescript'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
   {
     rules: {
+      // React Compiler導入時に既存コードを段階的に見直す。従来のlintエラー判定は維持する。
+      'react-hooks/immutability': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
       // 意図的に使わない変数・引数・catch束縛は _ 始まりにして明示する。
       // 「消し忘れ」と「シグネチャ上必要だが使わない」を区別できるようにするため。
       "@typescript-eslint/no-unused-vars": [
@@ -30,6 +27,7 @@ const eslintConfig = [
       "@next/next/no-img-element": "off",
     },
   },
-];
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+])
 
 export default eslintConfig;

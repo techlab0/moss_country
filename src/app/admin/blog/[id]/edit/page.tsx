@@ -315,8 +315,8 @@ export default function EditBlogPostPage() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-48"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48"></div>
+        <div className="h-96 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -329,7 +329,7 @@ export default function EditBlogPostPage() {
         </div>
         <Link
           href="/admin/blog"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
         >
           ← 記事一覧に戻る
         </Link>
@@ -354,7 +354,7 @@ export default function EditBlogPostPage() {
           </Link>
           <Link
             href="/admin/blog"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             ← 記事一覧に戻る
           </Link>
@@ -368,7 +368,7 @@ export default function EditBlogPostPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">基本情報</h2>
           
           <div className="grid grid-cols-1 gap-6">
@@ -383,7 +383,7 @@ export default function EditBlogPostPage() {
                 required
                 value={formData.title}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green sm:text-sm"
                 placeholder="記事のタイトルを入力"
               />
             </div>
@@ -392,7 +392,7 @@ export default function EditBlogPostPage() {
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
                 URL スラッグ *
               </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
+              <div className="mt-1 flex rounded-md shadow-xs">
                 <div className="relative flex items-stretch flex-grow focus-within:z-10">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <span className="text-gray-500 sm:text-sm">/blog/</span>
@@ -417,7 +417,7 @@ export default function EditBlogPostPage() {
                   type="button"
                   onClick={generateSlug}
                   disabled={!formData.title.trim()}
-                  className="relative -ml-px inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-moss-green focus:border-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative -ml-px inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-hidden focus:ring-1 focus:ring-moss-green focus:border-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>自動生成</span>
                 </button>
@@ -450,7 +450,7 @@ export default function EditBlogPostPage() {
                 value={formData.excerpt}
                 onChange={handleInputChange}
                 maxLength={200}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green sm:text-sm"
                 placeholder="記事の概要を入力（200文字以内）"
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -468,7 +468,7 @@ export default function EditBlogPostPage() {
                 rows={3}
                 value={formData.seoDescription}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green sm:text-sm"
                 placeholder="空欄のままで構いません"
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -485,7 +485,7 @@ export default function EditBlogPostPage() {
                 id="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green sm:text-sm"
               >
                 {categories.map((category) => (
                   <option key={category.value} value={category.value}>
@@ -497,7 +497,7 @@ export default function EditBlogPostPage() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">アイキャッチ画像</h2>
           {featuredImagePreview && (
             <div className="mb-4">
@@ -531,7 +531,7 @@ export default function EditBlogPostPage() {
           <p className="mt-2 text-xs text-gray-500">JPEG・PNG・WebP（最大4MB）。大きな画像はアップロード前に自動で縮小されます。</p>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">本文</h2>
           
           <div>
@@ -555,7 +555,7 @@ export default function EditBlogPostPage() {
           onChange={(ctaLinks) => setFormData(prev => ({ ...prev, ctaLinks }))}
         />
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">追加設定</h2>
           
           <div className="space-y-6">
@@ -586,7 +586,7 @@ export default function EditBlogPostPage() {
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                  className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green sm:text-sm"
+                  className="flex-1 border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green sm:text-sm"
                   placeholder="タグを入力してEnterまたは追加ボタン"
                 />
                 <button
@@ -606,7 +606,7 @@ export default function EditBlogPostPage() {
                 id="isPublished"
                 checked={formData.isPublished}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-moss-green focus:ring-moss-green border-gray-300 rounded"
+                className="h-4 w-4 text-moss-green focus:ring-moss-green border-gray-300 rounded-sm"
               />
               <label htmlFor="isPublished" className="ml-2 block text-sm text-gray-900">
                 公開する

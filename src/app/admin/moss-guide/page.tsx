@@ -154,7 +154,7 @@ export default function AdminMossGuidePage() {
         <div className="mt-4 sm:mt-0">
           <Link
             href="/admin/moss-guide/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
           >
             <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -166,10 +166,10 @@ export default function AdminMossGuidePage() {
 
       {/* 統計情報 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-emerald-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">全</span>
                 </div>
@@ -184,10 +184,10 @@ export default function AdminMossGuidePage() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">公</span>
                 </div>
@@ -202,10 +202,10 @@ export default function AdminMossGuidePage() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-gray-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">非</span>
                 </div>
@@ -220,10 +220,10 @@ export default function AdminMossGuidePage() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-amber-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">★</span>
                 </div>
@@ -238,10 +238,10 @@ export default function AdminMossGuidePage() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">WS</span>
                 </div>
@@ -258,7 +258,7 @@ export default function AdminMossGuidePage() {
       </div>
 
       {/* フィルター */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex flex-wrap gap-2">
             <button
@@ -347,7 +347,7 @@ export default function AdminMossGuidePage() {
       </div>
 
       {/* 苔一覧 */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      <div className="bg-white shadow-sm overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
           {filteredSpecies.length === 0 ? (
             <li className="px-6 py-12 text-center">

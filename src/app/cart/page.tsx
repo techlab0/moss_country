@@ -30,11 +30,11 @@ function CartItemRow({
   return (
     <div
       key={itemKey}
-      className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800"
+      className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800"
     >
       <div className="flex flex-col sm:flex-row gap-6">
         {/* 商品画像 */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <Link href={`/shop/${getProductSlug(item.product)}`}>
             <ImagePlaceholder
               src={imageUrl}
@@ -247,7 +247,7 @@ export default function CartPage() {
 
             {/* 注文サマリー */}
             <div className="lg:col-span-1">
-              <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800 sticky top-24">
+              <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800 sticky top-24">
                 <h2 className="text-xl font-medium text-white mb-6">注文サマリー</h2>
 
                 {/* 価格詳細 */}

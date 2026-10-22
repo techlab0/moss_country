@@ -300,7 +300,7 @@ export default function MobileWorkshopPage() {
             <nav aria-label="ワークショップの種類" className="mb-8 flex flex-col sm:flex-row justify-center gap-3">
               <Link
                 href="/workshop"
-                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-moss-green"
+                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xs transition-colors hover:bg-white hover:text-moss-green"
               >
                 店舗体験
               </Link>
@@ -351,7 +351,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('aboutTitle')}
               </h2>
@@ -395,7 +395,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-12">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('galleryTitle')}
               </h2>
@@ -424,7 +424,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-12">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('clientsTitle')}
               </h2>
@@ -440,15 +440,15 @@ export default function MobileWorkshopPage() {
               {workshopClients.map((name, index) => (
                 <li
                   key={`${name}-${index}`}
-                  className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/95 px-5 py-4 text-gray-800 shadow-lg backdrop-blur-sm"
+                  className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/95 px-5 py-4 text-gray-800 shadow-lg backdrop-blur-xs"
                 >
-                  <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-moss-green" aria-hidden="true"></span>
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-moss-green" aria-hidden="true"></span>
                   <span className="font-medium leading-relaxed">{name}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="max-w-3xl mx-auto rounded-2xl border border-white/50 bg-white/90 px-6 py-5 text-center text-gray-600 shadow-lg backdrop-blur-sm">
+            <p className="max-w-3xl mx-auto rounded-2xl border border-white/50 bg-white/90 px-6 py-5 text-center text-gray-600 shadow-lg backdrop-blur-xs">
               掲載許可をいただいた企業・施設様を順次ご紹介します。
             </p>
           )}
@@ -459,7 +459,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('scenesTitle')}
               </h2>
@@ -476,7 +476,7 @@ export default function MobileWorkshopPage() {
                 <CardHeader className="!p-3 md:!p-6">
                   {/* 2列にすると横幅が足りないため、狭い画面ではアイコンを文章の上に積む */}
                   <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                    <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center shrink-0">
                       {scene.icon}
                     </div>
                     <div>
@@ -497,7 +497,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('menusTitle')}
               </h2>
@@ -528,7 +528,7 @@ export default function MobileWorkshopPage() {
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 mb-3">
                     <p className="text-sm md:text-lg font-medium text-gray-700">{menu.dimensions}</p>
-                    <span className="self-start bg-light-green text-moss-green px-2 py-1 rounded text-xs md:text-sm font-medium">
+                    <span className="self-start bg-light-green text-moss-green px-2 py-1 rounded-sm text-xs md:text-sm font-medium">
                       {menu.time}
                     </span>
                   </div>
@@ -539,7 +539,7 @@ export default function MobileWorkshopPage() {
           </div>
 
           <div className="text-center mt-8">
-            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
+            <div className="bg-black/40 backdrop-blur-xs p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
               <p className="text-white text-sm">
                 <span className="whitespace-pre-line">{normalizeBasicMaterialNote(t('menusNote'))}</span>
               </p>
@@ -550,10 +550,10 @@ export default function MobileWorkshopPage() {
 
       {/* Pricing Section */}
       <section className="py-20 relative">
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs" />
         <Container className="relative z-10">
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('pricingTitle')}
               </h2>
@@ -697,10 +697,10 @@ export default function MobileWorkshopPage() {
 
       {/* Features Section */}
       <section className="py-20 relative">
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs" />
         <Container className="relative z-10">
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('featuresTitle')}
               </h2>
@@ -711,7 +711,7 @@ export default function MobileWorkshopPage() {
           <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto">
             {editableFeatures.map((feature, index) => (
               <div key={index} className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-moss-green rounded-full flex items-center justify-center shrink-0">
                   {feature.icon}
                 </div>
                 <div>
@@ -730,7 +730,7 @@ export default function MobileWorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 {t('stepsTitle')}
               </h2>

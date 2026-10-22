@@ -58,7 +58,7 @@ function ToolbarButton({
       title={title}
       aria-label={title}
       aria-pressed={active ?? false}
-      className={`px-2.5 py-1.5 text-sm rounded border transition-colors disabled:opacity-40 ${
+      className={`px-2.5 py-1.5 text-sm rounded-sm border transition-colors disabled:opacity-40 ${
         active
           ? 'bg-moss-green text-white border-moss-green'
           : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -215,7 +215,7 @@ export function RichTextEditor({ value, onChange }: Props) {
     },
     editorProps: {
       attributes: {
-        class: 'prose-admin min-h-[320px] px-4 py-3 focus:outline-none',
+        class: 'prose-admin min-h-[320px] px-4 py-3 focus:outline-hidden',
       },
       // 太字・斜体・元に戻すはTipTapが標準で割り当てるが、リンクは持っていないため自前で拾う
       handleKeyDown: (_view, event) => {
@@ -372,7 +372,7 @@ export function RichTextEditor({ value, onChange }: Props) {
           value={codeValue}
           onChange={(e) => setCodeValue(e.target.value)}
           spellCheck={false}
-          className="w-full min-h-[380px] px-4 py-3 font-mono text-sm focus:outline-none"
+          className="w-full min-h-[380px] px-4 py-3 font-mono text-sm focus:outline-hidden"
         />
       )}
 

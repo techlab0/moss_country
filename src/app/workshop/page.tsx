@@ -160,7 +160,7 @@ export default function WorkshopPage() {
               </Link>
               <Link
                 href="/workshop/mobile"
-                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-moss-green"
+                className="rounded-full border border-white/70 bg-black/25 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xs transition-colors hover:bg-white hover:text-moss-green"
               >
                 出張・団体・法人向け
               </Link>
@@ -188,7 +188,7 @@ export default function WorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 ワークショップ詳細
               </h2>
@@ -311,7 +311,7 @@ export default function WorkshopPage() {
           </div>
 
           {coursePlans.some((plan) => plan.category === 'maintenance') && (
-            <div className="mx-auto mt-10 max-w-4xl rounded-xl border border-white/20 bg-black/50 p-6 text-white backdrop-blur-sm">
+            <div className="mx-auto mt-10 max-w-4xl rounded-xl border border-white/20 bg-black/50 p-6 text-white backdrop-blur-xs">
               <h3 className="text-2xl font-bold">{t('maintenanceTitle')}</h3>
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-200">{t('maintenanceLead')}</p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -341,7 +341,7 @@ export default function WorkshopPage() {
           )}
           
           <div className="text-center mt-8">
-            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
+            <div className="bg-black/40 backdrop-blur-xs p-6 rounded-lg max-w-2xl mx-auto border border-white/20">
               <h4 className="text-lg font-semibold text-white mb-2">含まれるもの</h4>
               <div className="grid grid-cols-2 gap-2 text-sm text-white">
                 <div className="flex items-center">
@@ -371,7 +371,7 @@ export default function WorkshopPage() {
               </div>
             </div>
 
-            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg max-w-4xl mx-auto mt-4 border border-white/20">
+            <div className="bg-black/40 backdrop-blur-xs p-6 rounded-lg max-w-4xl mx-auto mt-4 border border-white/20">
               <h4 className="text-lg font-semibold text-white mb-4">{t('importantTitle')}</h4>
               <div className="grid gap-3 text-left md:grid-cols-2">
                 {t('importantNotes').split('\n').filter(Boolean).map((note) => (
@@ -394,7 +394,7 @@ export default function WorkshopPage() {
       {/* Workshop Gallery */}
       <section id="workshop-gallery" className="scroll-mt-24 py-20">
         <Container>
-          <div className="mb-12 bg-black/60 p-8 text-center backdrop-blur-sm">
+          <div className="mb-12 bg-black/60 p-8 text-center backdrop-blur-xs">
             <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">
               {t('galleryTitle')}
             </h2>
@@ -418,7 +418,7 @@ export default function WorkshopPage() {
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption className="absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-1 text-xs font-medium tracking-wide text-white backdrop-blur-sm">
+                <figcaption className="absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-1 text-xs font-medium tracking-wide text-white backdrop-blur-xs">
                   {image.label}
                 </figcaption>
               </figure>
@@ -432,7 +432,7 @@ export default function WorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 受付可能日
               </h2>
@@ -512,7 +512,7 @@ export default function WorkshopPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 参加者の声
               </h2>
@@ -543,7 +543,7 @@ export default function WorkshopPage() {
                       </svg>
                     ))}
                   </div>
-                  <span className="bg-light-green text-moss-green px-2 py-1 rounded text-sm">
+                  <span className="bg-light-green text-moss-green px-2 py-1 rounded-sm text-sm">
                     {testimonial.course}
                   </span>
                 </CardHeader>
@@ -559,10 +559,10 @@ export default function WorkshopPage() {
       {/* Booking Process */}
       <section className="py-20 relative">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs" />
         <Container className="relative z-10">
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 予約の流れ
               </h2>

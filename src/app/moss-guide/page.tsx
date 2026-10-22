@@ -211,7 +211,7 @@ export default function MossGuidePage() {
               苔図鑑
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow">
+            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow-sm">
               北海道の苔テラリウム専門店が厳選した、テラリウムに最適な苔の種類をご紹介。
               育て方のコツや特性を詳しく解説します。
             </p>
@@ -231,7 +231,7 @@ export default function MossGuidePage() {
                     placeholder="苔の名前で検索..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700 placeholder-gray-400"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-xs focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700 placeholder-gray-400"
                   />
                 </div>
                 
@@ -240,7 +240,7 @@ export default function MossGuidePage() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
+                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-xs focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
                   >
                     <option value="all">全ての分類</option>
                     <option value="moss">蘚類</option>
@@ -254,7 +254,7 @@ export default function MossGuidePage() {
                   <select
                     value={selectedDifficulty}
                     onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
+                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-xs focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
                   >
                     <option value="all">全ての難易度</option>
                     <option value="5">★☆☆☆☆ とても簡単</option>
@@ -284,7 +284,7 @@ export default function MossGuidePage() {
         <Container>
           {isLoading ? (
             <div className="text-center py-12">
-              <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-moss-green bg-white">
+              <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow-sm rounded-md text-moss-green bg-white">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-moss-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -316,7 +316,7 @@ export default function MossGuidePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
               {filteredSpecies.map((species) => (
                 <Link key={species._id} href={`/moss-guide/${species.slug?.current || 'no-slug'}`} className="block group">
-                  <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white/80 backdrop-blur-sm">
+                  <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white/80 backdrop-blur-xs">
                     {/* 画像部分 */}
                     <div className="w-full h-64 overflow-hidden relative">
                       {species.images && species.images[0] ? (
@@ -355,7 +355,7 @@ export default function MossGuidePage() {
                       </div>
                       
                       {/* 難易度（星が少ないほど簡単） */}
-                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
+                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs px-2 py-1 rounded-full">
                         <span className="text-xs font-medium text-amber-600">
                           {renderStars(species.characteristics.beginnerFriendly)}
                         </span>

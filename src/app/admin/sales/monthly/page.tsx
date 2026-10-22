@@ -145,7 +145,7 @@ function ChangeBadge({ rate }: { rate: number | null }) {
   if (rate === null) return null;
   const positive = rate >= 0;
   return (
-    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${positive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-sm ${positive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
       {positive ? '↑' : '↓'} {Math.abs(rate)}%
     </span>
   );
@@ -163,7 +163,7 @@ function SummaryCard({
   sub?: string;
 }) {
   return (
-    <div className="bg-white shadow rounded-lg p-4">
+    <div className="bg-white shadow-sm rounded-lg p-4">
       <p className="text-xs sm:text-sm text-gray-500 leading-snug">{label}</p>
       <div className="flex items-baseline flex-wrap gap-x-2 mt-1">
         <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
@@ -367,7 +367,7 @@ export default function MonthlySalesPage() {
       </div>
 
       {/* 月ナビゲーション */}
-      <div className="bg-white shadow rounded-lg p-3 flex items-center justify-between gap-2">
+      <div className="bg-white shadow-sm rounded-lg p-3 flex items-center justify-between gap-2">
         <button
           onClick={() => setMonth(shiftMonth(month, -1))}
           className="px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap border border-gray-300 rounded-md hover:bg-gray-50"
@@ -468,19 +468,19 @@ export default function MonthlySalesPage() {
           </div>
 
           {/* 税内訳 */}
-          <div className="bg-white shadow rounded-lg p-4 flex flex-wrap gap-x-8 gap-y-1 text-sm">
+          <div className="bg-white shadow-sm rounded-lg p-4 flex flex-wrap gap-x-8 gap-y-1 text-sm">
             <span className="text-gray-500">（内訳）税抜金額: <span className="text-gray-900 font-medium">¥{summary.taxExcludedTotal.toLocaleString()}</span></span>
             <span className="text-gray-500">消費税（10%）: <span className="text-gray-900 font-medium">¥{summary.taxAmountTotal.toLocaleString()}</span></span>
           </div>
 
           {!hasAnySales ? (
-            <div className="bg-white shadow rounded-lg p-8 text-center text-gray-400">
+            <div className="bg-white shadow-sm rounded-lg p-8 text-center text-gray-400">
               この月の売上データはありません
             </div>
           ) : (
             <>
               {/* 日別売上グラフ */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-3">日別売上</h2>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -501,7 +501,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* 支払い方法別内訳 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-3">支払い方法別（店舗売上）</h2>
                 <BreakdownBars
                   rows={methodOrder.map(method => ({
@@ -513,7 +513,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* カテゴリー別内訳 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-3">カテゴリー別（商品定価ベース）</h2>
                 <BreakdownBars
                   rows={categoryOrder
@@ -534,7 +534,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* 曜日別の平均売上 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-1">曜日別の平均売上</h2>
                 <p className="text-xs text-gray-500 mb-3">
                   売上のあった日だけで平均しています（定休日は平均に含めません）。
@@ -566,7 +566,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* 曜日別の平均来客数 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-1">曜日別の平均来客数</h2>
                 <p className="text-xs text-gray-500 mb-3">
                   来店者数を記録した日だけで平均しています。未入力の日は平均に含めません。
@@ -617,7 +617,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* ワークショップ（イベント日）の寄与 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-1">ワークショップの日別売上</h2>
                 <p className="text-xs text-gray-500 mb-3">
                   店頭の明細でワークショップに分類された金額です（割引前の定価ベース）。
@@ -663,7 +663,7 @@ export default function MonthlySalesPage() {
 
               {/* 前半と後半の比較 */}
               {halfComparison && (
-                <div className="bg-white shadow rounded-lg p-4">
+                <div className="bg-white shadow-sm rounded-lg p-4">
                   <h2 className="font-medium text-gray-900 mb-1">前半（1〜15日）と後半（16日〜）の比較</h2>
                   <p className="text-xs text-gray-500 mb-3">
                     月の途中で勢いが変わっていないかを見ます。差が大きいときは、その期間に何をしたかを振り返る手がかりになります。
@@ -741,7 +741,7 @@ export default function MonthlySalesPage() {
               )}
 
               {/* 時間帯別の売上 */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-1">時間帯別の売上（店頭）</h2>
                 <p className="text-xs text-gray-500 mb-3">
                   レジで登録した時刻を会計時刻とみなしています。紙の記録をまとめて入力した分は時刻が残らないため除外しています。
@@ -785,7 +785,7 @@ export default function MonthlySalesPage() {
               </div>
 
               {/* 売れ筋ランキング */}
-              <div className="bg-white shadow rounded-lg p-4">
+              <div className="bg-white shadow-sm rounded-lg p-4">
                 <h2 className="font-medium text-gray-900 mb-1">売れ筋ランキング（上位20件）</h2>
                 <p className="text-xs text-gray-500 mb-3">
                   金額は割引前の定価ベースです。数量は明細に入力された個数の合計です。

@@ -232,7 +232,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
         {/* メインコンテンツ */}
         <div className="lg:col-span-2 space-y-6">
           {/* お問い合わせ内容 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">
                 お問い合わせ内容
@@ -266,7 +266,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           {/* お問い合わせ者情報 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">
                 お問い合わせ者情報
@@ -303,7 +303,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           {/* 返信 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">返信</h3>
             </div>
@@ -333,7 +333,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
                     maxLength={5000}
                     disabled={sendingReply}
                     placeholder="お問い合わせいただきありがとうございます。..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green disabled:bg-gray-100"
                   />
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">
@@ -369,7 +369,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
 
           {/* 技術情報 */}
           {(contact.ip_address || contact.user_agent) && (
-            <div className="bg-white shadow rounded-lg">
+            <div className="bg-white shadow-sm rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">技術情報</h3>
               </div>
@@ -406,7 +406,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
         <div className="space-y-6">
 
           {/* ステータス */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">ステータス</h3>
             </div>
@@ -433,7 +433,7 @@ function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           {/* 更新履歴 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">更新履歴</h3>
             </div>

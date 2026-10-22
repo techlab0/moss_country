@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
+import nodemailer from 'nodemailer';
 
 // STORE_EMAIL はモジュール読み込み時に確定するため、import より前に設定する
 process.env.STORE_EMAIL = 'info@mosscountry.com';
@@ -144,4 +145,74 @@ test('宛先が空なら送信せず sent:false を返す', async () => {
       assert.equal(result.reason, 'no-recipient');
     }
   );
+});
+
+test('宛先アドレスが上限を超える場合はSMTPへ渡さず送信を拒否する', async () => {
+  await withMailEnv(
+    { SMTP_HOST: 'smtp.example.com', SMTP_USER: 'u', SMTP_PASS: 'p' },
+    async () => {
+      const result = await sendMail({
+        to: `${'a'.repeat(321)}@example.com`,
+        subject: 'x',
+        text: 'y',
+      });
+
+      assert.deepEqual(result, { sent: false, reason: 'invalid-recipient' });
+    }
+  );
+});
+
+test('返信先と複数宛先の上限もSMTPへ渡す前に検証する', async () => {
+  await withMailEnv(
+    { SMTP_HOST: 'smtp.example.com', SMTP_USER: 'u', SMTP_PASS: 'p' },
+    async () => {
+      const badReplyTo = await sendMail({
+        to: 'customer@example.com',
+        replyTo: `${'a'.repeat(321)}@example.com`,
+        subject: 'x',
+        text: 'y',
+      });
+      const tooManyRecipients = await sendMail({
+        to: Array.from({ length: 51 }, (_, index) => `customer${index}@example.com`),
+        subject: 'x',
+        text: 'y',
+      });
+
+      assert.deepEqual(badReplyTo, { sent: false, reason: 'invalid-recipient' });
+      assert.deepEqual(tooManyRecipients, { sent: false, reason: 'invalid-recipient' });
+    }
+  );
+});
+
+test('カンマ区切りで渡された宛先も解析後の件数で制限する', async () => {
+  const originalCreateTransport = nodemailer.createTransport;
+  const transport = originalCreateTransport({ jsonTransport: true });
+  const originalSendMail = transport.sendMail.bind(transport);
+  let rejectionCode;
+  transport.sendMail = async (options) => {
+    try {
+      return await originalSendMail(options);
+    } catch (error) {
+      rejectionCode = error.code;
+      throw error;
+    }
+  };
+  nodemailer.createTransport = () => transport;
+
+  try {
+    const { sendMail: boundedSendMail } = await import(`${mailerModuleUrl}?recipient-limit`);
+    const recipients = Array.from({ length: 51 }, (_, i) => `${i.toString(36)}@x.y`).join(',');
+    assert.ok(recipients.length <= 320, '文字数上限を通る入力で件数制限を検証する');
+    await withMailEnv(
+      { SMTP_HOST: 'smtp.example.com', SMTP_USER: 'u', SMTP_PASS: 'p' },
+      async () => {
+        const result = await boundedSendMail({ to: recipients, subject: 'x', text: 'y' });
+        assert.equal(result.sent, false);
+        assert.equal(rejectionCode, 'EMAXRECIPIENTS');
+      }
+    );
+  } finally {
+    nodemailer.createTransport = originalCreateTransport;
+    transport.close();
+  }
 });

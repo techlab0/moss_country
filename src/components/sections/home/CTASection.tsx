@@ -81,7 +81,7 @@ export function CTASection({ ov }: CTASectionProps) {
       />
       <div data-scene-content>
       <Container className="relative z-10">
-        <div ref={cardRef} className="text-center rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-16 mx-4 bg-stone-950/50 backdrop-blur-sm border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div ref={cardRef} className="text-center rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-16 mx-4 bg-stone-950/50 backdrop-blur-xs border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           <div className="mb-6 sm:mb-8">
             <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-200 font-medium">Get Started Today</span>
           </div>

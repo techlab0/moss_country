@@ -97,7 +97,7 @@ light-blue: #F0F8FF    /* セクション背景 */
 ## 🖥️ 開発環境構築
 
 ### 前提条件
-- Node.js 18以上
+- Node.js 22.12以上（Sanity Studio v6の要件）
 - npm または yarn
 
 ### インストール

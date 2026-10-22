@@ -53,7 +53,7 @@ test('在庫調整APIは管理者を検証し、商品更新と実履歴を同�
   assert.match(updateRoute, /\.transaction\(\)/);
   assert.match(updateRoute, /_type:\s*'inventoryLog'/);
   assert.match(updateRoute, /operation:\s*'adjustment'/);
-  assert.match(updateRoute, /revalidateTag\('products'\)/);
+  assert.match(updateRoute, /revalidateTag\('products',\s*\{\s*expire:\s*0\s*\}\)/);
 });
 
 test('在庫管理画面は管理APIの実データと変更理由を使い、モック履歴を表示しない', async () => {

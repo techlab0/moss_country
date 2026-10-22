@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       })
       .commit();
 
-    revalidateTag('products');
+    revalidateTag('products', { expire: 0 });
 
     return NextResponse.json({
       success: true,

@@ -150,7 +150,7 @@ export async function PATCH(
 
     // 公開側（/shop 一覧・/shop/[slug] 詳細）のキャッシュを即時破棄し、
     // 表示/非表示やスラッグ変更などをほぼ即座に反映させる
-    revalidateTag('products');
+    revalidateTag('products', { expire: 0 });
 
     return NextResponse.json(product);
   } catch (error) {
@@ -177,7 +177,7 @@ export async function DELETE(
     await client.delete(id);
 
     // 削除も公開側キャッシュへ即時反映する
-    revalidateTag('products');
+    revalidateTag('products', { expire: 0 });
 
     return NextResponse.json(
       { message: '商品を削除しました' },

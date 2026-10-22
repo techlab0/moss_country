@@ -72,7 +72,7 @@ export default function ProductionCheckPage() {
               <h3 className="text-lg font-semibold text-red-800 mb-3">❌ 不足している必須環境変数</h3>
               <ul className="space-y-2">
                 {configStatus.missingVariables.map((variable) => (
-                  <li key={variable} className="text-red-700 font-mono bg-red-100 px-2 py-1 rounded">
+                  <li key={variable} className="text-red-700 font-mono bg-red-100 px-2 py-1 rounded-sm">
                     {variable}
                   </li>
                 ))}

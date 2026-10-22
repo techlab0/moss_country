@@ -285,8 +285,8 @@ export default function AdminProductsPage() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-48"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48"></div>
+        <div className="h-96 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -303,25 +303,25 @@ export default function AdminProductsPage() {
         <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
           <Link
             href="/admin/products/new"
-            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
           >
             新商品登録
           </Link>
           <Link
             href="/admin/products/bulk"
-            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             一括編集
           </Link>
           <Link
             href="/admin/cms"
-            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             詳細CMS管理
           </Link>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             データ更新
           </button>
@@ -329,7 +329,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* 検索・カテゴリ・表示状態の絞り込み */}
-      <div className="bg-white shadow rounded-lg p-4 flex flex-wrap items-end gap-4">
+      <div className="bg-white shadow-sm rounded-lg p-4 flex flex-wrap items-end gap-4">
         <div className="flex-1 min-w-[200px]">
           <label htmlFor="admin-product-search" className="block text-xs font-medium text-gray-500 mb-1">
             商品名検索
@@ -432,13 +432,13 @@ export default function AdminProductsPage() {
       </div>
 
       {/* 商品一覧 */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-6 py-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-medium">商品一覧</h2>
           <button
             onClick={handleRepairSlugs}
             disabled={repairing}
-            className="text-xs px-3 py-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            className="text-xs px-3 py-1.5 border border-gray-300 rounded-sm text-gray-500 hover:bg-gray-50 disabled:opacity-50"
           >
             {repairing ? '修復中...' : 'スラッグ未設定の商品を修復'}
           </button>
@@ -480,7 +480,7 @@ export default function AdminProductsPage() {
                     <tr className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
+                          <div className="shrink-0 h-12 w-12">
                             {/* Sanityの画像CDNで96px（Retina用に表示サイズの2倍）に縮小して配信する。
                                 next/imageを通さないのは、Vercelの画像最適化の変換回数を消費しないため。 */}
                             {product.thumbnailUrl ? (
@@ -552,7 +552,7 @@ export default function AdminProductsPage() {
                           <button
                             onClick={() => handleToggleVisibility(product)}
                             disabled={togglingVisibilityId === product._id}
-                            className={`px-2 py-1 text-xs rounded border disabled:opacity-50 ${
+                            className={`px-2 py-1 text-xs rounded-sm border disabled:opacity-50 ${
                               isVisible
                                 ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
                                 : 'border-gray-800 bg-gray-800 text-white hover:bg-gray-700'
@@ -662,7 +662,7 @@ export default function AdminProductsPage() {
                                 onChange={(e) =>
                                   setQuickEditData((prev) => ({ ...prev, isVisible: e.target.checked }))
                                 }
-                                className="h-4 w-4 text-moss-green focus:ring-moss-green border-gray-300 rounded"
+                                className="h-4 w-4 text-moss-green focus:ring-moss-green border-gray-300 rounded-sm"
                               />
                               <label htmlFor={`quick-edit-visible-${product._id}`} className="text-sm text-gray-900">
                                 公開する（表示）
@@ -705,7 +705,7 @@ export default function AdminProductsPage() {
             </p>
             <Link
               href="/admin/products/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-moss-green hover:bg-moss-green/90"
             >
               新しい商品を追加
             </Link>
@@ -715,7 +715,7 @@ export default function AdminProductsPage() {
 
       {/* クイックアクション */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-2">商品登録</h3>
           <p className="text-gray-600 text-sm mb-4">新しい商品を追加</p>
           <div className="space-y-2">
@@ -735,7 +735,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-2">在庫管理</h3>
           <p className="text-gray-600 text-sm mb-4">在庫の確認・更新</p>
           <Link
@@ -746,7 +746,7 @@ export default function AdminProductsPage() {
           </Link>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-2">カテゴリ管理</h3>
           <p className="text-gray-600 text-sm mb-4">商品カテゴリは各商品の登録・編集画面で選択できます。スキーマ変更は Sanity Studio で行います。</p>
           <Link

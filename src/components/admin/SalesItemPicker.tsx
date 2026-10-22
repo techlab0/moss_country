@@ -111,7 +111,7 @@ export function SalesItemSelect({
       disabled={loading}
       className={
         className ??
-        'w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+        'w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
       }
     >
       <option value="">{loading ? '読み込み中...' : '未設定'}</option>

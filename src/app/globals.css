@@ -2,9 +2,51 @@
    スタックで、Noto Sans JPやInter等はどのコンポーネントからも参照されていなかったため、
    初回訪問時に8ファミリ分のCSSとフォントを取りに行くだけの純粋な待ち時間になっていた。 */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --default-ring-width: 3px;
+  --default-ring-color: var(--color-blue-500);
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+  --font-inter: Inter, system-ui, sans-serif;
+  --font-handwriting: Kalam, Caveat, "Dancing Script", cursive;
+  --font-nature: Merriweather, Lora, "Playfair Display", serif;
+
+  --color-moss-green: #1F4A0C;
+  --color-moss-light: #2D5016;
+  --color-moss-dark: #16320A;
+  --color-forest-green: #0F3808;
+  --color-warm-brown: #8B4513;
+  --color-earth-brown: #6B3410;
+  --color-light-green: #A8E6A3;
+  --color-sage-green: #8FBC8F;
+  --color-beige: #F5F5DC;
+  --color-cream: #FFF8DC;
+  --color-light-blue: #F8F8FF;
+  --color-nature-gray: #6B7280;
+  --color-ink: var(--color-text-base);
+  --color-muted: var(--color-text-muted);
+  --color-form-text: var(--color-form-text-value);
+  --color-form-bg: var(--color-form-bg-value);
+  --color-form-border: var(--color-form-border-value);
+  --color-form-placeholder: var(--color-form-placeholder-value);
+}
+
+/* Tailwind 3 defaulted plain borders to gray-200; keep that appearance in v4. */
+@layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, #e5e7eb);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 :root {
   /* サイトはライトデザイン固定。OSダークモード時にUAがフォーム部品・既定文字色を
@@ -16,10 +58,10 @@
   --color-text-base: #171717;
   --color-text-muted: #525252;
   /* フォーム用：入力欄は常に黒系文字・白系背景で可読性を確保 */
-  --color-form-text: #171717;
-  --color-form-bg: #ffffff;
-  --color-form-border: #d4d4d4;
-  --color-form-placeholder: #737373;
+  --color-form-text-value: #171717;
+  --color-form-bg-value: #ffffff;
+  --color-form-border-value: #d4d4d4;
+  --color-form-placeholder-value: #737373;
 }
 
 body {
@@ -47,9 +89,11 @@ html {
 }
 
 /* レスポンシブ画像の最適化 */
-img {
-  max-width: 100%;
-  height: auto;
+@layer base {
+  img {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 /* タッチフレンドリーなボタンサイズ */
@@ -61,6 +105,7 @@ img {
 }
 
 /* フォームの文字色・背景を常に黒系・白系で統一（暗い画面でも読みやすく） */
+@layer base {
 input,
 textarea,
 select,
@@ -84,8 +129,10 @@ select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px var(--color-form-bg) inset !important;
   box-shadow: 0 0 0 1000px var(--color-form-bg) inset !important;
 }
+}
 
 /* フォーカス可視性の向上 */
+@layer base {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -93,6 +140,7 @@ textarea:focus-visible,
 select:focus-visible {
   outline: 2px solid #22c55e;
   outline-offset: 2px;
+}
 }
 
 /* 管理画面以外に背景画像を適用 */
@@ -161,7 +209,7 @@ body.admin-layout textarea:focus {
   }
   
   .hero-gradient {
-    background: linear-gradient(135deg, theme('colors.moss-green') 0%, theme('colors.warm-brown') 100%);
+    background: linear-gradient(135deg, var(--color-moss-green) 0%, var(--color-warm-brown) 100%);
   }
 }
 

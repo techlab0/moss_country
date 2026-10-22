@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="rounded-md shadow-xs space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">
                 メールアドレス
@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
+                className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-hidden focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
                 placeholder="メールアドレス"
                 disabled={isLoading}
               />
@@ -91,7 +91,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="relative block w-full px-3 py-2 pr-12 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
+                className="relative block w-full px-3 py-2 pr-12 border border-gray-300 rounded-md placeholder-gray-600 text-gray-900 focus:outline-hidden focus:ring-moss-green focus:border-moss-green focus:z-10 text-base"
                 placeholder="パスワード"
                 disabled={isLoading}
               />
@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
                 tabIndex={-1}
                 aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
                 title={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
-                className="absolute inset-y-0 right-0 z-20 flex items-center px-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="absolute inset-y-0 right-0 z-20 flex items-center px-3 text-gray-500 hover:text-gray-700 focus:outline-hidden"
               >
                 {showPassword ? (
                   // 目に斜線（非表示にする）
@@ -131,7 +131,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-moss-green hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-moss-green hover:bg-moss-green/90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-moss-green disabled:opacity-50 disabled:cursor-not-allowed"
             >
 {isLoading ? (
                 <>

@@ -126,7 +126,7 @@ export const InventoryNotifications: React.FC = () => {
                   {notifications.map((event, index) => (
                     <div key={`${event.timestamp}-${index}`} className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-1">
+                        <div className="shrink-0 mt-1">
                           {getNotificationIcon(event)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -155,12 +155,12 @@ export const InventoryNotifications: React.FC = () => {
                             </span>
                           </div>
                           {event.newStock <= 5 && event.newStock > 0 && (
-                            <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                            <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-sm">
                               ⚠️ 在庫残り少ない
                             </div>
                           )}
                           {event.newStock === 0 && (
-                            <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                            <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded-sm">
                               🚫 在庫切れ
                             </div>
                           )}

@@ -128,10 +128,10 @@ export async function PUT(request: NextRequest) {
 
     // 準備中ページ(maintenancePages)はミドルウェアの状態キャッシュにも載るため、
     // 保存時に 'maintenance' タグを破棄して準備中の切り替えを即時反映する
-    revalidateTag('maintenance');
+    revalidateTag('maintenance', { expire: 0 });
     // ルートレイアウトのメタデータ（robots/title/OGP/GTM）のキャッシュも破棄し、
     // インデックス許可の切り替えを保存直後のページ表示から反映させる
-    revalidateTag('site-settings');
+    revalidateTag('site-settings', { expire: 0 });
 
     const merged = mergeSiteSettings(saved as Partial<SiteSettingsData>);
     return NextResponse.json({

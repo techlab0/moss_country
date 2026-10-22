@@ -59,7 +59,7 @@ export default function RentalTerrariumPage() {
     <main className="min-h-screen bg-[#f5f3eb] text-[#26362d]">
       <nav
         aria-label="レンタルサービスの選択"
-        className="border-b border-[#c4cec6] bg-white py-5 shadow-sm"
+        className="border-b border-[#c4cec6] bg-white py-5 shadow-xs"
       >
         <Container>
           <p className="mb-3 text-center text-sm font-bold tracking-wide text-[#557962]">
@@ -114,7 +114,7 @@ export default function RentalTerrariumPage() {
             </Link>
             <a
               href="#plans"
-              className="rounded-full border border-white/70 bg-black/20 px-7 py-3.5 font-bold text-white backdrop-blur-sm transition hover:bg-white/10"
+              className="rounded-full border border-white/70 bg-black/20 px-7 py-3.5 font-bold text-white backdrop-blur-xs transition hover:bg-white/10"
             >
               {t('heroPlansButton')}
             </a>
@@ -263,7 +263,7 @@ export default function RentalTerrariumPage() {
             </table>
           </div>
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl bg-white p-7 shadow-sm">
+            <div className="rounded-2xl bg-white p-7 shadow-xs">
               <h3 className="text-xl font-bold text-[#173b27]">
                 {t('includedTitle')}
               </h3>

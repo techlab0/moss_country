@@ -30,7 +30,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         </div>
 
         {/* ロゴ（静的） */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 mb-8">
+        <div className="bg-white/90 backdrop-blur-xs rounded-lg p-4 mb-8">
           <img 
             src="/images/moss_country_logo.avif" 
             alt="MOSS COUNTRY" 

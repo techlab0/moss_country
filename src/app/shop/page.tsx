@@ -246,7 +246,7 @@ export default function ProductsPage() {
               dangerouslySetInnerHTML={{ __html: heroTitle }}
             />
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow whitespace-pre-line">
+            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow-sm whitespace-pre-line">
               {heroLead}
             </p>
             <Button variant="primary" size="lg">
@@ -262,7 +262,7 @@ export default function ProductsPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 テラリウム作品
               </h2>
@@ -297,7 +297,7 @@ export default function ProductsPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 関連用品
               </h2>
@@ -332,7 +332,7 @@ export default function ProductsPage() {
       <section id="products" className="py-20 relative">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 商品ラインナップ
               </h2>
@@ -350,7 +350,7 @@ export default function ProductsPage() {
           */}
           {isLoading ? (
             <div className="min-h-[60vh] flex items-center justify-center">
-              <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-moss-green bg-white">
+              <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow-sm rounded-md text-moss-green bg-white">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-moss-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -360,7 +360,7 @@ export default function ProductsPage() {
             </div>
           ) : products.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <div className="bg-black/60 backdrop-blur-sm p-8 rounded-lg">
+              <div className="bg-black/60 backdrop-blur-xs p-8 rounded-lg">
                 <p className="text-white text-lg">現在商品がありません。</p>
               </div>
             </div>
@@ -406,7 +406,7 @@ export default function ProductsPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="商品名で検索"
                     aria-label="商品名で検索"
-                    className="w-full px-4 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-moss-green"
+                    className="w-full px-4 py-2 rounded-lg border border-white/20 focus:outline-hidden focus:ring-2 focus:ring-moss-green"
                   />
                 </div>
                 <label className="flex items-center gap-2 text-white text-sm font-medium whitespace-nowrap">
@@ -426,7 +426,7 @@ export default function ProductsPage() {
                     id="product-sort"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                    className="px-3 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-moss-green"
+                    className="px-3 py-2 rounded-lg border border-white/20 focus:outline-hidden focus:ring-2 focus:ring-moss-green"
                   >
                     <option value="recommended">おすすめ順</option>
                     <option value="name">あいうえお順</option>
@@ -449,7 +449,7 @@ export default function ProductsPage() {
                 if (categorySections.length === 0) {
                   return (
                     <div className="text-center py-12">
-                      <div className="bg-black/60 backdrop-blur-sm p-8 rounded-lg">
+                      <div className="bg-black/60 backdrop-blur-xs p-8 rounded-lg">
                         <p className="text-white text-lg">条件に一致する商品が見つかりませんでした</p>
                       </div>
                     </div>
@@ -460,7 +460,7 @@ export default function ProductsPage() {
                   <div className="space-y-16">
                     {categorySections.map(({ category, filtered }) => (
                       <div key={category}>
-                        <div className="bg-black/50 backdrop-blur-sm p-6 mb-8">
+                        <div className="bg-black/50 backdrop-blur-xs p-6 mb-8">
                           <h3 className="text-2xl md:text-3xl font-bold text-white text-center">
                             {category}
                           </h3>
@@ -487,7 +487,7 @@ export default function ProductsPage() {
       {/* Care Guide */}
       <section className="py-20 relative">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs" />
         <Container className="relative z-10">
           <div className="glass-card p-8 rounded-3xl">
             <h2 className="text-3xl font-bold text-moss-green mb-6 text-center">

@@ -117,7 +117,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     >
       <Container>
         <div className="mb-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 inline-block">
+          <div className="bg-white/80 backdrop-blur-xs rounded-lg p-3 inline-block">
             <ShopBackLink className="text-moss-green hover:underline font-medium" />
           </div>
         </div>
@@ -144,7 +144,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+            <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
               <div className="flex items-center gap-3 mb-2">
                 <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
                   {category}
@@ -162,14 +162,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {product.description && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+              <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">商品説明</h2>
                 <p className="text-gray-700 leading-relaxed">{product.description}</p>
               </div>
             )}
 
             {product.dimensions && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+              <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">サイズ</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   {product.dimensions.width && (
@@ -198,7 +198,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
 
             {product.materials && product.materials.length > 0 && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+              <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">素材</h2>
                 <div className="flex flex-wrap gap-2">
                   {product.materials.map((material, index) => (
@@ -211,7 +211,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
 
             {product.careInstructions && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+              <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">お手入れ方法</h2>
                 <p className="text-gray-700 leading-relaxed">{product.careInstructions}</p>
               </div>

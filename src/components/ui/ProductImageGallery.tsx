@@ -127,7 +127,7 @@ export function ProductImageGallery({ images, alt, fallbackSrc }: ProductImageGa
               onClick={() => setActiveIndex(index)}
               aria-label={`${alt} ${index + 1}を表示`}
               aria-current={index === activeIndex}
-              className={`w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 overflow-hidden rounded bg-white/80 flex items-center justify-center transition-opacity ${
+              className={`w-20 h-20 sm:w-24 sm:h-24 shrink-0 overflow-hidden rounded-sm bg-white/80 flex items-center justify-center transition-opacity ${
                 index === activeIndex ? 'ring-2 ring-moss-green opacity-100' : 'opacity-70 hover:opacity-100'
               }`}
             >

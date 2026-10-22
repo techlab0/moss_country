@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           message: '入力内容に誤りがあります。',
-          errors: error.errors
+          errors: error.issues
         },
         { status: 400 }
       );

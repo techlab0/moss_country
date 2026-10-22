@@ -58,13 +58,13 @@ export default function BlogAnalyticsPage() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-48"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            <div key={i} className="h-32 bg-gray-200 rounded-sm"></div>
           ))}
         </div>
-        <div className="h-64 bg-gray-200 rounded"></div>
+        <div className="h-64 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export default function BlogAnalyticsPage() {
           <h1 className="text-3xl font-bold text-gray-900">ブログ統計</h1>
           <Link
             href="/admin/blog"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             ← ブログ管理に戻る
           </Link>
@@ -98,13 +98,13 @@ export default function BlogAnalyticsPage() {
         <div className="flex space-x-3">
           <button
             onClick={fetchStats}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             🔄 更新
           </button>
           <Link
             href="/admin/blog"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             ← ブログ管理に戻る
           </Link>
@@ -113,9 +113,9 @@ export default function BlogAnalyticsPage() {
 
       {/* 概要統計 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="w-8 h-8 bg-moss-green rounded-md flex items-center justify-center">
                 <span className="text-white font-medium text-sm">📝</span>
               </div>
@@ -127,9 +127,9 @@ export default function BlogAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
                 <span className="text-white font-medium text-sm">✅</span>
               </div>
@@ -141,9 +141,9 @@ export default function BlogAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
                 <span className="text-white font-medium text-sm">📄</span>
               </div>
@@ -157,7 +157,7 @@ export default function BlogAnalyticsPage() {
       </div>
 
       {/* カテゴリ別統計 */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-medium text-gray-900">カテゴリ別記事数</h2>
         </div>
@@ -182,7 +182,7 @@ export default function BlogAnalyticsPage() {
 
       {/* 人気タグ */}
       {stats.tagsStats.length > 0 && (
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white shadow-sm rounded-lg">
           <div className="px-6 py-4 border-b">
             <h2 className="text-lg font-medium text-gray-900">よく使われるタグ</h2>
           </div>
@@ -205,7 +205,7 @@ export default function BlogAnalyticsPage() {
       )}
 
       {/* 最近の記事 */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-medium text-gray-900">最近の記事</h2>
         </div>

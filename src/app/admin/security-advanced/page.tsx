@@ -12,10 +12,10 @@ const AdvancedSecurityPage = () => {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48 mb-4"></div>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            <div key={i} className="h-32 bg-gray-200 rounded-sm"></div>
           ))}
         </div>
       </div>
@@ -32,7 +32,7 @@ const AdvancedSecurityPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">ログイン制限設定</h2>
           <div className="space-y-4">
             <div>
@@ -42,7 +42,7 @@ const AdvancedSecurityPage = () => {
               <input
                 type="number"
                 defaultValue={5}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs"
               />
             </div>
             <div>
@@ -52,13 +52,13 @@ const AdvancedSecurityPage = () => {
               <input
                 type="number"
                 defaultValue={30}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">IP制御</h2>
           <div className="space-y-4">
             <div>
@@ -68,7 +68,7 @@ const AdvancedSecurityPage = () => {
               <textarea
                 rows={3}
                 placeholder="192.168.1.0/24"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs"
               />
             </div>
             <div>
@@ -78,14 +78,14 @@ const AdvancedSecurityPage = () => {
               <textarea
                 rows={3}
                 placeholder="悪意のあるIPアドレス"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-xs"
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow-sm rounded-lg p-6">
         <h2 className="text-lg font-medium text-gray-900 mb-4">セキュリティレポート</h2>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

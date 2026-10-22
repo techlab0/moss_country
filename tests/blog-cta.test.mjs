@@ -150,7 +150,7 @@ test('ブログ記事はスマートフォンで共有し、PCでは記事URLを
   assert.ok(button.includes('social-plugins.line.me/lineit/share'), 'LINEの共有画面を開ける');
   assert.ok(button.includes('URLをコピー'), 'URLコピーを明示的に選べる');
   assert.match(button, /handleNativeShare[\s\S]*?navigator\.share\(\{ url \}\)/, 'Instagramなどは端末標準の共有先を利用する');
-  assert.ok(button.includes('>\n        共有\n'), 'ボタン名は「共有」にする');
+  assert.ok(button.replace(/\r\n/g, '\n').includes('>\n        共有\n'), 'ボタン名は「共有」にする');
   assert.ok(!button.includes('Instagramで共有'), 'Instagram専用の表記にしない');
   assert.ok(!button.includes('window.location.href'), 'ブラウザ上の不確実なURLを共有に使わない');
   assert.ok(!button.includes('text:'), '携帯電話のコピーへタイトルなどの文章を混ぜない');

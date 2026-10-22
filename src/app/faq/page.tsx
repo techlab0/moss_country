@@ -57,7 +57,7 @@ export default async function FAQPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white drop-shadow-lg mb-4">よくあるご質問</h1>
           <div className="w-24 h-1 bg-moss-green mx-auto mb-6"></div>
-          <p className="text-xl text-gray-100 drop-shadow max-w-2xl mx-auto">
+          <p className="text-xl text-gray-100 drop-shadow-sm max-w-2xl mx-auto">
             MOSS COUNTRYのテラリウムや商品について、
             お客様からよくいただくご質問をまとめました。
           </p>
@@ -71,7 +71,7 @@ export default async function FAQPage() {
           <div className="space-y-8">
             {Object.entries(groupedFAQs).map(([category, categoryFAQs]) => (
               <div key={category}>
-                <h2 className="text-2xl font-semibold text-white drop-shadow mb-6 pb-2 border-b-2 border-white/70">
+                <h2 className="text-2xl font-semibold text-white drop-shadow-sm mb-6 pb-2 border-b-2 border-white/70">
                   {category}
                 </h2>
                 <div className="grid gap-4">
@@ -79,7 +79,7 @@ export default async function FAQPage() {
                     <Card key={faq._id} className="transition-shadow hover:shadow-lg">
                       <CardHeader>
                         <h3 className="text-lg font-semibold text-moss-green flex items-start">
-                          <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 flex-shrink-0">
+                          <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 shrink-0">
                             Q
                           </span>
                           {faq.question}
@@ -87,7 +87,7 @@ export default async function FAQPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-start">
-                          <span className="bg-warm-brown text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 flex-shrink-0">
+                          <span className="bg-warm-brown text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 shrink-0">
                             A
                           </span>
                           <div className="text-gray-700 leading-relaxed">

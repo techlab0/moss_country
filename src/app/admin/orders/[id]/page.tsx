@@ -318,8 +318,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-64"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-64"></div>
+        <div className="h-96 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -414,7 +414,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         {/* メインコンテンツ */}
         <div className="lg:col-span-2 space-y-6">
           {/* 注文商品 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">注文商品</h2>
             </div>
@@ -467,7 +467,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           </div>
 
           {/* 備考 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">備考</h2>
             </div>
@@ -476,7 +476,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 value={notesInput}
                 onChange={(e) => setNotesInput(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-moss-green focus:border-moss-green text-sm"
                 placeholder="管理者用のメモを入力"
               />
             </div>
@@ -486,7 +486,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         {/* サイドバー */}
         <div className="space-y-6">
           {/* ステータス更新 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">ステータス編集</h2>
             </div>
@@ -496,7 +496,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <select
                   value={statusInput}
                   onChange={(e) => setStatusInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-moss-green focus:border-moss-green"
                 >
                   {Object.entries(statusConfig).map(([status, config]) => (
                     <option key={status} value={status}>
@@ -510,7 +510,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <select
                   value={paymentStatusInput}
                   onChange={(e) => setPaymentStatusInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-moss-green focus:border-moss-green"
                 >
                   {Object.entries(paymentStatusLabels).map(([status, label]) => (
                     <option key={status} value={status}>
@@ -525,7 +525,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   type="text"
                   value={trackingNumberInput}
                   onChange={(e) => setTrackingNumberInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-moss-green focus:border-moss-green"
                   placeholder="未設定"
                 />
               </div>
@@ -540,7 +540,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           </div>
 
           {/* 顧客情報 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">顧客情報</h2>
             </div>
@@ -561,7 +561,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           </div>
 
           {/* 配送先情報 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">配送先情報</h2>
             </div>
@@ -584,7 +584,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           </div>
 
           {/* 支払情報 */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">支払情報</h2>
             </div>

@@ -93,7 +93,7 @@ export default function CustomersPage() {
               </p>
             </div>
           ) : (
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div className="bg-white shadow-xs rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -170,11 +170,11 @@ export default function CustomersPage() {
           {/* 統計情報 */}
           {!isLoading && filteredCustomers.length > 0 && (
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-6 rounded-lg shadow-xs">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">総顧客数</h3>
                 <p className="text-3xl font-bold text-moss-green">{customers.length}</p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-6 rounded-lg shadow-xs">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">平均注文回数</h3>
                 <p className="text-3xl font-bold text-moss-green">
                   {customers.length > 0 
@@ -183,7 +183,7 @@ export default function CustomersPage() {
                   }
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-6 rounded-lg shadow-xs">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">平均購入金額</h3>
                 <p className="text-3xl font-bold text-moss-green">
                   ¥{customers.length > 0 

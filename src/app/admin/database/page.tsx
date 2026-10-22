@@ -282,25 +282,25 @@ export default function DatabaseOptimizationPage() {
           {/* 統計情報カード */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg shadow">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-blue-600">
                   {stats.tables.length}
                 </div>
                 <div className="text-sm text-gray-600">テーブル数</div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-green-600">
                   {stats.indexes.length}
                 </div>
                 <div className="text-sm text-gray-600">インデックス数</div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-purple-600">
                   {stats.performance.cacheHitRatio.toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">キャッシュヒット率</div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-orange-600">
                   {stats.performance.connectionCount}
                 </div>
@@ -311,7 +311,7 @@ export default function DatabaseOptimizationPage() {
 
           {/* 推奨事項 */}
           {recommendations.length > 0 && (
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-white rounded-lg shadow-sm">
               <div className="px-6 py-4 border-b">
                 <h3 className="text-lg font-semibold">最適化推奨事項</h3>
               </div>
@@ -357,7 +357,7 @@ export default function DatabaseOptimizationPage() {
       {activeTab === "performance" && stats && (
         <div className="space-y-6">
           {/* テーブル情報 */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-lg shadow-sm">
             <div className="px-6 py-4 border-b">
               <h3 className="text-lg font-semibold">テーブル統計</h3>
             </div>
@@ -402,7 +402,7 @@ export default function DatabaseOptimizationPage() {
           </div>
 
           {/* インデックス情報 */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-lg shadow-sm">
             <div className="px-6 py-4 border-b">
               <h3 className="text-lg font-semibold">インデックス使用状況</h3>
             </div>
@@ -461,7 +461,7 @@ export default function DatabaseOptimizationPage() {
       {/* メンテナンスタブ */}
       {activeTab === "maintenance" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">
               データベースメンテナンス
             </h3>
@@ -517,7 +517,7 @@ export default function DatabaseOptimizationPage() {
       {/* クエリ分析タブ */}
       {activeTab === "query-analyzer" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">SQLクエリ分析</h3>
             <div className="space-y-4">
               <div>

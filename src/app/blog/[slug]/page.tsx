@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getBlogPostBySlug, urlFor } from '@/lib/sanity'
 import { buildMetaDescription, normalizeDescription } from '@/lib/metaDescription'
+import { generateSEOMetadata } from '@/lib/slugUtils'
 import type { BlogPost } from '@/types/sanity'
 import { Container } from '@/components/layout/Container'
 import Image from 'next/image'
@@ -28,10 +29,13 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   // 抜粋が数十文字しかない記事があるため、足りない分は本文の冒頭で補う。
   const description =
     normalizeDescription(post.seoDescription) || buildMetaDescription([post.excerpt, post.content])
+  const seo = generateSEOMetadata(post.title, post.excerpt || '', post.category)
+  const imageUrl = post.featuredImage?.asset?.url
 
   return {
     title: post.title,
     description,
+    keywords: seo.keywords,
     openGraph: {
       title: `${post.title} | MOSS COUNTRY`,
       description,
@@ -39,8 +43,11 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       type: 'article',
       publishedTime: post.publishedAt,
       authors: post.author ? [post.author] : undefined,
+      images: imageUrl ? [imageUrl] : undefined,
+      tags: post.tags,
     },
     twitter: {
+      card: 'summary_large_image',
       title: `${post.title} | MOSS COUNTRY`,
       description,
     },
@@ -60,8 +67,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const hasBody = Array.isArray(post.content) && post.content.length > 0
   const blogCtas = getBlogCtas(post)
-  const ctaClassName = 'inline-flex items-center justify-center rounded-lg bg-moss-green px-7 py-3.5 font-medium text-white shadow-lg transition-colors hover:bg-moss-green/90 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2'
-  const productCtaClassName = 'inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 font-medium text-white transition-all hover:border-white hover:bg-white hover:text-[#17351f] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#111914]'
+  const ctaClassName = 'inline-flex items-center justify-center rounded-lg bg-moss-green px-7 py-3.5 font-medium text-white shadow-lg transition-colors hover:bg-moss-green/90 focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:ring-offset-2'
+  const productCtaClassName = 'inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 font-medium text-white transition-all hover:border-white hover:bg-white hover:text-[#17351f] focus:outline-hidden focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#111914]'
 
   return (
     <div 
@@ -77,7 +84,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         <article className="max-w-4xl mx-auto">
           <header className="mb-8">
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+            <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6">
               <div className="flex items-center gap-4 mb-4">
                 {post.category && (
                   <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm">
@@ -115,7 +122,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           </header>
 
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">
+          <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6 mb-8">
             <div className="prose prose-lg max-w-none">
               {hasBody ? (
                 <PortableText
@@ -186,7 +193,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           />
 
           {blogCtas.length > 0 && (
-            <div className="mb-8 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0d1711]/95 p-5 text-center shadow-2xl backdrop-blur-sm sm:p-8">
+            <div className="mb-8 overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0d1711]/95 p-5 text-center shadow-2xl backdrop-blur-xs sm:p-8">
               <div className="mb-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300/80">Related products</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-wide text-white">記事に登場した商品</h2>
@@ -243,7 +250,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           )}
 
           {post.tags && post.tags.length > 0 && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 mb-8">
+            <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6 mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">タグ</h3>
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag, index) => (

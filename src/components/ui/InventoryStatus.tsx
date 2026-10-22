@@ -107,7 +107,7 @@ export const InventoryBadge: React.FC<InventoryBadgeProps> = ({
 
   if (variant === 'detailed') {
     return (
-      <div className={`bg-white/90 backdrop-blur-sm rounded-lg p-4 ${className}`}>
+      <div className={`bg-white/90 backdrop-blur-xs rounded-lg p-4 ${className}`}>
         <h3 className="font-semibold mb-2 text-gray-800">在庫状況</h3>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -189,7 +189,7 @@ export const InventoryAlert: React.FC<InventoryAlertProps> = ({
     return (
       <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
         <div className="flex items-center gap-3">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -205,7 +205,7 @@ export const InventoryAlert: React.FC<InventoryAlertProps> = ({
           <div className="mt-3 flex gap-2">
             <button
               onClick={onNotifyWhenAvailable}
-              className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+              className="text-xs bg-red-600 text-white px-3 py-1 rounded-sm hover:bg-red-700 transition-colors"
             >
               再入荷通知を受け取る
             </button>
@@ -219,7 +219,7 @@ export const InventoryAlert: React.FC<InventoryAlertProps> = ({
     return (
       <div className={`bg-orange-50 border border-orange-200 rounded-lg p-3 ${className}`}>
         <div className="flex items-center gap-2">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

@@ -268,7 +268,7 @@ export default function ContactPage() {
         <Container className="relative z-10">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+              <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                   お問い合わせフォーム
                 </h2>
@@ -315,7 +315,7 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green"
                         placeholder="田中 太郎"
                       />
                     </div>
@@ -332,7 +332,7 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green"
                         placeholder="example@email.com"
                       />
                     </div>
@@ -350,7 +350,7 @@ export default function ContactPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green"
                         placeholder="011-123-4567"
                       />
                     </div>
@@ -366,7 +366,7 @@ export default function ContactPage() {
                         value={formData.inquiryType}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green"
                       >
                         <option value="">選択してください</option>
                         {inquiryTypes.map((type, index) => (
@@ -388,7 +388,7 @@ export default function ContactPage() {
                       value={formData.subject}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green"
                       placeholder="お問い合わせ内容を簡潔にお書きください"
                     />
                   </div>
@@ -407,7 +407,7 @@ export default function ContactPage() {
                       required
                       rows={6}
                       maxLength={1000}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-moss-green resize-vertical"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-moss-green resize-vertical"
                       placeholder="詳しいお問い合わせ内容をお書きください（1000文字以内）"
                     />
                   </div>
@@ -421,7 +421,7 @@ export default function ContactPage() {
                       checked={formData.agreement}
                       onChange={handleInputChange}
                       required
-                      className="mr-3 w-4 h-4 text-moss-green border-gray-300 rounded focus:ring-moss-green flex-shrink-0"
+                      className="mr-3 w-4 h-4 text-moss-green border-gray-300 rounded-sm focus:ring-moss-green shrink-0"
                     />
                     <label htmlFor="agreement" className="text-sm text-gray-700">
                       <span className="text-red-500">*</span>
@@ -453,7 +453,7 @@ export default function ContactPage() {
       <section className="py-20 bg-white">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 よくあるご質問
               </h2>

@@ -204,7 +204,7 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
       </div>
 
       {!fixedPageId && (
-        <div className="bg-white shadow rounded-lg p-4">
+        <div className="bg-white shadow-sm rounded-lg p-4">
           <label className="block text-sm text-gray-600 mb-1">編集するページ</label>
           <select
             value={pageId}
@@ -227,10 +227,10 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
       )}
 
       {loading ? (
-        <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+        <div className="animate-pulse h-64 bg-gray-200 rounded-sm"></div>
       ) : (
         <>
-          <div className="bg-white shadow rounded-lg divide-y">
+          <div className="bg-white shadow-sm rounded-lg divide-y">
             {page.fields.map(field => (
               <div key={field.key} className="p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -289,7 +289,7 @@ function PageContentEditor({ fixedPageId }: PageContentEditorProps) {
                         ...prev,
                         [field.key]: e.target.checked ? 'true' : 'false',
                       }))}
-                      className="h-5 w-5 rounded border-gray-300 text-moss-green focus:ring-moss-green"
+                      className="h-5 w-5 rounded-sm border-gray-300 text-moss-green focus:ring-moss-green"
                     />
                     <span className="text-sm text-gray-700">
                       {(textValues[field.key] ?? field.default) !== 'false'

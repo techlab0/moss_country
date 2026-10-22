@@ -104,7 +104,7 @@ export default function ChangePasswordPage() {
   if (success) {
     return (
       <div className="max-w-md mx-auto py-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
               <svg
@@ -135,7 +135,7 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">パスワード変更</h1>
           <p className="text-sm text-gray-600 mt-2">
@@ -156,7 +156,7 @@ export default function ChangePasswordPage() {
               type={showPasswords ? "text" : "password"}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
               disabled={isLoading}
               required
             />
@@ -174,7 +174,7 @@ export default function ChangePasswordPage() {
               type={showPasswords ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
               disabled={isLoading}
               required
             />
@@ -199,7 +199,7 @@ export default function ChangePasswordPage() {
               type={showPasswords ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
               disabled={isLoading}
               required
             />
@@ -211,7 +211,7 @@ export default function ChangePasswordPage() {
               checked={showPasswords}
               onChange={(e) => setShowPasswords(e.target.checked)}
               disabled={isLoading}
-              className="h-4 w-4 rounded border-gray-300 text-moss-green focus:ring-moss-green"
+              className="h-4 w-4 rounded-sm border-gray-300 text-moss-green focus:ring-moss-green"
             />
             パスワードを表示する
           </label>

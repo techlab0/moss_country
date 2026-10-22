@@ -77,8 +77,8 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
     return (
       <div className="bg-stone-950 min-h-screen pt-20 px-4">
         <div className="max-w-md mx-auto py-16 animate-pulse">
-          <div className="h-8 bg-stone-800 rounded mb-4"></div>
-          <div className="h-32 bg-stone-800 rounded"></div>
+          <div className="h-8 bg-stone-800 rounded-sm mb-4"></div>
+          <div className="h-32 bg-stone-800 rounded-sm"></div>
         </div>
       </div>
     );
@@ -112,7 +112,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
-        <div className="bg-stone-900/50 backdrop-blur-sm border border-stone-800 rounded-2xl p-6">
+        <div className="bg-stone-900/50 backdrop-blur-xs border border-stone-800 rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-stone-400 mb-3">MOSS COUNTRY レシート</h2>
 
           {receipt.description && (

@@ -37,7 +37,7 @@ export default function CraftMossRentalPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f2e9] text-[#26362d]">
-      <nav aria-label="レンタルサービスの選択" className="border-b border-[#c4cec6] bg-white py-5 shadow-sm">
+      <nav aria-label="レンタルサービスの選択" className="border-b border-[#c4cec6] bg-white py-5 shadow-xs">
         <Container>
           <p className="mb-3 text-center text-sm font-bold tracking-wide text-[#557962]">レンタルサービスを選択</p>
           <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3">

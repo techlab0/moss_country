@@ -122,7 +122,7 @@ export default function TerrariumGuidePage() {
           </p>
           <a
             href="#origin"
-            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/30 bg-black/20 px-6 py-3 text-sm text-white backdrop-blur-sm transition-colors hover:border-emerald-300 hover:text-emerald-200"
+            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/30 bg-black/20 px-6 py-3 text-sm text-white backdrop-blur-xs transition-colors hover:border-emerald-300 hover:text-emerald-200"
           >
             テラリウムの物語を読む
             <span aria-hidden="true">↓</span>
