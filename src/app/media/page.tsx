@@ -55,7 +55,7 @@ export default function MediaPage() {
               {mediaCoverage.map((item) => (
                 <article key={item.id} className="relative sm:pl-16">
                   <div className="absolute left-3 top-10 hidden h-4 w-4 rounded-full border-4 border-[#07100c] bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.65)] sm:block" />
-                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur-sm">
+                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur-xs">
                     <div className={item.image ? 'grid lg:grid-cols-[0.9fr_1.1fr]' : ''}>
                       {item.image && (
                         <div className="relative min-h-64 overflow-hidden bg-black lg:min-h-[360px]">

@@ -93,12 +93,12 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewDet
           {/* バッジ */}
           <div className="absolute top-2 left-2 flex gap-2">
             {product.featured && (
-              <div className="bg-red-500 text-white px-2 py-1 rounded text-sm z-10">
+              <div className="bg-red-500 text-white px-2 py-1 rounded-sm text-sm z-10">
                 おすすめ
               </div>
             )}
             {!inventoryLoading && isOutOfStock && (
-              <div className="bg-gray-500 text-white px-2 py-1 rounded text-sm z-10">
+              <div className="bg-gray-500 text-white px-2 py-1 rounded-sm text-sm z-10">
                 在庫切れ
               </div>
             )}
@@ -154,7 +154,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewDet
       {/* 商品情報 */}
       <div className="p-3 sm:p-6 flex flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
-          <span className="bg-moss-green text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs leading-tight">
+          <span className="bg-moss-green text-white px-1.5 sm:px-2 py-1 rounded-sm text-[10px] sm:text-xs leading-tight">
             {product.category}
           </span>
           <InventoryBadge productId={product._id} product={product} />
@@ -243,7 +243,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewDet
         {showSuccess && (
           <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 text-green-700 text-sm">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>カートに追加しました</span>

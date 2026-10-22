@@ -60,7 +60,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product, shippin
   const inCartQuantity = isInCart(product._id) ? getCartItemQuantity(product._id) : 0;
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 space-y-4">
+    <div className="bg-white/90 backdrop-blur-xs rounded-lg p-6 space-y-4">
       {/* 在庫状況 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -115,7 +115,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product, shippin
       
       {/* 在庫上限警告 */}
       {isInStock && quantity >= availableStock && (
-        <div className="text-orange-600 text-sm bg-orange-50 p-2 rounded border border-orange-200">
+        <div className="text-orange-600 text-sm bg-orange-50 p-2 rounded-sm border border-orange-200">
           ⚠️ 在庫上限に達しています（最大: {availableStock}点）
         </div>
       )}
@@ -172,7 +172,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product, shippin
         {error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
               <p className="text-red-600 text-sm">{error}</p>
@@ -191,7 +191,7 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product, shippin
       {showSuccess && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <div className="flex items-center gap-2 text-green-700">
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span className="text-sm font-medium">

@@ -15,7 +15,7 @@ import type { Product } from '@/types/ecommerce';
  */
 function revalidateProductCache(): void {
   try {
-    revalidateTag('products');
+    revalidateTag('products', { expire: 0 });
   } catch (error) {
     console.warn('在庫更新後の商品キャッシュ破棄に失敗しました:', error);
   }

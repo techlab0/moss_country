@@ -558,7 +558,7 @@ export default function WorkshopBookingPage() {
                 <select
                   value={partySize}
                   onChange={(e) => setPartySize(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                 >
                   {Array.from({ length: maxPartySize }, (_, i) => i + 1).map((n) => (
                     <option key={n} value={n}>
@@ -582,7 +582,7 @@ export default function WorkshopBookingPage() {
           {/* ステップ4: お客様情報 */}
           {step === 4 && (
             <div className="space-y-6">
-              <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800 space-y-4">
+              <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800 space-y-4">
                 <div>
                   <label className="block text-stone-300 text-sm font-medium mb-2">
                     お名前 <span className="text-red-400">*</span>
@@ -591,7 +591,7 @@ export default function WorkshopBookingPage() {
                     type="text"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
                 <div>
@@ -602,7 +602,7 @@ export default function WorkshopBookingPage() {
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
                 <div>
@@ -613,7 +613,7 @@ export default function WorkshopBookingPage() {
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
                 <div>
@@ -622,7 +622,7 @@ export default function WorkshopBookingPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                     placeholder="ご要望等がございましたらご記入ください"
                   />
                   <p className="text-stone-400 text-xs mt-2">
@@ -674,7 +674,7 @@ export default function WorkshopBookingPage() {
                 </div>
               </div>
 
-              <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+              <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                 <h2 className="text-white font-medium mb-4">お支払い方法</h2>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 p-4 border border-stone-700 rounded-lg cursor-pointer hover:border-stone-600 transition-colors">
@@ -688,7 +688,7 @@ export default function WorkshopBookingPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-white font-medium">現地払い</p>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-700 text-stone-200">当日精算</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-stone-700 text-stone-200">当日精算</span>
                       </div>
                       <p className="text-stone-400 text-xs">当日、店頭にてお支払いください</p>
                     </div>
@@ -704,7 +704,7 @@ export default function WorkshopBookingPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-white font-medium">クレジットカード</p>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-200">事前決済</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-emerald-900 text-emerald-200">事前決済</span>
                       </div>
                       <p className="text-stone-400 text-xs">この画面でカード情報を入力して決済します</p>
                     </div>
@@ -721,7 +721,7 @@ export default function WorkshopBookingPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-white font-medium">PayPay</p>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-200">事前決済</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-emerald-900 text-emerald-200">事前決済</span>
                         </div>
                         <p className="text-stone-400 text-xs">PayPayの支払いページへ移動してお支払いいただきます</p>
                       </div>
@@ -737,7 +737,7 @@ export default function WorkshopBookingPage() {
                 )}
               </div>
 
-              <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+              <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                 <h2 className="text-white font-medium mb-3">キャンセルポリシー</h2>
                 <ul className="space-y-1.5 text-sm text-stone-300">
                   <li className="flex justify-between gap-4">

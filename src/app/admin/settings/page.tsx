@@ -254,7 +254,7 @@ export default function SettingsPage() {
       {tab === 'maintenance' && (
         <>
           {/* サイト全体のメンテナンスモード */}
-          <div className="bg-white shadow-sm rounded-lg p-6">
+          <div className="bg-white shadow-xs rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">サイト全体のメンテナンスモード</h2>
 
             <div className="space-y-4">
@@ -272,7 +272,7 @@ export default function SettingsPage() {
                     onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, isEnabled: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
                 </label>
               </div>
 
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                   id="maintenance-password"
                   value={maintenanceSettings.password}
                   onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="メンテナンスパスワードを入力"
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                   value={maintenanceSettings.message || ''}
                   onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, message: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="メンテナンス中に表示するメッセージ"
                 />
               </div>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                     onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, purchaseLocked: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-moss-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-moss-green"></div>
                 </label>
               </div>
 
@@ -352,7 +352,7 @@ export default function SettingsPage() {
                   value={maintenanceSettings.purchaseLockedMessage ?? ''}
                   onChange={(e) => setMaintenanceSettings({ ...maintenanceSettings, purchaseLockedMessage: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder={DEFAULT_PURCHASE_LOCKED_MESSAGE}
                 />
               </div>
@@ -378,7 +378,7 @@ export default function SettingsPage() {
 
           {/* ページ別の準備中設定 */}
           {siteSettings && (
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-white shadow-xs rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-1">ページ別の準備中設定</h2>
               <p className="text-sm text-gray-600 mb-4">
                 チェックしたページは「このページは現在準備中です」と表示され、一般ユーザーは閲覧できなくなります（管理者ログイン中は閲覧可能）。
@@ -418,7 +418,7 @@ export default function SettingsPage() {
 
           {/* 検索エンジン設定 */}
           {siteSettings && (
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-white shadow-xs rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">検索エンジン設定</h2>
 
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
@@ -495,7 +495,7 @@ export default function SettingsPage() {
           />
 
           {/* SNSリンク */}
-          <div className="bg-white shadow-sm rounded-lg p-6 space-y-3">
+          <div className="bg-white shadow-xs rounded-lg p-6 space-y-3">
             <h2 className="text-lg font-semibold text-gray-900">SNSリンク</h2>
             <ul className="space-y-2">
               {siteSettings.snsLinks.map((sns, index) => (
@@ -530,7 +530,7 @@ export default function SettingsPage() {
           </div>
 
           {/* フッター文言 */}
-          <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+          <div className="bg-white shadow-xs rounded-lg p-6 space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">フッターの文言</h2>
             <div>
               <label className="block text-sm text-gray-600 mb-1">紹介文</label>
@@ -646,7 +646,7 @@ function SeoSettingsEditor({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+      <div className="bg-white shadow-xs rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">サイト共通のメタデータ</h2>
         <p className="text-sm text-gray-600">
           検索結果やSNSシェア時に表示される情報です。空欄にすると初期値に戻ります。
@@ -696,7 +696,7 @@ function SeoSettingsEditor({
         </div>
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+      <div className="bg-white shadow-xs rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">ページ別の説明文</h2>
         <p className="text-sm text-gray-600">
           検索結果に出る各ページの説明文です。初期値は自動で入っています。書き換えるとそのページだけ上書きされ、
@@ -738,7 +738,7 @@ function SeoSettingsEditor({
         })}
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+      <div className="bg-white shadow-xs rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">SNSシェア表示</h2>
 
         <div>
@@ -776,7 +776,7 @@ function SeoSettingsEditor({
         </div>
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+      <div className="bg-white shadow-xs rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">検索エンジン・計測タグ</h2>
 
         <div>
@@ -864,7 +864,7 @@ function ShippingSettingsEditor({
   return (
     <div className="space-y-6">
       {/* 送料無料モード */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white shadow-xs rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">サイト全体を送料無料にする</h2>
@@ -886,7 +886,7 @@ function ShippingSettingsEditor({
 
       <div className={settings.freeShippingMode ? 'opacity-50 pointer-events-none space-y-6' : 'space-y-6'}>
       {/* 送料計算の基準 */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white shadow-xs rounded-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-1">送料計算の基準料金</h2>
         <p className="text-sm text-gray-600">
           購入画面の送料計算には、下のゆうパック料金表を使用します。実際の配送業者は、ご注文内容やお届け先に応じて発送時に店舗が選定します。
@@ -894,7 +894,7 @@ function ShippingSettingsEditor({
       </div>
 
       {/* 料金表（ゾーン × サイズ） */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white shadow-xs rounded-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-1">
           料金表（{settings.carriers[carrier].label}）
         </h2>
@@ -931,7 +931,7 @@ function ShippingSettingsEditor({
                         min={0}
                         value={priceOf(z.id, tier.size)}
                         onChange={(e) => setRate(z.id, tier.size, Number(e.target.value))}
-                        className="w-20 px-2 py-1 text-right border border-gray-200 rounded"
+                        className="w-20 px-2 py-1 text-right border border-gray-200 rounded-sm"
                       />
                     </td>
                   ))}
@@ -943,7 +943,7 @@ function ShippingSettingsEditor({
       </div>
 
       {/* 割引・加算・梱包設定 */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white shadow-xs rounded-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">割引・加算・梱包の設定</h2>
         <div className="flex items-center justify-between gap-4 p-4 mb-5 border border-emerald-200 bg-emerald-50 rounded-md">
           <div>
@@ -1021,7 +1021,7 @@ function NavLinkListEditor({
   onRemove: (index: number) => void;
 }) {
   return (
-    <div className="bg-white shadow-sm rounded-lg p-6 space-y-3">
+    <div className="bg-white shadow-xs rounded-lg p-6 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>

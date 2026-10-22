@@ -52,7 +52,7 @@ export function MaintenancePage() {
       
       <Container className="relative z-10">
         <div className="max-w-md mx-auto">
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-8">
+          <div className="bg-white/95 backdrop-blur-xs rounded-lg shadow-xl p-8">
             {/* ロゴ */}
             <div className="text-center mb-8">
               <div className="text-moss-green text-4xl font-bold mb-2">
@@ -89,7 +89,7 @@ export function MaintenancePage() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moss-green focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:border-transparent"
                   placeholder="パスワードを入力してください"
                   required
                 />

@@ -98,7 +98,7 @@ function WorkshopPayPayReturnContent() {
                 )}
               </div>
 
-              <div className="bg-stone-900/50 backdrop-blur-sm border border-stone-800 rounded-2xl p-6 mb-8 text-left">
+              <div className="bg-stone-900/50 backdrop-blur-xs border border-stone-800 rounded-2xl p-6 mb-8 text-left">
                 <h2 className="text-lg font-semibold text-emerald-400 mb-3">当日について</h2>
                 <ul className="text-stone-300 space-y-2">
                   <li>• 確認メールをお送りしましたのでご確認ください</li>
@@ -208,8 +208,8 @@ export default function WorkshopPayPayReturnPage() {
             <div className="max-w-2xl mx-auto text-center">
               <div className="animate-pulse">
                 <div className="w-16 h-16 bg-stone-800 rounded-full mx-auto mb-4" />
-                <div className="h-8 bg-stone-800 rounded mb-4" />
-                <div className="h-4 bg-stone-800 rounded mb-8" />
+                <div className="h-8 bg-stone-800 rounded-sm mb-4" />
+                <div className="h-4 bg-stone-800 rounded-sm mb-8" />
               </div>
             </div>
           </Container>

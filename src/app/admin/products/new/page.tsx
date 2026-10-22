@@ -187,7 +187,7 @@ const NewProductPage = () => {
         <p className="text-gray-600 mt-2">商品情報を入力して新しい商品を登録します</p>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* 売上項目を先に選ぶ運用にしている。項目を選べば商品名が自動で入り、
               同じ商品が別名でEC・店頭に二重登録されるのを防げる。 */}
@@ -205,7 +205,7 @@ const NewProductPage = () => {
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -218,7 +218,7 @@ const NewProductPage = () => {
                 type="text"
                 value={formData.nameReading}
                 onChange={(e) => setFormData(prev => ({ ...prev, nameReading: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 placeholder="こけだま"
               />
               <p className="text-xs text-gray-500 mt-1">あいうえお順の並び替えに使います</p>
@@ -241,7 +241,7 @@ const NewProductPage = () => {
                     return prev;
                   });
                 }}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 placeholder="product-slug"
                 required
               />
@@ -257,7 +257,7 @@ const NewProductPage = () => {
               <div className="flex flex-wrap gap-2 mb-2">
                 {images.map((item, index) => (
                   <div key={item.image._key ?? index} className="relative w-64">
-                    <div className="w-64 h-40 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-64 h-40 rounded-sm border overflow-hidden bg-gray-100 flex items-center justify-center">
                       {item.previewUrl ? (
                         <img
                           src={item.previewUrl}
@@ -285,7 +285,7 @@ const NewProductPage = () => {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               disabled={uploadingImage}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-moss-green file:text-white"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:bg-moss-green file:text-white"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleImageUpload(file);
@@ -303,7 +303,7 @@ const NewProductPage = () => {
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -316,7 +316,7 @@ const NewProductPage = () => {
               value={formData.seoDescription}
               onChange={(e) => setFormData(prev => ({ ...prev, seoDescription: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="空欄のままで構いません"
             />
             <p className="mt-1 text-sm text-gray-500">
@@ -333,7 +333,7 @@ const NewProductPage = () => {
                 type="number"
                 value={formData.price}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 min="0"
                 required
               />
@@ -346,7 +346,7 @@ const NewProductPage = () => {
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 required
               >
                 {categories.map(category => (
@@ -368,7 +368,7 @@ const NewProductPage = () => {
                   ...prev,
                   costPrice: e.target.value === '' ? undefined : Number(e.target.value),
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 min="0"
                 placeholder="分かる場合だけ入力"
               />
@@ -399,7 +399,7 @@ const NewProductPage = () => {
               type="text"
               value={formData.materials.join(', ')}
               onChange={(e) => handleMaterialsChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="苔, ガラス容器, 土"
             />
           </div>
@@ -412,7 +412,7 @@ const NewProductPage = () => {
               value={formData.careInstructions}
               onChange={(e) => setFormData(prev => ({ ...prev, careInstructions: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="水やりの頻度や置き場所などの注意点を記載"
             />
           </div>
@@ -434,7 +434,7 @@ const NewProductPage = () => {
                   min="1"
                   value={formData.lowStockThreshold}
                   onChange={(e) => setFormData(prev => ({ ...prev, lowStockThreshold: parseInt(e.target.value) || 5 }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="5"
                 />
                 <p className="text-xs text-gray-500 mt-1">この数以下になると「在庫少」表示</p>
@@ -446,7 +446,7 @@ const NewProductPage = () => {
                   id="featured"
                   checked={formData.featured}
                   onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
                   おすすめ商品として表示
@@ -474,7 +474,7 @@ const NewProductPage = () => {
                       dimensions: { ...prev.dimensions, width: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 12"
                 />
               </div>
@@ -492,7 +492,7 @@ const NewProductPage = () => {
                       dimensions: { ...prev.dimensions, height: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 15"
                 />
               </div>
@@ -510,7 +510,7 @@ const NewProductPage = () => {
                       dimensions: { ...prev.dimensions, depth: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 12"
                 />
               </div>
@@ -523,7 +523,7 @@ const NewProductPage = () => {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, weight: e.target.value === '' ? undefined : Number(e.target.value) }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 800"
                 />
               </div>
@@ -534,7 +534,7 @@ const NewProductPage = () => {
                 id="fragile"
                 checked={formData.fragile ?? false}
                 onChange={(e) => setFormData((prev) => ({ ...prev, fragile: e.target.checked }))}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
               />
               <label htmlFor="fragile" className="ml-2 block text-sm text-gray-900">
                 割れ物（取扱注意・送料に割れ物加算を適用）

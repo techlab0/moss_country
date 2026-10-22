@@ -181,7 +181,7 @@ export default function SalesItemsPage() {
   }, {});
 
   if (loading) {
-    return <div className="animate-pulse h-64 bg-gray-200 rounded"></div>;
+    return <div className="animate-pulse h-64 bg-gray-200 rounded-sm"></div>;
   }
 
   return (
@@ -208,7 +208,7 @@ export default function SalesItemsPage() {
       )}
 
       {/* PayPay 店舗用QRコード設定 */}
-      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
         <h2 className="font-medium text-gray-900">PayPay 店舗用QRコード</h2>
         <p className="text-sm text-gray-500">
           PayPay for Businessの店舗掲示用QRコード画像を設定すると、売上入力でPayPayを選んだ際の確認画面に表示されます。
@@ -240,7 +240,7 @@ export default function SalesItemsPage() {
       </div>
 
       {/* 新規追加フォーム */}
-      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
         <h2 className="font-medium text-gray-900">新規項目を追加</h2>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <select
@@ -288,7 +288,7 @@ export default function SalesItemsPage() {
 
       {/* カテゴリごとの一覧 */}
       {Object.entries(categoryLabels).map(([category, label]) => (
-        <div key={category} className="bg-white shadow rounded-lg">
+        <div key={category} className="bg-white shadow-sm rounded-lg">
           <div className="px-4 py-3 border-b bg-gray-50">
             <h2 className="font-medium text-gray-900">{label}</h2>
           </div>

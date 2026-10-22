@@ -100,7 +100,7 @@ export default function BlogCategoriesPage() {
         <div className="flex space-x-3">
           <Link
             href="/admin/blog"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             ← ブログ管理に戻る
           </Link>
@@ -108,7 +108,7 @@ export default function BlogCategoriesPage() {
       </div>
 
       {/* カテゴリ一覧 */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-6 py-4 border-b">
           <div className="flex justify-between items-center">
             <div>
@@ -166,7 +166,7 @@ export default function BlogCategoriesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
+                      <div className="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded-sm">
                         {category.value}
                       </div>
                     </td>
@@ -199,7 +199,7 @@ export default function BlogCategoriesPage() {
       {/* 設定情報 */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
@@ -214,7 +214,7 @@ export default function BlogCategoriesPage() {
                 カテゴリを変更する場合は、開発者にお問い合わせください。
               </p>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>ファイル場所: <code className="bg-blue-100 px-1 rounded">sanity/schemas/blogPost.ts</code></li>
+                <li>ファイル場所: <code className="bg-blue-100 px-1 rounded-sm">sanity/schemas/blogPost.ts</code></li>
                 <li>変更後は、Sanity Studioの再起動が必要です</li>
                 <li>既存記事のカテゴリも確認・更新してください</li>
               </ul>
@@ -224,7 +224,7 @@ export default function BlogCategoriesPage() {
       </div>
 
       {/* カテゴリ別記事数グラフ */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow-sm rounded-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">カテゴリ別記事数</h3>
         <div className="space-y-4">
           {categories.map((category) => {
@@ -255,7 +255,7 @@ export default function BlogCategoriesPage() {
 
       {/* クイックアクション */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-2">📝 新記事作成</h3>
           <p className="text-gray-600 text-sm mb-4">カテゴリを指定して新しい記事を作成</p>
           <Link
@@ -267,7 +267,7 @@ export default function BlogCategoriesPage() {
           </Link>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-2">📊 記事管理</h3>
           <p className="text-gray-600 text-sm mb-4">すべての記事を確認・管理</p>
           <Link

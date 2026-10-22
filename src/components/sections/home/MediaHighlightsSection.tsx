@@ -24,7 +24,7 @@ export function MediaHighlightsSection() {
           {featuredMediaCoverage.map((item) => (
             <article
               key={item.id}
-              className="group overflow-hidden rounded-2xl border border-white/10 bg-stone-950/70 shadow-2xl shadow-black/20 backdrop-blur-sm"
+              className="group overflow-hidden rounded-2xl border border-white/10 bg-stone-950/70 shadow-2xl shadow-black/20 backdrop-blur-xs"
             >
               <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-emerald-950 to-stone-950">
                 {item.image ? (
@@ -41,7 +41,7 @@ export function MediaHighlightsSection() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-                <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/55 px-3 py-1 text-xs text-white backdrop-blur-sm">
+                <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/55 px-3 py-1 text-xs text-white backdrop-blur-xs">
                   {item.category}
                 </span>
               </div>

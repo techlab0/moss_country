@@ -83,7 +83,7 @@ export const LatestNews: React.FC = () => {
             >
               <Link
                 href={`/blog/${post.slug.current}`}
-                className="block bg-stone-950/50 backdrop-blur-sm rounded-lg p-4 sm:p-6 hover:bg-stone-900/60 transition-all duration-300 border border-emerald-400/15 hover:border-emerald-400/40"
+                className="block bg-stone-950/50 backdrop-blur-xs rounded-lg p-4 sm:p-6 hover:bg-stone-900/60 transition-all duration-300 border border-emerald-400/15 hover:border-emerald-400/40"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1">
@@ -104,7 +104,7 @@ export const LatestNews: React.FC = () => {
                       <p className="text-gray-300 text-sm mt-2 line-clamp-2">{post.excerpt}</p>
                     )}
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <div className="flex items-center text-emerald-400 text-sm font-medium group-hover:text-emerald-300 transition-colors duration-300">
                       詳細を見る
                       <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

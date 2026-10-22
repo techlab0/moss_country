@@ -59,7 +59,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-moss-green bg-white">
+        <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow-sm rounded-md text-moss-green bg-white">
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-moss-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -137,7 +137,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
       
       <div className="relative z-10">
         {/* Navigation */}
-        <div className="py-4 border-b border-emerald-100 bg-white/90 backdrop-blur-sm">
+        <div className="py-4 border-b border-emerald-100 bg-white/90 backdrop-blur-xs">
           <Container>
             <div className="flex items-center text-sm text-gray-600">
               <Link href="/" className="hover:text-moss-green transition-colors">ホーム</Link>
@@ -203,7 +203,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                 
                 {/* 画像キャプション */}
                 {species.images && species.images[selectedImageIndex]?.caption && (
-                  <p className="text-sm text-gray-600 text-center bg-white/90 backdrop-blur-sm p-3 rounded-lg">
+                  <p className="text-sm text-gray-600 text-center bg-white/90 backdrop-blur-xs p-3 rounded-lg">
                     {species.images[selectedImageIndex].caption}
                   </p>
                 )}
@@ -212,7 +212,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
               {/* 詳細情報 */}
               <div className="space-y-6">
                 {/* ヘッダー */}
-                <div className="bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow-lg">
+                <div className="bg-white/90 backdrop-blur-xs p-6 rounded-lg shadow-lg">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold text-gray-900 mb-2">{species.name}</h1>
@@ -252,7 +252,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                 </div>
 
                 {/* 育成特性 */}
-                <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
+                <Card className="bg-white/90 backdrop-blur-xs shadow-lg">
                   <CardContent className="p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
                       特性
@@ -309,7 +309,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
             <div className="mt-8 max-w-7xl mx-auto space-y-6">
               {/* 基本情報 - descriptionまたはbasicInfoがある場合のみ表示 */}
               {(species.description || (species.basicInfo && typeof species.basicInfo === 'string' && species.basicInfo.trim())) && (
-                <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
+                <Card className="bg-white/90 backdrop-blur-xs shadow-lg">
                   <CardContent className="p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">基本情報</h2>
                     {species.description && (
@@ -349,7 +349,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
 
               {/* 補足情報 - 内容がある場合のみ表示 */}
               {species.supplementaryInfo && typeof species.supplementaryInfo === 'string' && species.supplementaryInfo.trim() && (
-                <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
+                <Card className="bg-white/90 backdrop-blur-xs shadow-lg">
                   <CardContent className="p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
                       補足情報
@@ -367,7 +367,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                 (species.practicalAdvice.difficultyPoints && species.practicalAdvice.difficultyPoints.length > 0 && species.practicalAdvice.difficultyPoints.some(point => point.trim())) ||
                 (species.practicalAdvice.careInstructions && species.practicalAdvice.careInstructions.trim())
               ) && (
-                <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
+                <Card className="bg-white/90 backdrop-blur-xs shadow-lg">
                   <CardContent className="p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
                       育て方
@@ -382,7 +382,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                           <ul className="space-y-2">
                             {species.practicalAdvice.successTips.map((tip, index) => (
                               <li key={index} className="flex items-start">
-                                <span className="flex-shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3"></span>
+                                <span className="shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3"></span>
                                 <span className="text-gray-700">{tip}</span>
                               </li>
                             ))}
@@ -399,7 +399,7 @@ export default function MossGuideDetailPage({ params }: MossGuideDetailPageProps
                           <ul className="space-y-2">
                             {species.practicalAdvice.difficultyPoints.map((point, index) => (
                               <li key={index} className="flex items-start">
-                                <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2 mr-3"></span>
+                                <span className="shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2 mr-3"></span>
                                 <span className="text-gray-700">{point}</span>
                               </li>
                             ))}

@@ -92,10 +92,10 @@ export function DashboardStats() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-16"></div>
+          <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded-sm mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded-sm w-16"></div>
           </div>
         ))}
       </div>
@@ -105,7 +105,7 @@ export function DashboardStats() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statCards.map((stat) => (
-        <div key={stat.title} className="bg-white rounded-lg shadow p-6">
+        <div key={stat.title} className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center">
             <div className={`${stat.color} rounded-lg p-3 mr-4`}>
               <span className="text-2xl">{stat.icon}</span>

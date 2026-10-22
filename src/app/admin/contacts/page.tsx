@@ -170,7 +170,7 @@ function ContactsPage() {
       {error && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
           <div className="flex">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
@@ -198,10 +198,10 @@ function ContactsPage() {
 
       {/* 統計カード */}
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-sm font-medium">📧</span>
                 </div>
@@ -222,7 +222,7 @@ function ContactsPage() {
       </div>
 
       {/* フィルター・検索 */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow-sm rounded-lg p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -232,7 +232,7 @@ function ContactsPage() {
               <input
                 type="text"
                 placeholder="名前、メール、件名で検索"
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green"
+                className="block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green"
                 value={searchDraft}
                 onChange={(e) => setSearchDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleFilterChange('search', searchDraft)}
@@ -253,7 +253,7 @@ function ContactsPage() {
               優先度
             </label>
             <select
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green"
+              className="block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green"
               value={filters.priority}
               onChange={(e) => handleFilterChange('priority', e.target.value)}
             >
@@ -269,7 +269,7 @@ function ContactsPage() {
               お問い合わせ種類
             </label>
             <select
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-moss-green focus:border-moss-green"
+              className="block w-full border-gray-300 rounded-md shadow-xs focus:ring-moss-green focus:border-moss-green"
               value={filters.inquiry_type}
               onChange={(e) => handleFilterChange('inquiry_type', e.target.value)}
             >
@@ -283,7 +283,7 @@ function ContactsPage() {
       </div>
 
       {/* お問い合わせ一覧 */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         {loading ? (
           <div className="p-6 text-center">
             <div className="inline-flex items-center">
@@ -382,7 +382,7 @@ function ContactsPage() {
 
       {/* ページネーション */}
       {pagination.totalPages > 1 && (
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow-sm">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
@@ -411,7 +411,7 @@ function ContactsPage() {
               </p>
             </div>
             <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+              <nav className="relative z-0 inline-flex rounded-md shadow-xs -space-x-px">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}

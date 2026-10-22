@@ -474,7 +474,7 @@ export default function CheckoutPage() {
               {/* チェックアウトフォーム */}
               <div className="lg:col-span-2 space-y-8">
                 {/* お客様情報 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <h2 className="text-xl font-medium text-white mb-6">お客様情報</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -486,7 +486,7 @@ export default function CheckoutPage() {
                         required
                         value={formData.customer.lastName}
                         onChange={(e) => handleInputChange('customer', 'lastName', e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                       />
                     </div>
                     <div>
@@ -498,7 +498,7 @@ export default function CheckoutPage() {
                         required
                         value={formData.customer.firstName}
                         onChange={(e) => handleInputChange('customer', 'firstName', e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -510,7 +510,7 @@ export default function CheckoutPage() {
                         required
                         value={formData.customer.email}
                         onChange={(e) => handleInputChange('customer', 'email', e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -522,14 +522,14 @@ export default function CheckoutPage() {
                         required
                         value={formData.customer.phone}
                         onChange={(e) => handleInputChange('customer', 'phone', e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* 配送先住所 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-medium text-white">配送先住所</h2>
                     <p className="text-xs text-stone-400">お客様情報の姓名が自動入力されます</p>
@@ -545,7 +545,7 @@ export default function CheckoutPage() {
                           required
                           value={formData.shippingAddress.lastName}
                           onChange={(e) => handleInputChange('shippingAddress', 'lastName', e.target.value)}
-                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                         />
                       </div>
                       <div>
@@ -557,7 +557,7 @@ export default function CheckoutPage() {
                           required
                           value={formData.shippingAddress.firstName}
                           onChange={(e) => handleInputChange('shippingAddress', 'firstName', e.target.value)}
-                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                         />
                       </div>
                     </div>
@@ -576,7 +576,7 @@ export default function CheckoutPage() {
                           placeholder="000-0000"
                           value={formData.shippingAddress.postalCode}
                           onChange={(e) => handleInputChange('shippingAddress', 'postalCode', e.target.value)}
-                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                         />
                         {isPostalCodeLoading && (
                           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -599,7 +599,7 @@ export default function CheckoutPage() {
                           required
                           value={formData.shippingAddress.state}
                           onChange={(e) => handleInputChange('shippingAddress', 'state', e.target.value)}
-                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                         />
                       </div>
                       <div>
@@ -611,7 +611,7 @@ export default function CheckoutPage() {
                           required
                           value={formData.shippingAddress.city}
                           onChange={(e) => handleInputChange('shippingAddress', 'city', e.target.value)}
-                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                          className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                         />
                       </div>
                     </div>
@@ -626,7 +626,7 @@ export default function CheckoutPage() {
                         placeholder="例：1-2-3 マンション名 101号室"
                         value={formData.shippingAddress.address1}
                         onChange={(e) => handleInputChange('shippingAddress', 'address1', e.target.value)}
-                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-none focus:border-emerald-500"
+                        className="w-full px-4 py-3 bg-stone-800 border border-stone-700 text-white rounded-lg focus:outline-hidden focus:border-emerald-500"
                       />
                     </div>
 
@@ -634,7 +634,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 配送業者 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <h2 className="text-xl font-medium text-white mb-3">配送業者</h2>
                   <p className="text-stone-300 leading-relaxed">
                     配送業者は、ご注文内容やお届け先に応じて当店が選定いたします。
@@ -645,7 +645,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 配送方法 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <h2 className="text-xl font-medium text-white mb-6">配送方法</h2>
                   <div className="space-y-3">
                     {shippingMethods.map((method) => (
@@ -694,7 +694,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 支払い方法 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <h2 className="text-xl font-medium text-white mb-6">支払い方法</h2>
                   <div className="space-y-3">
                     {paymentMethods.map((method) => (
@@ -733,7 +733,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 利用規約 */}
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800">
                   <div className="space-y-4">
                     <label className="flex items-start gap-3">
                       <input
@@ -768,7 +768,7 @@ export default function CheckoutPage() {
 
               {/* 注文サマリー */}
               <div className="lg:col-span-1">
-                <div className="bg-stone-900/50 backdrop-blur-sm rounded-2xl p-6 border border-stone-800 sticky top-24">
+                <div className="bg-stone-900/50 backdrop-blur-xs rounded-2xl p-6 border border-stone-800 sticky top-24">
                   <h2 className="text-xl font-medium text-white mb-6">注文内容</h2>
 
                   {/* 商品リスト */}

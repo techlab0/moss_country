@@ -38,7 +38,7 @@ export function InventoryAlerts() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-sm">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">在庫アラート</h2>
         </div>
@@ -46,9 +46,9 @@ export function InventoryAlerts() {
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="h-4 bg-gray-200 rounded w-8"></div>
-                <div className="h-4 bg-gray-200 rounded flex-1"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-8"></div>
+                <div className="h-4 bg-gray-200 rounded-sm flex-1"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-16"></div>
               </div>
             ))}
           </div>
@@ -58,7 +58,7 @@ export function InventoryAlerts() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg shadow-sm">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">在庫アラート</h2>

@@ -90,13 +90,13 @@ function ServiceAccountHint({ email }: { email: string | null }) {
     <div className="mt-3 pt-3 border-t border-amber-200">
       <p className="text-xs text-amber-800">権限を付与するサービスアカウント:</p>
       <div className="flex items-center gap-2 mt-1 flex-wrap">
-        <code className="text-xs bg-white border border-amber-300 rounded px-2 py-1 break-all text-gray-800">
+        <code className="text-xs bg-white border border-amber-300 rounded-sm px-2 py-1 break-all text-gray-800">
           {email}
         </code>
         <button
           type="button"
           onClick={copy}
-          className="text-xs px-2 py-1 border border-amber-400 rounded text-amber-900 hover:bg-amber-100"
+          className="text-xs px-2 py-1 border border-amber-400 rounded-sm text-amber-900 hover:bg-amber-100"
         >
           {copied ? 'コピーしました' : 'コピー'}
         </button>

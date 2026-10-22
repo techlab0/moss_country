@@ -155,7 +155,7 @@ export default function BlogPage() {
               ブログ・ニュース
             </h1>
             <div className="w-24 h-1 bg-white mx-auto mb-8"></div>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow">
+            <p className="text-xl text-white/90 max-w-3xl mx-auto mb-8 drop-shadow-sm">
               MOSS COUNTRYからの最新情報、イベント出店のお知らせ、テラリウムのお手入れ方法、
               新商品のご紹介などをお届けします。
             </p>
@@ -175,7 +175,7 @@ export default function BlogPage() {
                     placeholder="記事を検索..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700 placeholder-gray-400"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-xs focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700 placeholder-gray-400"
                   />
                 </div>
                 
@@ -184,7 +184,7 @@ export default function BlogPage() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
+                    className="block w-full py-3 px-4 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-xs focus:ring-2 focus:ring-moss-green focus:border-transparent text-gray-700"
                   >
                     <option value="all">全てのカテゴリー</option>
                     {categories.map((category) => (
@@ -240,10 +240,10 @@ export default function BlogPage() {
           <div className="space-y-6 max-w-4xl mx-auto">
             {filteredPosts.map((post) => (
               <Link key={post._id} href={`/blog/${post.slug.current}`} className="block group">
-                <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white/80 backdrop-blur-sm">
+                <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white/80 backdrop-blur-xs">
                   <div className="flex flex-col md:flex-row">
                     {/* 画像部分 */}
-                    <div className="md:w-1/3 flex-shrink-0">
+                    <div className="md:w-1/3 shrink-0">
                       {post.featuredImage ? (
                         <div className="h-48 md:h-full overflow-hidden bg-stone-100">
                           <Image

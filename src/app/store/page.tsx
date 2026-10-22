@@ -182,7 +182,7 @@ function StoreCalendar() {
               <div className="font-semibold mb-1 flex items-center justify-between">{day}{vis.hasEvent && <span title="イベントあり">📍</span>}</div>
               <div className="text-xs leading-tight flex items-end justify-between gap-1">
                 <span className="font-medium line-clamp-2 flex-1 min-w-0">{primary!.title}{items!.length > 1 ? ` 他${items!.length - 1}件` : ''}</span>
-                <span className="flex-shrink-0 opacity-70">≫</span>
+                <span className="shrink-0 opacity-70">≫</span>
               </div>
             </button>
           ) : (
@@ -243,19 +243,19 @@ function StoreCalendar() {
       {/* カレンダー凡例 */}
       <div className="flex flex-wrap gap-4 mb-6 text-sm">
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-emerald-200 border border-emerald-400 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-emerald-200 border border-emerald-400 rounded-sm mr-2"></div>
           <span className="text-white">営業日</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-amber-200 border border-amber-400 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-amber-200 border border-amber-400 rounded-sm mr-2"></div>
           <span className="text-white">イベント出店</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-gradient-to-br from-emerald-200 from-50% to-amber-200 to-50% border border-emerald-400 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-gradient-to-br from-emerald-200 from-50% to-amber-200 to-50% border border-emerald-400 rounded-sm mr-2"></div>
           <span className="text-white">営業＋イベント</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-red-200 border border-red-400 rounded mr-2"></div>
+          <div className="w-4 h-4 bg-red-200 border border-red-400 rounded-sm mr-2"></div>
           <span className="text-white">休業日</span>
         </div>
       </div>
@@ -312,7 +312,7 @@ function StoreCalendar() {
                 <button
                   type="button"
                   onClick={() => setModalEvent(null)}
-                  className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+                  className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors shrink-0"
                   aria-label="閉じる"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,13 +333,13 @@ function StoreCalendar() {
                     <h4 className="text-lg font-semibold text-gray-900 mb-2 break-words min-w-0">{item.title}</h4>
                     {item.location && (
                       <p className="text-gray-600 mb-2 flex items-start gap-2 min-w-0">
-                        <span className="flex-shrink-0">📍</span>
+                        <span className="shrink-0">📍</span>
                         <span className="break-words min-w-0">{item.location}</span>
                       </p>
                     )}
                     {item.notes && (
                       <p className="text-gray-600 whitespace-pre-wrap flex items-start gap-2 min-w-0 break-words">
-                        <span className="flex-shrink-0">💭</span>
+                        <span className="shrink-0">💭</span>
                         <span className="min-w-0 break-words">{item.notes}</span>
                       </p>
                     )}
@@ -430,7 +430,7 @@ function FAQSection() {
         <Card key={index}>
           <CardHeader>
             <h3 className="text-lg font-semibold text-moss-green flex items-start">
-              <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 flex-shrink-0">
+              <span className="bg-moss-green text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 shrink-0">
                 Q
               </span>
               {item.question}
@@ -438,7 +438,7 @@ function FAQSection() {
           </CardHeader>
           <CardContent>
             <div className="flex items-start">
-              <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 flex-shrink-0">
+              <span className="bg-light-green text-moss-green rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5 shrink-0">
                 A
               </span>
               <p className="text-gray-700">{item.answer}</p>
@@ -581,7 +581,7 @@ export default function StorePage() {
       <section className="py-20" id="access-info">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 店舗情報
               </h2>
@@ -710,7 +710,7 @@ export default function StorePage() {
       <section className="py-20 scroll-mt-24" id="calendar">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 営業カレンダー
               </h2>
@@ -731,7 +731,7 @@ export default function StorePage() {
       <section className="py-20 relative">
         <Container className="relative z-10">
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 店舗設備・施設
               </h2>
@@ -769,7 +769,7 @@ export default function StorePage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 サービス・料金
               </h2>
@@ -825,7 +825,7 @@ export default function StorePage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 店舗の様子
               </h2>
@@ -853,7 +853,7 @@ export default function StorePage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
                 よくあるご質問
               </h2>

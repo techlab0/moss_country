@@ -12,10 +12,10 @@ const UsersAdvancedPage = () => {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48 mb-4"></div>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            <div key={i} className="h-32 bg-gray-200 rounded-sm"></div>
           ))}
         </div>
       </div>
@@ -32,7 +32,7 @@ const UsersAdvancedPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
@@ -48,7 +48,7 @@ const UsersAdvancedPage = () => {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
@@ -64,7 +64,7 @@ const UsersAdvancedPage = () => {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
@@ -81,7 +81,7 @@ const UsersAdvancedPage = () => {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
             ユーザー管理機能

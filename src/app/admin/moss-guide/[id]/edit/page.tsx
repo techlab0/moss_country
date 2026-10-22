@@ -285,7 +285,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         </div>
         <Link
           href="/admin/moss-guide"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
         >
           ← 一覧に戻る
         </Link>
@@ -293,7 +293,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* 基本情報 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">基本情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -305,7 +305,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 required
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
                 placeholder="例：ホソウリゴケ"
               />
             </div>
@@ -323,7 +323,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                       setFormData(prev => ({ ...prev, slug: e.target.value }));
                       setSlugError('');
                     }}
-                    className={`focus:ring-emerald-500 focus:border-emerald-500 block flex-1 px-3 py-2 border rounded-md shadow-sm sm:text-sm ${
+                    className={`focus:ring-emerald-500 focus:border-emerald-500 block flex-1 px-3 py-2 border rounded-md shadow-xs sm:text-sm ${
                       slugError ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="hosourigoke"
@@ -335,7 +335,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   type="button"
                   onClick={generateSlug}
                   disabled={!formData.name.trim()}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-sm text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   苔の名前から自動生成
                 </button>
@@ -362,7 +362,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
               <select
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="moss">蘚類</option>
                 <option value="liverwort">苔類</option>
@@ -376,7 +376,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                     type="checkbox"
                     checked={formData.featured}
                     onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded-sm"
                   />
                   <span className="ml-2 text-sm text-gray-700">おすすめ</span>
                 </label>
@@ -385,7 +385,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                     type="checkbox"
                     checked={formData.isVisible}
                     onChange={(e) => setFormData(prev => ({ ...prev, isVisible: e.target.checked }))}
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded-sm"
                   />
                   <span className="ml-2 text-sm text-gray-700">公開</span>
                 </label>
@@ -404,7 +404,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   type="text"
                   value={name}
                   onChange={(e) => updateArrayItem('commonNames', index, e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="別名を入力"
                 />
                 <button
@@ -428,7 +428,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         </div>
 
         {/* 画像アップロード */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">画像</h2>
           
           {/* 画像一覧 */}
@@ -436,7 +436,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
               {images.map((image, index) => (
                 <div key={index} className="relative border border-gray-300 rounded-lg p-2">
-                  <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-2">
+                  <div className="aspect-square bg-gray-100 rounded-sm overflow-hidden mb-2">
                     {image && image.asset ? (
                       <Image
                         src={urlFor(image).width(300).height(300).url()}
@@ -518,7 +518,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         </div>
 
         {/* 育成特性 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">育成特性</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
@@ -531,7 +531,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   ...prev,
                   characteristics: { ...prev.characteristics, beginnerFriendly: parseInt(e.target.value) }
                 }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value={1}>★★★★★ とても難しい</option>
                 <option value={2}>★★★★☆ 難しい</option>
@@ -550,7 +550,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   ...prev,
                   characteristics: { ...prev.characteristics, waterRequirement: e.target.value }
                 }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="high">多め</option>
                 <option value="medium">普通</option>
@@ -567,7 +567,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   ...prev,
                   characteristics: { ...prev.characteristics, lightRequirement: e.target.value }
                 }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="weak">弱光（明るい日陰・LED弱）</option>
                 <option value="medium">中光（明るい室内・LED中）</option>
@@ -584,7 +584,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   ...prev,
                   characteristics: { ...prev.characteristics, growthSpeed: e.target.value }
                 }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="slow">解放</option>
                 <option value="normal">半開放</option>
@@ -602,7 +602,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   characteristics: { ...prev.characteristics, growthDescription: e.target.value }
                 }))}
                 rows={3}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="育ち方・成長の様子を自由に記載（例：ゆっくり伸びる、密閉向きなど）"
               />
             </div>
@@ -610,7 +610,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         </div>
 
         {/* 基本情報 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">追加の基本情報</h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -623,14 +623,14 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 basicInfo: e.target.value
               }))}
               rows={6}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="生息地、外観、その他の特徴など、詳細説明で書ききれない基本的な情報を記載してください"
             />
           </div>
         </div>
 
 {/* 検索結果の説明文 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">検索エンジン向け</h2>
 
           <div className="mt-4">
@@ -641,7 +641,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
               value={formData.seoDescription}
               onChange={(e) => setFormData(prev => ({ ...prev, seoDescription: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-moss-green"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-moss-green"
               placeholder="空欄のままで構いません"
             />
             <p className="mt-1 text-sm text-gray-500">
@@ -651,7 +651,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         </div>
 
         {/* 補足情報 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">補足情報</h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -664,14 +664,14 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                 supplementaryInfo: e.target.value
               }))}
               rows={6}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="北海道の分布情報、採取時期、冬期管理の注意点、その他の補足情報などを自由に記載してください"
             />
           </div>
         </div>
 
         {/* 育て方 */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">育て方</h2>
           <div className="space-y-6">
             <div className="flex items-center">
@@ -682,7 +682,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   ...prev,
                   practicalAdvice: { ...prev.practicalAdvice, workshopUsage: e.target.checked }
                 }))}
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded-sm"
               />
               <span className="ml-2 text-sm text-gray-700">ワークショップで使用</span>
             </div>
@@ -698,7 +698,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                     type="text"
                     value={point}
                     onChange={(e) => updateArrayItem('practicalAdvice', index, e.target.value, 'difficultyPoints')}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="注意点を入力"
                   />
                   <button
@@ -730,7 +730,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                     type="text"
                     value={tip}
                     onChange={(e) => updateArrayItem('practicalAdvice', index, e.target.value, 'successTips')}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="成功のコツを入力"
                   />
                   <button
@@ -763,7 +763,7 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
                   practicalAdvice: { ...prev.practicalAdvice, careInstructions: e.target.value }
                 }))}
                 rows={6}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="水やりの頻度、光の当て方、温度管理、肥料、植え替えなど、具体的な管理方法を詳しく説明してください"
               />
             </div>
@@ -774,14 +774,14 @@ export default function EditMossSpeciesPage({ params }: EditMossSpeciesPageProps
         <div className="flex justify-end space-x-4">
           <Link
             href="/admin/moss-guide"
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             キャンセル
           </Link>
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+            className="px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
           >
             {saving ? '更新中...' : '更新する'}
           </button>

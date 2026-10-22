@@ -127,7 +127,7 @@ export default function StoryPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
                 OUR MISSION
               </h2>
@@ -151,7 +151,7 @@ export default function StoryPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
                 OUR VALUES
               </h2>
@@ -183,7 +183,7 @@ export default function StoryPage() {
       <section className="py-20">
         <Container>
           <div className="text-center mb-16">
-            <div className="bg-black/60 backdrop-blur-sm p-8 w-full">
+            <div className="bg-black/60 backdrop-blur-xs p-8 w-full">
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
                 OUR JOURNEY
               </h2>
@@ -242,7 +242,7 @@ export default function StoryPage() {
               
               <div className="space-y-6">
                 <div className="flex items-start">
-                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">MATERIAL SELECTION</h4>
                     <p className="text-white/80 font-light">
@@ -253,7 +253,7 @@ export default function StoryPage() {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">ORIGINAL TECHNIQUE</h4>
                     <p className="text-white/80 font-light">
@@ -264,7 +264,7 @@ export default function StoryPage() {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                  <div className="w-3 h-3 bg-light-green rounded-full mt-2 mr-4 shrink-0"></div>
                   <div>
                     <h4 className="font-bold text-light-green mb-2 tracking-wide text-sm sm:text-base break-words">QUALITY ASSURANCE</h4>
                     <p className="text-white/80 font-light">
@@ -308,7 +308,7 @@ export default function StoryPage() {
       {/* Future Vision */}
       <section className="py-20 relative">
         {/* Section Overlay */}
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs" />
         <Container className="relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-moss-green mb-6">

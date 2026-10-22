@@ -173,8 +173,8 @@ export default function AdminInventoryPage() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-48"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48"></div>
+        <div className="h-96 bg-gray-200 rounded-sm"></div>
       </div>
     );
   }
@@ -225,7 +225,7 @@ export default function AdminInventoryPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">在庫状況</h2>
             </div>
@@ -268,7 +268,7 @@ export default function AdminInventoryPage() {
                                 onChange={(event) =>
                                   setEditValues((previous) => ({ ...previous, [item.id]: event.target.value }))
                                 }
-                                className="w-24 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                                className="w-24 px-2 py-1 text-sm border rounded-sm focus:outline-hidden focus:ring-moss-green focus:border-moss-green"
                                 aria-label={`${item.productName}の在庫数`}
                                 autoFocus
                               />
@@ -285,7 +285,7 @@ export default function AdminInventoryPage() {
                                     setEditNotes((previous) => ({ ...previous, [item.id]: event.target.value }))
                                   }
                                   placeholder="例：7月棚卸し、入荷"
-                                  className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-moss-green focus:border-moss-green"
+                                  className="w-full px-2 py-1 text-sm border rounded-sm focus:outline-hidden focus:ring-moss-green focus:border-moss-green"
                                 />
                               </div>
                             </div>
@@ -342,7 +342,7 @@ export default function AdminInventoryPage() {
         </div>
 
         <div>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b">
               <h2 className="text-lg font-medium">最近の在庫変更</h2>
               <p className="text-xs text-gray-500 mt-1">最新50件</p>

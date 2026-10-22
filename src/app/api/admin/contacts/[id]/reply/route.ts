@@ -160,7 +160,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0]?.message ?? '入力内容に誤りがあります' },
+        { error: error.issues[0]?.message ?? '入力内容に誤りがあります' },
         { status: 400 }
       );
     }

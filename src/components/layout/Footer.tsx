@@ -39,7 +39,7 @@ export const Footer: React.FC = () => {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center mb-4">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2">
+              <div className="bg-white/90 backdrop-blur-xs rounded-lg p-2">
                 <img
                   src="/images/moss_country_logo.avif"
                   alt="MOSS COUNTRY"

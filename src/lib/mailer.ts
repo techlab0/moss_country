@@ -45,6 +45,23 @@ interface MailerConfig {
   from: string;
 }
 
+const MAX_RECIPIENTS = 50;
+const MAX_ADDRESS_LENGTH = 320;
+
+function normalizeAddressList(value: string | string[] | undefined): string[] | null {
+  if (value === undefined) return [];
+
+  const addresses = Array.isArray(value) ? value : [value];
+  if (
+    addresses.length > MAX_RECIPIENTS ||
+    addresses.some((address) => typeof address !== 'string' || address.length > MAX_ADDRESS_LENGTH)
+  ) {
+    return null;
+  }
+
+  return addresses.map((address) => address.trim()).filter(Boolean);
+}
+
 // 送信基盤の設定を環境変数から解決する。汎用SMTP優先、無ければGmailにフォールバック。
 function resolveMailerConfig(): MailerConfig | null {
   const smtpHost = process.env.SMTP_HOST;
@@ -127,18 +144,29 @@ export async function sendMail({ to, subject, text, html, replyTo, bcc }: SendMa
     return { sent: false, reason: 'not-configured' };
   }
 
-  const toList = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  const toList = normalizeAddressList(to);
+  const bccList = normalizeAddressList(bcc);
+  if (
+    toList === null ||
+    bccList === null ||
+    (replyTo !== undefined && (typeof replyTo !== 'string' || replyTo.length > MAX_ADDRESS_LENGTH))
+  ) {
+    console.warn('[mailer] 宛先情報が上限を超えたため、メール送信をスキップしました。', { subject });
+    return { sent: false, reason: 'invalid-recipient' };
+  }
+
   if (toList.length === 0) {
     console.warn('[mailer] 送信先が空のため、メール送信をスキップしました。', { subject });
     return { sent: false, reason: 'no-recipient' };
   }
 
-  const bccList = (Array.isArray(bcc) ? bcc : bcc ? [bcc] : []).filter(Boolean);
   const configurationSet = getSesConfigurationSet();
 
   try {
     const transporter = getTransporter(config);
     await transporter.sendMail({
+      // Nodemailerがカンマ区切りを解析・重複排除した後の合計にも上限を設ける。
+      maxRecipients: MAX_RECIPIENTS,
       from: `"MOSS COUNTRY" <${config.from}>`,
       to: toList.join(', '),
       subject,

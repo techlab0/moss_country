@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useState, useEffect, useCallback } from 'react';
+import type { ReactElement } from 'react';
 
 interface AuditLog {
   id: string;
@@ -31,7 +32,7 @@ interface SecurityAlert {
   users: string[];
 }
 
-export default function AuditLogsPage(): JSX.Element {
+export default function AuditLogsPage(): ReactElement {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
@@ -304,25 +305,25 @@ export default function AuditLogsPage(): JSX.Element {
       {/* 統計 */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white shadow rounded-lg px-6 py-4">
+          <div className="bg-white shadow-sm rounded-lg px-6 py-4">
             <p className="text-sm text-gray-500">全期間</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total.toLocaleString()}</p>
           </div>
-          <div className="bg-white shadow rounded-lg px-6 py-4">
+          <div className="bg-white shadow-sm rounded-lg px-6 py-4">
             <p className="text-sm text-gray-500">今日</p>
             <p className="text-2xl font-bold text-gray-900">{stats.today.toLocaleString()}</p>
           </div>
-          <div className="bg-white shadow rounded-lg px-6 py-4">
+          <div className="bg-white shadow-sm rounded-lg px-6 py-4">
             <p className="text-sm text-gray-500">直近7日</p>
             <p className="text-2xl font-bold text-gray-900">{stats.thisWeek.toLocaleString()}</p>
           </div>
-          <div className="bg-white shadow rounded-lg px-6 py-4">
+          <div className="bg-white shadow-sm rounded-lg px-6 py-4">
             <p className="text-sm text-gray-500">重要度の内訳</p>
             <div className="mt-1 flex flex-wrap gap-1">
               {Object.entries(stats.bySeverity ?? {}).map(([severity, count]) => (
                 <span
                   key={severity}
-                  className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(severity)}`}
+                  className={`px-2 py-0.5 rounded-sm text-xs font-medium ${getSeverityColor(severity)}`}
                 >
                   {SEVERITY_LABELS[severity] || severity} {count}
                 </span>
@@ -333,7 +334,7 @@ export default function AuditLogsPage(): JSX.Element {
       )}
 
       {/* 絞り込み */}
-      <div className="bg-white shadow rounded-lg px-6 py-4 space-y-4">
+      <div className="bg-white shadow-sm rounded-lg px-6 py-4 space-y-4">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-500 mb-1">キーワード</label>
@@ -406,7 +407,7 @@ export default function AuditLogsPage(): JSX.Element {
       </div>
 
       {/* 一覧 */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -482,7 +483,7 @@ export default function AuditLogsPage(): JSX.Element {
                             <div>
                               <dt className="font-medium text-gray-500 mb-1">詳細</dt>
                               <dd>
-                                <pre className="bg-white border border-gray-200 rounded p-3 overflow-x-auto text-xs">
+                                <pre className="bg-white border border-gray-200 rounded-sm p-3 overflow-x-auto text-xs">
                                   {JSON.stringify(log.details ?? {}, null, 2)}
                                 </pre>
                               </dd>

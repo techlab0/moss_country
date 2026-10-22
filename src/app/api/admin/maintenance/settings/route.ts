@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     await setAppSetting(MAINTENANCE_PASSWORD_KEY, trimmedPassword);
 
     // メンテ/購入ロックの状態キャッシュを即破棄し、切り替えを即時反映する
-    revalidateTag('maintenance');
+    revalidateTag('maintenance', { expire: 0 });
 
     const newSettings: MaintenanceSettings = {
       isEnabled,

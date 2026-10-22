@@ -218,7 +218,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* モバイル用オーバーレイ */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-40 bg-gray-600/75 lg:hidden"
           onClick={closeSidebar}
         />
       )}
@@ -228,7 +228,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           クリップのみ行う overflow-x-clip を使う（売上入力の会計バーが下部に固定されなくなる） */}
       <div className="flex flex-col flex-1 min-w-0 min-h-screen overflow-x-clip">
         {/* ヘッダー */}
-        <header className="relative z-10 bg-white shadow-sm border-b">
+        <header className="relative z-10 bg-white shadow-xs border-b">
           <div className="px-4 lg:px-6 py-3 lg:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

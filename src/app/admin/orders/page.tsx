@@ -145,10 +145,10 @@ const AdminOrdersPage = () => {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-48 mb-4"></div>
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            <div key={i} className="h-16 bg-gray-200 rounded-sm"></div>
           ))}
         </div>
       </div>
@@ -196,7 +196,7 @@ const AdminOrdersPage = () => {
         ))}
       </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      <div className="bg-white shadow-sm overflow-hidden sm:rounded-md">
         {filteredOrders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-500">
             該当する注文がありません
@@ -211,7 +211,7 @@ const AdminOrdersPage = () => {
                       <p className="text-sm font-medium text-indigo-600 truncate">
                         {order.orderNumber}
                       </p>
-                      <div className="ml-2 flex-shrink-0 flex">
+                      <div className="ml-2 shrink-0 flex">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${(statusConfig[order.status] || statusConfig.pending).color}`}>
                           {(statusConfig[order.status] || { label: order.status }).label}
                         </span>
@@ -226,7 +226,7 @@ const AdminOrdersPage = () => {
                           ¥{order.total.toLocaleString()} - {order.paymentMethod ? (paymentMethodLabels[order.paymentMethod] || order.paymentMethod) : '不明'} - {order.itemCount}点
                         </p>
                       </div>
-                      <div className="ml-2 flex-shrink-0 flex items-center space-x-2">
+                      <div className="ml-2 shrink-0 flex items-center space-x-2">
                         <Link
                           href={`/admin/orders/${order.id}`}
                           className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"

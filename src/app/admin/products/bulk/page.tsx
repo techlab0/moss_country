@@ -169,7 +169,7 @@ export default function BulkEditProductsPage() {
         </Link>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
@@ -183,7 +183,7 @@ export default function BulkEditProductsPage() {
               type="checkbox"
               checked={onlyUnlinked}
               onChange={(e) => setOnlyUnlinked(e.target.checked)}
-              className="h-4 w-4 border-gray-300 rounded"
+              className="h-4 w-4 border-gray-300 rounded-sm"
             />
             売上項目が未設定のものだけ（{unlinkedCount}件）
           </label>
@@ -216,10 +216,10 @@ export default function BulkEditProductsPage() {
           </div>
         </div>
 
-        {message && <p className="text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-2">{message}</p>}
+        {message && <p className="text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-sm px-3 py-2">{message}</p>}
       </div>
 
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
+      <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
@@ -291,7 +291,7 @@ export default function BulkEditProductsPage() {
                       type="checkbox"
                       checked={row.isVisible}
                       onChange={(e) => updateRow(row._id, { isVisible: e.target.checked })}
-                      className="h-4 w-4 border-gray-300 rounded"
+                      className="h-4 w-4 border-gray-300 rounded-sm"
                     />
                   </td>
                 </tr>

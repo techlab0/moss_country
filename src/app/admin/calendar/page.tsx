@@ -227,7 +227,7 @@ export default function CalendarManagePage() {
           {items && (
             <div className="space-y-0.5">
               {items.slice(0, 3).map((item, idx) => (
-                <div key={item.id ?? idx} className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${itemChipClass(item.type)}`} title={item.title}>
+                <div key={item.id ?? idx} className={`text-[10px] leading-tight px-1 py-0.5 rounded-sm truncate ${itemChipClass(item.type)}`} title={item.title}>
                   {item.title}
                 </div>
               ))}
@@ -325,9 +325,9 @@ export default function CalendarManagePage() {
         <CardContent>
           {/* カレンダー凡例 */}
           <div className="flex flex-wrap gap-4 mb-6 text-sm">
-            <div className="flex items-center"><div className="w-4 h-4 bg-emerald-50 border border-emerald-200 rounded mr-2"></div><span className="text-gray-700">営業日</span></div>
-            <div className="flex items-center"><div className="w-4 h-4 bg-amber-50 border border-amber-200 rounded mr-2"></div><span className="text-gray-700">イベント出店</span></div>
-            <div className="flex items-center"><div className="w-4 h-4 bg-red-50 border border-red-200 rounded mr-2"></div><span className="text-gray-700">休業日</span></div>
+            <div className="flex items-center"><div className="w-4 h-4 bg-emerald-50 border border-emerald-200 rounded-sm mr-2"></div><span className="text-gray-700">営業日</span></div>
+            <div className="flex items-center"><div className="w-4 h-4 bg-amber-50 border border-amber-200 rounded-sm mr-2"></div><span className="text-gray-700">イベント出店</span></div>
+            <div className="flex items-center"><div className="w-4 h-4 bg-red-50 border border-red-200 rounded-sm mr-2"></div><span className="text-gray-700">休業日</span></div>
             <div className="flex items-center"><span className="mr-1">📍</span><span className="text-gray-700">イベントあり（1日に複数設定可）</span></div>
           </div>
 
@@ -359,7 +359,7 @@ export default function CalendarManagePage() {
 
       {/* 編集モーダル（1日 = 項目リスト） */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4 text-gray-900 max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -378,7 +378,7 @@ export default function CalendarManagePage() {
                 ) : (
                   <ul className="space-y-2">
                     {selectedItems.map((item) => (
-                      <li key={item.id} className={`flex items-center justify-between gap-2 p-2 rounded ${itemChipClass(item.type)}`}>
+                      <li key={item.id} className={`flex items-center justify-between gap-2 p-2 rounded-sm ${itemChipClass(item.type)}`}>
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{getDefaultTitle(item.type)}: {item.title}</div>
                           {(item.location || item.notes) && (
@@ -386,8 +386,8 @@ export default function CalendarManagePage() {
                           )}
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <button onClick={() => editExistingItem(item)} className="text-xs px-2 py-1 bg-white/70 rounded hover:bg-white">編集</button>
-                          <button onClick={() => deleteItem(item.id)} className="text-xs px-2 py-1 bg-white/70 rounded hover:bg-white text-red-600">削除</button>
+                          <button onClick={() => editExistingItem(item)} className="text-xs px-2 py-1 bg-white/70 rounded-sm hover:bg-white">編集</button>
+                          <button onClick={() => deleteItem(item.id)} className="text-xs px-2 py-1 bg-white/70 rounded-sm hover:bg-white text-red-600">削除</button>
                         </div>
                       </li>
                     ))}

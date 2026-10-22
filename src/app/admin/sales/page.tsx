@@ -785,7 +785,7 @@ function EntryTab({
     // 表示用の税内訳（確定値はサーバーが計算する。src/lib/tax.ts と同じ計算式）
     const taxExcluded = Math.round(finalTotal / 1.1);
     return (
-      <div className="bg-white shadow rounded-lg p-6 space-y-4">
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
         <div className="text-center border-b pb-3">
           <h2 className="font-bold text-gray-900 tracking-wider">MOSS COUNTRY</h2>
           <p className="text-xs text-gray-500 mt-1">お会計内容のご確認</p>
@@ -880,7 +880,7 @@ function EntryTab({
   // QR決済フロー中はフォームの代わりにQR画面を表示
   if (qrFlow) {
     return (
-      <div className="bg-white shadow rounded-lg p-6 text-center space-y-4">
+      <div className="bg-white shadow-sm rounded-lg p-6 text-center space-y-4">
         <p className="text-3xl font-bold text-gray-900">¥{qrFlow.amount.toLocaleString()}</p>
         <ul className="text-left text-sm text-gray-600 divide-y border rounded-md">
           {qrFlow.lineItems.map((li, idx) => (
@@ -970,7 +970,7 @@ function EntryTab({
   return (
     <div className="space-y-4">
       {/* 来店人数 */}
-      <div className="bg-white shadow rounded-lg p-4 flex items-center justify-between">
+      <div className="bg-white shadow-sm rounded-lg p-4 flex items-center justify-between">
         <span className="font-medium text-gray-900">来店人数</span>
         <div className="flex items-center gap-2">
           <button
@@ -998,11 +998,11 @@ function EntryTab({
       </div>
 
       {loadingItems ? (
-        <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
+        <div className="animate-pulse h-64 bg-gray-200 rounded-sm"></div>
       ) : (
         <>
           {/* 検索・カテゴリ絞り込み。検索中はカテゴリ指定を無視して全カテゴリから探す */}
-          <div className="bg-white shadow rounded-lg p-3 space-y-3">
+          <div className="bg-white shadow-sm rounded-lg p-3 space-y-3">
             <div className="relative">
               <input
                 type="text"
@@ -1093,7 +1093,7 @@ function EntryTab({
 
             const categoryTotal = itemsInCategory.reduce((sum, item) => sum + itemAmount(item), 0);
             return (
-              <details key={category} className="bg-white shadow rounded-lg overflow-hidden" open>
+              <details key={category} className="bg-white shadow-sm rounded-lg overflow-hidden" open>
                 <summary className="px-4 py-3 bg-gray-50 font-medium text-gray-900 cursor-pointer flex justify-between items-center">
                   <span>{categoryLabels[category]}</span>
                   {categoryTotal > 0 && <span className="text-sm text-moss-green font-bold">¥{categoryTotal.toLocaleString()}</span>}
@@ -1155,7 +1155,7 @@ function EntryTab({
           )}
 
           {/* カタログ外の商品 */}
-          <div className="bg-white shadow rounded-lg p-4 space-y-3">
+          <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-medium text-gray-900 text-sm">その他（カタログにない商品）</h2>
               <button
@@ -1557,12 +1557,12 @@ function SummaryTab({
   }, [data]);
 
   if (loading) {
-    return <div className="animate-pulse h-64 bg-gray-200 rounded"></div>;
+    return <div className="animate-pulse h-64 bg-gray-200 rounded-sm"></div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-white shadow rounded-lg p-4">
+      <div className="bg-white shadow-sm rounded-lg p-4">
         <label className="block text-sm text-gray-600 mb-1">日付</label>
         <input
           type="date"
@@ -1601,7 +1601,7 @@ function SummaryTab({
       </div>
 
       {/* 集計サマリー */}
-      <div className="bg-white shadow rounded-lg p-4 space-y-2">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-2">
         <h2 className="font-medium text-gray-900 mb-2">集計（取引から自動計算）</h2>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">現金</span>
@@ -1685,7 +1685,7 @@ function SummaryTab({
 
       {/* 商品別明細 */}
       {agg && agg.itemRows.length > 0 && (
-        <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
+        <div className="bg-white shadow-sm rounded-lg p-4 overflow-x-auto">
           <h2 className="font-medium text-gray-900 mb-2">商品別明細</h2>
           <table className="w-full text-xs">
             <thead>
@@ -1733,7 +1733,7 @@ function SummaryTab({
       )}
 
       {/* カウンタ・調整・備考 */}
-      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
         <h2 className="font-medium text-gray-900">来店・じゃらんポイント・調整（自動加算済み、手修正可）</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -1772,7 +1772,7 @@ function SummaryTab({
       </div>
 
       {/* 取引履歴 */}
-      <div className="bg-white shadow rounded-lg p-4 space-y-3">
+      <div className="bg-white shadow-sm rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-medium text-gray-900">取引履歴</h2>
           <div className="flex items-center gap-3">
@@ -1830,11 +1830,11 @@ function SummaryTab({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs text-gray-400">{formatTime(tx.createdAt)}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                        <span className="text-xs px-1.5 py-0.5 rounded-sm bg-blue-100 text-blue-800">
                           {methodLabels[tx.paymentMethod || 'cash']}
                         </span>
                         {tx.source === 'historical' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">手書き記録</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-sm bg-amber-100 text-amber-800">手書き記録</span>
                         )}
                         {(tx.visitorCount || 0) > 0 && (
                           <span className="text-xs text-gray-500">{tx.visitorCount}名</span>
@@ -1897,13 +1897,13 @@ function SummaryTab({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-gray-400">{formatTime(charge.createdAt)}</span>
                       <span
-                        className={`text-xs px-1.5 py-0.5 rounded ${
+                        className={`text-xs px-1.5 py-0.5 rounded-sm ${
                           charge.method === 'paypay' ? 'bg-red-100 text-red-800' : 'bg-purple-100 text-purple-800'
                         }`}
                       >
                         {methodLabels[charge.method || 'qr']}
                       </span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${status.className}`}>{status.label}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-sm ${status.className}`}>{status.label}</span>
                       {(charge.visitorCount || 0) > 0 && (
                         <span className="text-xs text-gray-500">{charge.visitorCount}名</span>
                       )}
@@ -1915,7 +1915,7 @@ function SummaryTab({
                       </p>
                     )}
                     {!!charge.inventoryWarnings?.length && (
-                      <div className="mt-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      <div className="mt-2 rounded-sm border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                         <p className="font-bold">在庫に反映できなかった商品があります</p>
                         {charge.inventoryWarnings.map((warning, index) => (
                           <p key={`${warning.itemName}-${index}`} className="mt-1">
@@ -2552,12 +2552,12 @@ function EditPanel({
         </div>
       )}
       {pointAmountInvalid && (
-        <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1.5">
+        <p className="text-xs text-red-600 bg-red-50 rounded-sm px-2 py-1.5">
           じゃらんポイントは売上合計以下で入力してください。
         </p>
       )}
       {mismatch && (
-        <p className="text-xs text-yellow-700 bg-yellow-50 rounded px-2 py-1.5">
+        <p className="text-xs text-yellow-700 bg-yellow-50 rounded-sm px-2 py-1.5">
           ⚠️ 明細合計が決済金額（¥{(edit.paidAmount || 0).toLocaleString()}）と一致していません。記録として保存はできますが、金額の変更（返金）はできません。
         </p>
       )}

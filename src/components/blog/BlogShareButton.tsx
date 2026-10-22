@@ -92,7 +92,7 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex items-center justify-center rounded-lg border-2 border-moss-green bg-white/90 px-6 py-3 font-medium text-moss-green shadow-sm transition-colors hover:bg-moss-green hover:text-white focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2"
+        className="inline-flex items-center justify-center rounded-lg border-2 border-moss-green bg-white/90 px-6 py-3 font-medium text-moss-green shadow-xs transition-colors hover:bg-moss-green hover:text-white focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:ring-offset-2"
       >
         <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 1 1 0-2.684m0 2.684 6.632 3.316m-6.632-6 6.632-3.316m0 9.316a3 3 0 1 0 5.368 2.684 3 3 0 0 0-5.368-2.684Zm0-9.316a3 3 0 1 0 5.368-2.684 3 3 0 0 0-5.368 2.684Z" />
@@ -103,7 +103,7 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
         <button
           type="button"
           onClick={handleNativeShare}
-          className="rounded-full border border-[#c13584] bg-white px-4 py-2 text-sm font-medium text-[#a62c72] transition-colors hover:bg-[#fff3fa] focus:outline-none focus:ring-2 focus:ring-[#c13584] focus:ring-offset-2"
+          className="rounded-full border border-[#c13584] bg-white px-4 py-2 text-sm font-medium text-[#a62c72] transition-colors hover:bg-[#fff3fa] focus:outline-hidden focus:ring-2 focus:ring-[#c13584] focus:ring-offset-2"
         >
           Instagramなど
         </button>
@@ -113,7 +113,7 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2 ${link.className}`}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:ring-offset-2 ${link.className}`}
           >
             {link.label}
           </a>
@@ -121,7 +121,7 @@ export function BlogShareButton({ url }: BlogShareButtonProps) {
         <button
           type="button"
           onClick={() => copyUrl(url)}
-          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-moss-green focus:ring-offset-2"
+          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:ring-offset-2"
         >
           URLをコピー
         </button>

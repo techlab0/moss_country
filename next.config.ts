@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // lintエラーは0件にしたので、以後は増えたらビルドで止める。
-    // 警告（react-hooks/exhaustive-deps など）はビルドを止めない。
-    ignoreDuringBuilds: false,
-  },
   typescript: {
     // 型エラーも0件にしたので、以後は増えたらビルドで止める。
     ignoreBuildErrors: false,
@@ -20,6 +15,7 @@ const nextConfig: NextConfig = {
     formats: ['image/webp', 'image/avif'], // 次世代フォーマット
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    qualities: [75, 80, 82, 85],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },

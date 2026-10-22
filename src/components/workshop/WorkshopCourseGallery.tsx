@@ -54,7 +54,7 @@ export function WorkshopCourseGallery({
         aria-label={`${courseName}の写真を拡大表示`}
       >
         <img src={mainImage.url} alt={mainImage.alt || `${courseName}の完成イメージ`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" style={{ objectPosition: imageObjectPosition(mainImage) }} />
-        <span className="absolute bottom-2 right-2 rounded-full bg-black/65 px-2.5 py-1 text-xs text-white backdrop-blur-sm">
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/65 px-2.5 py-1 text-xs text-white backdrop-blur-xs">
           写真を見る{visibleImages.length > 1 ? ` 1/${visibleImages.length}` : ''}
         </span>
       </button>

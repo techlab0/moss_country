@@ -15,7 +15,7 @@ const Setup2FAPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow-sm p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
           二段階認証の設定
         </h1>
@@ -40,7 +40,7 @@ const Setup2FAPage = () => {
                   <input
                     type="tel"
                     placeholder="090-1234-5678"
-                    className="block w-full border-gray-300 rounded-md shadow-sm"
+                    className="block w-full border-gray-300 rounded-md shadow-xs"
                   />
                 </div>
               </div>
@@ -52,7 +52,7 @@ const Setup2FAPage = () => {
                 スマートフォンアプリで認証コードを生成します
               </p>
               
-              <div className="bg-gray-100 p-4 rounded text-center">
+              <div className="bg-gray-100 p-4 rounded-sm text-center">
                 <div className="text-sm text-gray-600">QRコードがここに表示されます</div>
               </div>
             </div>

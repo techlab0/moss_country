@@ -81,7 +81,7 @@ export function WorkshopSection({ t, ov, img, imgStyle }: WorkshopSectionProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
           <div
             ref={textBlockRef}
-            className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 relative overflow-hidden bg-stone-950/50 backdrop-blur-sm border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)] order-2 md:order-1"
+            className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 relative overflow-hidden bg-stone-950/50 backdrop-blur-xs border border-emerald-400/15 shadow-[0_8px_32px_rgba(0,0,0,0.4)] order-2 md:order-1"
           >
             <div className="mb-4 sm:mb-6 relative z-10">
               <span className="text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-300 font-medium">Workshop Experience</span>
@@ -106,7 +106,7 @@ export function WorkshopSection({ t, ov, img, imgStyle }: WorkshopSectionProps) 
             <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 relative z-10">
               {(['workshopPoint1', 'workshopPoint2', 'workshopPoint3', 'workshopPoint4'] as const).map((key) => (
                 <li key={key} className="flex items-center text-gray-200">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-400 mr-3 sm:mr-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-sm sm:text-base">{t(key)}</span>

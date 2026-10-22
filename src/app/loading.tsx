@@ -11,7 +11,7 @@
 export default function Loading() {
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/90 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/90 backdrop-blur-xs"
       role="status"
       aria-live="polite"
     >

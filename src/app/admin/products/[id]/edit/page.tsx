@@ -254,7 +254,7 @@ export default function EditProductPage() {
         <p className="text-gray-600 mt-2">商品情報を変更して保存します</p>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow-sm rounded-lg">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* 新規登録画面と同じく売上項目を先頭に置く（既存商品では商品名を上書きしない） */}
           <SalesItemPicker
@@ -269,7 +269,7 @@ export default function EditProductPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -279,7 +279,7 @@ export default function EditProductPage() {
                 type="text"
                 value={formData.nameReading}
                 onChange={(e) => setFormData((prev) => ({ ...prev, nameReading: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 placeholder="こけだま"
               />
               <p className="text-xs text-gray-500 mt-1">あいうえお順の並び替えに使います</p>
@@ -299,7 +299,7 @@ export default function EditProductPage() {
                     return prev;
                   });
                 }}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 placeholder="product-slug"
                 required
               />
@@ -313,7 +313,7 @@ export default function EditProductPage() {
               <div className="flex flex-wrap gap-2 mb-2">
                 {images.map((item, index) => (
                   <div key={item.image._key ?? index} className="relative w-64">
-                    <div className="w-64 h-40 rounded border overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-64 h-40 rounded-sm border overflow-hidden bg-gray-100 flex items-center justify-center">
                       {item.previewUrl ? (
                         <img
                           src={item.previewUrl}
@@ -341,7 +341,7 @@ export default function EditProductPage() {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               disabled={uploadingImage}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-moss-green file:text-white"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:bg-moss-green file:text-white"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleImageUpload(file);
@@ -357,7 +357,7 @@ export default function EditProductPage() {
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -368,7 +368,7 @@ export default function EditProductPage() {
               value={formData.seoDescription}
               onChange={(e) => setFormData((prev) => ({ ...prev, seoDescription: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="空欄のままで構いません"
             />
             <p className="mt-1 text-sm text-gray-500">
@@ -383,7 +383,7 @@ export default function EditProductPage() {
                 type="number"
                 value={formData.price}
                 onChange={(e) => setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 min={0}
                 required
               />
@@ -393,7 +393,7 @@ export default function EditProductPage() {
               <select
                 value={formData.category}
                 onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 required
               >
                 {categories.map((category) => (
@@ -412,7 +412,7 @@ export default function EditProductPage() {
                   ...prev,
                   costPrice: e.target.value === '' ? undefined : Number(e.target.value),
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 min={0}
                 placeholder="分かる場合だけ入力"
               />
@@ -440,7 +440,7 @@ export default function EditProductPage() {
               type="text"
               value={formData.materials.join(', ')}
               onChange={(e) => handleMaterialsChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="苔, ガラス容器, 土"
             />
           </div>
@@ -451,7 +451,7 @@ export default function EditProductPage() {
               value={formData.careInstructions}
               onChange={(e) => setFormData((prev) => ({ ...prev, careInstructions: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               placeholder="水やりの頻度や置き場所などの注意点を記載"
             />
           </div>
@@ -471,7 +471,7 @@ export default function EditProductPage() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, lowStockThreshold: parseInt(e.target.value) || 5 }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="5"
                 />
                 <p className="text-xs text-gray-500 mt-1">この数以下になると「在庫少」表示</p>
@@ -482,7 +482,7 @@ export default function EditProductPage() {
                   id="featured"
                   checked={formData.featured}
                   onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
                   おすすめ商品として表示
@@ -509,7 +509,7 @@ export default function EditProductPage() {
                       dimensions: { ...prev.dimensions, width: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 12"
                 />
               </div>
@@ -527,7 +527,7 @@ export default function EditProductPage() {
                       dimensions: { ...prev.dimensions, height: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 15"
                 />
               </div>
@@ -545,7 +545,7 @@ export default function EditProductPage() {
                       dimensions: { ...prev.dimensions, depth: e.target.value === '' ? undefined : Number(e.target.value) },
                     }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 12"
                 />
               </div>
@@ -558,7 +558,7 @@ export default function EditProductPage() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, weight: e.target.value === '' ? undefined : Number(e.target.value) }))
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="例: 800"
                 />
               </div>
@@ -569,7 +569,7 @@ export default function EditProductPage() {
                 id="fragile"
                 checked={formData.fragile ?? false}
                 onChange={(e) => setFormData((prev) => ({ ...prev, fragile: e.target.checked }))}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
               />
               <label htmlFor="fragile" className="ml-2 block text-sm text-gray-900">
                 割れ物（取扱注意・送料に割れ物加算を適用）
