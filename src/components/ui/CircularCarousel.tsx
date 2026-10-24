@@ -216,7 +216,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       {/* Arc Arrangement Container。円弧がちょうど収まる高さにし、直下の説明文へ垂れ込まないよう
           縦横ともクリップする（カードはコンテナ中央基準で配置されるため弧は潰れない）。 */}
       <div className="relative h-[22rem] [@media(max-height:720px)]:h-[20rem] md:h-[21rem] md:[@media(max-height:720px)]:h-[19rem] overflow-clip flex items-center justify-center mx-auto max-w-[76rem]">
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full">
           {items.map((item, index) => (
             <div
               key={item.id}
