@@ -84,3 +84,18 @@ test('準備中でないページはサイトマップに残る', () => {
 test('準備中の指定が無ければ何も外さない', () => {
   assert.equal(isSitemapUrlVisible('https://mosscountry.com/shop', []), true);
 });
+
+test('苔を知るページは初回だけ準備中にし、管理画面保存後は設定を尊重する', () => {
+  const initial = mergeSiteSettings({
+    maintenancePages: [],
+    craftMossRentalVisibilityConfigured: true,
+  });
+  assert.equal(initial.maintenancePages.includes('/moss-basics'), true);
+
+  const configured = mergeSiteSettings({
+    maintenancePages: [],
+    craftMossRentalVisibilityConfigured: true,
+    mossBasicsVisibilityConfigured: true,
+  });
+  assert.equal(configured.maintenancePages.includes('/moss-basics'), false);
+});

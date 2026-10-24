@@ -255,7 +255,7 @@ test('クラフトモスレンタルを編集でき、表示・非表示を切�
   assert.ok(registry.includes('craftMossRental: {'), 'クラフトモスレンタルの編集定義が必要');
   assert.ok(registry.includes("path: '/craft-moss-rental'"), '公開ページのパスを登録する');
   assert.ok(settings.includes("{ path: '/craft-moss-rental', label: 'クラフトモスレンタル' }"), '表示切替の対象に追加する');
-  assert.ok(settings.includes("maintenancePages: ['/craft-moss-rental']"), '初期状態は非表示にする');
+  assert.ok(settings.includes("maintenancePages: ['/craft-moss-rental', '/moss-basics']"), '初期状態は非表示にする');
   assert.ok(publicPage.includes("usePageContent('craftMossRental')"), '公開ページで編集内容を読み込む');
   assert.ok(publicPage.includes("img('heroImage')"), 'メイン画像を編集可能にする');
   assert.ok(registry.includes("key: 'priceAvailableFrame'"), '苔フレームのレンタル状況を編集対象に含める');

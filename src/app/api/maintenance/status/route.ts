@@ -19,8 +19,14 @@ export async function GET() {
       // ミドルウェアが毎リクエスト参照するため、Nextデータキャッシュ(revalidate:60 + tags:['maintenance'])
       // に載せてSanityの非CDN API Requests消費を抑える。準備中ページの変更は
       // 管理画面の保存時に revalidateTag('maintenance') で即座に反映される。
-      writeClient.fetch<{ maintenancePages?: string[]; craftMossRentalVisibilityConfigured?: boolean } | null>(
-        `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages, craftMossRentalVisibilityConfigured }`,
+      writeClient.fetch<{
+        maintenancePages?: string[];
+        craftMossRentalVisibilityConfigured?: boolean;
+        mossBasicsVisibilityConfigured?: boolean;
+      } | null>(
+        `*[_type == "siteSettings" && _id == "siteSettings"][0]{
+          maintenancePages, craftMossRentalVisibilityConfigured, mossBasicsVisibilityConfigured
+        }`,
         {},
         { next: { revalidate: 60, tags: ['maintenance'] } }
       ),
@@ -36,7 +42,7 @@ export async function GET() {
     console.warn('Failed to fetch maintenance status:', error);
     return NextResponse.json({
       isEnabled: false,
-      maintenancePages: ['/craft-moss-rental'],
+      maintenancePages: ['/craft-moss-rental', '/moss-basics'],
       purchaseLocked: false,
       purchaseLockedMessage: DEFAULT_PURCHASE_LOCKED_MESSAGE,
     });

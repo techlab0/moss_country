@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
         footerLegalLinks[]{ label, href, isVisible },
         snsLinks[]{ platform, url, isVisible },
         footerTagline, businessHours, businessDays, copyrightText, maintenancePages, allowIndexing,
-        craftMossRentalVisibilityConfigured, rentalTerrariumSitemapConfigured,
+        craftMossRentalVisibilityConfigured, mossBasicsVisibilityConfigured,
+        rentalTerrariumSitemapConfigured,
         seo {
           siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
           twitterHandle, googleSiteVerification, gtmContainerId
@@ -114,6 +115,7 @@ export async function PUT(request: NextRequest) {
       copyrightText: typeof body.copyrightText === 'string' ? body.copyrightText : '',
       maintenancePages,
       craftMossRentalVisibilityConfigured: true,
+      mossBasicsVisibilityConfigured: true,
       rentalTerrariumSitemapConfigured: true,
       allowIndexing: body.allowIndexing === true,
       seo: sanitizeSeo(body.seo),

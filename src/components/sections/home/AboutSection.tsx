@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Container } from '@/components/layout/Container';
@@ -35,11 +35,31 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const cardOuterRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [showMossBasicsLink, setShowMossBasicsLink] = useState(false);
 
   const overrideTitle = ov('aboutTitle');
   const titleContent = overrideTitle !== undefined
     ? splitCharsKeepBreaks(overrideTitle, 'always')
     : splitCharsKeepBreaks('小さな自然、\n大きな癒し', 'mobile-only');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/site-settings')
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (cancelled) return;
+        const maintenancePages = data?.settings?.maintenancePages;
+        setShowMossBasicsLink(
+          Array.isArray(maintenancePages) && !maintenancePages.includes('/moss-basics')
+        );
+      })
+      .catch(() => {
+        // 設定を確認できない場合は、準備中ページへの入口を表示しない。
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -216,6 +236,14 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
           >
             テラリウムを知る
           </a>
+          {showMossBasicsLink && (
+            <a
+              href="/moss-basics"
+              className="inline-flex w-full items-center justify-center rounded-full border border-emerald-300/70 px-10 py-4 text-lg font-light text-emerald-200 transition-all duration-300 hover:scale-105 hover:bg-emerald-300 hover:text-stone-950 sm:w-auto"
+            >
+              苔を知る
+            </a>
+          )}
         </div>
       </Container>
       </div>

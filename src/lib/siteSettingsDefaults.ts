@@ -32,6 +32,7 @@ export interface SiteSettingsData {
   copyrightText: string;
   maintenancePages: string[];
   craftMossRentalVisibilityConfigured?: boolean;
+  mossBasicsVisibilityConfigured?: boolean;
   rentalTerrariumSitemapConfigured?: boolean;
   allowIndexing: boolean;
   // SEO設定の既定値の解決は seoSettings.ts の mergeSeoSettings が担当する
@@ -57,6 +58,7 @@ export const maintenanceTargetPages: Array<{ path: string; label: string }> = [
   { path: '/workshop', label: 'ワークショップ' },
   { path: '/workshop/mobile', label: '出張ワークショップ' },
   { path: '/craft-moss-rental', label: 'クラフトモスレンタル' },
+  { path: '/moss-basics', label: '苔を知る' },
   { path: '/story', label: 'ストーリー' },
   { path: '/store', label: '店舗情報' },
   { path: '/blog', label: 'ブログ' },
@@ -124,6 +126,7 @@ export const defaultSiteSettings: SiteSettingsData = {
     { label: '出張ワークショップ', href: '/workshop/mobile', isVisible: true },
     { label: 'レンタルテラリウム', href: '/rental-terrarium', isVisible: true },
     { label: 'テラリウムを知る', href: '/terrarium-guide', isVisible: true },
+    { label: '苔を知る', href: '/moss-basics', isVisible: true },
     { label: 'ストーリー', href: '/story', isVisible: true },
     { label: 'メディア情報', href: '/media', isVisible: true },
     { label: '店舗情報', href: '/store', isVisible: true },
@@ -148,7 +151,7 @@ export const defaultSiteSettings: SiteSettingsData = {
   businessHours: '11:00 - 20:00',
   businessDays: '不定休（カレンダーをご確認ください）',
   copyrightText: '© 2024 MOSS COUNTRY. All rights reserved.',
-  maintenancePages: ['/craft-moss-rental'],
+  maintenancePages: ['/craft-moss-rental', '/moss-basics'],
   allowIndexing: false,
 };
 
@@ -187,9 +190,27 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
   const linksWithTerrariumGuide = linksWithRentalTerrarium.some(link => link.href === '/terrarium-guide')
     ? linksWithRentalTerrarium
     : [...linksWithRentalTerrarium, { label: 'テラリウムを知る', href: '/terrarium-guide', isVisible: true }];
-  const footerSitemapLinks = linksWithTerrariumGuide.some(link => link.href === '/media')
+  const linksWithMossBasics = linksWithTerrariumGuide.some(link => link.href === '/moss-basics')
     ? linksWithTerrariumGuide
-    : [...linksWithTerrariumGuide, { label: 'メディア情報', href: '/media', isVisible: true }];
+    : (() => {
+        const links = [...linksWithTerrariumGuide];
+        const terrariumGuideIndex = links.findIndex(link => link.href === '/terrarium-guide');
+        links.splice(terrariumGuideIndex >= 0 ? terrariumGuideIndex + 1 : links.length, 0, {
+          label: '苔を知る',
+          href: '/moss-basics',
+          isVisible: true,
+        });
+        return links;
+      })();
+  const footerSitemapLinks = linksWithMossBasics.some(link => link.href === '/media')
+    ? linksWithMossBasics
+    : [...linksWithMossBasics, { label: 'メディア情報', href: '/media', isVisible: true }];
+  const maintenancePagesWithCraftMoss = saved.craftMossRentalVisibilityConfigured === true
+    ? saved.maintenancePages ?? []
+    : Array.from(new Set([...(saved.maintenancePages ?? []), '/craft-moss-rental']));
+  const maintenancePages = saved.mossBasicsVisibilityConfigured === true
+    ? maintenancePagesWithCraftMoss
+    : Array.from(new Set([...maintenancePagesWithCraftMoss, '/moss-basics']));
   return {
     headerLinks: saved.headerLinks?.length ? saved.headerLinks : defaultSiteSettings.headerLinks,
     footerSitemapLinks,
@@ -199,10 +220,9 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
     businessHours: saved.businessHours ?? defaultSiteSettings.businessHours,
     businessDays: saved.businessDays ?? defaultSiteSettings.businessDays,
     copyrightText: saved.copyrightText ?? defaultSiteSettings.copyrightText,
-    maintenancePages: saved.craftMossRentalVisibilityConfigured === true
-      ? saved.maintenancePages ?? []
-      : Array.from(new Set([...(saved.maintenancePages ?? []), '/craft-moss-rental'])),
+    maintenancePages,
     craftMossRentalVisibilityConfigured: saved.craftMossRentalVisibilityConfigured === true,
+    mossBasicsVisibilityConfigured: saved.mossBasicsVisibilityConfigured === true,
     rentalTerrariumSitemapConfigured: saved.rentalTerrariumSitemapConfigured === true,
     allowIndexing: saved.allowIndexing === true,
   };

@@ -108,6 +108,13 @@ export const siteSettings = defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'mossBasicsVisibilityConfigured',
+      title: '苔を知るページ公開設定済み',
+      type: 'boolean',
+      hidden: true,
+      initialValue: false,
+    }),
+    defineField({
       name: 'rentalTerrariumSitemapConfigured',
       title: 'レンタルテラリウムのサイトマップ設定済み',
       type: 'boolean',

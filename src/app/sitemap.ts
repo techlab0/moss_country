@@ -62,6 +62,12 @@ async function getStaticRoutes(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/moss-basics`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
@@ -184,7 +190,7 @@ async function getDynamicRoutes(): Promise<MetadataRoute.Sitemap> {
 async function getMaintenancePages(): Promise<string[]> {
   try {
     const saved = await writeClient.fetch(
-      `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages, craftMossRentalVisibilityConfigured }`,
+      `*[_type == "siteSettings" && _id == "siteSettings"][0]{ maintenancePages, craftMossRentalVisibilityConfigured, mossBasicsVisibilityConfigured }`,
       {},
       { next: { revalidate: 60, tags: ['maintenance'] } }
     )
