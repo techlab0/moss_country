@@ -220,7 +220,7 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
           {items.map((item, index) => (
             <div
               key={item.id}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+              className="absolute top-1/2 left-1/2 cursor-pointer"
               style={getItemStyle(index)}
               onClick={() => goToItem(index)}
             >
