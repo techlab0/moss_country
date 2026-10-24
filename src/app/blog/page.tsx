@@ -12,6 +12,19 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { imageDisplayScale, imageObjectPosition } from '@/lib/imagePosition'
 
+const categoryLabels: Record<string, string> = {
+  news: 'お知らせ',
+  howto: 'テラリウムの作り方',
+  plants: '植物について',
+  maintenance: 'メンテナンス',
+  events: 'イベント',
+  other: 'その他',
+}
+
+function getCategoryLabel(category: string) {
+  return categoryLabels[category] ?? category
+}
+
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([])
@@ -90,7 +103,11 @@ export default function BlogPage() {
         // カテゴリー一覧を作成
         const uniqueCategories = Array.from(
           new Set(fetchedPosts.map(post => post.category).filter((c): c is string => Boolean(c)))
-        )
+        ).sort((a, b) => {
+          if (a === 'maintenance') return -1
+          if (b === 'maintenance') return 1
+          return 0
+        })
         setCategories(uniqueCategories)
       } catch (error) {
         console.error('ブログ記事の取得に失敗しました:', error)
@@ -189,7 +206,7 @@ export default function BlogPage() {
                     <option value="all">全てのカテゴリー</option>
                     {categories.map((category) => (
                       <option key={category} value={category}>
-                        {category}
+                        {getCategoryLabel(category)}
                       </option>
                     ))}
                   </select>
@@ -275,7 +292,7 @@ export default function BlogPage() {
                         <div className="flex items-center justify-between mb-3">
                           {post.category && (
                             <span className="bg-moss-green text-white px-3 py-1 rounded-full text-sm font-medium">
-                              {post.category}
+                              {getCategoryLabel(post.category)}
                             </span>
                           )}
                           <time className="text-gray-700 text-sm font-medium">
