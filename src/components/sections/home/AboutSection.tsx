@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Container } from '@/components/layout/Container';
-import { Button } from '@/components/ui/Button';
+
+const aboutCtaClass = 'inline-flex w-full items-center justify-center rounded-full border-0 bg-emerald-600 px-10 py-4 text-lg font-light text-white transition-all duration-300 hover:scale-105 hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-moss-green focus:ring-offset-2 sm:w-auto';
 
 interface AboutSectionProps {
   t: (key: string) => string;
@@ -221,25 +222,19 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 text-center sm:mt-10 sm:flex-row md:mt-10 [@media(max-height:720px)]:mt-5">
-          <a href="/story" className="w-full sm:w-auto">
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full px-10 py-4 text-lg font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 sm:w-auto"
-            >
-              店舗ストーリー
-            </Button>
+          <a href="/story" className={aboutCtaClass}>
+            店舗ストーリー
           </a>
           <a
             href="/terrarium-guide"
-            className="inline-flex w-full items-center justify-center rounded-full border border-emerald-300/70 px-10 py-4 text-lg font-light text-emerald-200 transition-all duration-300 hover:scale-105 hover:bg-emerald-300 hover:text-stone-950 sm:w-auto"
+            className={aboutCtaClass}
           >
             テラリウムを知る
           </a>
           {showMossBasicsLink && (
             <a
               href="/moss-basics"
-              className="inline-flex w-full items-center justify-center rounded-full border border-emerald-300/70 px-10 py-4 text-lg font-light text-emerald-200 transition-all duration-300 hover:scale-105 hover:bg-emerald-300 hover:text-stone-950 sm:w-auto"
+              className={aboutCtaClass}
             >
               苔を知る
             </a>

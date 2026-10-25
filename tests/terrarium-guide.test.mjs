@@ -36,6 +36,11 @@ test('商品・体験・店舗への導線とトップページの入口があ�
   assert.match(sitemap, /\$\{baseUrl\}\/terrarium-guide/);
 });
 
+test('トップページの案内ボタンは店舗ストーリーと同じ見た目に揃える', () => {
+  assert.match(homeAbout, /const aboutCtaClass = .*bg-emerald-600/);
+  assert.equal((homeAbout.match(/className=\{aboutCtaClass\}/g) ?? []).length, 3);
+});
+
 test('フッターのサイトマップに入口がある', () => {
   assert.match(siteSettings, /label: 'テラリウムを知る', href: '\/terrarium-guide'/);
 });
