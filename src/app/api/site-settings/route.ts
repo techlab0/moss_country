@@ -22,6 +22,7 @@ export async function GET() {
         snsLinks[]{ platform, url, isVisible },
         footerTagline, businessHours, businessDays, copyrightText, maintenancePages,
         craftMossRentalVisibilityConfigured, mossBasicsVisibilityConfigured,
+        mossBasicsSitemapConfigured,
         rentalTerrariumSitemapConfigured
       }`
     );

@@ -227,7 +227,7 @@ export function AboutSection({ t, ov }: AboutSectionProps) {
               size="lg"
               className="w-full px-10 py-4 text-lg font-light bg-emerald-600 hover:bg-emerald-700 border-0 rounded-full transition-all duration-300 transform hover:scale-105 sm:w-auto"
             >
-              ストーリーを読む
+              店舗ストーリー
             </Button>
           </a>
           <a

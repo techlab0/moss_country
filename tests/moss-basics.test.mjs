@@ -42,6 +42,8 @@ test('初期状態は非表示で、管理画面から公開状態を保存で�
   assert.match(siteSettings, /\{ path: '\/moss-basics', label: '苔を知る' \}/);
   assert.match(siteSettings, /mossBasicsVisibilityConfigured/);
   assert.match(adminSettingsApi, /mossBasicsVisibilityConfigured: true/);
+  assert.match(siteSettings, /mossBasicsSitemapConfigured/);
+  assert.match(adminSettingsApi, /mossBasicsSitemapConfigured: true/);
   assert.match(sitemap, /mossBasicsVisibilityConfigured/);
 });
 

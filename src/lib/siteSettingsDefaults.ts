@@ -33,6 +33,7 @@ export interface SiteSettingsData {
   maintenancePages: string[];
   craftMossRentalVisibilityConfigured?: boolean;
   mossBasicsVisibilityConfigured?: boolean;
+  mossBasicsSitemapConfigured?: boolean;
   rentalTerrariumSitemapConfigured?: boolean;
   allowIndexing: boolean;
   // SEO設定の既定値の解決は seoSettings.ts の mergeSeoSettings が担当する
@@ -202,9 +203,14 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
         });
         return links;
       })();
-  const footerSitemapLinks = linksWithMossBasics.some(link => link.href === '/media')
+  const linksWithVisibleMossBasics = saved.mossBasicsSitemapConfigured === true
     ? linksWithMossBasics
-    : [...linksWithMossBasics, { label: 'メディア情報', href: '/media', isVisible: true }];
+    : linksWithMossBasics.map(link => (
+        link.href === '/moss-basics' ? { ...link, label: '苔を知る', isVisible: true } : link
+      ));
+  const footerSitemapLinks = linksWithVisibleMossBasics.some(link => link.href === '/media')
+    ? linksWithVisibleMossBasics
+    : [...linksWithVisibleMossBasics, { label: 'メディア情報', href: '/media', isVisible: true }];
   const maintenancePagesWithCraftMoss = saved.craftMossRentalVisibilityConfigured === true
     ? saved.maintenancePages ?? []
     : Array.from(new Set([...(saved.maintenancePages ?? []), '/craft-moss-rental']));
@@ -223,6 +229,7 @@ export function mergeSiteSettings(saved: Partial<SiteSettingsData> | null | unde
     maintenancePages,
     craftMossRentalVisibilityConfigured: saved.craftMossRentalVisibilityConfigured === true,
     mossBasicsVisibilityConfigured: saved.mossBasicsVisibilityConfigured === true,
+    mossBasicsSitemapConfigured: saved.mossBasicsSitemapConfigured === true,
     rentalTerrariumSitemapConfigured: saved.rentalTerrariumSitemapConfigured === true,
     allowIndexing: saved.allowIndexing === true,
   };

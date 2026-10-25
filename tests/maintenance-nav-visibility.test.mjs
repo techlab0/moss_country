@@ -66,6 +66,21 @@ test('管理画面で設定済みならレンタルテラリウムを非表示�
   assert.equal(merged.footerSitemapLinks.some(link => link.href === '/rental-terrarium'), false);
 });
 
+test('苔を知るリンクは初回だけ表示へ補正し、管理画面保存後は設定を尊重する', () => {
+  const initiallyVisible = mergeSiteSettings({
+    footerSitemapLinks: [{ label: '苔を知る', href: '/moss-basics', isVisible: false }],
+    craftMossRentalVisibilityConfigured: true,
+  });
+  assert.equal(initiallyVisible.footerSitemapLinks.find(link => link.href === '/moss-basics')?.isVisible, true);
+
+  const manuallyHidden = mergeSiteSettings({
+    footerSitemapLinks: [{ label: '苔を知る', href: '/moss-basics', isVisible: false }],
+    craftMossRentalVisibilityConfigured: true,
+    mossBasicsSitemapConfigured: true,
+  });
+  assert.equal(manuallyHidden.footerSitemapLinks.find(link => link.href === '/moss-basics')?.isVisible, false);
+});
+
 test('準備中のページはサイトマップから外す', () => {
   const pages = ['/shop'];
   assert.equal(isSitemapUrlVisible('https://mosscountry.com/shop', pages), false);

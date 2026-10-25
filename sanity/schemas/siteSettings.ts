@@ -115,6 +115,13 @@ export const siteSettings = defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'mossBasicsSitemapConfigured',
+      title: '苔を知るサイトマップ設定済み',
+      type: 'boolean',
+      hidden: true,
+      initialValue: false,
+    }),
+    defineField({
       name: 'rentalTerrariumSitemapConfigured',
       title: 'レンタルテラリウムのサイトマップ設定済み',
       type: 'boolean',

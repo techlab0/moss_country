@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         snsLinks[]{ platform, url, isVisible },
         footerTagline, businessHours, businessDays, copyrightText, maintenancePages, allowIndexing,
         craftMossRentalVisibilityConfigured, mossBasicsVisibilityConfigured,
+        mossBasicsSitemapConfigured,
         rentalTerrariumSitemapConfigured,
         seo {
           siteTitle, titleTemplate, description, keywords, ogDescription, ogImageUrl,
@@ -116,6 +117,7 @@ export async function PUT(request: NextRequest) {
       maintenancePages,
       craftMossRentalVisibilityConfigured: true,
       mossBasicsVisibilityConfigured: true,
+      mossBasicsSitemapConfigured: true,
       rentalTerrariumSitemapConfigured: true,
       allowIndexing: body.allowIndexing === true,
       seo: sanitizeSeo(body.seo),
