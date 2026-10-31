@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { CalendarItem, CalendarData } from '@/types/calendar';
+import { isSameCalendarItem, normalizeBulkCalendarItem } from './calendarBulk';
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
@@ -50,11 +51,15 @@ export default function CalendarManagePage() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarData>({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   // モーダル内で追加/編集中の1項目（id有=既存編集、id無=新規追加）
   const [editItem, setEditItem] = useState<CalendarItem>({ type: 'open', title: '営業日' });
+  const [bulkItem, setBulkItem] = useState<CalendarItem>({ type: 'open', title: '営業日' });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
@@ -95,6 +100,20 @@ export default function CalendarManagePage() {
     setSelectedDate(dateStr);
     setEditItem({ type: 'open', title: '営業日' }); // 追加フォームは初期化
     setIsEditModalOpen(true);
+  };
+
+  const toggleSelectedDate = (dateStr: string) => {
+    setSelectedDates((prev) => (
+      prev.includes(dateStr)
+        ? prev.filter((date) => date !== dateStr)
+        : [...prev, dateStr]
+    ));
+  };
+
+  const stopMultiSelect = () => {
+    setIsMultiSelectMode(false);
+    setSelectedDates([]);
+    setBulkItem({ type: 'open', title: '営業日' });
   };
 
   const closeEditModal = () => {
@@ -145,6 +164,66 @@ export default function CalendarManagePage() {
       flash({ type: 'success', text: '項目を削除しました' });
     } catch {
       flash({ type: 'error', text: '削除中にエラーが発生しました' });
+    }
+  };
+
+  // 選択した日へ同じ項目を追加する。既存項目は削除せず、完全に同じ内容だけ重複を避ける。
+  const saveBulkItems = async () => {
+    if (selectedDates.length === 0 || isBulkSaving) return;
+
+    const normalizedItem = normalizeBulkCalendarItem(bulkItem);
+
+    if (!normalizedItem.title) {
+      flash({ type: 'error', text: 'タイトルを入力してください' });
+      return;
+    }
+
+    const datesToSave = selectedDates.filter((date) => (
+      !(calendarEvents[date] ?? []).some((item) => isSameCalendarItem(item, normalizedItem))
+    ));
+    const skippedCount = selectedDates.length - datesToSave.length;
+
+    if (datesToSave.length === 0) {
+      flash({ type: 'success', text: '選択した日には同じ内容がすでに登録されています' });
+      return;
+    }
+
+    if (!confirm(`${selectedDates.length}日分に「${normalizedItem.title}」を設定しますか？\n既存の項目はそのまま残ります。`)) return;
+
+    setIsBulkSaving(true);
+    try {
+      const results = await Promise.all(datesToSave.map(async (date) => {
+        try {
+          const response = await fetch('/api/admin/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, event: normalizedItem }),
+          });
+          return { date, ok: response.ok };
+        } catch {
+          return { date, ok: false };
+        }
+      }));
+
+      const failedDates = results.filter((result) => !result.ok).map((result) => result.date);
+      const savedCount = results.length - failedDates.length;
+      await fetchCalendarData();
+
+      if (failedDates.length > 0) {
+        // 失敗した日だけを残すことで、そのまま再実行できるようにする。
+        setSelectedDates(failedDates);
+        flash({
+          type: 'error',
+          text: `${savedCount}日分を保存しましたが、${failedDates.length}日分は保存できませんでした。失敗した日だけ選択状態に残しています。`,
+        });
+        return;
+      }
+
+      const skippedText = skippedCount > 0 ? `（同じ内容が登録済みの${skippedCount}日分は変更なし）` : '';
+      setSelectedDates([]);
+      flash({ type: 'success', text: `${savedCount}日分を一括設定しました${skippedText}` });
+    } finally {
+      setIsBulkSaving(false);
     }
   };
 
@@ -213,16 +292,23 @@ export default function CalendarManagePage() {
 
       const vis = dayVisual(items);
       const borderColor = isToday ? 'border-blue-500 border-2' : vis.border;
+      const isSelected = selectedDates.includes(dateStr);
 
       days.push(
-        <div
+        <button
+          type="button"
           key={day}
-          className={`p-2 min-h-[80px] border ${borderColor} ${vis.bg} ${vis.text} text-sm rounded-lg cursor-pointer transition-all duration-200 overflow-hidden min-w-0`}
-          onClick={() => openEditModal(dateStr)}
+          className={`relative p-2 min-h-[80px] border ${borderColor} ${vis.bg} ${vis.text} text-left text-sm rounded-lg cursor-pointer transition-all duration-200 overflow-hidden min-w-0 ${isSelected ? 'ring-2 ring-blue-600 ring-offset-1 bg-blue-50' : ''}`}
+          onClick={() => (isMultiSelectMode ? toggleSelectedDate(dateStr) : openEditModal(dateStr))}
+          aria-pressed={isMultiSelectMode ? isSelected : undefined}
+          aria-label={isMultiSelectMode ? `${dateStr}${isSelected ? ' 選択済み' : ' 選択する'}` : undefined}
         >
           <div className="flex items-center justify-between mb-1">
             <span className="font-semibold">{day}</span>
-            {vis.hasEvent && <span title="イベントあり">📍</span>}
+            <div className="flex items-center gap-1">
+              {vis.hasEvent && <span title="イベントあり">📍</span>}
+              {isSelected && <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white" aria-hidden="true">✓</span>}
+            </div>
           </div>
           {items && (
             <div className="space-y-0.5">
@@ -234,7 +320,7 @@ export default function CalendarManagePage() {
               {items.length > 3 && <div className="text-[10px] text-gray-500">+{items.length - 3}</div>}
             </div>
           )}
-        </div>
+        </button>
       );
     }
     return days;
@@ -252,6 +338,7 @@ export default function CalendarManagePage() {
 
   const selectedItems = selectedDate ? calendarEvents[selectedDate] ?? [] : [];
   const totalItems = Object.values(calendarEvents).reduce((n, arr) => n + arr.length, 0);
+  const sortedSelectedDates = [...selectedDates].sort();
 
   return (
     <div className="space-y-6">
@@ -288,7 +375,7 @@ export default function CalendarManagePage() {
           <h3 className="text-sm font-semibold text-blue-800">使い方</h3>
         </div>
         <p className="text-sm text-blue-700">
-          日付をクリックして項目を設定します。<b>1日に複数の項目を追加できます</b>（例: 「営業日」＋「イベント出店」）。変更は即座にストアページに反映されます。
+          日付をクリックして項目を設定します。<b>1日に複数の項目を追加できます</b>（例: 「営業日」＋「イベント出店」）。複数の日に同じ内容を設定するときは「複数日を選択」を押してください。変更は即座にストアページに反映されます。
         </p>
         <div className="mt-2 text-xs text-blue-600">現在登録済みの項目数: {totalItems}件</div>
       </div>
@@ -317,10 +404,94 @@ export default function CalendarManagePage() {
           <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">一括操作:</span>
+              {!isMultiSelectMode ? (
+                <Button onClick={() => setIsMultiSelectMode(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2">✓ 複数日を選択</Button>
+              ) : (
+                <Button onClick={stopMultiSelect} variant="ghost" className="border-blue-300 text-blue-700 hover:bg-blue-50 text-sm px-4 py-2">選択モードを終了</Button>
+              )}
               <Button onClick={setAllBusinessDays} className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2">🏢 全日営業日に設定</Button>
               <Button onClick={clearAllEvents} variant="ghost" className="border-red-300 text-red-600 hover:bg-red-50 text-sm px-4 py-2">🗑️ 全項目削除</Button>
             </div>
           </div>
+
+          {isMultiSelectMode && (
+            <div className="mt-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4 text-gray-900">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="font-semibold text-blue-900">複数日への一括設定</h3>
+                  <p className="mt-1 text-sm text-blue-800">カレンダーの日付をクリックして選択してください。月を移動して別の月の日付も一緒に選べます。</p>
+                </div>
+                <div className="shrink-0 rounded-full bg-blue-600 px-3 py-1 text-sm font-semibold text-white">{selectedDates.length}日選択中</div>
+              </div>
+
+              {sortedSelectedDates.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1" aria-label="選択中の日付">
+                  {sortedSelectedDates.map((date) => (
+                    <button
+                      key={date}
+                      type="button"
+                      onClick={() => toggleSelectedDate(date)}
+                      className="rounded-full border border-blue-300 bg-white px-2 py-1 text-xs text-blue-800 hover:bg-blue-100"
+                      title="選択から外す"
+                    >
+                      {date} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-900">種類</label>
+                  <select
+                    value={bulkItem.type}
+                    onChange={(e) => {
+                      const newType = e.target.value as CalendarItem['type'];
+                      setBulkItem({ type: newType, title: getDefaultTitle(newType) });
+                    }}
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2"
+                  >
+                    <option value="open">営業日</option>
+                    <option value="event">イベント出店</option>
+                    <option value="closed">休業日</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-900">タイトル</label>
+                  <input
+                    type="text"
+                    value={bulkItem.title}
+                    onChange={(e) => setBulkItem((prev) => ({ ...prev, title: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2"
+                    placeholder="イベント名や休業理由など"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-sm font-medium text-gray-900">{bulkItem.type === 'event' ? '場所' : '補足事項'}</label>
+                  <input
+                    type="text"
+                    value={bulkItem.type === 'event' ? (bulkItem.location || '') : (bulkItem.notes || '')}
+                    onChange={(e) => {
+                      if (bulkItem.type === 'event') setBulkItem((prev) => ({ ...prev, location: e.target.value }));
+                      else setBulkItem((prev) => ({ ...prev, notes: e.target.value }));
+                    }}
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2"
+                    placeholder={bulkItem.type === 'event' ? 'イベント開催場所' : bulkItem.type === 'closed' ? '休業理由など' : '備考・お知らせなど'}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button onClick={saveBulkItems} disabled={selectedDates.length === 0 || isBulkSaving} className="bg-blue-600 hover:bg-blue-700">
+                  {isBulkSaving ? '保存中...' : `${selectedDates.length}日分を一括設定`}
+                </Button>
+                {selectedDates.length > 0 && (
+                  <Button onClick={() => setSelectedDates([])} variant="ghost" disabled={isBulkSaving}>選択をすべて解除</Button>
+                )}
+                <span className="text-xs text-blue-700">既存の項目は削除せず、同じ内容の重複だけを避けます。</span>
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {/* カレンダー凡例 */}

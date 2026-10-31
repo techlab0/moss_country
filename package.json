@@ -9,7 +9,7 @@
     "lint": "eslint src tests",
     "test:shipping": "node --experimental-strip-types --test tests/shipping-note.test.mjs",
     "test:workshop": "node --experimental-strip-types --test tests/workshop-booking-safety.test.mjs tests/workshop-calendar-policy.test.mjs tests/workshop-plan-visibility.test.mjs tests/workshop-course-presets.test.mjs tests/workshop-course-images.test.mjs",
-    "test:admin-ui": "node --experimental-strip-types --test tests/admin-ui-order.test.mjs tests/blog-cta.test.mjs tests/shop-page-copy.test.mjs",
+    "test:admin-ui": "node --experimental-strip-types --test tests/admin-ui-order.test.mjs tests/blog-cta.test.mjs tests/calendar-bulk-selection.test.mjs tests/shop-page-copy.test.mjs",
     "test:analytics": "node --experimental-strip-types --test tests/analytics-summary.test.mjs",
     "test:home-season": "node --experimental-strip-types --test tests/home-season.test.mjs",
     "test:media": "node --experimental-strip-types --test tests/media-page.test.mjs",
