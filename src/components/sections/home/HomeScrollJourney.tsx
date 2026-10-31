@@ -26,15 +26,36 @@ export function HomeScrollJourney({ children }: HomeScrollJourneyProps) {
     });
     const unsubscribe = lenis.on('scroll', () => ScrollTrigger.update());
     let animationFrameId = 0;
+    let isRunning = false;
 
     const update = (time: number) => {
+      if (!isRunning) return;
       lenis.raf(time);
       animationFrameId = window.requestAnimationFrame(update);
     };
-    animationFrameId = window.requestAnimationFrame(update);
+
+    const start = () => {
+      if (isRunning || document.hidden) return;
+      isRunning = true;
+      animationFrameId = window.requestAnimationFrame(update);
+    };
+
+    const stop = () => {
+      isRunning = false;
+      window.cancelAnimationFrame(animationFrameId);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    start();
 
     return () => {
-      window.cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stop();
       unsubscribe();
       lenis.destroy();
     };

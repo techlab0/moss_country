@@ -35,6 +35,10 @@
   filter: blur(0.45px);
 }
 
+.paused .particle {
+  animation-play-state: paused;
+}
+
 .spring .particle,
 .autumn .particle,
 .winter .particle {

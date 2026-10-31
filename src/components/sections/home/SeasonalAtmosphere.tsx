@@ -32,9 +32,14 @@ function particleStyle(index: number): ParticleStyle {
 
 export function SeasonalAtmosphere() {
   const [season, setSeason] = useState<HomeSeason | null>(null);
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
   useEffect(() => {
     setSeason(getCurrentHomeSeason());
+    const handleVisibilityChange = () => setIsPageVisible(!document.hidden);
+    handleVisibilityChange();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   if (!season) return null;
@@ -43,7 +48,7 @@ export function SeasonalAtmosphere() {
     <div
       aria-hidden="true"
       data-home-season={season}
-      className={`${styles.atmosphere} ${styles[season]}`}
+      className={`${styles.atmosphere} ${styles[season]} ${isPageVisible ? '' : styles.paused}`}
       title={`${SEASON_LABELS[season]}の背景演出`}
     >
       {Array.from({ length: PARTICLE_COUNT }, (_, index) => (

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import { usePathname } from 'next/navigation';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { getPageLoadingConfig, LOADING_CONFIG } from '@/config/loading';
+import { shouldWaitForInitialImage } from '@/lib/pageLoadingImages';
 
 interface PageLoadingContextType {
   isLoading: boolean;
@@ -85,21 +86,45 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
   // 画像読み込み検知
   useEffect(() => {
     if (!pageConfig) return;
-    
+
+    let cancelled = false;
+    const cleanupImageListeners: Array<() => void> = [];
+
     const checkImagesLoaded = () => {
-      const images = document.querySelectorAll('img');
-      const imagePromises = Array.from(images).map((img) => {
+      // 画面外の lazy 画像まで待つと、その画像はスクロールするまで読み込まれず、
+      // ページ自体は表示できるのにローディング画面だけが最大時間まで残ってしまう。
+      // 最初の画面に必要な画像だけを待ち、下部画像はブラウザ本来の遅延読込へ任せる。
+      const images = Array.from(document.querySelectorAll('img')).filter((img) => {
+        const rect = img.getBoundingClientRect();
+        return shouldWaitForInitialImage({
+          loading: img.loading,
+          fetchPriority: img.fetchPriority,
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportHeight: window.innerHeight,
+          deferredBackground: img.dataset.deferredHomeBackground === 'true',
+        });
+      });
+
+      const imagePromises = images.map((img) => {
         return new Promise<void>((resolve) => {
           if (img.complete) {
             resolve();
           } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve(); // エラーでも続行
+            // 既存の onload を上書きせず、画像部品側の処理と共存する。
+            const finish = () => resolve();
+            img.addEventListener('load', finish, { once: true });
+            img.addEventListener('error', finish, { once: true });
+            cleanupImageListeners.push(() => {
+              img.removeEventListener('load', finish);
+              img.removeEventListener('error', finish);
+            });
           }
         });
       });
 
       Promise.all(imagePromises).then(() => {
+        if (cancelled) return;
         // 100%に到達したら即座にローディング終了条件を満たす
         setProgress(100);
         setImagesLoaded(true);
@@ -114,7 +139,9 @@ export const PageLoadingProvider: React.FC<PageLoadingProviderProps> = ({
     }
 
     return () => {
+      cancelled = true;
       document.removeEventListener('DOMContentLoaded', checkImagesLoaded);
+      cleanupImageListeners.forEach((cleanup) => cleanup());
     };
   }, [pathname, pageConfig]);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getImageProps } from 'next/image';
 
 /**
@@ -88,19 +88,56 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const activeIdRef = useRef<string | null>(null);
+  // Heroの次に来るAboutだけを先に用意し、残りは近づいた時点で読み込む。
+  // 5シーン分を初期表示時に一斉取得しないための状態。
+  const [loadedSceneIds, setLoadedSceneIds] = useState<Set<string>>(() => new Set(['about']));
+
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-scene-id]'));
+    if (!('IntersectionObserver' in window)) {
+      setLoadedSceneIds(new Set(SCENES.map((scene) => scene.id)));
+      return;
+    }
+
+    // 画面へ入る半画面ほど前に読み込みを始め、遷移時には従来どおり画像を表示できるようにする。
+    const observer = new IntersectionObserver((entries) => {
+      const approachingIds = entries
+        .filter((entry) => entry.isIntersecting)
+        .map((entry) => (entry.target as HTMLElement).dataset.sceneId)
+        .filter((id): id is string => Boolean(id));
+
+      if (approachingIds.length === 0) return;
+      setLoadedSceneIds((current) => {
+        const next = new Set(current);
+        approachingIds.forEach((id) => next.add(id));
+        return next.size === current.size ? current : next;
+      });
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '50% 0px 50% 0px', threshold: 0.01 });
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!rootRef.current) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sectionById = new Map<string, HTMLElement>();
+    document.querySelectorAll<HTMLElement>('[data-scene-id]').forEach((section) => {
+      const id = section.dataset.sceneId;
+      if (id) sectionById.set(id, section);
+    });
+    const contentById = new Map<string, HTMLElement>();
 
     const findActiveSceneId = (): string | null => {
       const centerY = window.innerHeight / 2;
-      const sections = document.querySelectorAll<HTMLElement>('[data-scene-id]');
-      for (const section of sections) {
+      for (const [id, section] of sectionById) {
         const rect = section.getBoundingClientRect();
         if (rect.top <= centerY && rect.bottom >= centerY) {
-          return section.dataset.sceneId ?? null;
+          return id;
         }
       }
       return null;
@@ -111,8 +148,11 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
 
     const getContent = (id: string | null): HTMLElement | null => {
       if (!id) return null;
-      const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
-      return section?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
+      const cached = contentById.get(id);
+      if (cached?.isConnected) return cached;
+      const content = sectionById.get(id)?.querySelector<HTMLElement>('[data-scene-content]') ?? null;
+      if (content) contentById.set(id, content);
+      return content;
     };
 
     // 背景レイヤーはPC・モバイルとも同じ穏やかなフェードで切り替える。
@@ -147,7 +187,7 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
       const revealLine = window.innerHeight * 0.8;
       for (const id of sceneIds) {
         if (revealedContent.has(id)) continue;
-        const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+        const section = sectionById.get(id);
         const content = getContent(id);
         if (!section || !content) continue;
         const top = section.getBoundingClientRect().top;
@@ -171,7 +211,7 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
     // JSでのみ隠すので、JSが動かない環境では通常表示のまま（コンテンツ喪失なし）。
     const initContentReveal = () => {
       for (const id of sceneIds) {
-        const section = document.querySelector<HTMLElement>(`[data-scene-id="${id}"]`);
+        const section = sectionById.get(id);
         const content = getContent(id);
         if (!section || !content) continue;
         content.dataset.revealPrepared = '1';
@@ -186,10 +226,12 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
 
     let lastScrollY = window.scrollY;
     let scrollScheduled = false;
+    let scrollTimerId: number | null = null;
     const handleScroll = () => {
       if (scrollScheduled) return;
       scrollScheduled = true;
-      window.setTimeout(() => {
+      scrollTimerId = window.setTimeout(() => {
+        scrollTimerId = null;
         scrollScheduled = false;
         const y = window.scrollY;
         const direction: 'up' | 'down' = y >= lastScrollY ? 'down' : 'up';
@@ -209,6 +251,7 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
     window.addEventListener('resize', handleScroll, { passive: true });
 
     return () => {
+      if (scrollTimerId !== null) window.clearTimeout(scrollTimerId);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
@@ -240,6 +283,8 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
           className="absolute inset-0 opacity-0 will-change-[opacity,transform]"
         >
           {(() => {
+            if (!loadedSceneIds.has(scene.id)) return null;
+
             // 画面幅による画像の出し分け（アートディレクション）は、JSの状態ではなく
             // <picture> のブラウザネイティブなメディア選択で行う。JS凍結環境や
             // ハイドレーション初期値の問題に左右されず、該当する側しかダウンロードされない。
@@ -256,9 +301,11 @@ export function SceneBackdrop({ img, imgStyle }: SceneBackdropProps) {
                 <img
                   {...imgProps}
                   alt=""
-                  // lazyだとモバイルで表示されないことがあるため確実に先読みする
+                  // シーンへ近づいてからDOMへ追加しているため、この時点では確実に取得する。
+                  // 初期画面に必要なHero画像より優先しない。
                   loading="eager"
-                  fetchPriority="high"
+                  fetchPriority="low"
+                  data-deferred-home-background="true"
                   className="object-cover"
                   style={{ ...imgProps.style }}
                 />
