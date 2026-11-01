@@ -26,5 +26,6 @@ test('写真集は12枚ずつ表示し、拡大表示に対応する', () => {
 
 test('苔を知るページとフッターから写真集へ移動できる', () => {
   assert.match(mossBasicsPage, /href="\/moss-gallery"/);
+  assert.match(mossBasicsPage, /よくある疑問<\/a>\s*<Link href="\/moss-gallery"/);
   assert.match(footer, /href="\/moss-gallery"/);
 });

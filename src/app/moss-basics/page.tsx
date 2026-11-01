@@ -55,6 +55,7 @@ export default function MossBasicsPage() {
             <a href="#nature" className="whitespace-nowrap transition-colors hover:text-emerald-200">自然での役割</a>
             <a href="#care" className="whitespace-nowrap transition-colors hover:text-emerald-200">育て方の基本</a>
             <a href="#questions" className="whitespace-nowrap transition-colors hover:text-emerald-200">よくある疑問</a>
+            <Link href="/moss-gallery" className="whitespace-nowrap text-emerald-200 transition-colors hover:text-white">苔の写真集</Link>
           </div>
         </Container>
       </nav>
