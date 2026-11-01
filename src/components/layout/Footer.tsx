@@ -85,6 +85,11 @@ export const Footer: React.FC = () => {
                     </Link>
                   </li>
                 ))}
+              <li>
+                <Link href="/moss-gallery" className="text-emerald-600 hover:text-white transition-colors duration-200">
+                  苔風景写真集
+                </Link>
+              </li>
             </ul>
           </div>
 

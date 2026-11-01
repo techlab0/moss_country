@@ -154,6 +154,36 @@ export default function MossBasicsPage() {
           </Container>
         </section>
 
+        <section className="border-b border-white/10 bg-[#08140e] py-16 sm:py-20">
+          <Container>
+            <Link
+              href="/moss-gallery"
+              className="group grid overflow-hidden rounded-[2rem] border border-emerald-200/15 bg-black/25 lg:grid-cols-[1.15fr_0.85fr]"
+            >
+              <div className="relative min-h-64 overflow-hidden lg:min-h-96">
+                <Image
+                  src="/images/moss-gallery/KM19814322_TP_V.webp"
+                  alt="苔に覆われた森の風景"
+                  fill
+                  sizes="(max-width: 1023px) 100vw, 58vw"
+                  className="object-cover transition duration-700 ease-out group-hover:scale-[1.035]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#08140e]/25 lg:to-[#08140e]" />
+              </div>
+              <div className="flex flex-col justify-center px-7 py-10 sm:px-10 lg:px-12">
+                <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">MOSS LANDSCAPES</p>
+                <h2 className="mt-4 font-serif text-3xl sm:text-4xl">苔風景写真集</h2>
+                <p className="mt-5 leading-8 text-white/65">
+                  森、庭園、水辺に広がる苔の景色を、写真でゆっくりお楽しみください。
+                </p>
+                <span className="mt-7 inline-flex items-center text-emerald-200">
+                  写真集を見る <span aria-hidden="true" className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+                </span>
+              </div>
+            </Link>
+          </Container>
+        </section>
+
         <section id="care" className="scroll-mt-32 border-b border-white/10 bg-[#0a1811] py-20 sm:py-28">
           <Container>
             <div className="mx-auto max-w-3xl text-center">
