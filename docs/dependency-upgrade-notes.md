@@ -21,6 +21,20 @@ The repository owner's GitHub API returned all 60 currently open Dependabot aler
 
 These are unresolved upstream risks, not dismissed alerts. Avoid processing untrusted CLI patterns/configuration; monitor upstream fixes. Do not use `npm audit fix --force`: its proposed Sanity/ESLint downgrades break the supported dependency combination. `decompress` is absent, and Nodemailer 10.2.0 is audit-clean. Scoped `smol-toml@1.9.1` and `js-yaml@3.15.2` overrides remove the other affected framework-detection versions.
 
+## Transitive advisory overrides (2026-11-02)
+
+Dependabot alerts #61–#70 concerned three transitive packages. npm `overrides` now pin the patched versions without changing any direct dependency:
+
+| Package | Advisory range | Override | Dependency paths |
+| --- | --- | --- | --- |
+| `undici` | `>=7.0.0 <7.30.1` (8 advisories) | `7.30.1` | Sanity `get-it`, jsdom, module-federation. The root copy was 7.29.1; nested 7.30.1 copies were deduplicated. Next.js server `fetch` uses Node's built-in undici and is unaffected by this package. |
+| `glob` | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) `>=9.0.0 <=14.0.1` | `14.0.3` | `googleapis` → `gaxios` → `rimraf@5`. gaxios never loads rimraf at runtime; rimraf's `glob`/`globSync` named imports exist in glob 14. |
+| `minimatch` | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) `<11.0.1` | `11.0.3` for 9.x/10.x only | glob, `@typescript-eslint/typescript-estree`, `@oclif/core` (Sanity CLI). These use the named-export API that v11 keeps. |
+
+`minimatch@3.1.5` remains and keeps alert #70 open. ESLint 9, `@eslint/eslintrc` and `eslint-plugin-react`/`import`/`jsx-a11y` (latest releases still require `^3.1.2`) call the v3 default-export function, which minimatch 11 removed, so forcing it would break linting. It is a devDependency of the lint step only, matching patterns from repository configuration, not request input. Remove the restriction once upstream plugins move to minimatch ≥11.0.1.
+
+Verification: `npm audit` fell from 22 entries (1 high, 21 moderate) to 15 moderate, all derived from that single minimatch@3 advisory. TypeScript passed; all 251 local tests passed; lint had 0 errors. The production build passed with process-local synthetic Supabase settings. `next start` served `/`, `/shop`, `/workshop` and `/blog` with 200 and returned 401 for the unauthenticated admin products API. A public read-only Sanity query through `@sanity/client` on the overridden undici succeeded. Square and authenticated Supabase flows were not exercised; no package on their call paths changed.
+
 ## Validation and release boundaries
 
 - A clean install and a full installed-package-versus-lockfile scan passed with zero version mismatches.

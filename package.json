@@ -76,9 +76,11 @@
   },
   "overrides": {
     "adm-zip": "0.6.1",
-    "glob": "10.5.0",
+    "glob": "14.0.3",
+    "minimatch@>=9.0.0 <11.0.1": "11.0.3",
     "postcss": "$postcss",
     "prismjs": "1.30.0",
+    "undici": "7.30.1",
     "uuid": "$uuid",
     "@google-cloud/storage": {
       "gaxios": {
