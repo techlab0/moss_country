@@ -259,7 +259,7 @@ export const pageContentRegistry: Record<string, PageDefinition> = {
       { key: 'method3Info', label: '連絡方法3 住所', type: 'text', default: '札幌市西区発寒11条4丁目3-1' },
       { key: 'method3Hours', label: '連絡方法3 補足', type: 'text', default: '予約優先（当日来店も歓迎）' },
       { key: 'faq1Q', label: 'FAQ1 質問', type: 'text', default: 'ワークショップの予約はいつまでにすればよいですか？' },
-      { key: 'faq1A', label: 'FAQ1 回答', type: 'textarea', default: '開催日の3日前までにご予約をお願いいたします。人気のコースは早めに満席になることがありますので、お早めのご予約をお勧めします。' },
+      { key: 'faq1A', label: 'FAQ1 回答', type: 'textarea', default: '前日までにお申し込みいただければご参加いただけます。当日参加も、予約枠と材料に空きがある場合は可能です。ただし、苔の在庫状況によっては、事前にご予約いただいたお客様を優先し、当日のお申し込みをお断りする場合がございます。' },
       { key: 'faq2Q', label: 'FAQ2 質問', type: 'text', default: 'オーダーメイドの制作期間はどのくらいですか？' },
       { key: 'faq2A', label: 'FAQ2 回答', type: 'textarea', default: '内容により異なりますが、通常1-2週間程度お時間をいただいております。お急ぎの場合はご相談ください。' },
       { key: 'faq3Q', label: 'FAQ3 質問', type: 'text', default: 'テラリウムの配送は可能ですか？' },

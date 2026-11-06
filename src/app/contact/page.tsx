@@ -16,6 +16,11 @@ const inquiryTypes = [
   'その他',
 ];
 
+const LEGACY_WORKSHOP_BOOKING_ANSWER =
+  '開催日の3日前までにご予約をお願いいたします。人気のコースは早めに満席になることがありますので、お早めのご予約をお勧めします。';
+const WORKSHOP_BOOKING_ANSWER =
+  '前日までにお申し込みいただければご参加いただけます。当日参加も、予約枠と材料に空きがある場合は可能です。ただし、苔の在庫状況によっては、事前にご予約いただいたお客様を優先し、当日のお申し込みをお断りする場合がございます。';
+
 export default function ContactPage() {
   // 管理画面の「ページ編集」で保存された文言を反映する（保存がなければ従来の文言）
   const { t } = usePageContent('contact');
@@ -25,10 +30,15 @@ export default function ContactPage() {
     info: t(`method${i}Info`),
     hours: t(`method${i}Hours`),
   }));
-  const faqItems = [1, 2, 3, 4].map(i => ({
-    question: t(`faq${i}Q`),
-    answer: t(`faq${i}A`),
-  }));
+  const faqItems = [1, 2, 3, 4].map(i => {
+    const answer = t(`faq${i}A`);
+    return {
+      question: t(`faq${i}Q`),
+      answer: i === 1 && answer === LEGACY_WORKSHOP_BOOKING_ANSWER
+        ? WORKSHOP_BOOKING_ANSWER
+        : answer,
+    };
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
