@@ -41,6 +41,10 @@ test('メンテナンス会の案内文を編集して公開ページへ表示�
     assert.match(registry, new RegExp(`key: '${key}'`));
     assert.match(workshopPage, new RegExp(`t\\('${key}'\\)`));
   }
+  assert.match(registry, /default: '初心者コース参加'/);
+  assert.match(registry, /default: '初心者コース未参加'/);
+  assert.match(workshopPage, /初心者コースを受講したことがある方/);
+  assert.match(workshopPage, /初心者コースをまだ受講していない方/);
   assert.match(workshopPage, /plan\.description/);
   assert.match(workshopPage, /plan\.mossTypes/);
   assert.match(workshopPage, /plan\.priceNote/);

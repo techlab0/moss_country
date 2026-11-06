@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -21,8 +22,12 @@ const planMeta = [
 ];
 
 export default function WorkshopPage() {
+  const router = useRouter();
   // 管理画面の「ページ編集」で保存された文言・画像を反映する（保存がなければ従来の文言・画像）
   const { t, img, imgStyle } = usePageContent('workshop');
+  const maintenanceLead = t('maintenanceLead').replaceAll('基本コース', '初心者コース');
+  const maintenanceParticipantLabel = t('maintenanceParticipantLabel').replaceAll('基本コース参加者', '初心者コース参加');
+  const maintenanceNonParticipantLabel = t('maintenanceNonParticipantLabel').replaceAll('基本コース未参加', '初心者コース未参加');
   const workshopSizes = planMeta.map((meta, i) => ({
     ...meta,
     name: t(`plan${i + 1}Name`),
@@ -176,7 +181,7 @@ export default function WorkshopPage() {
               variant="primary" 
               size="lg"
               className="bg-white !text-moss-green hover:bg-moss-green hover:!text-white"
-              onClick={() => window.location.href = '/workshop/booking'}
+              onClick={() => router.push('/workshop/booking')}
             >
               今すぐ予約する
             </Button>
@@ -313,7 +318,10 @@ export default function WorkshopPage() {
           {coursePlans.some((plan) => plan.category === 'maintenance') && (
             <div className="mx-auto mt-10 max-w-4xl rounded-xl border border-white/20 bg-black/50 p-6 text-white backdrop-blur-xs">
               <h3 className="text-2xl font-bold">{t('maintenanceTitle')}</h3>
-              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-200">{t('maintenanceLead')}</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-200">{maintenanceLead}</p>
+              <p className="mt-2 text-xs leading-relaxed text-emerald-100">
+                参加・未参加は、初心者コースを受講したことがあるかどうかに合わせてお選びください。
+              </p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {coursePlans.filter((plan) => plan.category === 'maintenance').map((plan) => (
                   <div key={plan._id} className="rounded-lg border border-white/15 bg-white/10 p-4">
@@ -324,8 +332,10 @@ export default function WorkshopPage() {
                     {plan.description && <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-gray-200">{plan.description}</p>}
                     {plan.mossTypes && <p className="mt-2 text-xs text-gray-300">使用する苔：{plan.mossTypes.replace(/\n/g, '・')}</p>}
                     <div className="mt-3 rounded-md bg-black/20 p-3">
-                      <p className="text-sm">{t('maintenanceParticipantLabel')}：¥{(plan.participantPrice || 0).toLocaleString()}</p>
-                      <p className="mt-1 text-sm">{t('maintenanceNonParticipantLabel')}：¥{(plan.nonParticipantPrice || 0).toLocaleString()}</p>
+                      <p className="text-sm">{maintenanceParticipantLabel}：¥{(plan.participantPrice || 0).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-gray-300">初心者コースを受講したことがある方</p>
+                      <p className="mt-3 text-sm">{maintenanceNonParticipantLabel}：¥{(plan.nonParticipantPrice || 0).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-gray-300">初心者コースをまだ受講していない方</p>
                     </div>
                     {plan.duration && <p className="mt-2 text-xs text-amber-100">所要時間：{plan.duration}</p>}
                     {plan.priceNote && <p className="mt-1 whitespace-pre-line text-xs text-gray-300">※{plan.priceNote}</p>}
@@ -489,7 +499,7 @@ export default function WorkshopPage() {
                     variant="primary"
                     size="md"
                     className="bg-moss-green text-white hover:bg-moss-green/80"
-                    onClick={() => window.location.href = '/workshop/booking'}
+                    onClick={() => router.push('/workshop/booking')}
                   >
                     オンラインで予約する
                   </Button>
@@ -604,7 +614,7 @@ export default function WorkshopPage() {
                       variant="ghost"
                       size="lg"
                       className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                      onClick={() => window.location.href = '/workshop/mobile'}
+                      onClick={() => router.push('/workshop/mobile')}
                     >
                       詳しく見る
                     </Button>
@@ -639,7 +649,7 @@ export default function WorkshopPage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = '/workshop/booking'}
+                onClick={() => router.push('/workshop/booking')}
               >
                 予約する
               </Button>
@@ -647,7 +657,7 @@ export default function WorkshopPage() {
                 variant="ghost" 
                 size="lg" 
                 className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-moss-green transition-all duration-300 cursor-pointer font-semibold px-8 py-3"
-                onClick={() => window.location.href = 'mailto:info@mosscountry.com?subject=ワークショップについてのお問い合わせ'}
+                onClick={() => router.push('/contact#contact-form')}
               >
                 お問い合わせフォーム
               </Button>

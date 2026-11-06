@@ -138,7 +138,7 @@ function WorkshopPayPayReturnContent() {
                 <Button onClick={handleRecheck} disabled={isRechecking} className="w-full sm:w-auto">
                   {isRechecking ? '確認中...' : 'お支払い状況を再確認する'}
                 </Button>
-                <Link href="/contact" className="w-full sm:w-auto">
+                <Link href="/contact#contact-form" className="w-full sm:w-auto">
                   <Button variant="ghost" className="w-full sm:w-auto text-stone-300 border border-stone-700 hover:bg-stone-800">
                     お問い合わせ
                   </Button>
@@ -165,7 +165,7 @@ function WorkshopPayPayReturnContent() {
                 <Button onClick={handleRecheck} disabled={isRechecking} className="w-full sm:w-auto">
                   {isRechecking ? '確認中...' : 'お支払い状況を再確認する'}
                 </Button>
-                <Link href="/contact" className="w-full sm:w-auto">
+                <Link href="/contact#contact-form" className="w-full sm:w-auto">
                   <Button variant="ghost" className="w-full sm:w-auto text-stone-300 border border-stone-700 hover:bg-stone-800">
                     お問い合わせ
                   </Button>
@@ -185,7 +185,7 @@ function WorkshopPayPayReturnContent() {
                 <Button onClick={handleRecheck} disabled={isRechecking} className="w-full sm:w-auto">
                   {isRechecking ? '確認中...' : '再度確認する'}
                 </Button>
-                <Link href="/contact" className="w-full sm:w-auto">
+                <Link href="/contact#contact-form" className="w-full sm:w-auto">
                   <Button variant="ghost" className="w-full sm:w-auto text-stone-300 border border-stone-700 hover:bg-stone-800">
                     お問い合わせ
                   </Button>

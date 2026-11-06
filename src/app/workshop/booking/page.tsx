@@ -14,7 +14,7 @@ import { WorkshopCourseGallery } from '@/components/workshop/WorkshopCourseGalle
 // 既存のワークショップページ（src/app/workshop/page.tsx）と同じ問い合わせ導線を流用する
 const JALAN_URL =
   'https://www.jalan.net/kankou/spt_guide000000228974/?msockid=3e4b092db2b0692107f61de6b3b568a6';
-const CONTACT_MAILTO = 'mailto:info@mosscountry.com?subject=ワークショップ予約について';
+const CONTACT_FORM_URL = '/contact#contact-form';
 
 interface AvailableSlot {
   date: string;
@@ -67,14 +67,15 @@ function UnavailableNotice({ message }: { message: string }) {
         >
           じゃらんで予約する
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white border border-white/40 hover:bg-white/10"
-          onClick={() => (window.location.href = CONTACT_MAILTO)}
-        >
-          お問い合わせフォーム
-        </Button>
+        <Link href={CONTACT_FORM_URL}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white border border-white/40 hover:bg-white/10"
+          >
+            お問い合わせフォーム
+          </Button>
+        </Link>
       </div>
     </div>
   );
@@ -82,6 +83,17 @@ function UnavailableNotice({ message }: { message: string }) {
 
 export default function WorkshopBookingPage() {
   const [step, setStep] = useState<Step>(1);
+  const bookingTopRef = useRef<HTMLDivElement>(null);
+
+  const moveToStep = (nextStep: Step) => {
+    setStep(nextStep);
+    window.requestAnimationFrame(() => {
+      bookingTopRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+  };
 
   // ---- 1. プラン選択 ----
   const [plans, setPlans] = useState<SimpleWorkshop[]>([]);
@@ -206,7 +218,7 @@ export default function WorkshopBookingPage() {
   const total = selectedUnitPrice * partySize;
   const selectedPlanLabel = selectedPlan
     ? `${selectedPlan.title}${selectedPlan.pricingMode === 'maintenance'
-      ? maintenanceParticipation === 'participant' ? '（基本コース参加者）' : '（基本コース未参加）'
+      ? maintenanceParticipation === 'participant' ? '（初心者コース参加）' : '（初心者コース未参加）'
       : ''}`
     : '';
 
@@ -240,17 +252,17 @@ export default function WorkshopBookingPage() {
     setMaintenanceParticipation(participation);
     setSelectedSlot(null);
     setAvailability([]);
-    setStep(2);
+    moveToStep(2);
   };
 
   const handleSelectSlot = (slot: AvailableSlot) => {
     setSelectedSlot(slot);
     setPartySize(1);
-    setStep(3);
+    moveToStep(3);
   };
 
   const handlePartyNext = () => {
-    setStep(4);
+    moveToStep(4);
   };
 
   const handleCustomerNext = () => {
@@ -259,7 +271,7 @@ export default function WorkshopBookingPage() {
       return;
     }
     setCustomerError(null);
-    setStep(5);
+    moveToStep(5);
   };
 
   async function submitBooking(paymentToken?: { token: string }) {
@@ -397,7 +409,7 @@ export default function WorkshopBookingPage() {
   return (
     <div className="bg-stone-950 min-h-screen pt-20">
       <Container>
-        <div className="py-8 max-w-3xl mx-auto">
+        <div ref={bookingTopRef} className="scroll-mt-24 py-8 max-w-3xl mx-auto">
           <div className="border-b border-stone-800 pb-6 mb-8">
             <h1 className="text-3xl md:text-4xl font-light text-white">
               {maintenanceOnly ? 'メンテナンス会の予約' : 'ワークショップ予約'}
@@ -414,7 +426,7 @@ export default function WorkshopBookingPage() {
                 <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-4">
                   <p className="font-medium text-emerald-200">メンテナンス会のみ表示しています</p>
                   <p className="mt-1 text-sm leading-relaxed text-stone-300">
-                    お持ちの容器サイズを選び、基本コースへの参加歴に合う料金区分をお選びください。
+                    お持ちの容器サイズを選び、初心者コースを受講したことがあるかどうかに合わせて料金区分をお選びください。
                   </p>
                   <button type="button" onClick={showAllPlans} className="mt-3 text-sm text-emerald-400 underline underline-offset-4 hover:text-emerald-300">
                     通常のワークショップを含む一覧を見る
@@ -449,10 +461,12 @@ export default function WorkshopBookingPage() {
                               {plan.pricingMode === 'maintenance' ? (
                                 <div className="space-y-2">
                                   <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan, 'participant')} className="w-full rounded-lg border border-emerald-700 px-3 py-2 text-left text-sm text-white hover:bg-emerald-900/30 disabled:cursor-not-allowed">
-                                    基本コース参加者 <strong className="float-right text-emerald-400">¥{(plan.participantPrice || 0).toLocaleString()}</strong>
+                                    <span className="block font-medium">初心者コース参加 <strong className="float-right text-emerald-400">¥{(plan.participantPrice || 0).toLocaleString()}</strong></span>
+                                    <span className="mt-1 block text-xs text-stone-400">初心者コースを受講したことがある方</span>
                                   </button>
                                   <button type="button" disabled={paused} onClick={() => handleSelectPlan(plan, 'non_participant')} className="w-full rounded-lg border border-stone-700 px-3 py-2 text-left text-sm text-white hover:border-emerald-600 disabled:cursor-not-allowed">
-                                    基本コース未参加 <strong className="float-right text-emerald-400">¥{(plan.nonParticipantPrice || 0).toLocaleString()}</strong>
+                                    <span className="block font-medium">初心者コース未参加 <strong className="float-right text-emerald-400">¥{(plan.nonParticipantPrice || 0).toLocaleString()}</strong></span>
+                                    <span className="mt-1 block text-xs text-stone-400">初心者コースをまだ受講していない方</span>
                                   </button>
                                 </div>
                               ) : (
@@ -483,7 +497,7 @@ export default function WorkshopBookingPage() {
                   <p className="text-stone-400 text-xs">選択中のプラン</p>
                   <p className="text-white font-medium">{selectedPlanLabel}</p>
                 </div>
-                <button className="text-emerald-400 text-sm hover:underline" onClick={() => setStep(1)}>
+                <button className="text-emerald-400 text-sm hover:underline" onClick={() => moveToStep(1)}>
                   変更する
                 </button>
               </div>
@@ -505,7 +519,7 @@ export default function WorkshopBookingPage() {
                     <p>当日参加をご希望の場合は、一度ご連絡の上スタッフにご相談ください。</p>
                     <p>
                       3か月より先の日程は、
-                      <Link href="/contact" className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
+                      <Link href="/contact#contact-form" className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
                         お問い合わせ
                       </Link>
                       よりご相談ください。
@@ -534,7 +548,7 @@ export default function WorkshopBookingPage() {
               )}
 
               <div>
-                <Button variant="ghost" size="sm" className="text-stone-300" onClick={() => setStep(1)}>
+                <Button variant="ghost" size="sm" className="text-stone-300" onClick={() => moveToStep(1)}>
                   ← 戻る
                 </Button>
               </div>
@@ -569,7 +583,7 @@ export default function WorkshopBookingPage() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" size="md" className="text-stone-300" onClick={() => setStep(2)}>
+                <Button variant="ghost" size="md" className="text-stone-300" onClick={() => moveToStep(2)}>
                   ← 戻る
                 </Button>
                 <Button variant="primary" size="md" onClick={handlePartyNext}>
@@ -635,7 +649,7 @@ export default function WorkshopBookingPage() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" size="md" className="text-stone-300" onClick={() => setStep(3)}>
+                <Button variant="ghost" size="md" className="text-stone-300" onClick={() => moveToStep(3)}>
                   ← 戻る
                 </Button>
                 <Button variant="primary" size="md" onClick={handleCustomerNext}>
@@ -808,7 +822,7 @@ export default function WorkshopBookingPage() {
                   size="sm"
                   className="text-stone-300"
                   disabled={submitting}
-                  onClick={() => setStep(4)}
+                  onClick={() => moveToStep(4)}
                 >
                   ← 戻る
                 </Button>

@@ -71,7 +71,7 @@ test('予約画面はサーバーの受付期間を使い、3か月より先を�
   assert.ok(!bookingPage.includes('getDate() + 60'));
   assert.ok(bookingPage.includes('3か月より先の日程は'));
   assert.ok(bookingPage.includes('当日参加をご希望の場合は、一度ご連絡の上スタッフにご相談ください。'));
-  assert.ok(bookingPage.includes('href="/contact"'));
+  assert.ok(bookingPage.includes('href="/contact#contact-form"'));
 });
 
 test('営業日登録がある日だけワークショップを受け付ける', async () => {
